@@ -24,7 +24,7 @@ export class ProductLevelRule implements IDiscountRule {
       }
       
       const lineResult = result.getLineItem(item.lineId);
-      // If a higher-priority discount (e.g., custom) is already applied, skip.
+      // If a higher-priority discount (e.g., custom, batch, or another product rule) is already applied, skip.
       if (!lineResult || lineResult.totalDiscount > 0) {
         return;
       }
@@ -37,7 +37,12 @@ export class ProductLevelRule implements IDiscountRule {
           { config: this.config.specificUnitPriceThresholdRuleJson, type: 'product_config_specific_unit_price' as const, context: 'specific_unit_price' as const }
       ];
 
-      rulesToConsider.forEach(ruleEntry => {
+      for (const ruleEntry of rulesToConsider) {
+        // If a discount has already been applied to this line item in a previous iteration of this loop, stop.
+        if (lineResult.totalDiscount > 0) {
+          break; 
+        }
+
         if(ruleEntry.config?.isEnabled) {
             const discountAmount = evaluateRule(
                 ruleEntry.config,
@@ -62,7 +67,7 @@ export class ProductLevelRule implements IDiscountRule {
                 });
             }
         }
-      });
+      }
     });
   }
 }
