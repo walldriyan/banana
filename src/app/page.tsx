@@ -25,19 +25,36 @@ const sampleProducts: Product[] = [
 
 const allCampaigns = [megaDealFest, buyMoreSaveMore, clearanceSale];
 
-// Helper function to format a single rule for display
+// Helper function to format a single rule for display in Sinhala
 const formatRule = (rule: SpecificDiscountRuleConfig, prefix = ""): string => {
   if (!rule.isEnabled) return "";
-  let description = `${prefix}*${rule.name}*: `;
-  const valueStr = rule.type === 'percentage' ? `${rule.value}%` : `Rs. ${rule.value.toFixed(2)}`;
   
+  const valueStr = rule.type === 'percentage' ? `${rule.value}% ක` : `රු. ${rule.value.toFixed(2)} ක`;
+  const perItemStr = rule.applyFixedOnce ? "මුළු අයිතමයටම" : "එක් අයිතමයකට";
+
+  let conditionStr = "";
   if (rule.conditionMin) {
-    description += `Get ${valueStr} off when ${rule.applyFixedOnce ? 'total is' : ''} over ${rule.conditionMin}.`;
-  } else {
-    description += `Get ${valueStr} off.`;
+    conditionStr = `අයිතම ${rule.conditionMin} ක් හෝ ඊට වඩා ගත්විට`;
+    // We can make this more specific if we know the context (value vs quantity), but this is a good general start.
   }
-  return description;
+  
+  let baseDescription = `"${rule.name}" දීමනාව:`;
+
+  if (rule.type === 'fixed') {
+      baseDescription += ` ${valueStr} වට්ටමක් (${perItemStr})`;
+  } else {
+      baseDescription += ` ${valueStr} වට්ටමක්`;
+  }
+
+  if (conditionStr) {
+      baseDescription += `, ${conditionStr}.`;
+  } else {
+      baseDescription += `.`
+  }
+
+  return `${prefix}${baseDescription}`;
 };
+
 
 // Helper function to get all potential discounts for a product/batch
 const getAvailableDiscountsInfo = (
@@ -76,7 +93,7 @@ const getAvailableDiscountsInfo = (
           .forEach(rule => {
               const otherProduct = sampleProducts.find(p => p.id === rule.getProductId);
               if (otherProduct) {
-                  discounts.push(`*${rule.name}*: Buy ${rule.buyQuantity} of these to get ${otherProduct.name} at a discount!`);
+                  discounts.push(`"${rule.name}" දීමනාව: මෙම භාණ්ඩයෙන් ${rule.buyQuantity}ක් ගත්විට, ${otherProduct.name} සඳහා විශේෂ වට්ටමක්!`);
               }
           });
   }
@@ -174,7 +191,7 @@ export default function MyNewEcommerceShop() {
                     {/* Display product-level discounts */}
                     {productDiscounts.length > 0 && !p.batches && (
                       <div className="mt-3 space-y-1 rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-800">
-                        <h5 className="font-bold mb-1">Available Offers:</h5>
+                        <h5 className="font-bold mb-1">ලැබිය හැකි දීමනා:</h5>
                         {productDiscounts.map((desc, i) => <p key={i}>{desc}</p>)}
                       </div>
                     )}
@@ -196,7 +213,7 @@ export default function MyNewEcommerceShop() {
                                {/* Display batch & product discounts */}
                                {batchDiscounts.length > 0 && (
                                 <div className="space-y-1 rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-800">
-                                   <h5 className="font-bold mb-1">Available Offers for this Batch:</h5>
+                                   <h5 className="font-bold mb-1">මෙම Batch එක සඳහා දීමනා:</h5>
                                    {batchDiscounts.map((desc, i) => <p key={i}>{desc}</p>)}
                                 </div>
                                )}
