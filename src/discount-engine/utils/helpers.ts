@@ -38,8 +38,6 @@ export function evaluateRule(
     }
   } else { // percentage
     // Percentage is always calculated on the total value of the line.
-    // The concept of "apply once" is implicit for percentage discounts on a line item total.
-    // If you needed percentage per unit, the calculation would be different, but typically it's on the total.
     discountAmount = lineTotalValue * (ruleConfig.value / 100);
   }
   
