@@ -29,8 +29,15 @@ export function evaluateRule(
 
   let discountAmount = 0;
   if (ruleConfig.type === 'fixed') {
-    discountAmount = ruleConfig.value;
+    if (ruleConfig.applyFixedOnce) {
+      // Apply the fixed discount only once for the entire line item.
+      discountAmount = ruleConfig.value;
+    } else {
+      // Apply the fixed discount for each unit in the line item.
+      discountAmount = ruleConfig.value * itemQuantity;
+    }
   } else { // percentage
+    // Percentage is always calculated on the total value of the line.
     discountAmount = lineTotalValue * (ruleConfig.value / 100);
   }
   
