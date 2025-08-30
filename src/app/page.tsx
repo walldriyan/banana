@@ -4,12 +4,14 @@
 import { useState, useMemo } from 'react';
 
 // --- ඔබගේ අලුත් project එකේදී මෙම import paths නිවැරදිව සකස් කරගන්න ---
-import type { Product, SaleItem, ProductBatch, DiscountSet } from '@/types';
+import type { Product, SaleItem, ProductBatch, DiscountSet, SpecificDiscountRuleConfig, BuyGetRule } from '@/types';
 import { DiscountResult } from '@/discount-engine/core/result';
 // නිවැරදි කරන ලද import path සහ function නම
 import { calculateDiscountsForItems } from '@/lib/discountUtils'; 
 // @ts-ignore
 // -----------------------------------------------------------------------
+
+import { megaDealFest, buyMoreSaveMore, clearanceSale } from '@/lib/my-campaigns';
 
 
 // --- උදාහරණයක් සඳහා Products සහ Batches ---
@@ -21,85 +23,88 @@ const sampleProducts: Product[] = [
 ];
 // ---
 
-// --- Campaigns are now defined directly in the file ---
-const summerSale: DiscountSet = {
-  id: 'promo-summer',
-  name: 'Summer Sale',
-  isActive: true,
-  isDefault: true,
-  isOneTimePerTransaction: false,
-  productConfigurations: [
-    {
-      productId: 't-shirt-01',
-      lineItemValueRuleJson: {
-        isEnabled: true, name: '10% OFF T-Shirts', type: 'percentage', value: 10,
-      },
-      id: 'summersale-tshirt-config',
-      discountSetId: 'promo-summer',
-      productNameAtConfiguration: 'T-Shirt',
-      isActiveForProductInCampaign: true,
-      lineItemQuantityRuleJson: null,
-      specificQtyThresholdRuleJson: null,
-      specificUnitPriceThresholdRuleJson: null,
-    }
-  ],
-  globalCartPriceRuleJson: {
-    isEnabled: true, name: 'Bonus 500 OFF', type: 'fixed', value: 500, conditionMin: 10000
-  },
-  globalCartQuantityRuleJson: null,
-  defaultLineItemValueRuleJson: null,
-  defaultLineItemQuantityRuleJson: null,
-  defaultSpecificQtyThresholdRuleJson: null,
-  defaultSpecificUnitPriceThresholdRuleJson: null,
-};
+const allCampaigns = [megaDealFest, buyMoreSaveMore, clearanceSale];
 
-const vintageSale: DiscountSet = {
-  id: 'promo-vintage',
-  name: 'Vintage Stock Clearance',
-  isActive: true,
-  isDefault: false,
-  isOneTimePerTransaction: false,
-  batchConfigurations: [
-    {
-      productBatchId: 't-shirt-batch-old',
-      lineItemValueRuleJson: {
-        isEnabled: true, name: '50% OFF Old Batch', type: 'percentage', value: 50
-      },
-      id: 'vintage-old-batch-config',
-      discountSetId: 'promo-vintage',
-      isActiveForBatchInCampaign: true,
-      lineItemQuantityRuleJson: null,
-    }
-  ],
-  productConfigurations: [
-     {
-      productId: 't-shirt-01',
-      lineItemValueRuleJson: {
-        isEnabled: true, name: '10% OFF T-Shirts', type: 'percentage', value: 10
-      },
-      id: 'vintage-tshirt-config',
-      discountSetId: 'promo-vintage',
-      productNameAtConfiguration: 'T-Shirt',
-      isActiveForProductInCampaign: true,
-      lineItemQuantityRuleJson: null,
-      specificQtyThresholdRuleJson: null,
-      specificUnitPriceThresholdRuleJson: null,
-     }
-  ],
-    globalCartPriceRuleJson: null,
-    globalCartQuantityRuleJson: null,
-    defaultLineItemValueRuleJson: null,
-    defaultLineItemQuantityRuleJson: null,
-    defaultSpecificQtyThresholdRuleJson: null,
-    defaultSpecificUnitPriceThresholdRuleJson: null,
+// Helper function to format a single rule for display in Sinhala
+const formatRule = (rule: SpecificDiscountRuleConfig, prefix = ""): string => {
+  if (!rule.isEnabled) return "";
+  
+  const valueStr = rule.type === 'percentage' ? `${rule.value}% ක` : `රු. ${rule.value.toFixed(2)} ක`;
+  const perItemStr = rule.applyFixedOnce ? "මුළු අයිතමයටම" : "එක් අයිතමයකට";
+
+  let conditionStr = "";
+  if (rule.conditionMin) {
+    conditionStr = `අයිතම ${rule.conditionMin} ක් හෝ ඊට වඩා ගත්විට`;
+    // We can make this more specific if we know the context (value vs quantity), but this is a good general start.
+  }
+  
+  let baseDescription = `"${rule.name}" දීමනාව:`;
+
+  if (rule.type === 'fixed') {
+      baseDescription += ` ${valueStr} වට්ටමක් (${perItemStr})`;
+  } else {
+      baseDescription += ` ${valueStr} වට්ටමක්`;
+  }
+
+  if (conditionStr) {
+      baseDescription += `, ${conditionStr}.`;
+  } else {
+      baseDescription += `.`
+  }
+
+  return `${prefix}${baseDescription}`;
 };
 
 
-const allCampaigns = [summerSale, vintageSale];
+// Helper function to get all potential discounts for a product/batch
+const getAvailableDiscountsInfo = (
+  productId: string, 
+  batchId: string | undefined, 
+  campaign: DiscountSet
+): string[] => {
+  const discounts: string[] = [];
+
+  // 1. Batch-specific discounts (Highest Priority)
+  if (batchId && campaign.batchConfigurations) {
+    campaign.batchConfigurations
+      .filter(conf => conf.productBatchId === batchId && conf.isActiveForBatchInCampaign)
+      .forEach(conf => {
+        if (conf.lineItemValueRuleJson) discounts.push(formatRule(conf.lineItemValueRuleJson, '(Batch Offer) '));
+        if (conf.lineItemQuantityRuleJson) discounts.push(formatRule(conf.lineItemQuantityRuleJson, '(Batch Offer) '));
+      });
+  }
+
+  // 2. Product-specific discounts
+  if (campaign.productConfigurations) {
+    campaign.productConfigurations
+      .filter(conf => conf.productId === productId && conf.isActiveForProductInCampaign)
+      .forEach(conf => {
+        if (conf.lineItemValueRuleJson) discounts.push(formatRule(conf.lineItemValueRuleJson));
+        if (conf.lineItemQuantityRuleJson) discounts.push(formatRule(conf.lineItemQuantityRuleJson));
+        if (conf.specificQtyThresholdRuleJson) discounts.push(formatRule(conf.specificQtyThresholdRuleJson));
+        if (conf.specificUnitPriceThresholdRuleJson) discounts.push(formatRule(conf.specificUnitPriceThresholdRuleJson));
+      });
+  }
+  
+  // 3. Buy X Get Y rules where this product is the 'buy' item
+  if (campaign.buyGetRulesJson) {
+      campaign.buyGetRulesJson
+          .filter(rule => rule.buyProductId === productId)
+          .forEach(rule => {
+              const otherProduct = sampleProducts.find(p => p.id === rule.getProductId);
+              if (otherProduct) {
+                  discounts.push(`"${rule.name}" දීමනාව: මෙම භාණ්ඩයෙන් ${rule.buyQuantity}ක් ගත්විට, ${otherProduct.name} සඳහා විශේෂ වට්ටමක්!`);
+              }
+          });
+  }
+
+  return discounts.filter(d => d); // remove empty strings
+};
+
 
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
-  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(summerSale);
+  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
 
   const updateCartQuantity = (saleItemId: string, change: number) => {
     setCart(currentCart => {
@@ -139,10 +144,6 @@ export default function MyNewEcommerceShop() {
        }
     });
   };
-
-  const removeFromCart = (saleItemId: string) => {
-    setCart(currentCart => currentCart.filter(item => item.saleItemId !== saleItemId));
-  };
   
   const discountResult: DiscountResult = useMemo(() => {
     return calculateDiscountsForItems({ saleItems: cart, activeCampaign, allProducts: sampleProducts });
@@ -151,16 +152,6 @@ export default function MyNewEcommerceShop() {
   const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const finalTotal = originalTotal - (discountResult.totalItemDiscount + discountResult.totalCartDiscount);
   
-  const isDiscountAvailableForProduct = (productId: string, batchId?: string) => {
-    if (batchId && activeCampaign.batchConfigurations?.some(bc => bc.productBatchId === batchId && bc.lineItemValueRuleJson?.isEnabled)) {
-        return true;
-    }
-    if (activeCampaign.productConfigurations?.some(pc => pc.productId === productId && pc.lineItemValueRuleJson?.isEnabled)) {
-        return true;
-    }
-    return false;
-  };
-
   return (
    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -175,7 +166,7 @@ export default function MyNewEcommerceShop() {
           <div className="mb-8">
             <label htmlFor="campaign-selector" className="block text-sm font-medium text-gray-700 mb-2">Active Discount Campaign</label>
             <div className="relative">
-              <select id="campaign-selector" value={activeCampaign.id} onChange={(e) => setActiveCampaign(allCampaigns.find((c) => c.id === e.target.value) || summerSale)} className="w-full appearance-none rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-base shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition">
+              <select id="campaign-selector" value={activeCampaign.id} onChange={(e) => setActiveCampaign(allCampaigns.find((c) => c.id === e.target.value) || megaDealFest)} className="w-full appearance-none rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-base shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition">
                 {allCampaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
               </select>
               <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">▾</span>
@@ -185,39 +176,59 @@ export default function MyNewEcommerceShop() {
           <section>
             <h3 className="text-xl font-semibold text-gray-900 mb-4">Available Products</h3>
             <div className="space-y-4">
-              {sampleProducts.map((p) => (
-                <div key={p.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="text-lg font-semibold text-gray-900">{p.name}</h4>
-                      <p className="text-sm text-gray-500">{p.category}</p>
+              {sampleProducts.map((p) => {
+                const productDiscounts = getAvailableDiscountsInfo(p.id, undefined, activeCampaign);
+                return (
+                  <div key={p.id} className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="text-lg font-semibold text-gray-900">{p.name}</h4>
+                        <p className="text-sm text-gray-500">{p.category}</p>
+                      </div>
+                      {!p.batches && (<span className="text-lg font-bold text-gray-800">Rs. {p.sellingPrice.toFixed(2)}</span>)}
                     </div>
-                    {!p.batches && (<span className="text-lg font-bold text-gray-800">Rs. {p.sellingPrice.toFixed(2)}</span>)}
-                  </div>
+                    
+                    {/* Display product-level discounts */}
+                    {productDiscounts.length > 0 && !p.batches && (
+                      <div className="mt-3 space-y-1 rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-800">
+                        <h5 className="font-bold mb-1">ලැබිය හැකි දීමනා:</h5>
+                        {productDiscounts.map((desc, i) => <p key={i}>{desc}</p>)}
+                      </div>
+                    )}
 
-                  {p.batches ? (
-                    <div className="mt-3 space-y-3">
-                      {p.batches.map((b) => (
-                        <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
-                          <p className="text-sm text-gray-700">
-                            <span className="text-xs px-2 py-1 rounded-full border border-gray-300 bg-white text-gray-700 font-medium">Batch</span> 
-                            <span className="ml-2 font-semibold text-gray-900">{b.batchNumber}</span> • Rs. {b.sellingPrice.toFixed(2)}
-                          </p>
-                          <div className="flex items-center gap-3">
-                            {isDiscountAvailableForProduct(p.id, b.id) && (<span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">Discount Available</span>)}
-                            <button onClick={() => addToCart(p, b)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 transition">Add Batch</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="mt-4 flex items-center justify-end gap-3">
-                        {isDiscountAvailableForProduct(p.id) && (<span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">Discount Available</span>)}
-                        <button onClick={() => addToCart(p)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 transition">Add to Cart</button>
-                    </div>
-                  )}
-                </div>
-              ))}
+
+                    {p.batches ? (
+                      <div className="mt-3 space-y-3">
+                        {p.batches.map((b) => {
+                          const batchDiscounts = getAvailableDiscountsInfo(p.id, b.id, activeCampaign);
+                          return (
+                            <div key={b.id} className="flex flex-col gap-3 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
+                               <div className="flex flex-wrap items-center justify-between gap-3">
+                                  <p className="text-sm text-gray-700">
+                                    <span className="text-xs px-2 py-1 rounded-full border border-gray-300 bg-white text-gray-700 font-medium">Batch</span> 
+                                    <span className="ml-2 font-semibold text-gray-900">{b.batchNumber}</span> • Rs. {b.sellingPrice.toFixed(2)}
+                                  </p>
+                                  <button onClick={() => addToCart(p, b)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 transition">Add Batch</button>
+                               </div>
+                               {/* Display batch & product discounts */}
+                               {batchDiscounts.length > 0 && (
+                                <div className="space-y-1 rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-800">
+                                   <h5 className="font-bold mb-1">මෙම Batch එක සඳහා දීමනා:</h5>
+                                   {batchDiscounts.map((desc, i) => <p key={i}>{desc}</p>)}
+                                </div>
+                               )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex items-center justify-end gap-3">
+                          <button onClick={() => addToCart(p)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 transition">Add to Cart</button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </section>
         </div>
