@@ -3,32 +3,47 @@
 import type { DiscountSet } from '@/types';
 
 // **උදාහරණය 1: "Mega Deal Fest" - විවිධ නීති එකට**
+// This campaign now has multiple, potentially conflicting rules for the same product 
+// to test the engine's priority logic (first valid rule applies).
 export const megaDealFest: DiscountSet = {
   id: 'promo-mega-deal',
   name: 'Mega Deal Fest',
   isActive: true,
-  isDefault: true, // This will be the default selected campaign
+  isDefault: true,
   isOneTimePerTransaction: false,
   
-  // Product-specific discount for Jeans
+  // Product-specific discounts. Note the multiple entries for 'jeans-01' and 't-shirt-01'
   productConfigurations: [
     { 
-      id: 'mega-jeans-config-1',
+      id: 'mega-jeans-config-1', // Rule Set 1 for Jeans
       productId: 'jeans-01',
       productNameAtConfiguration: 'Jeans',
       discountSetId: 'promo-mega-deal',
       isActiveForProductInCampaign: true,
-      lineItemValueRuleJson: { // Rule 1: 15% off any jeans
+      lineItemValueRuleJson: { // Rule 1A: 15% off any jeans line item
         isEnabled: true, name: '15% OFF All Jeans', type: 'percentage', value: 15,
       },
       lineItemQuantityRuleJson: null,
-      specificQtyThresholdRuleJson: { // Rule 2: Buy 2 or more jeans, get Rs.1000 off total line (once)
+      specificQtyThresholdRuleJson: { // Rule 1B: Buy 2 or more jeans, get Rs.1000 off total line (once)
         isEnabled: true, name: 'Jeans Duo-Pack Discount', type: 'fixed', value: 1000, conditionMin: 2, applyFixedOnce: true,
       },
       specificUnitPriceThresholdRuleJson: null,
     },
     { 
-      id: 'mega-tshirt-config-1',
+      id: 'mega-jeans-config-2', // **NEW** Rule Set 2 for Jeans (Lower priority)
+      productId: 'jeans-01',
+      productNameAtConfiguration: 'Jeans',
+      discountSetId: 'promo-mega-deal',
+      isActiveForProductInCampaign: true,
+      lineItemValueRuleJson: { // Rule 2A: Rs. 500 off if line value is over Rs. 10,000
+        isEnabled: true, name: 'High-Value Jeans Discount', type: 'fixed', value: 500, conditionMin: 10000, applyFixedOnce: true,
+      },
+      lineItemQuantityRuleJson: null,
+      specificQtyThresholdRuleJson: null,
+      specificUnitPriceThresholdRuleJson: null,
+    },
+    { 
+      id: 'mega-tshirt-config-1', // Rule Set 1 for T-Shirt
       productId: 't-shirt-01',
       productNameAtConfiguration: 'T-Shirt',
       discountSetId: 'promo-mega-deal',
@@ -39,17 +54,29 @@ export const megaDealFest: DiscountSet = {
       lineItemQuantityRuleJson: null,
       specificQtyThresholdRuleJson: null,
       specificUnitPriceThresholdRuleJson: null,
+    },
+    { 
+      id: 'mega-tshirt-config-2', // **NEW** Rule Set 2 for T-Shirt
+      productId: 't-shirt-01',
+      productNameAtConfiguration: 'T-Shirt',
+      discountSetId: 'promo-mega-deal',
+      isActiveForProductInCampaign: true,
+      lineItemValueRuleJson: null,
+      lineItemQuantityRuleJson: null,
+      specificQtyThresholdRuleJson: { // Rule 4: Buy 4 T-Shirts, get Rs. 150 off per shirt
+          isEnabled: true, name: 'T-Shirt 4-Pack Deal', type: 'fixed', value: 150, applyFixedOnce: false, conditionMin: 4
+      },
+      specificUnitPriceThresholdRuleJson: null,
     }
   ],
   
-  // Batch-specific discount for old T-Shirts
+  // Batch-specific discount for old T-Shirts. This has higher priority than product-level rules.
   batchConfigurations: [
     { 
       id: 'mega-old-tshirt-batch-config',
       productBatchId: 't-shirt-batch-old',
       discountSetId: 'promo-mega-deal',
       isActiveForBatchInCampaign: true,
-      // Fixed Rs. 300 discount for EACH T-shirt from the old batch
       lineItemValueRuleJson: {
         isEnabled: true, name: 'Old T-Shirt Clearance', type: 'fixed', value: 300, applyFixedOnce: false, 
       },
@@ -60,7 +87,6 @@ export const megaDealFest: DiscountSet = {
       productBatchId: 't-shirt-batch-new',
       discountSetId: 'promo-mega-deal',
       isActiveForBatchInCampaign: true,
-      // 10% off for new batch t-shirts (this will clash with the product-level rule, but batch should take precedence)
       lineItemValueRuleJson: {
         isEnabled: true, name: 'New Arrival T-Shirts', type: 'percentage', value: 10
       },
@@ -95,7 +121,7 @@ export const buyMoreSaveMore: DiscountSet = {
   isOneTimePerTransaction: false,
 
   productConfigurations: [
-    { // Buy 3 or more T-shirts (any batch) and get a discount
+    {
       id: 'buymore-tshirt-config',
       productId: 't-shirt-01',
       productNameAtConfiguration: 'T-Shirt',
@@ -107,13 +133,13 @@ export const buyMoreSaveMore: DiscountSet = {
           isEnabled: true,
           name: 'T-Shirt Bulk Buy',
           type: 'fixed',
-          value: 250, // Rs. 250 OFF per T-shirt
-          conditionMin: 3, // Activates if you buy 3 or more
-          applyFixedOnce: false // Discount applies to each item
+          value: 250, 
+          conditionMin: 3, 
+          applyFixedOnce: false 
       },
       specificUnitPriceThresholdRuleJson: null,
     },
-    { // Discount on Jeans if they are expensive (e.g. premium version)
+    { 
         id: 'buymore-jeans-config',
         productId: 'jeans-01',
         productNameAtConfiguration: 'Jeans',
@@ -126,8 +152,8 @@ export const buyMoreSaveMore: DiscountSet = {
             isEnabled: true,
             name: 'Premium Jeans Offer',
             type: 'percentage',
-            value: 20, // 20% OFF
-            conditionMin: 7000, // Activates if unit price is 7000 or more
+            value: 20, 
+            conditionMin: 7000, 
         }
     }
   ],
@@ -139,24 +165,20 @@ export const buyMoreSaveMore: DiscountSet = {
         discountSetId: 'promo-buy-more',
         isActiveForBatchInCampaign: true,
         lineItemValueRuleJson: {
-            // An extra Rs. 100 off per item from the old batch, on top of any other applicable rule (since this engine applies first available)
-            // Note: In our current engine logic, this batch rule will take precedence and the product rule won't apply.
             isEnabled: true, name: 'Extra for Old Stock', type: 'fixed', value: 100, applyFixedOnce: false
         },
         lineItemQuantityRuleJson: null,
       }
   ],
 
-  // Global cart QUANTITY discount
   globalCartQuantityRuleJson: {
       isEnabled: true,
       name: 'Shopping Haul Bonus',
       type: 'fixed',
-      value: 400, // Rs. 400 off entire bill
-      conditionMin: 5, // If cart has 5 or more items in total
+      value: 400, 
+      conditionMin: 5, 
   },
   
-  // Nullify other rules
   buyGetRulesJson: [],
   globalCartPriceRuleJson: null,
   defaultLineItemValueRuleJson: null,
@@ -174,7 +196,7 @@ export const clearanceSale: DiscountSet = {
   isOneTimePerTransaction: false,
 
   productConfigurations: [
-      { // A special discount on Jeans just for this campaign
+      { 
         id: 'clearance-jeans-special',
         productId: 'jeans-01',
         productNameAtConfiguration: 'Jeans',
@@ -189,7 +211,6 @@ export const clearanceSale: DiscountSet = {
       }
   ],
 
-  // Massive discount on old batch T-shirts
   batchConfigurations: [
     { 
       id: 'clearance-old-tshirt-batch-config',
@@ -206,7 +227,6 @@ export const clearanceSale: DiscountSet = {
       productBatchId: 't-shirt-batch-new',
       discountSetId: 'promo-clearance',
       isActiveForBatchInCampaign: true,
-      // A small fixed discount for new t-shirts to encourage buying
       lineItemValueRuleJson: {
         isEnabled: true, name: 'New T-Shirt Consolation', type: 'fixed', value: 50, applyFixedOnce: false,
       },
@@ -214,22 +234,20 @@ export const clearanceSale: DiscountSet = {
     }
   ],
 
-  // A "Buy-Get" rule
   buyGetRulesJson: [
       {
           id: 'clearance-bogo-jeans',
           name: 'Buy T-Shirt Get Jeans',
-          buyProductId: 't-shirt-01', // Buy any T-shirt
+          buyProductId: 't-shirt-01', 
           buyQuantity: 2,
-          getProductId: 'jeans-01', // Get Jeans
+          getProductId: 'jeans-01', 
           getQuantity: 1,
-          discountType: 'percentage', // 50% off on the 'get' product
+          discountType: 'percentage', 
           discountValue: 50, 
-          isRepeatable: true, // For every 2 t-shirts, you get 1 discounted jean
+          isRepeatable: true, 
       }
   ],
 
-  // No other global or default discounts in this specific campaign
   globalCartPriceRuleJson: null,
   globalCartQuantityRuleJson: null,
   defaultLineItemValueRuleJson: null,
@@ -237,4 +255,3 @@ export const clearanceSale: DiscountSet = {
   defaultSpecificQtyThresholdRuleJson: null,
   defaultSpecificUnitPriceThresholdRuleJson: null,
 };
-
