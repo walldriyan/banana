@@ -11,6 +11,8 @@ import { calculateDiscountsForItems } from '@/lib/discountUtils';
 // @ts-ignore
 // -----------------------------------------------------------------------
 
+import { megaDealFest, buyMoreSaveMore, clearanceSale } from '@/lib/my-campaigns';
+
 
 // --- උදාහරණයක් සඳහා Products සහ Batches ---
 const oldBatch: ProductBatch = { id: 't-shirt-batch-old', batchNumber: 'OLD-2023', sellingPrice: 2000, costPrice: 1500, quantity: 100, productId: 't-shirt-01' };
@@ -21,85 +23,11 @@ const sampleProducts: Product[] = [
 ];
 // ---
 
-// --- Campaigns are now defined directly in the file ---
-const summerSale: DiscountSet = {
-  id: 'promo-summer',
-  name: 'Summer Sale',
-  isActive: true,
-  isDefault: true,
-  isOneTimePerTransaction: false,
-  productConfigurations: [
-    {
-      productId: 't-shirt-01',
-      lineItemValueRuleJson: {
-        isEnabled: true, name: '10% OFF T-Shirts', type: 'percentage', value: 10,
-      },
-      id: 'summersale-tshirt-config',
-      discountSetId: 'promo-summer',
-      productNameAtConfiguration: 'T-Shirt',
-      isActiveForProductInCampaign: true,
-      lineItemQuantityRuleJson: null,
-      specificQtyThresholdRuleJson: null,
-      specificUnitPriceThresholdRuleJson: null,
-    }
-  ],
-  globalCartPriceRuleJson: {
-    isEnabled: true, name: 'Bonus 500 OFF', type: 'fixed', value: 500, conditionMin: 10000
-  },
-  globalCartQuantityRuleJson: null,
-  defaultLineItemValueRuleJson: null,
-  defaultLineItemQuantityRuleJson: null,
-  defaultSpecificQtyThresholdRuleJson: null,
-  defaultSpecificUnitPriceThresholdRuleJson: null,
-};
-
-const vintageSale: DiscountSet = {
-  id: 'promo-vintage',
-  name: 'Vintage Stock Clearance',
-  isActive: true,
-  isDefault: false,
-  isOneTimePerTransaction: false,
-  batchConfigurations: [
-    {
-      productBatchId: 't-shirt-batch-old',
-      lineItemValueRuleJson: {
-        isEnabled: true, name: '50% OFF Old Batch', type: 'percentage', value: 50
-      },
-      id: 'vintage-old-batch-config',
-      discountSetId: 'promo-vintage',
-      isActiveForBatchInCampaign: true,
-      lineItemQuantityRuleJson: null,
-    }
-  ],
-  productConfigurations: [
-     {
-      productId: 't-shirt-01',
-      lineItemValueRuleJson: {
-        isEnabled: true, name: '10% OFF T-Shirts', type: 'percentage', value: 10
-      },
-      id: 'vintage-tshirt-config',
-      discountSetId: 'promo-vintage',
-      productNameAtConfiguration: 'T-Shirt',
-      isActiveForProductInCampaign: true,
-      lineItemQuantityRuleJson: null,
-      specificQtyThresholdRuleJson: null,
-      specificUnitPriceThresholdRuleJson: null,
-     }
-  ],
-    globalCartPriceRuleJson: null,
-    globalCartQuantityRuleJson: null,
-    defaultLineItemValueRuleJson: null,
-    defaultLineItemQuantityRuleJson: null,
-    defaultSpecificQtyThresholdRuleJson: null,
-    defaultSpecificUnitPriceThresholdRuleJson: null,
-};
-
-
-const allCampaigns = [summerSale, vintageSale];
+const allCampaigns = [megaDealFest, buyMoreSaveMore, clearanceSale];
 
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
-  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(summerSale);
+  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
 
   const updateCartQuantity = (saleItemId: string, change: number) => {
     setCart(currentCart => {
@@ -152,6 +80,7 @@ export default function MyNewEcommerceShop() {
   const finalTotal = originalTotal - (discountResult.totalItemDiscount + discountResult.totalCartDiscount);
   
   const isDiscountAvailableForProduct = (productId: string, batchId?: string) => {
+    if(!activeCampaign) return false;
     if (batchId && activeCampaign.batchConfigurations?.some(bc => bc.productBatchId === batchId && bc.lineItemValueRuleJson?.isEnabled)) {
         return true;
     }
@@ -175,7 +104,7 @@ export default function MyNewEcommerceShop() {
           <div className="mb-8">
             <label htmlFor="campaign-selector" className="block text-sm font-medium text-gray-700 mb-2">Active Discount Campaign</label>
             <div className="relative">
-              <select id="campaign-selector" value={activeCampaign.id} onChange={(e) => setActiveCampaign(allCampaigns.find((c) => c.id === e.target.value) || summerSale)} className="w-full appearance-none rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-base shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition">
+              <select id="campaign-selector" value={activeCampaign.id} onChange={(e) => setActiveCampaign(allCampaigns.find((c) => c.id === e.target.value) || megaDealFest)} className="w-full appearance-none rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-base shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition">
                 {allCampaigns.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
               </select>
               <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">▾</span>
