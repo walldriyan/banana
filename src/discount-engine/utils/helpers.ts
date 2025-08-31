@@ -30,17 +30,119 @@ export function evaluateRule(
   let discountAmount = 0;
   if (ruleConfig.type === 'fixed') {
     if (ruleConfig.applyFixedOnce) {
-      // Apply the fixed discount only once for the entire line item.
+      // Apply the fixed discount only once for the entire line item, regardless of quantity
+      // මේක මගින් quantity කීයක් තිබුණත් discount එක එක වරක් විතරක් apply වෙනවා
       discountAmount = ruleConfig.value;
     } else {
-      // Apply the fixed discount for each unit in the line item.
+      // Apply the fixed discount for each unit in the line item
+      // මේක මගින් quantity එක වැඩි වෙනකොට discount එකත් වැඩි වෙනවා
       discountAmount = ruleConfig.value * itemQuantity;
     }
   } else { // percentage
-    // Percentage is always calculated on the total value of the line.
+    // Percentage is always calculated on the total value of the line
+    // Percentage rules quantity එකට බලපාන්නේ නැහැ - line total එකට apply වෙනවා
     discountAmount = lineTotalValue * (ruleConfig.value / 100);
   }
   
-  // Ensure discount is not more than the line's total value.
+  // Ensure discount is not more than the line's total value
   return Math.max(0, Math.min(discountAmount, lineTotalValue));
+}
+
+/**
+ * Generate a unique rule ID for tracking one-time applications
+ */
+export function generateRuleId(
+  prefix: string, 
+  configId: string, 
+  ruleType: string, 
+  productId?: string,
+  batchId?: string
+): string {
+  const parts = [prefix, configId, ruleType];
+  if (productId) parts.push(productId);
+  if (batchId) parts.push(batchId);
+  return parts.join('-');
+}
+
+/**
+ * Check if a rule should be treated as one-time based on its configuration
+ */
+export function isOneTimeRule(
+  ruleConfig: SpecificDiscountRuleConfig | null,
+  campaignIsOneTime: boolean = false
+): boolean {
+  if (!ruleConfig) return false;
+  
+  // Rule-level one-time setting takes precedence
+  if (ruleConfig.applyFixedOnce !== undefined) {
+    return ruleConfig.applyFixedOnce;
+  }
+  
+  // Fall back to campaign-level setting
+  return campaignIsOneTime;
+}
+
+/**
+ * Validate rule configuration for common issues
+ */
+export function validateRuleConfig(ruleConfig: SpecificDiscountRuleConfig | null): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+  
+  if (!ruleConfig) {
+    return { isValid: false, errors: ['Rule configuration is null'] };
+  }
+  
+  if (!ruleConfig.name || ruleConfig.name.trim() === '') {
+    errors.push('Rule name is required');
+  }
+  
+  if (ruleConfig.value < 0) {
+    errors.push('Discount value cannot be negative');
+  }
+  
+  if (ruleConfig.type === 'percentage' && ruleConfig.value > 100) {
+    errors.push('Percentage discount cannot exceed 100%');
+  }
+  
+  if (ruleConfig.conditionMin !== undefined && ruleConfig.conditionMin < 0) {
+    errors.push('Minimum condition cannot be negative');
+  }
+  
+  if (ruleConfig.conditionMax !== undefined && ruleConfig.conditionMin !== undefined && 
+      ruleConfig.conditionMax < ruleConfig.conditionMin) {
+    errors.push('Maximum condition cannot be less than minimum condition');
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
+ * Calculate the effective discount rate for a line item
+ */
+export function calculateEffectiveDiscountRate(
+  originalAmount: number,
+  discountAmount: number
+): number {
+  if (originalAmount <= 0) return 0;
+  return (discountAmount / originalAmount) * 100;
+}
+
+/**
+ * Format discount amount for display
+ */
+export function formatDiscountAmount(amount: number, currency: string = 'LKR'): string {
+  return `${currency} ${amount.toFixed(2)}`;
+}
+
+/**
+ * Format discount percentage for display
+ */
+export function formatDiscountPercentage(percentage: number): string {
+  return `${percentage.toFixed(1)}%`;
 }

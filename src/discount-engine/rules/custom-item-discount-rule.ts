@@ -2,6 +2,7 @@
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
+import { generateRuleId } from '../utils/helpers';
 
 /**
  * This rule has the highest priority and applies manually set discounts.
@@ -30,16 +31,20 @@ export class CustomItemDiscountRule implements IDiscountRule {
       discountAmount = Math.min(discountAmount, lineTotal);
       
       if (discountAmount > 0) {
+        const ruleId = generateRuleId('custom', item.lineId, 'manual_discount', item.productId);
+        
         lineResult.addDiscount({
-          ruleId: `custom-${item.lineId}`,
+          ruleId,
           discountAmount,
-          description: `Custom ${item.customDiscountType} discount of ${item.customDiscountValue} applied.`,
+          description: `Custom ${item.customDiscountType} discount of ${item.customDiscountValue} applied manually.`,
+          isOneTime: false, // Custom discounts are typically not one-time restricted
           appliedRuleInfo: {
-            discountCampaignName: "Custom",
-            sourceRuleName: `Custom Discount`,
+            discountCampaignName: "Manual Discount",
+            sourceRuleName: `Custom ${item.customDiscountType === 'fixed' ? 'Fixed' : 'Percentage'} Discount`,
             totalCalculatedDiscount: discountAmount,
             ruleType: 'custom_item_discount',
             productIdAffected: item.productId,
+            appliedOnce: false
           },
         });
       }

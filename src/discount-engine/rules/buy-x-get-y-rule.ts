@@ -2,15 +2,15 @@
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
-import type { BuyGetRule, DiscountSet } from '@/types';
+import type { BuyGetRule } from '@/types';
 
 export class BuyXGetYRule implements IDiscountRule {
   private config: BuyGetRule;
   private campaignName: string;
 
-  constructor(config: BuyGetRule, campaignName: string) {
+  constructor(config: BuyGetRule, campaignName?: string) {
     this.config = config;
-    this.campaignName = campaignName;
+    this.campaignName = campaignName || 'Unknown Campaign';
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -48,7 +48,11 @@ export class BuyXGetYRule implements IDiscountRule {
       let discountAmountForThisLine = 0;
       if (discountType === 'percentage') {
         discountAmountForThisLine = getItem.price * (discountValue / 100) * itemsInLineToDiscount;
+      } else if (discountType === 'free') {
+        // 100% discount for free items
+        discountAmountForThisLine = getItem.price * itemsInLineToDiscount;
       } else { 
+        // Fixed amount discount
         discountAmountForThisLine = discountValue * itemsInLineToDiscount;
       }
       
@@ -57,15 +61,16 @@ export class BuyXGetYRule implements IDiscountRule {
 
       if (finalDiscount > 0) {
         lineResult.addDiscount({
-          ruleId: `bogo-${buyProductId}-${getProductId}`,
+          ruleId: `bogo-${this.config.id}`,
           discountAmount: finalDiscount,
-          description: `Buy ${buyQuantity} of ${buyProductId}, Get ${getQuantity} of ${getProductId} offer.`,
+          description: `${this.config.name}: Buy ${buyQuantity} ${buyProductId}, Get ${getQuantity} ${getProductId}`,
           appliedRuleInfo: {
             discountCampaignName: this.campaignName,
-            sourceRuleName: `Buy ${buyItems[0].name} Get ${getItem.name}`,
+            sourceRuleName: this.config.name,
             totalCalculatedDiscount: finalDiscount,
-            ruleType: 'buy_get_free',
+            ruleType: 'buy_get_rule',
             productIdAffected: getItem.productId,
+            appliedOnce: !isRepeatable
           },
         });
         freeItemsToDistribute -= itemsInLineToDiscount;

@@ -1,8 +1,10 @@
+
 // src/components/POSUI/SearchableProductInput.tsx
 "use client"
 
 import * as React from "react"
 import { Check, ChevronsUpDown, PackageSearch } from "lucide-react"
+import { useImperativeHandle } from "react";
 
 import { cn } from "@/lib/utils"
 import {
@@ -14,7 +16,6 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { type Product, type ProductBatch } from "@/types"
-import { useImperativeHandle } from "react";
 
 // Flatten products and batches into a single list for the dropdown
 type SearchableItem = {
@@ -51,6 +52,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
   // Expose a function to focus the input to the parent component
   useImperativeHandle(ref, () => ({
     focusSearchInput: () => {
+      // console.log('// 8. Focus කිරීමට Command ලැබුනා, Input එක:', inputRef.current);
       inputRef.current?.focus();
     }
   }));
@@ -97,6 +99,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
         <div className="relative">
             <CommandInput
                 ref={inputRef}
+                id="global-product-search-input" // This ID is crucial for the global keydown listener
                 value={inputValue}
                 onValueChange={setInputValue}
                 placeholder={searchPlaceholder}
