@@ -1,4 +1,3 @@
-
 // src/discount-engine/rules/batch-specific-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -8,7 +7,6 @@ import type { BatchDiscountConfiguration } from '@/types';
 
 export class BatchSpecificRule implements IDiscountRule {
   private config: BatchDiscountConfiguration;
-  // This type of rule applies to a specific batch, it's not repeatable in a BOGO sense.
   public readonly isPotentiallyRepeatable = false;
 
   constructor(config: BatchDiscountConfiguration) {
@@ -24,30 +22,29 @@ export class BatchSpecificRule implements IDiscountRule {
       return;
     }
 
-    // Find the line item that corresponds to this specific batch
-    const targetLineItem = context.items.find(
-      (item) => item.batchId === this.config.productBatchId
-    );
+    for (const item of context.items) {
+      // Rule only applies to the specific batch ID
+      if (item.batchId !== this.config.productBatchId) {
+        continue;
+      }
 
-    if (!targetLineItem) {
-      return;
-    }
-    
-    const lineResult = result.getLineItem(targetLineItem.lineId);
-    if (!lineResult || lineResult.totalDiscount > 0) return; // Skip if a higher-priority discount exists
-    
-    const lineTotal = targetLineItem.price * targetLineItem.quantity;
-    const rulesToConsider = [
-      { config: this.config.lineItemValueRuleJson, type: 'product_config_line_item_value' as const, context: 'item_value' as const },
-      { config: this.config.lineItemQuantityRuleJson, type: 'product_config_line_item_quantity' as const, context: 'item_quantity' as const },
-    ];
-    
-    rulesToConsider.forEach(ruleEntry => {
+      // The new engine logic ensures we only process an item once.
+      // No need to check for existing discounts here.
+      const lineResult = result.getLineItem(item.lineId);
+      if (!lineResult) continue;
+
+      const lineTotal = item.price * item.quantity;
+      const rulesToConsider = [
+        { config: this.config.lineItemValueRuleJson, type: 'batch_config_line_item_value' as const },
+        { config: this.config.lineItemQuantityRuleJson, type: 'batch_config_line_item_quantity' as const },
+      ];
+      
+      for (const ruleEntry of rulesToConsider) {
         if(ruleEntry.config?.isEnabled) {
             const discountAmount = evaluateRule(
                 ruleEntry.config,
-                targetLineItem.price,
-                targetLineItem.quantity,
+                item.price,
+                item.quantity,
                 lineTotal
             );
 
@@ -60,14 +57,17 @@ export class BatchSpecificRule implements IDiscountRule {
                         discountCampaignName: this.config.discountSet?.name || 'N/A',
                         sourceRuleName: ruleEntry.config.name,
                         totalCalculatedDiscount: discountAmount,
-                        ruleType: 'product_config_line_item_value', // Simplified for now
-                        productIdAffected: targetLineItem.productId,
-                        appliedOnce: !!ruleEntry.config.applyFixedOnce
+                        ruleType: ruleEntry.type,
+                        productIdAffected: item.productId,
+                        appliedOnce: !!ruleEntry.config.applyFixedOnce,
+                        ruleId: this.getId()
                     }
                 });
+                // Since a batch rule was found and applied, stop checking other batch rules for this item
+                return; 
             }
         }
-    });
-
+      }
+    }
   }
 }

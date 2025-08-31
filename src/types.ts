@@ -73,7 +73,7 @@ export interface ProductDiscountConfiguration {
 
 // **මෙම කොටස නිවැරදි කර ඇත**
 export interface BatchDiscountConfiguration {
-  id: string;
+  id:string;
   productBatchId: string;
   discountSetId: string;
   discountSet?: DiscountSet;

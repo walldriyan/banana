@@ -1,4 +1,3 @@
-
 // src/discount-engine/rules/product-level-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -8,7 +7,6 @@ import { evaluateRule } from '../utils/helpers';
 
 export class ProductLevelRule implements IDiscountRule {
   private config: ProductDiscountConfiguration;
-  // This type of rule applies once per product line, it's not repeatable in a BOGO sense.
   public readonly isPotentiallyRepeatable = false;
 
   constructor(config: ProductDiscountConfiguration) {
@@ -30,38 +28,34 @@ export class ProductLevelRule implements IDiscountRule {
         return;
       }
       
+      // The new engine logic ensures this rule is only checked if no other discount has been applied.
       const lineResult = result.getLineItem(item.lineId);
-      // If a higher-priority discount (e.g., custom, batch) is already applied, skip.
-      // A product-level rule does not override a batch-level one.
-      if (!lineResult || lineResult.totalDiscount > 0) {
+      if (!lineResult) {
         return;
       }
 
       const lineTotal = item.price * item.quantity;
+      
       const rulesToConsider = [
-          { config: this.config.lineItemValueRuleJson, type: 'product_config_line_item_value' as const, context: 'item_value' as const },
-          { config: this.config.lineItemQuantityRuleJson, type: 'product_config_line_item_quantity' as const, context: 'item_quantity' as const },
-          { config: this.config.specificQtyThresholdRuleJson, type: 'product_config_specific_qty_threshold' as const, context: 'specific_qty' as const },
-          { config: this.config.specificUnitPriceThresholdRuleJson, type: 'product_config_specific_unit_price' as const, context: 'specific_unit_price' as const }
+          { config: this.config.lineItemValueRuleJson, type: 'product_config_line_item_value' as const, contextValue: lineTotal },
+          { config: this.config.lineItemQuantityRuleJson, type: 'product_config_line_item_quantity' as const, contextValue: item.quantity },
+          { config: this.config.specificQtyThresholdRuleJson, type: 'product_config_specific_qty_threshold' as const, contextValue: item.quantity },
+          { config: this.config.specificUnitPriceThresholdRuleJson, type: 'product_config_specific_unit_price' as const, contextValue: item.price }
       ];
 
       for (const ruleEntry of rulesToConsider) {
-        // If a discount has already been applied to this line item in a previous iteration of this loop, stop.
-        if (lineResult.totalDiscount > 0) {
-          break; 
-        }
-
         if(ruleEntry.config?.isEnabled) {
             const discountAmount = evaluateRule(
                 ruleEntry.config,
                 item.price,
                 item.quantity,
-                lineTotal
+                lineTotal,
+                ruleEntry.contextValue // Pass the correct value to test against conditions
             );
 
             if (discountAmount > 0) {
                  lineResult.addDiscount({
-                    ruleId: `${this.getId()}-${ruleEntry.type}`, // More specific ID
+                    ruleId: `${this.getId()}-${ruleEntry.type}`,
                     discountAmount,
                     description: `Product-specific rule '${ruleEntry.config.name}' applied.`,
                     appliedRuleInfo: {
@@ -69,12 +63,14 @@ export class ProductLevelRule implements IDiscountRule {
                         sourceRuleName: ruleEntry.config.name,
                         totalCalculatedDiscount: discountAmount,
                         ruleType: ruleEntry.type,
-                        ruleId: `${this.getId()}-${ruleEntry.type}`,
+                        ruleId: this.getId(),
                         productIdAffected: item.productId,
                         appliedOnce: !!ruleEntry.config.applyFixedOnce,
-                        isRepeatable: false // Product rules are generally not repeatable in a BOGO sense
+                        isRepeatable: false
                     }
                 });
+                // Since a product rule was found and applied, stop checking other product rules for this item
+                return;
             }
         }
       }

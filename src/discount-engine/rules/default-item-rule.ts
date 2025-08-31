@@ -1,4 +1,3 @@
-
 // src/discount-engine/rules/default-item-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -12,7 +11,6 @@ import { evaluateRule } from '../utils/helpers';
  */
 export class DefaultItemRule implements IDiscountRule {
   private campaign: DiscountSet;
-  // Default rules are not considered repeatable in a BOGO sense.
   public readonly isPotentiallyRepeatable = false;
 
   constructor(campaign: DiscountSet) {
@@ -25,9 +23,9 @@ export class DefaultItemRule implements IDiscountRule {
 
   apply(context: DiscountContext, result: DiscountResult): void {
     context.items.forEach((item) => {
+      // The new engine logic ensures this rule is only checked if no other discount has been applied.
       const lineResult = result.getLineItem(item.lineId);
-      // If a discount (e.g., custom, batch, product-specific) has already been applied, skip default rules for this item.
-      if (!lineResult || lineResult.totalDiscount > 0) {
+      if (!lineResult) {
         return;
       }
 
@@ -40,7 +38,7 @@ export class DefaultItemRule implements IDiscountRule {
         { config: this.campaign.defaultSpecificUnitPriceThresholdRuleJson, valueToTest: item.price, type: 'campaign_default_specific_unit_price' as const },
       ];
       
-      rules.forEach(rule => {
+      for (const rule of rules) {
           if (rule.config?.isEnabled) {
               const discountAmount = evaluateRule(rule.config, item.price, item.quantity, lineTotal, rule.valueToTest);
               if (discountAmount > 0) {
@@ -54,13 +52,15 @@ export class DefaultItemRule implements IDiscountRule {
                           totalCalculatedDiscount: discountAmount,
                           ruleType: rule.type,
                           productIdAffected: item.productId,
-                          appliedOnce: !!rule.config.applyFixedOnce
+                          appliedOnce: !!rule.config.applyFixedOnce,
+                          ruleId: this.getId()
                       }
                   });
+                  // Stop checking other default rules for this item
+                  return;
               }
           }
-      });
-
+      }
     });
   }
 }

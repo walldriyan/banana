@@ -1,4 +1,3 @@
-
 // src/discount-engine/rules/cart-total-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -8,7 +7,6 @@ import { evaluateRule } from '../utils/helpers';
 
 export class CartTotalRule implements IDiscountRule {
   private campaign: DiscountSet;
-  // This type of rule applies to the whole cart, it's not repeatable.
   public readonly isPotentiallyRepeatable = false;
 
   constructor(campaign: DiscountSet) {
@@ -30,7 +28,7 @@ export class CartTotalRule implements IDiscountRule {
       { config: this.campaign.globalCartQuantityRuleJson, valueToTest: totalQuantity, type: 'campaign_global_cart_quantity' as const },
     ];
     
-    rules.forEach(rule => {
+    for (const rule of rules) {
         if (rule.config?.isEnabled) {
             const discountAmount = evaluateRule(rule.config, 0, 0, subtotalAfterItemDiscounts, rule.valueToTest);
             if (discountAmount > 0) {
@@ -43,12 +41,14 @@ export class CartTotalRule implements IDiscountRule {
                         sourceRuleName: rule.config.name,
                         totalCalculatedDiscount: discountAmount,
                         ruleType: rule.type,
-                        appliedOnce: true
+                        appliedOnce: true,
+                        ruleId: this.getId()
                     }
                 });
+                // Stop after applying the first valid cart rule
+                return;
             }
         }
-    });
-
+    }
   }
 }
