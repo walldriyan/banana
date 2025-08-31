@@ -1,3 +1,4 @@
+
 // src/app/page.tsx
 'use client';
 
@@ -31,22 +32,22 @@ export default function MyNewEcommerceShop() {
       const target = event.target as HTMLElement;
 
       // 1. පරිශීලකයා දැනටමත් input, textarea වැනි දෙයක type කරනවාදැයි පරීක්ෂා කිරීම.
-      const isTypingInInput = 
-        target.tagName === 'INPUT' || 
-        target.tagName === 'TEXTAREA' || 
+      const isTypingInInput =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
         target.isContentEditable;
-      
+
       // 2. පරිශීලකයා button එකක් හෝ select dropdown එකක් වැනි දෙයක් සමග interact කරනවාදැයි පරීක්ෂා කිරීම.
-      const isInteractingWithControl = 
-        target.tagName === 'BUTTON' || 
+      const isInteractingWithControl =
+        target.tagName === 'BUTTON' ||
         target.tagName === 'SELECT' ||
         target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
 
       // ඉහත කොන්දේසි වලින් එකක් හෝ සත්‍ය නම්, මෙම function එකෙන් ඉවත් වෙනවා.
       if (isTypingInInput || isInteractingWithControl) {
-        return; 
+        return;
       }
-      
+
       // 3. එබූ යතුර print කළ හැකි අකුරක්/ඉලක්කමක්/සංකේතයක් ද, සහ Ctrl, Alt, Meta වැනි modifier keys ඔබා නැතිදැයි පරීක්ෂා කිරීම.
       if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
         const searchInput = document.getElementById('global-product-search-input');
