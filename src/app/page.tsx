@@ -1,3 +1,4 @@
+
 // src/app/page.tsx
 'use client';
 
@@ -59,11 +60,7 @@ export default function MyNewEcommerceShop() {
 
       if (isPrintableKey) {
         console.log('// 7. Focus කිරීමට උත්සාහ කරනවා...');
-        const searchInput = document.getElementById('global-product-search-input');
-        console.log('// 8. Input එක හමුවුනාද?:', searchInput);
-        if (searchInput) {
-          searchInput.focus();
-        }
+        productSearchRef.current?.focusSearchInput();
       }
     };
 

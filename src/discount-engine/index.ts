@@ -1,3 +1,4 @@
+
 // src/discount-engine/index.ts
 
 import { DiscountContext } from './core/context';
@@ -74,16 +75,11 @@ export class DiscountEngine {
 
     for (const rule of this.rules) {
       // Check if this rule is repeatable and if it has already been applied in one-time mode.
-      // We check this *before* applying the rule.
-      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable) {
-        // This is a simplified check. A robust implementation would need rule to expose a unique ID.
-        // For now, we assume rule's constructor name or a unique property can identify it.
-        // Let's refine the rule interface to add a unique ID.
-        const ruleId = rule.getId(); // Assuming rules have a getId() method.
-         if (appliedRepeatableRuleIds.has(ruleId)) {
-           console.log(`[Engine] Skipping repeatable rule (ID: ${ruleId}) because One-Time Deal is active and it has already been applied.`);
-           continue; // Skip this rule for the rest of the transaction.
-         }
+      const ruleId = rule.getId ? rule.getId() : 'unidentifiable-rule';
+      
+      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable && appliedRepeatableRuleIds.has(ruleId)) {
+        console.log(`[Engine] SKIPPING repeatable rule (ID: ${ruleId}) because One-Time Deal is active and it has already been applied.`);
+        continue; // Skip this rule for the rest of the transaction.
       }
 
       const discountsBefore = result.getAppliedRulesSummary();
@@ -93,29 +89,13 @@ export class DiscountEngine {
       const discountsAfter = result.getAppliedRulesSummary();
 
       // If 'One-Time Deal' is active, we check if a repeatable rule was *just* applied.
-      if (this.campaign.isOneTimePerTransaction && discountsAfter.length > discountsBefore.length) {
-        const newDiscounts = this.findNewDiscounts(discountsBefore, discountsAfter);
-        
-        for (const newDiscount of newDiscounts) {
-          // If the rule that was just applied is repeatable, we add its ID to our tracker
-          // so it won't be applied again in this transaction.
-          if(newDiscount.isRepeatable) {
-            console.log(`[Engine] One-Time Deal: Rule "${newDiscount.sourceRuleName}" (ID: ${newDiscount.ruleId}) was just applied. It will not be applied again.`);
-            appliedRepeatableRuleIds.add(newDiscount.ruleId);
-          }
-        }
+      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable && discountsAfter.length > discountsBefore.length) {
+        console.log(`[Engine] One-Time Deal: Rule (ID: ${ruleId}) was just applied. It will not be applied again in this transaction.`);
+        appliedRepeatableRuleIds.add(ruleId);
       }
     }
     
     result.finalize();
     return result;
-  }
-
-  /**
-   * Helper to find which discounts are new between two states.
-   */
-  private findNewDiscounts(before: AppliedRuleInfo[], after: AppliedRuleInfo[]): AppliedRuleInfo[] {
-    const beforeIds = new Set(before.map(d => JSON.stringify(d))); // Inefficient but works for object comparison
-    return after.filter(d => !beforeIds.has(JSON.stringify(d)));
   }
 }

@@ -1,3 +1,4 @@
+
 // src/discount-engine/rules/interface.ts
 import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
@@ -16,8 +17,9 @@ export interface IDiscountRule {
   /**
    * Returns a unique, stable identifier for this specific rule instance.
    * This is crucial for the engine to track which rules have already been applied.
+   * This is optional as not all rules need it (e.g. ones that can't be repeated).
    */
-  getId(): string;
+  getId?(): string;
 
   /**
    * Evaluates the rule against the current sale context and applies
