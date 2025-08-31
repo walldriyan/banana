@@ -48,7 +48,6 @@ export class DiscountEngine {
     // Priority 4: "Buy X, Get Y" rules
     if (campaign.buyGetRulesJson) {
       campaign.buyGetRulesJson.forEach((ruleConfig) => {
-        // Pass the entire campaign object to the rule constructor
         this.rules.push(new BuyXGetYRule(ruleConfig));
       });
     }
@@ -74,22 +73,22 @@ export class DiscountEngine {
     console.log(`[Engine] Processing campaign: "${this.campaign.name}". One-Time Deal is ${this.campaign.isOneTimePerTransaction ? 'ACTIVE' : 'INACTIVE'}.`);
 
     for (const rule of this.rules) {
-      // Check if this rule is repeatable and if it has already been applied in one-time mode.
       const ruleId = rule.getId ? rule.getId() : null;
       
+      // Check if this rule is repeatable and if it has already been applied in one-time mode.
       if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable && ruleId && appliedRepeatableRuleIds.has(ruleId)) {
         console.log(`[Engine] SKIPPING repeatable rule (ID: ${ruleId}) because One-Time Deal is active and it has already been applied.`);
         continue; // Skip this rule for the rest of the transaction.
       }
-
-      const discountsBefore = result.getAppliedRulesSummary();
+      
+      const discountsBefore = result.getAppliedRulesSummary().length;
       
       rule.apply(context, result);
       
-      const discountsAfter = result.getAppliedRulesSummary();
+      const discountsAfter = result.getAppliedRulesSummary().length;
 
       // If 'One-Time Deal' is active, we check if a repeatable rule was *just* applied.
-      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable && ruleId && discountsAfter.length > discountsBefore.length) {
+      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable && ruleId && discountsAfter > discountsBefore) {
         console.log(`[Engine] One-Time Deal: Rule (ID: ${ruleId}) was just applied. It will not be applied again in this transaction.`);
         appliedRepeatableRuleIds.add(ruleId);
       }
