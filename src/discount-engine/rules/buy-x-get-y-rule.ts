@@ -7,6 +7,7 @@ import type { BuyGetRule, DiscountSet } from '@/types';
 
 export class BuyXGetYRule implements IDiscountRule {
   private config: BuyGetRule;
+  // **THE FIX IS HERE**
   // This flag tells the engine that THIS TYPE of rule could be repeatable.
   // The engine then decides IF it should repeat based on the global 'isOneTimePerTransaction' flag.
   public readonly isPotentiallyRepeatable = true; 
