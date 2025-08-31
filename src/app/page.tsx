@@ -31,41 +31,28 @@ export default function MyNewEcommerceShop() {
 
   // --- Global Keydown Listener Logic ---
   useEffect(() => {
-    // console.log('// --- Listener ක්‍රියාත්මකයි ---');
-
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      // console.log(`// 1. යතුරක් එබුවා: ${event.key}`);
       const target = event.target as HTMLElement;
-      // console.log('// 2. Target Element:', target);
 
       const isTyping =
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable;
-      // console.log(`// 3. දැනටමත් ටයිප් කරනවාද?: ${isTyping}`);
       
       const isInteracting =
         target.tagName === 'BUTTON' ||
         target.tagName === 'SELECT' ||
         target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
-      // console.log(`// 4. වෙනත් UI එකක් සමග ක්‍රියා කරනවාද?: ${isInteracting}`);
 
       if (isTyping || isInteracting) {
-        // console.log('// 5. Focus කිරීම නවත්වනවා.');
         return;
       }
       
       const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-      // console.log(`// 6. යතුර Print කළ හැකිද?: ${isPrintableKey}`);
 
       if (isPrintableKey) {
-        // console.log('// 7. Focus කිරීමට උත්සාහ කරනවා...');
-        // console.log('// 8. Ref එක හමුවුනාද?:', productSearchRef.current);
         if (productSearchRef.current) {
           productSearchRef.current.focusSearchInput();
-          // console.log('// 9. Ref එක හරහා Input එක සාර්ථකව focus කළා!');
-        } else {
-          // console.error('// 9. Error: Ref එක හරහා Input එක හමු වුනේ නැහැ!');
         }
       }
     };
@@ -73,10 +60,9 @@ export default function MyNewEcommerceShop() {
     document.addEventListener('keydown', handleGlobalKeyDown);
 
     return () => {
-      // console.log('// --- Listener ඉවත් කරනවා ---');
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []); // Dependency array එක හිස්ව තැබීමෙන්, component එක mount වූ විට listener එක එක් වරක් පමණක් එකතු වේ.
+  }, []); // Empty dependency array means this effect runs once on mount.
 
 
   const updateCartQuantity = (saleItemId: string, change: number) => {
