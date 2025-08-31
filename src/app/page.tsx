@@ -28,23 +28,24 @@ export default function MyNewEcommerceShop() {
   useEffect(() => {
     // keydown event එකට සවන් දෙන function එක.
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement;
       // පරිශීලකයා දැනටමත් input, textarea වැනි element එකක type කරනවාදැයි පරීක්ෂා කිරීම.
       // එසේනම්, මෙම function එකෙන් ඉවත් වෙනවා.
-      const target = event.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
         return;
       }
-      
-      // Ctrl, Alt, Meta (Cmd) වැනි modifier keys ඔබා ඇත්නම්, function එකෙන් ඉවත් වෙනවා.
-      if (event.ctrlKey || event.altKey || event.metaKey) {
+
+      // Ctrl, Alt, Meta (Cmd) වැනි modifier keys හෝ 'Enter', 'Shift' වැනි non-printable keys ඔබා ඇත්නම්, function එකෙන් ඉවත් වෙනවා.
+      // අපට අවශ්‍ය වන්නේ a-z, 0-9 වැනි අකුරු/ඉලක්කම් ටයිප් කරන විට පමණක් ක්‍රියාත්මක වීමටයි.
+      if (event.ctrlKey || event.altKey || event.metaKey || event.key.length > 1) {
         return;
       }
-
+      
       // ඉහත කිසිම කොන්දේසියකට අසු නොවුනහොත්, අපගේ ප්‍රධාන search bar එක focus කරනවා.
       const searchInput = document.getElementById('global-product-search-input');
       if (searchInput) {
         searchInput.focus();
-        // event.preventDefault(); // සමහරවිට ටයිප් වන පළමු අකුර නැතිවීම වැලැක්වීමට අවශ්‍ය විය හැක.
+        // event.preventDefault() අවශ්‍ය නැහැ, কারণ focus වූ පසු, අකුර ස්වයංක්‍රීයව input එකට යයි.
       }
     };
 
@@ -57,6 +58,7 @@ export default function MyNewEcommerceShop() {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, []); // මෙම useEffect එක ක්‍රියාත්මක වන්නේ component එක මුලින්ම load වන විට පමණයි.
+
 
   const updateCartQuantity = (saleItemId: string, change: number) => {
     setCart(currentCart => {
