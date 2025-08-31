@@ -11,6 +11,7 @@ export interface IDiscountRule {
   /**
    * A flag to indicate if this type of rule can be applied multiple times in a transaction.
    * The DiscountEngine will use this to enforce one-time-deal logic.
+   * Example: A Buy-Get-Free rule might be repeatable, but a simple 10% off is not.
    */
   readonly isPotentiallyRepeatable: boolean;
 

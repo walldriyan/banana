@@ -12,7 +12,8 @@ import { evaluateRule } from '../utils/helpers';
  */
 export class DefaultItemRule implements IDiscountRule {
   private campaign: DiscountSet;
-  public readonly isPotentiallyRepeatable = false; // Default rules are not repeatable in a BOGO sense
+  // Default rules are not considered repeatable in a BOGO sense.
+  public readonly isPotentiallyRepeatable = false;
 
   constructor(campaign: DiscountSet) {
     this.campaign = campaign;

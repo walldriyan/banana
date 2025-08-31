@@ -8,7 +8,8 @@ import { evaluateRule } from '../utils/helpers';
 
 export class ProductLevelRule implements IDiscountRule {
   private config: ProductDiscountConfiguration;
-  public readonly isPotentiallyRepeatable = false; // Product rules are not repeatable in a BOGO sense
+  // This type of rule applies once per product line, it's not repeatable in a BOGO sense.
+  public readonly isPotentiallyRepeatable = false;
 
   constructor(config: ProductDiscountConfiguration) {
     this.config = config;

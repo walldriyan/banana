@@ -9,6 +9,7 @@ import { DiscountResult } from '../core/result';
  * It checks if a `customDiscountValue` is present on a line item.
  */
 export class CustomItemDiscountRule implements IDiscountRule {
+  // Custom discounts are applied once and are not considered repeatable in a BOGO sense.
   public readonly isPotentiallyRepeatable = false;
 
   public getId(): string {

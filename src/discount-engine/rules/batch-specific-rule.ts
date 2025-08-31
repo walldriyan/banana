@@ -8,7 +8,8 @@ import type { BatchDiscountConfiguration } from '@/types';
 
 export class BatchSpecificRule implements IDiscountRule {
   private config: BatchDiscountConfiguration;
-  public readonly isPotentiallyRepeatable = false; // Batch rules are not repeatable in a BOGO sense
+  // This type of rule applies to a specific batch, it's not repeatable in a BOGO sense.
+  public readonly isPotentiallyRepeatable = false;
 
   constructor(config: BatchDiscountConfiguration) {
     this.config = config;

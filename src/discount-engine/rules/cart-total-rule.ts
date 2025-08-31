@@ -8,7 +8,8 @@ import { evaluateRule } from '../utils/helpers';
 
 export class CartTotalRule implements IDiscountRule {
   private campaign: DiscountSet;
-  public readonly isPotentiallyRepeatable = false; // Cart rules apply only once
+  // This type of rule applies to the whole cart, it's not repeatable.
+  public readonly isPotentiallyRepeatable = false;
 
   constructor(campaign: DiscountSet) {
     this.campaign = campaign;
