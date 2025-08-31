@@ -1,22 +1,16 @@
+// src/discount-engine/rules/custom-item-discount-rule.ts
 import { IDiscountRule } from './interface';
-import { DiscountContext, LineItemData } from '../core/context';
+import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
+import { generateRuleId } from '../utils/helpers';
 
 /**
  * This rule has the highest priority and applies manually set discounts.
  * It checks if a `customDiscountValue` is present on a line item.
  */
 export class CustomItemDiscountRule implements IDiscountRule {
-  public readonly isPotentiallyRepeatable = false;
-
-  public getId(item: LineItemData): string {
-    // This ID is stable for a given line item
-    return `custom-for-${item.lineId}`;
-  }
-
   apply(context: DiscountContext, result: DiscountResult): void {
     context.items.forEach((item) => {
-      // The new engine logic ensures this rule is only checked if no other discount has been applied.
       const lineResult = result.getLineItem(item.lineId);
       if (!lineResult || !item.customDiscountValue || item.customDiscountValue <= 0) {
         return;
@@ -37,17 +31,20 @@ export class CustomItemDiscountRule implements IDiscountRule {
       discountAmount = Math.min(discountAmount, lineTotal);
       
       if (discountAmount > 0) {
+        const ruleId = generateRuleId('custom', item.lineId, 'manual_discount', item.productId);
+        
         lineResult.addDiscount({
-          ruleId: this.getId(item),
+          ruleId,
           discountAmount,
-          description: `Custom ${item.customDiscountType} discount of ${item.customDiscountValue} applied.`,
+          description: `Custom ${item.customDiscountType} discount of ${item.customDiscountValue} applied manually.`,
+          isOneTime: false, // Custom discounts are typically not one-time restricted
           appliedRuleInfo: {
-            ruleId: this.getId(item),
-            discountCampaignName: "Custom",
-            sourceRuleName: `Custom Discount`,
+            discountCampaignName: "Manual Discount",
+            sourceRuleName: `Custom ${item.customDiscountType === 'fixed' ? 'Fixed' : 'Percentage'} Discount`,
             totalCalculatedDiscount: discountAmount,
             ruleType: 'custom_item_discount',
             productIdAffected: item.productId,
+            appliedOnce: false
           },
         });
       }

@@ -3,18 +3,13 @@ import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
 import type { ProductDiscountConfiguration } from '@/types';
-import { evaluateRule } from '../utils/helpers';
+import { evaluateRule, generateRuleId, isOneTimeRule, validateRuleConfig } from '../utils/helpers';
 
 export class ProductLevelRule implements IDiscountRule {
   private config: ProductDiscountConfiguration;
-  public readonly isPotentiallyRepeatable = false;
 
   constructor(config: ProductDiscountConfiguration) {
     this.config = config;
-  }
-
-  public getId(): string {
-    return `product-${this.config.id}`;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -28,50 +23,82 @@ export class ProductLevelRule implements IDiscountRule {
         return;
       }
       
-      // The new engine logic ensures this rule is only checked if no other discount has been applied.
       const lineResult = result.getLineItem(item.lineId);
-      if (!lineResult) {
+      // If a higher-priority discount (e.g., custom, batch) is already applied, skip.
+      if (!lineResult || lineResult.totalDiscount > 0) {
         return;
       }
 
       const lineTotal = item.price * item.quantity;
       
+      // Define rules in priority order - first matching rule wins
       const rulesToConsider = [
-          { config: this.config.lineItemValueRuleJson, type: 'product_config_line_item_value' as const, contextValue: lineTotal },
-          { config: this.config.lineItemQuantityRuleJson, type: 'product_config_line_item_quantity' as const, contextValue: item.quantity },
-          { config: this.config.specificQtyThresholdRuleJson, type: 'product_config_specific_qty_threshold' as const, contextValue: item.quantity },
-          { config: this.config.specificUnitPriceThresholdRuleJson, type: 'product_config_specific_unit_price' as const, contextValue: item.price }
+          { 
+            config: this.config.lineItemValueRuleJson, 
+            type: 'product_config_line_item_value' as const, 
+            valueToTest: lineTotal,
+            description: 'Product line value rule'
+          },
+          { 
+            config: this.config.lineItemQuantityRuleJson, 
+            type: 'product_config_line_item_quantity' as const, 
+            valueToTest: item.quantity,
+            description: 'Product quantity rule'
+          },
+          { 
+            config: this.config.specificQtyThresholdRuleJson, 
+            type: 'product_config_specific_qty_threshold' as const, 
+            valueToTest: item.quantity,
+            description: 'Product quantity threshold rule'
+          },
+          { 
+            config: this.config.specificUnitPriceThresholdRuleJson, 
+            type: 'product_config_specific_unit_price' as const, 
+            valueToTest: item.price,
+            description: 'Product unit price threshold rule'
+          }
       ];
 
+      // Apply first valid rule only (respecting priority)
       for (const ruleEntry of rulesToConsider) {
-        if(ruleEntry.config?.isEnabled) {
-            const discountAmount = evaluateRule(
-                ruleEntry.config,
-                item.price,
-                item.quantity,
-                lineTotal,
-                ruleEntry.contextValue // Pass the correct value to test against conditions
-            );
+        if (!ruleEntry.config?.isEnabled) continue;
 
-            if (discountAmount > 0) {
-                 lineResult.addDiscount({
-                    ruleId: `${this.getId()}-${ruleEntry.type}`,
-                    discountAmount,
-                    description: `Product-specific rule '${ruleEntry.config.name}' applied.`,
-                    appliedRuleInfo: {
-                        discountCampaignName: this.config.discountSet?.name || 'N/A',
-                        sourceRuleName: ruleEntry.config.name,
-                        totalCalculatedDiscount: discountAmount,
-                        ruleType: ruleEntry.type,
-                        ruleId: this.getId(),
-                        productIdAffected: item.productId,
-                        appliedOnce: !!ruleEntry.config.applyFixedOnce,
-                        isRepeatable: false
-                    }
-                });
-                // Since a product rule was found and applied, stop checking other product rules for this item
-                return;
-            }
+        // Validate rule configuration
+        const validation = validateRuleConfig(ruleEntry.config);
+        if (!validation.isValid) {
+          console.warn(`Invalid rule configuration for ${ruleEntry.type}:`, validation.errors);
+          continue;
+        }
+
+        const discountAmount = evaluateRule(
+            ruleEntry.config,
+            item.price,
+            item.quantity,
+            lineTotal,
+            ruleEntry.valueToTest
+        );
+
+        if (discountAmount > 0) {
+          const ruleId = generateRuleId('product', this.config.id, ruleEntry.type, item.productId);
+          const isOneTime = isOneTimeRule(ruleEntry.config, this.config.discountSet?.isOneTimePerTransaction);
+
+          lineResult.addDiscount({
+              ruleId,
+              discountAmount,
+              description: `${ruleEntry.description}: '${ruleEntry.config.name}' applied.`,
+              isOneTime,
+              appliedRuleInfo: {
+                  discountCampaignName: this.config.discountSet?.name || 'N/A',
+                  sourceRuleName: ruleEntry.config.name,
+                  totalCalculatedDiscount: discountAmount,
+                  ruleType: ruleEntry.type,
+                  productIdAffected: item.productId,
+                  appliedOnce: isOneTime
+              }
+          });
+          
+          // Stop after first successful rule application (priority logic)
+          break;
         }
       }
     });

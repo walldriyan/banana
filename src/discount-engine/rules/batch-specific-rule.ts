@@ -2,19 +2,14 @@
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
-import { evaluateRule } from '../utils/helpers';
+import { evaluateRule, generateRuleId, isOneTimeRule, validateRuleConfig } from '../utils/helpers';
 import type { BatchDiscountConfiguration } from '@/types';
 
 export class BatchSpecificRule implements IDiscountRule {
   private config: BatchDiscountConfiguration;
-  public readonly isPotentiallyRepeatable = false;
 
   constructor(config: BatchDiscountConfiguration) {
     this.config = config;
-  }
-
-  public getId(): string {
-    return `batch-${this.config.id}`;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -22,51 +17,76 @@ export class BatchSpecificRule implements IDiscountRule {
       return;
     }
 
-    for (const item of context.items) {
-      // Rule only applies to the specific batch ID
-      if (item.batchId !== this.config.productBatchId) {
+    // Find the line item that corresponds to this specific batch
+    const targetLineItem = context.items.find(
+      (item) => item.batchId === this.config.productBatchId
+    );
+
+    if (!targetLineItem) {
+      return;
+    }
+    
+    const lineResult = result.getLineItem(targetLineItem.lineId);
+    if (!lineResult || lineResult.totalDiscount > 0) return; // Skip if a higher-priority discount exists
+    
+    const lineTotal = targetLineItem.price * targetLineItem.quantity;
+    
+    // Define rules in priority order
+    const rulesToConsider = [
+      { 
+        config: this.config.lineItemValueRuleJson, 
+        type: 'batch_config_line_item_value' as const, 
+        valueToTest: lineTotal,
+        description: 'Batch line value rule'
+      },
+      { 
+        config: this.config.lineItemQuantityRuleJson, 
+        type: 'batch_config_line_item_quantity' as const, 
+        valueToTest: targetLineItem.quantity,
+        description: 'Batch quantity rule'
+      },
+    ];
+    
+    // Apply first valid rule only
+    for (const ruleEntry of rulesToConsider) {
+      if (!ruleEntry.config?.isEnabled) continue;
+
+      // Validate rule configuration
+      const validation = validateRuleConfig(ruleEntry.config);
+      if (!validation.isValid) {
+        console.warn(`Invalid batch rule configuration for ${ruleEntry.type}:`, validation.errors);
         continue;
       }
 
-      // The new engine logic ensures we only process an item once.
-      // No need to check for existing discounts here.
-      const lineResult = result.getLineItem(item.lineId);
-      if (!lineResult) continue;
+      const discountAmount = evaluateRule(
+          ruleEntry.config,
+          targetLineItem.price,
+          targetLineItem.quantity,
+          lineTotal,
+          ruleEntry.valueToTest
+      );
 
-      const lineTotal = item.price * item.quantity;
-      const rulesToConsider = [
-        { config: this.config.lineItemValueRuleJson, type: 'batch_config_line_item_value' as const },
-        { config: this.config.lineItemQuantityRuleJson, type: 'batch_config_line_item_quantity' as const },
-      ];
-      
-      for (const ruleEntry of rulesToConsider) {
-        if(ruleEntry.config?.isEnabled) {
-            const discountAmount = evaluateRule(
-                ruleEntry.config,
-                item.price,
-                item.quantity,
-                lineTotal
-            );
+      if (discountAmount > 0) {
+        const ruleId = generateRuleId('batch', this.config.id, ruleEntry.type, targetLineItem.productId, targetLineItem.batchId);
+        const isOneTime = isOneTimeRule(ruleEntry.config, this.config.discountSet?.isOneTimePerTransaction);
 
-            if (discountAmount > 0) {
-                 lineResult.addDiscount({
-                    ruleId: `${this.getId()}-${ruleEntry.type}`,
-                    discountAmount,
-                    description: `Batch-specific rule '${ruleEntry.config.name}' applied.`,
-                    appliedRuleInfo: {
-                        discountCampaignName: this.config.discountSet?.name || 'N/A',
-                        sourceRuleName: ruleEntry.config.name,
-                        totalCalculatedDiscount: discountAmount,
-                        ruleType: ruleEntry.type,
-                        productIdAffected: item.productId,
-                        appliedOnce: !!ruleEntry.config.applyFixedOnce,
-                        ruleId: this.getId()
-                    }
-                });
-                // Since a batch rule was found and applied, stop checking other batch rules for this item
-                return; 
+        lineResult.addDiscount({
+            ruleId,
+            discountAmount,
+            description: `${ruleEntry.description}: '${ruleEntry.config.name}' applied.`,
+            isOneTime,
+            appliedRuleInfo: {
+                discountCampaignName: this.config.discountSet?.name || 'N/A',
+                sourceRuleName: ruleEntry.config.name,
+                totalCalculatedDiscount: discountAmount,
+                ruleType: ruleEntry.type,
+                productIdAffected: targetLineItem.productId,
+                appliedOnce: isOneTime
             }
-        }
+        });
+        
+        // Stop after first successful rule application
+        break;
       }
     }
   }

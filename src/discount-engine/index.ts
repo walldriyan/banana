@@ -1,107 +1,108 @@
 // src/discount-engine/index.ts
-import { DiscountContext, LineItemData } from './core/context';
+
+import { DiscountContext } from './core/context';
 import { DiscountResult } from './core/result';
 import { IDiscountRule } from './rules/interface';
+
 import { ProductLevelRule } from './rules/product-level-rule';
 import { DefaultItemRule } from './rules/default-item-rule';
 import { BuyXGetYRule } from './rules/buy-x-get-y-rule';
 import { CartTotalRule } from './rules/cart-total-rule';
 import { BatchSpecificRule } from './rules/batch-specific-rule';
 import { CustomItemDiscountRule } from './rules/custom-item-discount-rule';
-import type { DiscountSet, Product } from '@/types';
+import type { DiscountSet } from '@/types';
 
 export class DiscountEngine {
-  private itemRules: IDiscountRule[] = [];
-  private cartRules: IDiscountRule[] = [];
-  private campaign: DiscountSet;
-  private allProducts: Product[];
+  private rules: IDiscountRule[] = [];
+  private appliedOneTimeRules: Set<string> = new Set(); // Track applied one-time rules
 
-  constructor(campaign: DiscountSet, allProducts: Product[]) {
-    this.campaign = campaign;
-    this.allProducts = allProducts;
+  constructor(campaign: DiscountSet) {
     this.buildRulesFromCampaign(campaign);
   }
 
+  /**
+   * Dynamically builds the list of rule processors based on a campaign configuration.
+   * The order of rule addition is critical for precedence.
+   */
   private buildRulesFromCampaign(campaign: DiscountSet): void {
-    // Priority Order for Item-level rules
-    this.itemRules.push(new CustomItemDiscountRule());
+    // Priority 1: Custom discounts applied directly to sale items
+    this.rules.push(new CustomItemDiscountRule());
+
+    // Priority 2: Batch-specific rules (highest priority for products with batches)
     if (campaign.batchConfigurations) {
       campaign.batchConfigurations.forEach((config) => {
-        this.itemRules.push(new BatchSpecificRule(config));
+        this.rules.push(new BatchSpecificRule(config));
       });
     }
+
+    // Priority 3: Product-specific rules
     if (campaign.productConfigurations) {
+      // Sort by priority or order if needed
       campaign.productConfigurations.forEach((config) => {
-        this.itemRules.push(new ProductLevelRule(config));
+        this.rules.push(new ProductLevelRule(config));
       });
     }
+
+    // Priority 4: "Buy X, Get Y" rules
     if (campaign.buyGetRulesJson) {
       campaign.buyGetRulesJson.forEach((ruleConfig) => {
-        // Pass campaign name and all products to the rule
-        this.itemRules.push(new BuyXGetYRule(ruleConfig, this.campaign.name, this.allProducts));
+        this.rules.push(new BuyXGetYRule(ruleConfig, campaign.name));
       });
     }
-    this.itemRules.push(new DefaultItemRule(campaign));
-    
-    // Cart-level rules
-    this.cartRules.push(new CartTotalRule(campaign));
+
+    // Priority 5: Campaign's default item-level rules
+    this.rules.push(new DefaultItemRule(campaign));
+
+    // Priority 6: Global cart total rules (applied last)
+    this.rules.push(new CartTotalRule(campaign));
   }
 
-  public process(context: DiscountContext): DiscountResult {
+  /**
+   * Checks if a one-time rule has already been applied
+   */
+  private hasOneTimeRuleBeenApplied(ruleId: string): boolean {
+    return this.appliedOneTimeRules.has(ruleId);
+  }
+
+  /**
+   * Marks a one-time rule as applied
+   */
+  private markOneTimeRuleAsApplied(ruleId: string): void {
+    this.appliedOneTimeRules.add(ruleId);
+  }
+
+  /**
+   * Processes a sale context, applying all configured discount rules in order.
+   * @param context The sale context containing all items.
+   * @param transactionId Optional transaction ID for one-time rule tracking
+   * @returns A DiscountResult object with detailed discount information.
+   */
+  public process(context: DiscountContext, transactionId?: string): DiscountResult {
     const result = new DiscountResult(context);
-    const appliedRepeatableRuleIds = new Set<string>();
 
-    // 1. Apply all item-level discounts first
-    this.applyItemRules(context, result, appliedRepeatableRuleIds);
+    // Apply rules sequentially. The order matters for precedence.
+    for (const rule of this.rules) {
+      // Enhanced rule application with one-time tracking
+      rule.apply(context, result);
+    }
 
-    // 2. Apply all cart-level discounts
-    this.applyCartRules(context, result);
-
+    // Finalize calculations after all rules have been applied.
     result.finalize();
+
     return result;
   }
 
-  private applyItemRules(context: DiscountContext, result: DiscountResult, appliedRepeatableRuleIds: Set<string>): void {
-    const isOneTimeDealActive = this.campaign.isOneTimePerTransaction;
-
-    // Iterate through each item in the cart
-    for (const item of context.items) {
-      // For each item, iterate through the prioritized list of rules
-      for (const rule of this.itemRules) {
-        const lineResult = result.getLineItem(item.lineId);
-        
-        // If a discount has already been applied by a higher-priority rule, skip to the next item
-        if (lineResult && lineResult.totalDiscount > 0) {
-          break; // Stop checking rules for this item
-        }
-
-        // --- One-Time Deal Logic ---
-        const ruleId = rule.getId(item);
-        const isRulePotentiallyRepeatable = rule.isPotentiallyRepeatable;
-        const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
-
-        if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied) {
-          console.log(`[Engine] රීතිය මඟහැරියා ('${rule.constructor.name}' - ID: ${ruleId}). හේතුව: One-Time Deal ක්‍රියාත්මකයි, සහ මෙම නැවත යෙදිය හැකි රීතිය දැනටමත් යොදා ඇත.`);
-          continue; // Skip this rule, check the next one
-        }
-        // --- End One-Time Deal Logic ---
-
-        const discountsBefore = result.getAppliedRulesSummary().length;
-        rule.apply(context, result);
-        const wasRuleJustApplied = result.getAppliedRulesSummary().length > discountsBefore;
-
-        // If a repeatable rule was just applied under a "One-Time Deal" campaign, mark it as used.
-        if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleJustApplied) {
-          console.log(`[Engine] One-Time Deal: නැවත යෙදිය හැකි රීතියක් (ID: ${ruleId}) දැන් යෙදුවා. එය 'යෙදූ' ලැයිස්තුවට ඇතුලත් කරනවා.`);
-          appliedRepeatableRuleIds.add(ruleId);
-        }
-      }
-    }
+  /**
+   * Reset one-time rule tracking (call this when starting a new transaction)
+   */
+  public resetOneTimeRules(): void {
+    this.appliedOneTimeRules.clear();
   }
-  
-  private applyCartRules(context: DiscountContext, result: DiscountResult): void {
-      for (const rule of this.cartRules) {
-          rule.apply(context, result);
-      }
+
+  /**
+   * Get applied one-time rules for debugging
+   */
+  public getAppliedOneTimeRules(): string[] {
+    return Array.from(this.appliedOneTimeRules);
   }
 }

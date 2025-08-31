@@ -1,29 +1,20 @@
 // src/discount-engine/rules/buy-x-get-y-rule.ts
 import { IDiscountRule } from './interface';
-import { DiscountContext, LineItemData } from '../core/context';
+import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
-import type { BuyGetRule, Product } from '@/types';
+import type { BuyGetRule } from '@/types';
 
 export class BuyXGetYRule implements IDiscountRule {
   private config: BuyGetRule;
   private campaignName: string;
-  private allProducts: Product[];
-  public readonly isPotentiallyRepeatable = true; 
 
-  constructor(config: BuyGetRule, campaignName: string, allProducts: Product[]) {
+  constructor(config: BuyGetRule, campaignName?: string) {
     this.config = config;
-    this.campaignName = campaignName;
-    this.allProducts = allProducts;
-  }
-  
-  public getId(): string {
-    return this.config.id;
+    this.campaignName = campaignName || 'Unknown Campaign';
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
     const {
-      id,
-      name,
       buyProductId,
       buyQuantity,
       getProductId,
@@ -41,17 +32,15 @@ export class BuyXGetYRule implements IDiscountRule {
 
     const getItems = context.items.filter((item) => item.productId === getProductId);
     if (getItems.length === 0) return;
-    
-    const timesRuleCanApply = isRepeatable ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
-    let freeItemsToDistribute = timesRuleCanApply * getQuantity;
+
+    const timesRuleApplies = isRepeatable ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
+    let freeItemsToDistribute = timesRuleApplies * getQuantity;
 
     for (const getItem of getItems) {
       if (freeItemsToDistribute <= 0) break;
 
       const lineResult = result.getLineItem(getItem.lineId);
-      // The new engine logic ensures we only process an item once.
-      // So, if the "get" item already has a discount, this rule won't even be checked for it.
-      if (!lineResult) continue;
+      if (!lineResult || lineResult.totalDiscount > 0) continue;
 
       const itemsInLineToDiscount = Math.min(getItem.quantity, freeItemsToDistribute);
       if (itemsInLineToDiscount <= 0) continue;
@@ -59,7 +48,11 @@ export class BuyXGetYRule implements IDiscountRule {
       let discountAmountForThisLine = 0;
       if (discountType === 'percentage') {
         discountAmountForThisLine = getItem.price * (discountValue / 100) * itemsInLineToDiscount;
+      } else if (discountType === 'free') {
+        // 100% discount for free items
+        discountAmountForThisLine = getItem.price * itemsInLineToDiscount;
       } else { 
+        // Fixed amount discount
         discountAmountForThisLine = discountValue * itemsInLineToDiscount;
       }
       
@@ -68,17 +61,16 @@ export class BuyXGetYRule implements IDiscountRule {
 
       if (finalDiscount > 0) {
         lineResult.addDiscount({
-          ruleId: id,
+          ruleId: `bogo-${this.config.id}`,
           discountAmount: finalDiscount,
-          description: `Offer: ${name}`,
+          description: `${this.config.name}: Buy ${buyQuantity} ${buyProductId}, Get ${getQuantity} ${getProductId}`,
           appliedRuleInfo: {
-            ruleId: id,
             discountCampaignName: this.campaignName,
-            sourceRuleName: name,
+            sourceRuleName: this.config.name,
             totalCalculatedDiscount: finalDiscount,
-            ruleType: 'buy_get_free',
+            ruleType: 'buy_get_rule',
             productIdAffected: getItem.productId,
-            isRepeatable: isRepeatable, 
+            appliedOnce: !isRepeatable
           },
         });
         freeItemsToDistribute -= itemsInLineToDiscount;
