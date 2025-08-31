@@ -29,23 +29,31 @@ export default function MyNewEcommerceShop() {
     // keydown event එකට සවන් දෙන function එක.
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
-      // පරිශීලකයා දැනටමත් input, textarea වැනි element එකක type කරනවාදැයි පරීක්ෂා කිරීම.
-      // එසේනම්, මෙම function එකෙන් ඉවත් වෙනවා.
-      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
-        return;
-      }
 
-      // Ctrl, Alt, Meta (Cmd) වැනි modifier keys හෝ 'Enter', 'Shift' වැනි non-printable keys ඔබා ඇත්නම්, function එකෙන් ඉවත් වෙනවා.
-      // අපට අවශ්‍ය වන්නේ a-z, 0-9 වැනි අකුරු/ඉලක්කම් ටයිප් කරන විට පමණක් ක්‍රියාත්මක වීමටයි.
-      if (event.ctrlKey || event.altKey || event.metaKey || event.key.length > 1) {
-        return;
+      // 1. පරිශීලකයා දැනටමත් input, textarea වැනි දෙයක type කරනවාදැයි පරීක්ෂා කිරීම.
+      const isTypingInInput = 
+        target.tagName === 'INPUT' || 
+        target.tagName === 'TEXTAREA' || 
+        target.isContentEditable;
+      
+      // 2. පරිශීලකයා button එකක් හෝ select dropdown එකක් වැනි දෙයක් සමග interact කරනවාදැයි පරීක්ෂා කිරීම.
+      const isInteractingWithControl = 
+        target.tagName === 'BUTTON' || 
+        target.tagName === 'SELECT' ||
+        target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
+
+      // ඉහත කොන්දේසි වලින් එකක් හෝ සත්‍ය නම්, මෙම function එකෙන් ඉවත් වෙනවා.
+      if (isTypingInInput || isInteractingWithControl) {
+        return; 
       }
       
-      // ඉහත කිසිම කොන්දේසියකට අසු නොවුනහොත්, අපගේ ප්‍රධාන search bar එක focus කරනවා.
-      const searchInput = document.getElementById('global-product-search-input');
-      if (searchInput) {
-        searchInput.focus();
-        // event.preventDefault() අවශ්‍ය නැහැ, কারণ focus වූ පසු, අකුර ස්වයංක්‍රීයව input එකට යයි.
+      // 3. එබූ යතුර print කළ හැකි අකුරක්/ඉලක්කමක්/සංකේතයක් ද, සහ Ctrl, Alt, Meta වැනි modifier keys ඔබා නැතිදැයි පරීක්ෂා කිරීම.
+      if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        const searchInput = document.getElementById('global-product-search-input');
+        if (searchInput) {
+          searchInput.focus();
+          // event.preventDefault() අවශ්‍ය නැහැ, কারণ focus වූ පසු, අකුර ස්වයංක්‍රීයව input එකට යයි.
+        }
       }
     };
 
