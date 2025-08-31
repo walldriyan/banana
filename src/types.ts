@@ -112,10 +112,12 @@ export interface DiscountSet {
 }
 
 export interface AppliedRuleInfo {
+  ruleId: string; // A unique ID for the rule configuration that was applied
   discountCampaignName: string;
   sourceRuleName: string;
   totalCalculatedDiscount: number;
   ruleType: string; // e.g. 'product_config_line_item_value', 'cart_total_rule'
   productIdAffected?: string;
   appliedOnce?: boolean;
+  isRepeatable?: boolean; // Lets the engine know if this rule *could* repeat
 }

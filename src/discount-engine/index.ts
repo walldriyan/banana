@@ -47,7 +47,7 @@ export class DiscountEngine {
     if (campaign.buyGetRulesJson) {
       campaign.buyGetRulesJson.forEach((ruleConfig) => {
         // Pass the entire campaign object to the rule constructor
-        this.rules.push(new BuyXGetYRule(ruleConfig, campaign));
+        this.rules.push(new BuyXGetYRule(ruleConfig));
       });
     }
 
@@ -66,11 +66,32 @@ export class DiscountEngine {
   public process(context: DiscountContext): DiscountResult {
     const result = new DiscountResult(context);
     
-    // The logic to handle one-time deals is now primarily managed within the rules 
-    // themselves (e.g., BuyXGetYRule) based on the campaign's isOneTimePerTransaction flag.
-    // This keeps the engine clean and delegates the specific implementation to the rule that understands "repeatability".
+    // This is the global tracker for repeatable rules when 'One-Time Deal' is active.
+    const appliedRepeatableRules = new Set<string>();
+
     for (const rule of this.rules) {
+      // Create a snapshot of the result object before applying the rule
+      // We'll use this to see what the rule did.
+      const discountsBefore = result.getAppliedRulesSummary();
+      
       rule.apply(context, result);
+      
+      // Now, see what new discounts were added by this rule
+      const discountsAfter = result.getAppliedRulesSummary();
+
+      // If 'One-Time Deal' is active, we need to check if a repeatable rule was just applied.
+      if (this.campaign.isOneTimePerTransaction && discountsAfter.length > discountsBefore.length) {
+        const newDiscounts = discountsAfter.slice(discountsBefore.length);
+        
+        for (const newDiscount of newDiscounts) {
+          // The rule that applied this discount is considered "used up" for this transaction.
+          // Note: This logic assumes a rule instance maps to a single configurable discount.
+          // For BuyXGetY, the ruleId is `bogo-${buyProductId}-${getProductId}`, which is unique per BOGO config.
+          if(newDiscount.isRepeatable) {
+            appliedRepeatableRules.add(newDiscount.ruleId);
+          }
+        }
+      }
     }
     
     result.finalize();

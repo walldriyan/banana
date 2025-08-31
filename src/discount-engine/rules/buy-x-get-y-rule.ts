@@ -6,15 +6,15 @@ import type { BuyGetRule, DiscountSet } from '@/types';
 
 export class BuyXGetYRule implements IDiscountRule {
   private config: BuyGetRule;
-  private campaign: DiscountSet; // Changed to hold the whole campaign
 
-  constructor(config: BuyGetRule, campaign: DiscountSet) { // Changed to accept the whole campaign
+  constructor(config: BuyGetRule) {
     this.config = config;
-    this.campaign = campaign;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
     const {
+      id,
+      name,
       buyProductId,
       buyQuantity,
       getProductId,
@@ -33,11 +33,9 @@ export class BuyXGetYRule implements IDiscountRule {
     const getItems = context.items.filter((item) => item.productId === getProductId);
     if (getItems.length === 0) return;
 
-    // The 'One-Time Deal' switch globally overrides the individual rule's 'isRepeatable' setting.
-    const ruleCanRepeat = this.campaign.isOneTimePerTransaction ? false : isRepeatable;
-
-    const timesRuleApplies = ruleCanRepeat ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
-    let freeItemsToDistribute = timesRuleApplies * getQuantity;
+    // This rule is repeatable by its nature. The DiscountEngine will control if it *actually* repeats.
+    const timesRuleCanApply = isRepeatable ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
+    let freeItemsToDistribute = timesRuleCanApply * getQuantity;
 
     for (const getItem of getItems) {
       if (freeItemsToDistribute <= 0) break;
@@ -60,15 +58,18 @@ export class BuyXGetYRule implements IDiscountRule {
 
       if (finalDiscount > 0) {
         lineResult.addDiscount({
-          ruleId: `bogo-${buyProductId}-${getProductId}`,
+          // Using the rule's own ID as the unique identifier.
+          ruleId: id, 
           discountAmount: finalDiscount,
-          description: `Buy ${buyQuantity} of ${buyProductId}, Get ${getQuantity} of ${getProductId} offer.`,
+          description: `Offer: ${name}`,
           appliedRuleInfo: {
-            discountCampaignName: this.campaign.name,
-            sourceRuleName: `Buy ${buyItems[0].name} Get ${getItem.name}`,
+            ruleId: id, // Pass the unique rule ID
+            discountCampaignName: "N/A", // This should be filled by a higher authority if needed
+            sourceRuleName: name,
             totalCalculatedDiscount: finalDiscount,
             ruleType: 'buy_get_free',
             productIdAffected: getItem.productId,
+            isRepeatable: isRepeatable, // Let the engine know this rule's nature
           },
         });
         freeItemsToDistribute -= itemsInLineToDiscount;
