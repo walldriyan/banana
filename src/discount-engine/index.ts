@@ -56,9 +56,6 @@ export class DiscountEngine {
       const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
 
       // --- තීරණය ගන්නා ස්ථානය (Decision Point) ---
-      // මෙම if කොන්දේසිය, "One-Time Deal" ක්‍රියාත්මක නම් (true) සහ
-      // මෙම රීතිය නැවත නැවත යෙදිය හැකි (repeatable) රීතියක් නම් සහ
-      // එම රීතිය දැනටමත් යොදා ඇත්නම්, එය නැවත යෙදීම වළක්වයි.
       console.log(`[Engine] රීතිය පරීක්ෂා කිරීම: '${rule.constructor.name}' (ID: ${ruleId})`);
       console.log(`[Engine] Params: { isOneTimeDealActive: ${isOneTimeDealActive}, isRulePotentiallyRepeatable: ${isRulePotentiallyRepeatable}, wasRuleAlreadyApplied: ${wasRuleAlreadyApplied} }`);
       

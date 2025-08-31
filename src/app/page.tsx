@@ -40,12 +40,7 @@ export default function MyNewEcommerceShop() {
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable;
 
-      const isInteracting =
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'SELECT' ||
-        target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
-
-      if (isTyping || isInteracting) {
+      if (isTyping) {
         return;
       }
       
