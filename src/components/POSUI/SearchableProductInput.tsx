@@ -1,4 +1,3 @@
-
 // src/components/POSUI/SearchableProductInput.tsx
 "use client"
 
@@ -15,6 +14,7 @@ import {
   CommandList,
 } from "@/components/ui/command"
 import { type Product, type ProductBatch } from "@/types"
+import { useImperativeHandle } from "react";
 
 // Flatten products and batches into a single list for the dropdown
 type SearchableItem = {
@@ -34,14 +34,26 @@ interface SearchableProductInputProps {
   emptyText?: string;
 }
 
-export default function SearchableProductInput({
+export interface SearchableProductInputRef {
+  focusSearchInput: () => void;
+}
+
+const SearchableProductInput = React.forwardRef<SearchableProductInputRef, SearchableProductInputProps>(({
   products,
   onProductSelect,
   placeholder = "Select product or batch...",
   searchPlaceholder = "Search by name or barcode...",
   emptyText = "No product found."
-}: SearchableProductInputProps) {
+}, ref) => {
   const [inputValue, setInputValue] = React.useState("");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Expose a function to focus the input to the parent component
+  useImperativeHandle(ref, () => ({
+    focusSearchInput: () => {
+      inputRef.current?.focus();
+    }
+  }));
 
   const searchableItems = React.useMemo(() => {
     const items: SearchableItem[] = [];
@@ -77,13 +89,14 @@ export default function SearchableProductInput({
         onProductSelect(selectedItem.product, selectedItem.batch);
     }
     setInputValue(""); // Reset input after selection
+    inputRef.current?.blur(); // Unfocus after selection
   }
 
   return (
      <Command shouldFilter={false} className="overflow-visible bg-transparent">
         <div className="relative">
             <CommandInput
-                id="global-product-search-input"
+                ref={inputRef}
                 value={inputValue}
                 onValueChange={setInputValue}
                 placeholder={searchPlaceholder}
@@ -121,4 +134,8 @@ export default function SearchableProductInput({
         )}
     </Command>
   )
-}
+});
+
+SearchableProductInput.displayName = "SearchableProductInput";
+
+export default SearchableProductInput;

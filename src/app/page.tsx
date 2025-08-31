@@ -1,8 +1,7 @@
-
 // src/app/page.tsx
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { DiscountResult } from '@/discount-engine/core/result';
 import { calculateDiscountsForItems } from '@/lib/discountUtils';
@@ -10,6 +9,7 @@ import { megaDealFest, buyMoreSaveMore, clearanceSale } from '@/lib/my-campaigns
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
 import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
+import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
 
 // --- Sample Data ---
 const oldBatch: ProductBatch = { id: 't-shirt-batch-old', batchNumber: 'OLD-2023', sellingPrice: 2000, costPrice: 1500, quantity: 100, productId: 't-shirt-01' };
@@ -24,6 +24,7 @@ const allCampaigns = [megaDealFest, buyMoreSaveMore, clearanceSale];
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
+  const productSearchRef = useRef<SearchableProductInputRef>(null);
 
   // --- Global Keydown Listener Logic ---
   useEffect(() => {
@@ -56,11 +57,12 @@ export default function MyNewEcommerceShop() {
 
       if (isPrintableKey) {
         console.log('// 7. Focus කිරීමට උත්සාහ කරනවා...');
-        const searchInput = document.getElementById('global-product-search-input');
-        console.log('// 8. Input එක හමුවුනාද?:', searchInput);
-        if (searchInput) {
-          searchInput.focus();
-          console.log('// 9. Input එක සාර්ථකව focus කළා!');
+        console.log('// 8. Ref එක හමුවුනාද?:', productSearchRef.current);
+        if (productSearchRef.current) {
+          productSearchRef.current.focusSearchInput();
+          console.log('// 9. Ref එක හරහා Input එක සාර්ථකව focus කළා!');
+        } else {
+          console.error('// 9. Error: Ref එක හරහා Input එක හමු වුනේ නැහැ!');
         }
       }
     };
@@ -136,6 +138,7 @@ export default function MyNewEcommerceShop() {
             />
 
             <SearchableProductInput 
+              ref={productSearchRef}
               products={sampleProducts}
               onProductSelect={addToCart}
             />
