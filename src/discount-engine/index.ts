@@ -74,12 +74,16 @@ export class DiscountEngine {
       const ruleId = rule.getId();
       
       const isOneTimeDealActive = this.campaign.isOneTimePerTransaction;
-      const isRuleRepeatable = rule.isPotentiallyRepeatable;
+      const isRulePotentiallyRepeatable = rule.isPotentiallyRepeatable;
       const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
 
       // This is the main global control point.
-      if (isOneTimeDealActive && isRuleRepeatable && wasRuleAlreadyApplied) {
-        console.log(`[Engine] SKIPPING repeatable rule (ID: ${ruleId}) because One-Time Deal is active and it has already been applied.`);
+      if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied) {
+        console.log(`[Engine] SKIPPING Rule (ID: ${ruleId}). Reason: One-Time Deal is active and this repeatable rule has already been applied.`, {
+            isOneTimeDealActive,
+            isRulePotentiallyRepeatable,
+            wasRuleAlreadyApplied,
+        });
         continue; // Skip this rule for the rest of the transaction.
       }
       
@@ -88,9 +92,10 @@ export class DiscountEngine {
       rule.apply(context, result);
       
       const discountsAfter = result.getAppliedRulesSummary().length;
+      const wasRuleJustApplied = discountsAfter > discountsBefore;
 
       // If 'One-Time Deal' is active, we check if a repeatable rule was *just* applied.
-      if (isOneTimeDealActive && isRuleRepeatable && discountsAfter > discountsBefore) {
+      if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleJustApplied) {
         console.log(`[Engine] One-Time Deal: Repeatable rule (ID: ${ruleId}) was just applied. Adding to the 'applied' list for this transaction.`);
         appliedRepeatableRuleIds.add(ruleId);
       }

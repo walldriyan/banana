@@ -52,7 +52,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
   // Expose a function to focus the input to the parent component
   useImperativeHandle(ref, () => ({
     focusSearchInput: () => {
-      console.log('// 8. Focus කිරීමට Command ලැබුනා, Input එක:', inputRef.current);
+      // console.log('// 8. Focus කිරීමට Command ලැබුනා, Input එක:', inputRef.current);
       inputRef.current?.focus();
     }
   }));
