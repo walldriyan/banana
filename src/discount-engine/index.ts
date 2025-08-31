@@ -45,10 +45,10 @@ export class DiscountEngine {
 
   public process(context: DiscountContext): DiscountResult {
     const result = new DiscountResult(context);
+    // This Set will track the IDs of repeatable rules that have already been applied once.
     const appliedRepeatableRuleIds = new Set<string>();
-    const isOneTimeDealActive = this.campaign.isOneTimePerTransaction;
 
-    console.log(`[Engine] Campaign එක ක්‍රියාත්මක වෙනවා: "${this.campaign.name}". One-Time Deal is ${isOneTimeDealActive ? 'ACTIVE' : 'INACTIVE'}.`);
+    const isOneTimeDealActive = this.campaign.isOneTimePerTransaction;
 
     for (const rule of this.rules) {
       const ruleId = rule.getId();
@@ -56,9 +56,12 @@ export class DiscountEngine {
       const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
 
       // --- තීරණය ගන්නා ස්ථානය (Decision Point) ---
+      // මෙම if කොන්දේසිය, "One-Time Deal" ක්‍රියාත්මක නම් (true) සහ
+      // මෙම රීතිය නැවත නැවත යෙදිය හැකි (repeatable) රීතියක් නම් සහ
+      // එම රීතිය දැනටමත් යොදා ඇත්නම්, එය නැවත යෙදීම වළක්වයි.
       console.log(`[Engine] රීතිය පරීක්ෂා කිරීම: '${rule.constructor.name}' (ID: ${ruleId})`);
       console.log(`[Engine] Params: { isOneTimeDealActive: ${isOneTimeDealActive}, isRulePotentiallyRepeatable: ${isRulePotentiallyRepeatable}, wasRuleAlreadyApplied: ${wasRuleAlreadyApplied} }`);
-
+      
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied) {
         console.log(`[Engine] රීතිය මඟහැරියා (ID: ${ruleId}). හේතුව: One-Time Deal ක්‍රියාත්මකයි, සහ මෙම repeatable රීතිය දැනටමත් යොදා ඇත.`);
         continue;
@@ -71,8 +74,9 @@ export class DiscountEngine {
       const discountsAfter = result.getAppliedRulesSummary().length;
       const wasRuleJustApplied = discountsAfter > discountsBefore;
 
-      // --- දෝෂය නිවැරදි කළ ස්ථානය (The Bug Fix is Here) ---
-      // 'One-Time Deal' ක්‍රියාත්මක නම්, සහ නැවත යෙදිය හැකි රීතියක් දැන් යෙදුවා නම්, එය 'යෙදූ' ලැයිස්තුවට ඇතුලත් කිරීම.
+      // --- THE BUG FIX IS HERE ---
+      // "One-Time Deal" ක්‍රියාත්මක නම්, සහ නැවත යෙදිය හැකි රීතියක් දැන් යෙදුවා නම්, එය 'යෙදූ' ලැයිස්තුවට ඇතුලත් කිරීම.
+      // If a one-time deal is active, the rule is repeatable, and it was just applied, we add its ID to our tracker.
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleJustApplied) {
         console.log(`[Engine] One-Time Deal: නැවත යෙදිය හැකි රීතියක් (ID: ${ruleId}) දැන් යෙදුවා. එය 'යෙදූ' ලැයිස්තුවට ඇතුලත් කරනවා.`);
         appliedRepeatableRuleIds.add(ruleId);

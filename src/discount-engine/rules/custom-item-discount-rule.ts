@@ -1,5 +1,4 @@
 
-// src/discount-engine/rules/custom-item-discount-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
