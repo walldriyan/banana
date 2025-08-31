@@ -22,6 +22,13 @@ export class DiscountEngine {
   }
 
   private buildRulesFromCampaign(campaign: DiscountSet): void {
+    // Priority Order:
+    // 1. Custom Discounts (manual overrides)
+    // 2. Batch-Specific Discounts
+    // 3. Product-Specific Discounts
+    // 4. Buy X Get Y Discounts
+    // 5. Campaign's Default Item Discounts
+    // 6. Campaign's Cart-Total Discounts
     this.rules.push(new CustomItemDiscountRule());
     if (campaign.batchConfigurations) {
       campaign.batchConfigurations.forEach((config) => {
@@ -44,6 +51,7 @@ export class DiscountEngine {
 
   public process(context: DiscountContext): DiscountResult {
     const result = new DiscountResult(context);
+    // This Set will track which REPEATABLE rules have already been applied in this transaction.
     const appliedRepeatableRuleIds = new Set<string>();
     const isOneTimeDealActive = this.campaign.isOneTimePerTransaction;
 
@@ -51,16 +59,16 @@ export class DiscountEngine {
       const ruleId = rule.getId();
       const isRulePotentiallyRepeatable = rule.isPotentiallyRepeatable;
       const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
+      const ruleClassName = (rule as any).constructor.name;
       
       const shouldSkipRule = isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied;
       
-      const ruleClassName = (rule as any).constructor.name;
-      console.log(`[Engine] > රීතිය පරීක්ෂා කිරීම: '${ruleClassName}' (ID: ${ruleId})`);
-
       if (shouldSkipRule) {
-        console.log(`[Engine] ---> ✋ රීතිය මඟහැරියා. හේතුව: "One-Time Deal" ක්‍රියාත්මකයි, සහ මෙම නැවත යෙදිය හැකි රීතිය දැනටමත් යොදා ඇත.`);
+        console.log(`[Engine] > රීතිය මඟහැරියා: '${ruleClassName}' (ID: ${ruleId}). හේතුව: "One-Time Deal" ක්‍රියාත්මකයි, සහ මෙම නැවත යෙදිය හැකි රීතිය දැනටමත් යොදා ඇත.`);
         continue;
       }
+
+      console.log(`[Engine] > රීතිය පරීක්ෂා කිරීම: '${ruleClassName}' (ID: ${ruleId})`);
       
       const discountsBefore = result.getAppliedRulesSummary().length;
       

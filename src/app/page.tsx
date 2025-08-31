@@ -26,7 +26,7 @@ const allCampaigns = [megaDealFest, buyMoreSaveMore, clearanceSale];
 
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
-  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
+  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(clearanceSale);
   const [isOneTimeDeal, setIsOneTimeDeal] = useState(false);
   const productSearchRef = useRef<SearchableProductInputRef>(null);
 
@@ -108,7 +108,6 @@ export default function MyNewEcommerceShop() {
     
     console.log(`[UI] නැවත ගණනය කරනවා... 'isOneTimePerTransaction' අගය = ${campaignForCalculation.isOneTimePerTransaction}`);
 
-
     return calculateDiscountsForItems({ saleItems: cart, activeCampaign: campaignForCalculation, allProducts: sampleProducts });
   }, [cart, activeCampaign, isOneTimeDeal]); // Dependency array is key for re-calculation
 
@@ -164,3 +163,4 @@ export default function MyNewEcommerceShop() {
     </div>
   );
 }
+
