@@ -33,7 +33,7 @@ export class BuyXGetYRule implements IDiscountRule {
     const getItems = context.items.filter((item) => item.productId === getProductId);
     if (getItems.length === 0) return;
 
-    // The 'One-Time Deal' switch overrides the individual rule's 'isRepeatable' setting.
+    // The 'One-Time Deal' switch globally overrides the individual rule's 'isRepeatable' setting.
     const ruleCanRepeat = this.campaign.isOneTimePerTransaction ? false : isRepeatable;
 
     const timesRuleApplies = ruleCanRepeat ? Math.floor(totalBuyQuantity / buyQuantity) : 1;

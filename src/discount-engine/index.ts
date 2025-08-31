@@ -65,27 +65,12 @@ export class DiscountEngine {
    */
   public process(context: DiscountContext): DiscountResult {
     const result = new DiscountResult(context);
-    const appliedRuleIdsForOneTimeDeal = new Set<string>();
-
+    
+    // The logic to handle one-time deals is now primarily managed within the rules 
+    // themselves (e.g., BuyXGetYRule) based on the campaign's isOneTimePerTransaction flag.
+    // This keeps the engine clean and delegates the specific implementation to the rule that understands "repeatability".
     for (const rule of this.rules) {
-      // Create a snapshot of the total discount before applying the current rule
-      const totalDiscountBefore = result.totalItemDiscount + result.totalCartDiscount;
-
       rule.apply(context, result);
-
-      const totalDiscountAfter = result.totalItemDiscount + result.totalCartDiscount;
-      
-      // Check if the current rule applied any discount
-      if (totalDiscountAfter > totalDiscountBefore) {
-        if (this.campaign.isOneTimePerTransaction) {
-            // A discount was applied by this rule. If it's a one-time deal, we might need to prevent it from running again.
-            // This is particularly relevant for rules like BuyXGetY that can be repeatable.
-            // We'll add a generic way to handle this.
-            
-            // For now, the most direct impact is on BuyXGetYRule, let's refine that logic.
-            // The logic inside the BuyXGetYRule is now the primary controller for this.
-        }
-      }
     }
     
     result.finalize();
