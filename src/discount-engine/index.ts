@@ -71,7 +71,7 @@ export class DiscountEngine {
     const appliedRepeatableRuleIds = new Set<string>();
     const isOneTimeDealActive = this.campaign.isOneTimePerTransaction;
 
-    console.log(`[Engine] Processing campaign: "${this.campaign.name}". One-Time Deal is ${isOneTimeDealActive ? 'ACTIVE' : 'INACTIVE'}.`);
+    console.log(`[Engine] Campaign එක ක්‍රියාත්මක වෙනවා: "${this.campaign.name}". One-Time Deal is ${isOneTimeDealActive ? 'ACTIVE' : 'INACTIVE'}.`);
 
     for (const rule of this.rules) {
       const ruleId = rule.getId();
@@ -88,12 +88,12 @@ export class DiscountEngine {
       // 3. wasRuleAlreadyApplied: මේ rule එක දැනටමත් මේ sale එකේ එක පාරක් apply වෙලා ඉවරද?
       //
       // මේ තුනම `true` නම් විතරයි, අපි මේ rule එක apply කරන්නේ නැතුව මඟහරින්නේ (skip).
-      console.log(`[Engine] CHECKING Rule: '${rule.constructor.name}' (ID: ${ruleId})`);
+      console.log(`[Engine] රීතිය පරීක්ෂා කිරීම: '${rule.constructor.name}' (ID: ${ruleId})`);
       console.log(`[Engine] Params: { isOneTimeDealActive: ${isOneTimeDealActive}, isRulePotentiallyRepeatable: ${isRulePotentiallyRepeatable}, wasRuleAlreadyApplied: ${wasRuleAlreadyApplied} }`);
 
 
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied) {
-        console.log(`[Engine] SKIPPING Rule (ID: ${ruleId}). Reason: One-Time Deal is active and this repeatable rule has already been applied.`);
+        console.log(`[Engine] රීතිය මඟහැරියා (ID: ${ruleId}). හේතුව: One-Time Deal ක්‍රියාත්මකයි, සහ මෙම repeatable රීතිය දැනටමත් යොදා ඇත.`);
         continue; // Skip this rule for the rest of the transaction.
       }
       
@@ -107,7 +107,7 @@ export class DiscountEngine {
       // **THE FIX IS HERE**
       // If 'One-Time Deal' is active, and a repeatable rule was *just* applied, we add it to our tracker.
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleJustApplied) {
-        console.log(`[Engine] One-Time Deal: Repeatable rule (ID: ${ruleId}) was just applied. Adding to the 'applied' list for this transaction.`);
+        console.log(`[Engine] One-Time Deal: නැවත යෙදිය හැකි රීතියක් (ID: ${ruleId}) දැන් යෙදුවා. එය 'යෙදූ' ලැයිස්තුවට ඇතුලත් කරනවා.`);
         appliedRepeatableRuleIds.add(ruleId);
       }
     }

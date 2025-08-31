@@ -113,7 +113,7 @@ export default function MyNewEcommerceShop() {
     
     // --- FOCUSED CONSOLE LOG ---
     // This log shows exactly what is being passed to the discount engine.
-    console.log(`[UI] Recalculating... Passing campaign object to engine with 'isOneTimePerTransaction' = ${campaignForCalculation.isOneTimePerTransaction}`);
+    console.log(`[UI] නැවත ගණනය කරනවා... 'isOneTimePerTransaction' අගය = ${campaignForCalculation.isOneTimePerTransaction}`);
 
 
     return calculateDiscountsForItems({ saleItems: cart, activeCampaign: campaignForCalculation, allProducts: sampleProducts });
