@@ -111,7 +111,7 @@ export default function MyNewEcommerceShop() {
       isOneTimePerTransaction: isOneTimeDeal,
     };
     
-    console.log(`--- Recalculating Discounts --- One-Time Deal Active? ${isOneTimeDeal} ---`);
+    console.log('--- Recalculating Discounts ---');
     console.log('Passing this campaign object to engine:', {id: campaignForCalculation.id, name: campaignForCalculation.name, isOneTimePerTransaction: campaignForCalculation.isOneTimePerTransaction});
 
 

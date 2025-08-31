@@ -81,6 +81,7 @@ export class DiscountEngine {
       console.log(`[Engine] CHECKING Rule: '${rule.constructor.name}' (ID: ${ruleId})`);
       console.log(`[Engine] Params: { isOneTimeDealActive: ${isOneTimeDealActive}, isRulePotentiallyRepeatable: ${isRulePotentiallyRepeatable}, wasRuleAlreadyApplied: ${wasRuleAlreadyApplied} }`);
 
+
       // This is the main global control point.
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied) {
         console.log(`[Engine] SKIPPING Rule (ID: ${ruleId}). Reason: One-Time Deal is active and this repeatable rule has already been applied.`);
