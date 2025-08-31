@@ -1,7 +1,7 @@
 // src/app/page.tsx
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { DiscountResult } from '@/discount-engine/core/result';
 import { calculateDiscountsForItems } from '@/lib/discountUtils';
@@ -23,6 +23,40 @@ const allCampaigns = [megaDealFest, buyMoreSaveMore, clearanceSale];
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
+
+  // --- Global Keydown Listener Logic ---
+  useEffect(() => {
+    // keydown event එකට සවන් දෙන function එක.
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      // පරිශීලකයා දැනටමත් input, textarea වැනි element එකක type කරනවාදැයි පරීක්ෂා කිරීම.
+      // එසේනම්, මෙම function එකෙන් ඉවත් වෙනවා.
+      const target = event.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable) {
+        return;
+      }
+      
+      // Ctrl, Alt, Meta (Cmd) වැනි modifier keys ඔබා ඇත්නම්, function එකෙන් ඉවත් වෙනවා.
+      if (event.ctrlKey || event.altKey || event.metaKey) {
+        return;
+      }
+
+      // ඉහත කිසිම කොන්දේසියකට අසු නොවුනහොත්, අපගේ ප්‍රධාන search bar එක focus කරනවා.
+      const searchInput = document.getElementById('global-product-search-input');
+      if (searchInput) {
+        searchInput.focus();
+        // event.preventDefault(); // සමහරවිට ටයිප් වන පළමු අකුර නැතිවීම වැලැක්වීමට අවශ්‍ය විය හැක.
+      }
+    };
+
+    // සම්පූර්ණ document එකටම event listener එක එකතු කිරීම.
+    document.addEventListener('keydown', handleGlobalKeyDown);
+
+    // Component එක unmount වන විට (පිටුවෙන් ඉවත් වන විට) listener එක ඉවත් කිරීම.
+    // මෙය memory leaks වළක්වා ගැනීමට ඉතා වැදගත්.
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []); // මෙම useEffect එක ක්‍රියාත්මක වන්නේ component එක මුලින්ම load වන විට පමණයි.
 
   const updateCartQuantity = (saleItemId: string, change: number) => {
     setCart(currentCart => {
