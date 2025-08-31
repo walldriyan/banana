@@ -106,7 +106,6 @@ export default function MyNewEcommerceShop() {
       isOneTimePerTransaction: isOneTimeDeal,
     };
     
-    // --- FOCUSED CONSOLE LOG ---
     console.log(`[UI] නැවත ගණනය කරනවා... 'isOneTimePerTransaction' අගය = ${campaignForCalculation.isOneTimePerTransaction}`);
 
 
