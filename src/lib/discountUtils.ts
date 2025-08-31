@@ -20,9 +20,9 @@ interface CalculateDiscountsInput {
  * @param input - The sale context including items and the active campaign.
  * @returns An instance of the DiscountResult class.
  */
-export function calculateDiscountsForItems(
-  input: CalculateDiscountsInput
-): DiscountResult {
+export function calculateDiscountsForItems(input: CalculateDiscountsInput): DiscountResult {
+  
+
   const { saleItems, activeCampaign, allProducts } = input;
 
   if (!activeCampaign || saleItems.length === 0) {
