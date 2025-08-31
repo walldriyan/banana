@@ -29,33 +29,30 @@ export default function MyNewEcommerceShop() {
   useEffect(() => {
     // keydown event එකට සවන් දෙන function එක.
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
-        alert('hi');
       const target = event.target as HTMLElement;
-      
-      // 1. පරිශීලකයා දැනටමත් input, textarea වැනි දෙයක type කරනවාදැයි පරීක්ෂා කිරීම.
-      const isTypingInInput =
+
+      // පරිශීලකයා දැනටමත් වෙනත් input, textarea වැනි දෙයක type කරනවාදැයි පරීක්ෂා කිරීම.
+      const isTyping =
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable;
-
-      // 2. පරිශීලකයා button එකක් හෝ select dropdown එකක් වැනි දෙයක් සමග interact කරනවාදැයි පරීක්ෂා කිරීම.
-      const isInteractingWithControl =
+        
+      // පරිශීලකයා button එකක් හෝ select dropdown එකක් වැනි දෙයක් සමග interact කරනවාදැයි පරීක්ෂා කිරීම.
+      const isInteracting = 
         target.tagName === 'BUTTON' ||
         target.tagName === 'SELECT' ||
         target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
 
-      // ඉහත කොන්දේසි වලින් එකක් හෝ සත්‍ය නම්, මෙම function එකෙන් ඉවත් වෙනවා.
-      if (isTypingInInput || isInteractingWithControl) {
+      // ඉහත කොන්දේසි සත්‍ය නම්, මෙම function එකෙන් ඉවත් වෙනවා.
+      if (isTyping || isInteracting) {
         return;
       }
-
-      // 3. එබූ යතුර print කළ හැකි අකුරක්/ඉලක්කමක්/සංකේතයක් ද, සහ Ctrl, Alt, Meta වැනි modifier keys ඔබා නැතිදැයි පරීක්ෂා කිරීම.
-      if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
       
+      // එබූ යතුර print කළ හැකි අකුරක්/ඉලක්කමක්/සංකේතයක් ද, සහ Ctrl, Alt, Meta වැනි modifier keys ඔබා නැතිදැයි පරීක්ෂා කිරීම.
+      if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
         const searchInput = document.getElementById('global-product-search-input');
         if (searchInput) {
           searchInput.focus();
-          // event.preventDefault() අවශ්‍ය නැහැ, কারণ focus වූ පසු, අකුර ස්වයංක්‍රීයව input එකට යයි.
         }
       }
     };
