@@ -20,6 +20,7 @@ const ProductList: React.FC<ProductListProps> = ({ products, activeCampaign, onA
             product={p}
             activeCampaign={activeCampaign}
             onAddToCart={onAddToCart}
+            products={products}
           />
         ))}
       </div>

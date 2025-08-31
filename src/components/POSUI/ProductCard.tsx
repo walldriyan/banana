@@ -77,11 +77,12 @@ const getAvailableDiscountsInfo = (productId: string, batchId: string | undefine
 interface ProductCardProps {
   product: Product;
   activeCampaign: DiscountSet;
+  products: Product[];
   onAddToCart: (product: Product, batch?: ProductBatch) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, activeCampaign, onAddToCart }) => {
-  const productDiscounts = getAvailableDiscountsInfo(product.id, undefined, activeCampaign, [product]);
+const ProductCard: React.FC<ProductCardProps> = ({ product, activeCampaign, onAddToCart, products }) => {
+  const productDiscounts = getAvailableDiscountsInfo(product.id, undefined, activeCampaign, products);
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-lg">
@@ -102,7 +103,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, activeCampaign, onAd
       {product.batches ? (
         <div className="mt-3 space-y-3">
           {product.batches.map((b) => {
-            const batchDiscounts = getAvailableDiscountsInfo(product.id, b.id, activeCampaign, [product]);
+            const batchDiscounts = getAvailableDiscountsInfo(product.id, b.id, activeCampaign, products);
             return (
               <div key={b.id} className="flex flex-col gap-3 rounded-xl bg-gray-50 border border-gray-200 px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">

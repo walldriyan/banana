@@ -7,8 +7,8 @@ import { DiscountResult } from '@/discount-engine/core/result';
 import { calculateDiscountsForItems } from '@/lib/discountUtils';
 import { megaDealFest, buyMoreSaveMore, clearanceSale } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
-import ProductList from '@/components/POSUI/ProductList';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
+import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 
 // --- Sample Data ---
 const oldBatch: ProductBatch = { id: 't-shirt-batch-old', batchNumber: 'OLD-2023', sellingPrice: 2000, costPrice: 1500, quantity: 100, productId: 't-shirt-01' };
@@ -75,20 +75,22 @@ export default function MyNewEcommerceShop() {
         <div className="lg:col-span-2">
           <header className="mb-6">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
-            <p className="text-base text-gray-500 mt-2">Select a campaign and add products to your cart to see the discount engine in action.</p>
+            <p className="text-base text-gray-500 mt-2">Search for products by name or barcode and add them to your cart.</p>
           </header>
 
-          <CampaignSelector
-            activeCampaign={activeCampaign}
-            allCampaigns={allCampaigns}
-            onCampaignChange={setActiveCampaign}
-          />
-          
-          <ProductList
-            products={sampleProducts}
-            activeCampaign={activeCampaign}
-            onAddToCart={addToCart}
-          />
+          <div className="space-y-6">
+            <CampaignSelector
+              activeCampaign={activeCampaign}
+              allCampaigns={allCampaigns}
+              onCampaignChange={setActiveCampaign}
+            />
+
+            <SearchableProductInput 
+              products={sampleProducts}
+              onProductSelect={addToCart}
+            />
+          </div>
+
         </div>
 
         {/* Right Column: Cart & Summary */}
