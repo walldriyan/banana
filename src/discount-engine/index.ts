@@ -70,35 +70,33 @@ export class DiscountEngine {
     // This is the global tracker for repeatable rules when 'One-Time Deal' is active.
     const appliedRepeatableRuleIds = new Set<string>();
 
-    console.log(`[Engine] Processing campaign: "${this.campaign.name}". One-Time Deal is ${this.campaign.isOneTimePerTransaction ? 'ACTIVE' : 'INACTIVE'}.`);
-
     for (const rule of this.rules) {
       const ruleId = rule.getId();
       
-      // Check if this rule is repeatable and if it has already been applied in one-time mode.
-      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable && appliedRepeatableRuleIds.has(ruleId)) {
+      const isOneTimeDealActive = this.campaign.isOneTimePerTransaction;
+      const isRuleRepeatable = rule.isPotentiallyRepeatable;
+      const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
+
+      // This is the main global control point.
+      if (isOneTimeDealActive && isRuleRepeatable && wasRuleAlreadyApplied) {
         console.log(`[Engine] SKIPPING repeatable rule (ID: ${ruleId}) because One-Time Deal is active and it has already been applied.`);
         continue; // Skip this rule for the rest of the transaction.
       }
       
       const discountsBefore = result.getAppliedRulesSummary().length;
-      console.log(`[Engine] Applying rule: ${rule.constructor.name} (ID: ${ruleId})`);
-      console.log(`[Engine] Result BEFORE apply:`, JSON.parse(JSON.stringify(result)));
       
       rule.apply(context, result);
       
-      console.log(`[Engine] Result AFTER apply:`, JSON.parse(JSON.stringify(result)));
       const discountsAfter = result.getAppliedRulesSummary().length;
 
       // If 'One-Time Deal' is active, we check if a repeatable rule was *just* applied.
-      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable && discountsAfter > discountsBefore) {
-        console.log(`[Engine] One-Time Deal: Rule (ID: ${ruleId}) was just applied. It will not be applied again in this transaction.`);
+      if (isOneTimeDealActive && isRuleRepeatable && discountsAfter > discountsBefore) {
+        console.log(`[Engine] One-Time Deal: Repeatable rule (ID: ${ruleId}) was just applied. Adding to the 'applied' list for this transaction.`);
         appliedRepeatableRuleIds.add(ruleId);
       }
     }
     
     result.finalize();
-    console.log(`[Engine] FINAL RESULT:`, JSON.parse(JSON.stringify(result)));
     return result;
   }
 }

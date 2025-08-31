@@ -7,7 +7,9 @@ import type { BuyGetRule, DiscountSet } from '@/types';
 
 export class BuyXGetYRule implements IDiscountRule {
   private config: BuyGetRule;
-  public readonly isPotentiallyRepeatable = true; // Mark this rule type as repeatable
+  // This flag tells the engine that THIS TYPE of rule could be repeatable.
+  // The engine then decides IF it should repeat based on the global 'isOneTimePerTransaction' flag.
+  public readonly isPotentiallyRepeatable = true; 
 
   constructor(config: BuyGetRule) {
     this.config = config;
@@ -40,7 +42,8 @@ export class BuyXGetYRule implements IDiscountRule {
     const getItems = context.items.filter((item) => item.productId === getProductId);
     if (getItems.length === 0) return;
 
-    // The engine's global one-time flag takes precedence. Here we only check the rule's own repeatability.
+    // The engine's global 'isOneTimePerTransaction' flag is handled by the engine itself.
+    // This rule only needs to check its own local isRepeatable flag.
     const timesRuleCanApply = isRepeatable ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
     let freeItemsToDistribute = timesRuleCanApply * getQuantity;
 
