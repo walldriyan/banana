@@ -3,7 +3,7 @@
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
 import { DiscountResult } from '../core/result';
-import type { BuyGetRule } from '@/types';
+import type { BuyGetRule, DiscountSet } from '@/types';
 
 export class BuyXGetYRule implements IDiscountRule {
   private config: BuyGetRule;
@@ -28,7 +28,7 @@ export class BuyXGetYRule implements IDiscountRule {
       getQuantity,
       discountType,
       discountValue,
-      isRepeatable, // The rule's own setting
+      isRepeatable, // The rule's own setting for WHEN it can repeat
     } = this.config;
 
     const buyItems = context.items.filter((item) => item.productId === buyProductId);
@@ -40,8 +40,10 @@ export class BuyXGetYRule implements IDiscountRule {
     const getItems = context.items.filter((item) => item.productId === getProductId);
     if (getItems.length === 0) return;
 
-    // This is the crucial logic: how many times CAN the rule apply based on the items bought?
-    // The engine will decide if it *actually* repeats based on the global one-time-deal flag.
+    // The engine's global one-time flag takes precedence.
+    // If the engine allows repeats for this transaction, then we check the rule's own setting.
+    // However, since the engine now controls repeats globally, we can just use the rule's own setting here.
+    // The engine will prevent it from running again if needed.
     const timesRuleCanApply = isRepeatable ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
     let freeItemsToDistribute = timesRuleCanApply * getQuantity;
 
