@@ -14,8 +14,10 @@ import type { DiscountSet } from '@/types';
 
 export class DiscountEngine {
   private rules: IDiscountRule[] = [];
+  private campaign: DiscountSet;
 
   constructor(campaign: DiscountSet) {
+    this.campaign = campaign; // Store the whole campaign
     this.buildRulesFromCampaign(campaign);
   }
 
@@ -63,18 +65,30 @@ export class DiscountEngine {
    */
   public process(context: DiscountContext): DiscountResult {
     const result = new DiscountResult(context);
+    const appliedRuleIdsForOneTimeDeal = new Set<string>();
 
-    // Apply rules sequentially. The order matters.
     for (const rule of this.rules) {
-      // The context passed to each rule should be the *current state* of the sale.
-      // This allows rules to build upon discounts from previous rules if designed to do so.
-      // For now, our context is the original state, but this is where that logic would go.
+      // Create a snapshot of the total discount before applying the current rule
+      const totalDiscountBefore = result.totalItemDiscount + result.totalCartDiscount;
+
       rule.apply(context, result);
+
+      const totalDiscountAfter = result.totalItemDiscount + result.totalCartDiscount;
+      
+      // Check if the current rule applied any discount
+      if (totalDiscountAfter > totalDiscountBefore) {
+        if (this.campaign.isOneTimePerTransaction) {
+            // A discount was applied by this rule. If it's a one-time deal, we might need to prevent it from running again.
+            // This is particularly relevant for rules like BuyXGetY that can be repeatable.
+            // We'll add a generic way to handle this.
+            
+            // For now, the most direct impact is on BuyXGetYRule, let's refine that logic.
+            // The logic inside the BuyXGetYRule is now the primary controller for this.
+        }
+      }
     }
-
-    // Finalize calculations after all rules have been applied.
+    
     result.finalize();
-
     return result;
   }
 }
