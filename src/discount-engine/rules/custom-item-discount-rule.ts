@@ -1,3 +1,4 @@
+
 // src/discount-engine/rules/custom-item-discount-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -8,6 +9,12 @@ import { DiscountResult } from '../core/result';
  * It checks if a `customDiscountValue` is present on a line item.
  */
 export class CustomItemDiscountRule implements IDiscountRule {
+  public readonly isPotentiallyRepeatable = false;
+
+  public getId(): string {
+    return 'custom-item-discount-rule';
+  }
+
   apply(context: DiscountContext, result: DiscountResult): void {
     context.items.forEach((item) => {
       const lineResult = result.getLineItem(item.lineId);

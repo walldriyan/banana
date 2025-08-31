@@ -1,3 +1,4 @@
+
 // src/discount-engine/rules/batch-specific-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -7,9 +8,14 @@ import type { BatchDiscountConfiguration } from '@/types';
 
 export class BatchSpecificRule implements IDiscountRule {
   private config: BatchDiscountConfiguration;
+  public readonly isPotentiallyRepeatable = false; // Batch rules are not repeatable in a BOGO sense
 
   constructor(config: BatchDiscountConfiguration) {
     this.config = config;
+  }
+
+  public getId(): string {
+    return `batch-${this.config.id}`;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -46,7 +52,7 @@ export class BatchSpecificRule implements IDiscountRule {
 
             if (discountAmount > 0) {
                  lineResult.addDiscount({
-                    ruleId: `batch-${this.config.id}-${ruleEntry.type}`,
+                    ruleId: `${this.getId()}-${ruleEntry.type}`,
                     discountAmount,
                     description: `Batch-specific rule '${ruleEntry.config.name}' applied.`,
                     appliedRuleInfo: {

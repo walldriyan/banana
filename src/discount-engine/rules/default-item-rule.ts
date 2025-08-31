@@ -1,3 +1,4 @@
+
 // src/discount-engine/rules/default-item-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -11,9 +12,14 @@ import { evaluateRule } from '../utils/helpers';
  */
 export class DefaultItemRule implements IDiscountRule {
   private campaign: DiscountSet;
+  public readonly isPotentiallyRepeatable = false; // Default rules are not repeatable in a BOGO sense
 
   constructor(campaign: DiscountSet) {
     this.campaign = campaign;
+  }
+
+  public getId(): string {
+    return `default-item-rule-${this.campaign.id}`;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -38,7 +44,7 @@ export class DefaultItemRule implements IDiscountRule {
               const discountAmount = evaluateRule(rule.config, item.price, item.quantity, lineTotal, rule.valueToTest);
               if (discountAmount > 0) {
                   lineResult.addDiscount({
-                      ruleId: `default-${rule.type}-${this.campaign.id}`,
+                      ruleId: `${this.getId()}-${rule.type}`,
                       discountAmount,
                       description: `Default campaign rule '${rule.config.name}' applied.`,
                       appliedRuleInfo: {

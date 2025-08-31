@@ -40,9 +40,7 @@ export class BuyXGetYRule implements IDiscountRule {
     const getItems = context.items.filter((item) => item.productId === getProductId);
     if (getItems.length === 0) return;
 
-    // The engine's global one-time flag takes precedence over the rule's own isRepeatable setting.
-    // The engine will skip this rule entirely if the one-time flag is set and the rule has been applied.
-    // So, we can trust the rule's own isRepeatable flag here, knowing the engine provides the global override.
+    // The engine's global one-time flag takes precedence. Here we only check the rule's own repeatability.
     const timesRuleCanApply = isRepeatable ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
     let freeItemsToDistribute = timesRuleCanApply * getQuantity;
 
@@ -79,7 +77,6 @@ export class BuyXGetYRule implements IDiscountRule {
             totalCalculatedDiscount: finalDiscount,
             ruleType: 'buy_get_free',
             productIdAffected: getItem.productId,
-            // Pass the rule's own repeatability setting to the engine
             isRepeatable: isRepeatable, 
           },
         });

@@ -121,6 +121,7 @@ export default function MyNewEcommerceShop() {
     };
     console.log('--- Recalculating Discounts ---');
     console.log('One-Time Deal Active?', isOneTimeDeal);
+    console.log('Passing this campaign to engine:', JSON.parse(JSON.stringify(campaignForCalculation)));
     return calculateDiscountsForItems({ saleItems: cart, activeCampaign: campaignForCalculation, allProducts: sampleProducts });
   }, [cart, activeCampaign, isOneTimeDeal]); // Dependency array is key for re-calculation
 

@@ -1,3 +1,4 @@
+
 // src/discount-engine/rules/product-level-rule.ts
 import { IDiscountRule } from './interface';
 import { DiscountContext } from '../core/context';
@@ -7,7 +8,7 @@ import { evaluateRule } from '../utils/helpers';
 
 export class ProductLevelRule implements IDiscountRule {
   private config: ProductDiscountConfiguration;
-  public readonly isPotentiallyRepeatable = false;
+  public readonly isPotentiallyRepeatable = false; // Product rules are not repeatable in a BOGO sense
 
   constructor(config: ProductDiscountConfiguration) {
     this.config = config;

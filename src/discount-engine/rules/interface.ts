@@ -12,14 +12,13 @@ export interface IDiscountRule {
    * A flag to indicate if this type of rule can be applied multiple times in a transaction.
    * The DiscountEngine will use this to enforce one-time-deal logic.
    */
-  isPotentiallyRepeatable?: boolean;
+  readonly isPotentiallyRepeatable: boolean;
 
   /**
    * Returns a unique, stable identifier for this specific rule instance.
    * This is crucial for the engine to track which rules have already been applied.
-   * This is optional as not all rules need it (e.g. ones that can't be repeated).
    */
-  getId?(): string;
+  getId(): string;
 
   /**
    * Evaluates the rule against the current sale context and applies
