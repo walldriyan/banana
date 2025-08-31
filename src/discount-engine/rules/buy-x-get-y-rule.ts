@@ -6,11 +6,11 @@ import type { BuyGetRule, DiscountSet } from '@/types';
 
 export class BuyXGetYRule implements IDiscountRule {
   private config: BuyGetRule;
-  private campaignName: string;
+  private campaign: DiscountSet; // Changed to hold the whole campaign
 
-  constructor(config: BuyGetRule, campaignName: string) {
+  constructor(config: BuyGetRule, campaign: DiscountSet) { // Changed to accept the whole campaign
     this.config = config;
-    this.campaignName = campaignName;
+    this.campaign = campaign;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -33,7 +33,10 @@ export class BuyXGetYRule implements IDiscountRule {
     const getItems = context.items.filter((item) => item.productId === getProductId);
     if (getItems.length === 0) return;
 
-    const timesRuleApplies = isRepeatable ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
+    // The 'One-Time Deal' switch overrides the individual rule's 'isRepeatable' setting.
+    const ruleCanRepeat = this.campaign.isOneTimePerTransaction ? false : isRepeatable;
+
+    const timesRuleApplies = ruleCanRepeat ? Math.floor(totalBuyQuantity / buyQuantity) : 1;
     let freeItemsToDistribute = timesRuleApplies * getQuantity;
 
     for (const getItem of getItems) {
@@ -61,7 +64,7 @@ export class BuyXGetYRule implements IDiscountRule {
           discountAmount: finalDiscount,
           description: `Buy ${buyQuantity} of ${buyProductId}, Get ${getQuantity} of ${getProductId} offer.`,
           appliedRuleInfo: {
-            discountCampaignName: this.campaignName,
+            discountCampaignName: this.campaign.name,
             sourceRuleName: `Buy ${buyItems[0].name} Get ${getItem.name}`,
             totalCalculatedDiscount: finalDiscount,
             ruleType: 'buy_get_free',

@@ -10,6 +10,8 @@ import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
 import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 // --- Sample Data ---
 const oldBatch: ProductBatch = { id: 't-shirt-batch-old', batchNumber: 'OLD-2023', sellingPrice: 2000, costPrice: 1500, quantity: 100, productId: 't-shirt-01' };
@@ -24,6 +26,7 @@ const allCampaigns = [megaDealFest, buyMoreSaveMore, clearanceSale];
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
+  const [isOneTimeDeal, setIsOneTimeDeal] = useState(false);
   const productSearchRef = useRef<SearchableProductInputRef>(null);
 
   // --- Global Keydown Listener Logic ---
@@ -116,8 +119,12 @@ export default function MyNewEcommerceShop() {
   };
 
   const discountResult: DiscountResult = useMemo(() => {
-    return calculateDiscountsForItems({ saleItems: cart, activeCampaign, allProducts: sampleProducts });
-  }, [cart, activeCampaign]);
+    const campaignForCalculation = {
+      ...activeCampaign,
+      isOneTimePerTransaction: isOneTimeDeal,
+    };
+    return calculateDiscountsForItems({ saleItems: cart, activeCampaign: campaignForCalculation, allProducts: sampleProducts });
+  }, [cart, activeCampaign, isOneTimeDeal]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
@@ -136,12 +143,25 @@ export default function MyNewEcommerceShop() {
               allCampaigns={allCampaigns}
               onCampaignChange={setActiveCampaign}
             />
+            
+            <div className="flex items-center gap-4">
+              <div className="flex-grow">
+                <SearchableProductInput 
+                  ref={productSearchRef}
+                  products={sampleProducts}
+                  onProductSelect={addToCart}
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="one-time-deal"
+                  checked={isOneTimeDeal}
+                  onCheckedChange={setIsOneTimeDeal}
+                />
+                <Label htmlFor="one-time-deal" className="whitespace-nowrap">One-Time Deal</Label>
+              </div>
+            </div>
 
-            <SearchableProductInput 
-              ref={productSearchRef}
-              products={sampleProducts}
-              onProductSelect={addToCart}
-            />
           </div>
 
         </div>

@@ -44,7 +44,8 @@ export class DiscountEngine {
     // Priority 4: "Buy X, Get Y" rules
     if (campaign.buyGetRulesJson) {
       campaign.buyGetRulesJson.forEach((ruleConfig) => {
-        this.rules.push(new BuyXGetYRule(ruleConfig));
+        // Pass the entire campaign object to the rule constructor
+        this.rules.push(new BuyXGetYRule(ruleConfig, campaign));
       });
     }
 
