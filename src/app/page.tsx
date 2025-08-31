@@ -27,63 +27,39 @@ export default function MyNewEcommerceShop() {
 
   // --- Global Keydown Listener Logic ---
   useEffect(() => {
-    // 1. Listener එක පටන් ගත්තා.
-    console.log('--- Global Key Down Listener Initialized ---');
-
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      // 2. යතුරක් එබූ බව හඳුනා ගත්තා.
-      console.log(`--- Key Pressed: "${event.key}" ---`);
-      
       const target = event.target as HTMLElement;
-      console.log('3. Event target:', target);
 
-      // 4. පරිශීලකයා දැනටමත් වෙනත් input එකක ටයිප් කරනවාද?
       const isTyping =
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable;
-      console.log('4. Is user already typing in an input?', isTyping);
 
-      // 5. පරිශීලකයා button, select හෝ dialog වැනි දෙයක් සමග interact කරනවාද?
       const isInteracting =
         target.tagName === 'BUTTON' ||
         target.tagName === 'SELECT' ||
         target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
-      console.log('5. Is user interacting with a UI element?', isInteracting);
-
 
       if (isTyping || isInteracting) {
-        // 6. ඉහත කොන්දේසි සත්‍ය නම්, function එකෙන් ඉවත් වෙනවා.
-        console.log('6. Condition met to EXIT. Not focusing search bar.');
         return;
       }
       
-      // 7. එබූ යතුර print කළ හැකි අකුරක්/ඉලක්කමක්/සංකේතයක් ද?
       const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-      console.log('7. Is it a printable key?', isPrintableKey);
-
 
       if (isPrintableKey) {
-        // 8. search input එක focus කිරීමට උත්සාහ කරනවා.
-        console.log('8. Attempting to focus search input...');
         const searchInput = document.getElementById('global-product-search-input');
         if (searchInput) {
           searchInput.focus();
-          console.log('9. Search input found and focused!');
-        } else {
-          console.error('10. Error: Search input with ID "global-product-search-input" not found!');
         }
       }
     };
 
     document.addEventListener('keydown', handleGlobalKeyDown);
 
-    // 11. Component එක unmount වන විට listener එක ඉවත් කිරීම.
     return () => {
-      console.log('--- Global Key Down Listener Cleaned Up ---');
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []); // මෙම useEffect එක ක්‍රියාත්මක වන්නේ component එක මුලින්ම load වන විට පමණයි.
+  }, []); 
 
 
   const updateCartQuantity = (saleItemId: string, change: number) => {

@@ -1,3 +1,4 @@
+
 // src/components/POSUI/SearchableProductInput.tsx
 "use client"
 
@@ -82,7 +83,7 @@ export default function SearchableProductInput({
      <Command shouldFilter={false} className="overflow-visible bg-transparent">
         <div className="relative">
             <CommandInput
-                id="global-product-search-input" // Global listener එකට හඳුනාගැනීම සඳහා ID එකක් ලබා දීම
+                id="global-product-search-input"
                 value={inputValue}
                 onValueChange={setInputValue}
                 placeholder={searchPlaceholder}
