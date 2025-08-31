@@ -31,7 +31,14 @@ const newBatch: ProductBatch = {
   quantity: 100, 
   productId: 't-shirt-01' 
 };
-
+const jnewBatch: ProductBatch = { 
+  id: 'jeans-batch-old', 
+  batchNumber: 'NEW-2026', 
+  sellingPrice: 7000, 
+  costPrice: 1800, 
+  quantity: 100, 
+  productId: 'jeans-01' 
+};
 const sampleProducts: Product[] = [
   { 
     id: 't-shirt-01', 
@@ -40,7 +47,7 @@ const sampleProducts: Product[] = [
     batches: [oldBatch, newBatch], 
     category: 'Apparel', 
     units: {baseUnit: 'pcs'}, 
-    stock: 200, 
+    stock: 200 , 
     defaultQuantity: 1, 
     isActive: true, 
     isService: false 
@@ -49,6 +56,7 @@ const sampleProducts: Product[] = [
     id: 'jeans-01', 
     name: 'Jeans', 
     sellingPrice: 7000, 
+    batches: [jnewBatch], 
     category: 'Apparel', 
     units: {baseUnit: 'pcs'}, 
     stock: 50, 

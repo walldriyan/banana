@@ -23,7 +23,7 @@ export const megaDealFest: DiscountSet = {
       lineItemValueRuleJson: { 
         isEnabled: true, 
         name: '15% OFF All Jeans', 
-        type: 'percentage', 
+        type: 'fixed', 
         value: 15,
         description: 'General 15% discount on any jeans purchase',
         applyFixedOnce: false // Can apply to multiple units
@@ -207,7 +207,7 @@ export const buyMoreSaveMore: DiscountSet = {
           name: 'T-Shirt Bulk Buy',
           type: 'fixed',
           value: 250, 
-          conditionMin: 3, 
+          conditionMin: 4, 
           applyFixedOnce: true, // 🔑 මේකයි fix කරන්න ඕනේ තැන! true කළම එක line එකට එක වරක් විතරක්
           description: 'Rs.250 off per line when buying 3 or more T-shirts (applied once per line item)'
       },
@@ -216,22 +216,23 @@ export const buyMoreSaveMore: DiscountSet = {
     { 
         id: 'buymore-jeans-config',
         productId: 'jeans-01',
-        productNameAtConfiguration: 'Jeans',
+        productNameAtConfiguration: 'jeans-01',
         discountSetId: 'promo-buy-more',
         isActiveForProductInCampaign: true,
         priority: 1,
         lineItemValueRuleJson: null,
         lineItemQuantityRuleJson: null,
-        specificQtyThresholdRuleJson: null,
-        specificUnitPriceThresholdRuleJson: {
-            isEnabled: true,
-            name: 'Premium Jeans Offer',
-            type: 'percentage',
-            value: 20, 
-            conditionMin: 7000,
-            description: '20% off premium jeans (Rs.7000+)',
-            applyFixedOnce: false
-        }
+        specificQtyThresholdRuleJson: {
+          isEnabled: true,
+          name: 'T-Shirt Bulk Buy',
+          type: 'fixed',
+          value: 250, 
+          conditionMin: 4, 
+          conditionMax: 7, 
+          applyFixedOnce: true, // 🔑 මේකයි fix කරන්න ඕනේ තැන! true කළම එක line එකට එක වරක් විතරක්
+          description: 'Rs.250 off per line when buying 3 or more T-shirts (applied once per line item)'
+      },
+      specificUnitPriceThresholdRuleJson: null,
     }
   ],
 
@@ -247,8 +248,28 @@ export const buyMoreSaveMore: DiscountSet = {
             name: 'Extra for Old Stock', 
             type: 'fixed', 
             value: 100, 
+            conditionMin:2,
+            conditionMax:4,
             applyFixedOnce: false,
             description: 'Extra Rs.100 off each old batch T-shirt'
+        },
+        lineItemQuantityRuleJson: null,
+      },
+      {
+        id: 'buymore-old-jeans-batch-config',
+        productBatchId: 'jeans-batch-old',
+        discountSetId: 'promo-buy-more',
+        isActiveForBatchInCampaign: true,
+        priority: 1,
+        lineItemValueRuleJson: {
+            isEnabled: true, 
+            name: 'Extra for Old Stock jns', 
+            type: 'fixed', 
+            conditionMin:2,
+            conditionMax:4,
+            value: 77, 
+            applyFixedOnce: true,
+            description: 'Extra Rs.10099 off each old batch T-shirt'
         },
         lineItemQuantityRuleJson: null,
       }
