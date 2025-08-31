@@ -29,8 +29,9 @@ export default function MyNewEcommerceShop() {
   useEffect(() => {
     // keydown event එකට සවන් දෙන function එක.
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
+        alert('hi');
       const target = event.target as HTMLElement;
-
+      
       // 1. පරිශීලකයා දැනටමත් input, textarea වැනි දෙයක type කරනවාදැයි පරීක්ෂා කිරීම.
       const isTypingInInput =
         target.tagName === 'INPUT' ||
@@ -50,6 +51,7 @@ export default function MyNewEcommerceShop() {
 
       // 3. එබූ යතුර print කළ හැකි අකුරක්/ඉලක්කමක්/සංකේතයක් ද, සහ Ctrl, Alt, Meta වැනි modifier keys ඔබා නැතිදැයි පරීක්ෂා කිරීම.
       if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      
         const searchInput = document.getElementById('global-product-search-input');
         if (searchInput) {
           searchInput.focus();
