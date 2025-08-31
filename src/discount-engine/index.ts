@@ -1,4 +1,3 @@
-
 // src/discount-engine/index.ts
 
 import { DiscountContext } from './core/context';
@@ -54,9 +53,12 @@ export class DiscountEngine {
       const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
       
       const shouldSkipRule = isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied;
+      
+      const ruleClassName = (rule as any).constructor.name;
+      console.log(`[Engine] > රීතිය පරීක්ෂා කිරීම: '${ruleClassName}' (ID: ${ruleId})`);
 
       if (shouldSkipRule) {
-        console.log(`[Engine] රීතිය මඟහැරියා (ID: ${ruleId}). හේතුව: One-Time Deal ක්‍රියාත්මකයි, සහ මෙම repeatable රීතිය දැනටමත් යොදා ඇත.`);
+        console.log(`[Engine] ---> ✋ රීතිය මඟහැරියා. හේතුව: "One-Time Deal" ක්‍රියාත්මකයි, සහ මෙම නැවත යෙදිය හැකි රීතිය දැනටමත් යොදා ඇත.`);
         continue;
       }
       
@@ -67,7 +69,7 @@ export class DiscountEngine {
       const wasRuleJustApplied = result.getAppliedRulesSummary().length > discountsBefore;
 
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleJustApplied) {
-        console.log(`[Engine] One-Time Deal: නැවත යෙදිය හැකි රීතියක් (ID: ${ruleId}) දැන් යෙදුවා. එය 'යෙදූ' ලැයිස්තුවට ඇතුලත් කරනවා.`);
+        console.log(`[Engine] ---> ✅ One-Time Deal: නැවත යෙදිය හැකි රීතියක් (ID: ${ruleId}) දැන් යෙදුවා. එය 'යෙදූ' ලැයිස්තුවට ඇතුලත් කරනවා.`);
         appliedRepeatableRuleIds.add(ruleId);
       }
     }
