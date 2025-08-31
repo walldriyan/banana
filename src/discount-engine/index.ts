@@ -78,11 +78,20 @@ export class DiscountEngine {
       const isRulePotentiallyRepeatable = rule.isPotentiallyRepeatable;
       const wasRuleAlreadyApplied = appliedRepeatableRuleIds.has(ruleId);
       
+      // --- FOCUSED CONSOLE LOG ---
+      // This is the main global control point.
+      //
+      // [සිංහලෙන් පැහැදිලි කිරීම]:
+      // අපි හැම rule එකක්ම apply කරන්න කලින්, මෙතනින් check කරනවා.
+      // 1. isOneTimeDealActive: UI එකේ switch එක ON කරලද? (`true` නම් ON)
+      // 2. isRulePotentiallyRepeatable: මේ rule එක BOGO වගේ නැවත නැවත apply වෙන්න පුළුවන් එකක්ද?
+      // 3. wasRuleAlreadyApplied: මේ rule එක දැනටමත් මේ sale එකේ එක පාරක් apply වෙලා ඉවරද?
+      //
+      // මේ තුනම `true` නම් විතරයි, අපි මේ rule එක apply කරන්නේ නැතුව මඟහරින්නේ (skip).
       console.log(`[Engine] CHECKING Rule: '${rule.constructor.name}' (ID: ${ruleId})`);
       console.log(`[Engine] Params: { isOneTimeDealActive: ${isOneTimeDealActive}, isRulePotentiallyRepeatable: ${isRulePotentiallyRepeatable}, wasRuleAlreadyApplied: ${wasRuleAlreadyApplied} }`);
 
 
-      // This is the main global control point.
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleAlreadyApplied) {
         console.log(`[Engine] SKIPPING Rule (ID: ${ruleId}). Reason: One-Time Deal is active and this repeatable rule has already been applied.`);
         continue; // Skip this rule for the rest of the transaction.
@@ -95,7 +104,8 @@ export class DiscountEngine {
       const discountsAfter = result.getAppliedRulesSummary().length;
       const wasRuleJustApplied = discountsAfter > discountsBefore;
 
-      // If 'One-Time Deal' is active, we check if a repeatable rule was *just* applied.
+      // **THE FIX IS HERE**
+      // If 'One-Time Deal' is active, and a repeatable rule was *just* applied, we add it to our tracker.
       if (isOneTimeDealActive && isRulePotentiallyRepeatable && wasRuleJustApplied) {
         console.log(`[Engine] One-Time Deal: Repeatable rule (ID: ${ruleId}) was just applied. Adding to the 'applied' list for this transaction.`);
         appliedRepeatableRuleIds.add(ruleId);

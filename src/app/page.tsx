@@ -111,8 +111,9 @@ export default function MyNewEcommerceShop() {
       isOneTimePerTransaction: isOneTimeDeal,
     };
     
-    console.log('--- Recalculating Discounts ---');
-    console.log('Passing this campaign object to engine:', {id: campaignForCalculation.id, name: campaignForCalculation.name, isOneTimePerTransaction: campaignForCalculation.isOneTimePerTransaction});
+    // --- FOCUSED CONSOLE LOG ---
+    // This log shows exactly what is being passed to the discount engine.
+    console.log(`[UI] Recalculating... Passing campaign object to engine with 'isOneTimePerTransaction' = ${campaignForCalculation.isOneTimePerTransaction}`);
 
 
     return calculateDiscountsForItems({ saleItems: cart, activeCampaign: campaignForCalculation, allProducts: sampleProducts });
