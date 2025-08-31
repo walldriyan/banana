@@ -7,9 +7,14 @@ import { evaluateRule } from '../utils/helpers';
 
 export class ProductLevelRule implements IDiscountRule {
   private config: ProductDiscountConfiguration;
+  public readonly isPotentiallyRepeatable = false;
 
   constructor(config: ProductDiscountConfiguration) {
     this.config = config;
+  }
+
+  public getId(): string {
+    return `product-${this.config.id}`;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -24,7 +29,8 @@ export class ProductLevelRule implements IDiscountRule {
       }
       
       const lineResult = result.getLineItem(item.lineId);
-      // If a higher-priority discount (e.g., custom, batch, or another product rule) is already applied, skip.
+      // If a higher-priority discount (e.g., custom, batch) is already applied, skip.
+      // A product-level rule does not override a batch-level one.
       if (!lineResult || lineResult.totalDiscount > 0) {
         return;
       }
@@ -53,7 +59,7 @@ export class ProductLevelRule implements IDiscountRule {
 
             if (discountAmount > 0) {
                  lineResult.addDiscount({
-                    ruleId: `product-${this.config.id}-${ruleEntry.type}`,
+                    ruleId: `${this.getId()}-${ruleEntry.type}`, // More specific ID
                     discountAmount,
                     description: `Product-specific rule '${ruleEntry.config.name}' applied.`,
                     appliedRuleInfo: {
@@ -61,8 +67,10 @@ export class ProductLevelRule implements IDiscountRule {
                         sourceRuleName: ruleEntry.config.name,
                         totalCalculatedDiscount: discountAmount,
                         ruleType: ruleEntry.type,
+                        ruleId: `${this.getId()}-${ruleEntry.type}`,
                         productIdAffected: item.productId,
-                        appliedOnce: !!ruleEntry.config.applyFixedOnce
+                        appliedOnce: !!ruleEntry.config.applyFixedOnce,
+                        isRepeatable: false // Product rules are generally not repeatable in a BOGO sense
                     }
                 });
             }

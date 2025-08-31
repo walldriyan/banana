@@ -10,14 +10,15 @@ import { BuyXGetYRule } from './rules/buy-x-get-y-rule';
 import { CartTotalRule } from './rules/cart-total-rule';
 import { BatchSpecificRule } from './rules/batch-specific-rule';
 import { CustomItemDiscountRule } from './rules/custom-item-discount-rule';
-import type { DiscountSet } from '@/types';
+import type { DiscountSet, AppliedRuleInfo } from '@/types';
 
 export class DiscountEngine {
   private rules: IDiscountRule[] = [];
   private campaign: DiscountSet;
 
   constructor(campaign: DiscountSet) {
-    this.campaign = campaign; // Store the whole campaign
+    // The entire campaign object, including the isOneTimePerTransaction flag, is stored.
+    this.campaign = campaign; 
     this.buildRulesFromCampaign(campaign);
   }
 
@@ -67,28 +68,40 @@ export class DiscountEngine {
     const result = new DiscountResult(context);
     
     // This is the global tracker for repeatable rules when 'One-Time Deal' is active.
-    const appliedRepeatableRules = new Set<string>();
+    const appliedRepeatableRuleIds = new Set<string>();
+
+    console.log(`[Engine] Processing campaign: "${this.campaign.name}". One-Time Deal is ${this.campaign.isOneTimePerTransaction ? 'ACTIVE' : 'INACTIVE'}.`);
 
     for (const rule of this.rules) {
-      // Create a snapshot of the result object before applying the rule
-      // We'll use this to see what the rule did.
+      // Check if this rule is repeatable and if it has already been applied in one-time mode.
+      // We check this *before* applying the rule.
+      if (this.campaign.isOneTimePerTransaction && rule.isPotentiallyRepeatable) {
+        // This is a simplified check. A robust implementation would need rule to expose a unique ID.
+        // For now, we assume rule's constructor name or a unique property can identify it.
+        // Let's refine the rule interface to add a unique ID.
+        const ruleId = rule.getId(); // Assuming rules have a getId() method.
+         if (appliedRepeatableRuleIds.has(ruleId)) {
+           console.log(`[Engine] Skipping repeatable rule (ID: ${ruleId}) because One-Time Deal is active and it has already been applied.`);
+           continue; // Skip this rule for the rest of the transaction.
+         }
+      }
+
       const discountsBefore = result.getAppliedRulesSummary();
       
       rule.apply(context, result);
       
-      // Now, see what new discounts were added by this rule
       const discountsAfter = result.getAppliedRulesSummary();
 
-      // If 'One-Time Deal' is active, we need to check if a repeatable rule was just applied.
+      // If 'One-Time Deal' is active, we check if a repeatable rule was *just* applied.
       if (this.campaign.isOneTimePerTransaction && discountsAfter.length > discountsBefore.length) {
-        const newDiscounts = discountsAfter.slice(discountsBefore.length);
+        const newDiscounts = this.findNewDiscounts(discountsBefore, discountsAfter);
         
         for (const newDiscount of newDiscounts) {
-          // The rule that applied this discount is considered "used up" for this transaction.
-          // Note: This logic assumes a rule instance maps to a single configurable discount.
-          // For BuyXGetY, the ruleId is `bogo-${buyProductId}-${getProductId}`, which is unique per BOGO config.
+          // If the rule that was just applied is repeatable, we add its ID to our tracker
+          // so it won't be applied again in this transaction.
           if(newDiscount.isRepeatable) {
-            appliedRepeatableRules.add(newDiscount.ruleId);
+            console.log(`[Engine] One-Time Deal: Rule "${newDiscount.sourceRuleName}" (ID: ${newDiscount.ruleId}) was just applied. It will not be applied again.`);
+            appliedRepeatableRuleIds.add(newDiscount.ruleId);
           }
         }
       }
@@ -96,5 +109,13 @@ export class DiscountEngine {
     
     result.finalize();
     return result;
+  }
+
+  /**
+   * Helper to find which discounts are new between two states.
+   */
+  private findNewDiscounts(before: AppliedRuleInfo[], after: AppliedRuleInfo[]): AppliedRuleInfo[] {
+    const beforeIds = new Set(before.map(d => JSON.stringify(d))); // Inefficient but works for object comparison
+    return after.filter(d => !beforeIds.has(JSON.stringify(d)));
   }
 }

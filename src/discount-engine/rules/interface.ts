@@ -8,6 +8,18 @@ import { DiscountResult } from '../core/result';
  */
 export interface IDiscountRule {
   /**
+   * A flag to indicate if this type of rule can be applied multiple times in a transaction.
+   * The DiscountEngine will use this to enforce one-time-deal logic.
+   */
+  isPotentiallyRepeatable?: boolean;
+
+  /**
+   * Returns a unique, stable identifier for this specific rule instance.
+   * This is crucial for the engine to track which rules have already been applied.
+   */
+  getId(): string;
+
+  /**
    * Evaluates the rule against the current sale context and applies
    * discounts to the result object if conditions are met.
    * @param context The current state of the sale (items, customer, etc.).

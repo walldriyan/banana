@@ -97,6 +97,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
         <div className="relative">
             <CommandInput
                 ref={inputRef}
+                id="global-product-search-input" // This ID is crucial for the global keydown listener
                 value={inputValue}
                 onValueChange={setInputValue}
                 placeholder={searchPlaceholder}
