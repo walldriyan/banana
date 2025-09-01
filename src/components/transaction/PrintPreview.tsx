@@ -10,7 +10,7 @@ interface PrintPreviewProps {
 
 export function PrintPreview({ data, showFullPrice }: PrintPreviewProps) {
   return (
-    <div className="w-full h-full p-4 bg-white shadow-md rounded-md">
+    <div className="w-full h-full p-4 bg-white shadow-md rounded-md overflow-y-scroll">
       {/* We can add a selector here later to switch between receipt templates */}
       <ThermalReceipt data={data} showAsGiftReceipt={showFullPrice} />
     </div>

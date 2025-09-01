@@ -121,7 +121,7 @@ export function TransactionDialog({
                     This is a preview of the final receipt. You can toggle the billing mode.
                 </DialogDescription>
             </DialogHeader>
-            <div className="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-md">
+            <div className="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-md overflow-y-scroll">
               <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
             </div>
             <DialogFooter className="items-center">
