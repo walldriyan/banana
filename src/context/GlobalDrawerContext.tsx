@@ -40,7 +40,7 @@ export function GlobalDrawerProvider({ children }: { children: React.ReactNode }
       setContent(null);
       setTitle(null);
       setDescription(null);
-    }, 300);
+    }, 200);
   }, []);
 
   const value = useMemo(() => ({
