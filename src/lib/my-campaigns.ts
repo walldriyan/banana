@@ -215,7 +215,7 @@ export const buyMoreSaveMore: DiscountSet = {
     },
     { 
         id: 'buymore-jeans-config',
-        productId: 'jeans-01',
+        productId: 'jeans-batch-old',
         productNameAtConfiguration: 'jeans-01',
         discountSetId: 'promo-buy-more',
         isActiveForProductInCampaign: true,

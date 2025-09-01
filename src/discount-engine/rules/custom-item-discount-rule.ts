@@ -1,20 +1,24 @@
-// src/discount-engine/rules/custom-item-discount-rule.ts
+// ===== FILE 5: src/discount-engine/rules/custom-item-discount-rule.ts =====
 import { IDiscountRule } from './interface';
-import { DiscountContext } from '../core/context';
+import { DiscountContext, LineItemData } from '../core/context';
 import { DiscountResult } from '../core/result';
 import { generateRuleId } from '../utils/helpers';
 
-/**
- * This rule has the highest priority and applies manually set discounts.
- * It checks if a `customDiscountValue` is present on a line item.
- */
 export class CustomItemDiscountRule implements IDiscountRule {
+  readonly isPotentiallyRepeatable: boolean = false; // Custom discounts are unique
+
+  getId(item?: LineItemData): string {
+    return `custom${item ? `-${item.lineId}` : '-unknown'}`;
+  }
+
   apply(context: DiscountContext, result: DiscountResult): void {
     context.items.forEach((item) => {
       const lineResult = result.getLineItem(item.lineId);
       if (!lineResult || !item.customDiscountValue || item.customDiscountValue <= 0) {
         return;
       }
+
+      console.log(`Processing custom discount for item ${item.lineId}: type=${item.customDiscountType}, value=${item.customDiscountValue}`);
 
       let discountAmount = 0;
       const lineTotal = item.price * item.quantity;
@@ -30,8 +34,12 @@ export class CustomItemDiscountRule implements IDiscountRule {
       // Ensure discount doesn't exceed the line total
       discountAmount = Math.min(discountAmount, lineTotal);
       
+      console.log(`Custom discount calculation: lineTotal=${lineTotal}, discountAmount=${discountAmount}`);
+      
       if (discountAmount > 0) {
         const ruleId = generateRuleId('custom', item.lineId, 'manual_discount', item.productId);
+        
+        console.log(`Applying custom discount: ruleId=${ruleId}, amount=${discountAmount}`);
         
         lineResult.addDiscount({
           ruleId,
