@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { DiscountResult } from '@/discount-engine/core/result';
 import { calculateDiscountsForItems } from '@/lib/discountUtils';
-import { megaDealFest,  clearanceSale, vipExclusive } from '@/lib/my-campaigns';
+import { megaDealFest, clearanceSale, vipExclusive } from '@/lib/my-campaigns';
 import { perUnitDiscounts, flatRateDiscounts, percentageVsFixed, mixedStrategy } from '@/lib/advanced-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
@@ -13,79 +13,80 @@ import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 import DiscountBehaviorPanel from '@/components/DiscountBehaviorPanel';
 import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
 import { buyMoreSaveMore } from '@/lib/buymore-campain';
+import { TransactionDialog } from '@/components/transaction/TransactionDialog';
 
 
-const oldBatch: ProductBatch = { 
-  id: 't-shirt-batch-old', 
-  batchNumber: 'OLD-2023', 
-  sellingPrice: 2000, 
-  costPrice: 1500, 
-  quantity: 100, 
-  productId: 't-shirt-01' 
+const oldBatch: ProductBatch = {
+  id: 't-shirt-batch-old',
+  batchNumber: 'OLD-2023',
+  sellingPrice: 2000,
+  costPrice: 1500,
+  quantity: 100,
+  productId: 't-shirt-01'
 };
 
-const newBatch: ProductBatch = { 
-  id: 't-shirt-batch-new', 
-  batchNumber: 'NEW-2024', 
-  sellingPrice: 2500, 
-  costPrice: 1800, 
-  quantity: 100, 
-  productId: 't-shirt-01' 
+const newBatch: ProductBatch = {
+  id: 't-shirt-batch-new',
+  batchNumber: 'NEW-2024',
+  sellingPrice: 2500,
+  costPrice: 1800,
+  quantity: 100,
+  productId: 't-shirt-01'
 };
 
-const jeansOldBatch: ProductBatch = { 
-  id: 'jeans-batch-old', 
-  batchNumber: 'JEANS-OLD-2023', 
-  sellingPrice: 7000, 
-  costPrice: 4000, 
-  quantity: 50, 
+const jeansOldBatch: ProductBatch = {
+  id: 'jeans-batch-old',
+  batchNumber: 'JEANS-OLD-2023',
+  sellingPrice: 7000,
+  costPrice: 4000,
+  quantity: 50,
   productId: 'jeans-01'
 };
 
-const jeansNewBatch: ProductBatch = { 
-  id: 'jeans-batch-new', 
-  batchNumber: 'JEANS-NEW-2024', 
-  sellingPrice: 8000, 
-  costPrice: 5000, 
-  quantity: 30, 
+const jeansNewBatch: ProductBatch = {
+  id: 'jeans-batch-new',
+  batchNumber: 'JEANS-NEW-2024',
+  sellingPrice: 8000,
+  costPrice: 5000,
+  quantity: 30,
   productId: 'jeans-01'
 };
 
 const sampleProducts: Product[] = [
-  { 
+  {
     id: 't-shirt-01',
-    name: 'T-Shirt', 
+    name: 'T-Shirt',
     sellingPrice: 2500,
-    batches: [oldBatch, newBatch], 
-    category: 'Apparel', 
-    units: {baseUnit: 'pcs'}, 
-    stock: 200, 
-    defaultQuantity: 1, 
-    isActive: true, 
-    isService: false 
+    batches: [oldBatch, newBatch],
+    category: 'Apparel',
+    units: { baseUnit: 'pcs' },
+    stock: 200,
+    defaultQuantity: 1,
+    isActive: true,
+    isService: false
   },
-  { 
+  {
     id: 'jeans-01',
-    name: 'Jeans', 
+    name: 'Jeans',
     sellingPrice: 8000,
     batches: [jeansOldBatch, jeansNewBatch],
-    category: 'Apparel', 
-    units: {baseUnit: 'pcs'}, 
-    stock: 80, 
-    defaultQuantity: 1, 
-    isActive: true, 
-    isService: false 
+    category: 'Apparel',
+    units: { baseUnit: 'pcs' },
+    stock: 80,
+    defaultQuantity: 1,
+    isActive: true,
+    isService: false
   },
 ];
 
 const allCampaigns = [
-  megaDealFest, 
-  buyMoreSaveMore, 
-  clearanceSale, 
+  megaDealFest,
+  buyMoreSaveMore,
+  clearanceSale,
   vipExclusive,
-  perUnitDiscounts, 
-  flatRateDiscounts, 
-  percentageVsFixed, 
+  perUnitDiscounts,
+  flatRateDiscounts,
+  percentageVsFixed,
   mixedStrategy
 ];
 
@@ -93,10 +94,13 @@ export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
   const [transactionId, setTransactionId] = useState<string>('');
+  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const productSearchRef = useRef<SearchableProductInputRef>(null);
 
+  const createNewTransactionId = () => `txn-${Date.now()}`;
+
   useEffect(() => {
-    setTransactionId(`txn-${Date.now()}`);
+    setTransactionId(createNewTransactionId());
   }, []);
 
 
@@ -109,7 +113,7 @@ export default function MyNewEcommerceShop() {
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable;
-      
+
       const isInteracting =
         target.tagName === 'BUTTON' ||
         target.tagName === 'SELECT' ||
@@ -118,7 +122,7 @@ export default function MyNewEcommerceShop() {
       if (isTyping || isInteracting) {
         return;
       }
-      
+
       const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
 
       if (isPrintableKey) {
@@ -155,14 +159,14 @@ export default function MyNewEcommerceShop() {
 
   const addToCart = (product: Product, batch?: ProductBatch) => {
     setCart(currentCart => {
-      const existingItem = currentCart.find(item => 
+      const existingItem = currentCart.find(item =>
         item.id === product.id && item.selectedBatchId === batch?.id
       );
-      
+
       if (existingItem) {
         return currentCart.map(item =>
-          item.saleItemId === existingItem.saleItemId 
-            ? { ...item, quantity: item.quantity + 1 } 
+          item.saleItemId === existingItem.saleItemId
+            ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       } else {
@@ -181,22 +185,23 @@ export default function MyNewEcommerceShop() {
 
   const clearCart = () => {
     setCart([]);
-    const newTransactionId = `txn-${Date.now()}`;
-    setTransactionId(newTransactionId);
+    setTransactionId(createNewTransactionId());
   };
 
-  const completeTransaction = () => {
-    console.log(`Transaction ${transactionId} Complete!`);
+
+  const handleTransactionComplete = () => {
+    setIsTransactionDialogOpen(false);
     clearCart();
+    // You can add a success toast here if you like
   };
 
   const discountResult: DiscountResult = useMemo(() => {
     const campaignForCalculation = activeCampaign;
     // console.log(`[UI] Re-calculating... 'isOneTimePerTransaction' = ${campaignForCalculation.isOneTimePerTransaction}`);
-    
-    return calculateDiscountsForItems({ 
-      saleItems: cart, 
-      activeCampaign: campaignForCalculation, 
+
+    return calculateDiscountsForItems({
+      saleItems: cart,
+      activeCampaign: campaignForCalculation,
       allProducts: sampleProducts,
       transactionId,
       config: {
@@ -210,7 +215,7 @@ export default function MyNewEcommerceShop() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         <div className="lg:col-span-2">
           <header className="mb-6">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
@@ -234,7 +239,7 @@ export default function MyNewEcommerceShop() {
               onCampaignChange={setActiveCampaign}
             />
 
-            <SearchableProductInput 
+            <SearchableProductInput
               ref={productSearchRef}
               products={sampleProducts}
               onProductSelect={addToCart}
@@ -248,12 +253,21 @@ export default function MyNewEcommerceShop() {
                 Clear Cart
               </button>
               <button
-                onClick={completeTransaction}
+                onClick={() => setIsTransactionDialogOpen(true)}
                 disabled={cart.length === 0}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Complete Transaction
               </button>
+
+              <TransactionDialog
+                isOpen={isTransactionDialogOpen}
+                onClose={() => setIsTransactionDialogOpen(false)}
+                cart={cart}
+                discountResult={discountResult}
+                transactionId={transactionId}
+                onTransactionComplete={handleTransactionComplete}
+              />
             </div>
           </div>
         </div>
@@ -264,13 +278,13 @@ export default function MyNewEcommerceShop() {
             discountResult={discountResult}
             onUpdateQuantity={updateCartQuantity}
           />
-          
-          <DiscountBehaviorPanel 
+
+          <DiscountBehaviorPanel
             discountResult={discountResult}
             activeCampaign={activeCampaign}
             transactionId={transactionId}
           />
-          
+
           {process.env.NODE_ENV === 'development' && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
               <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
