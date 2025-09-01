@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { DiscountResult } from '@/discount-engine/core/result';
-import { calculateDiscountsForItems, resetOneTimeRulesForCampaign } from '@/lib/discountUtils';
+import { calculateDiscountsForItems } from '@/lib/discountUtils';
 import { megaDealFest, buyMoreSaveMore, clearanceSale, vipExclusive } from '@/lib/my-campaigns';
 import { perUnitDiscounts, flatRateDiscounts, percentageVsFixed, mixedStrategy } from '@/lib/advanced-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -13,7 +13,7 @@ import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 import DiscountBehaviorPanel from '@/components/DiscountBehaviorPanel';
 import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
 
-// --- Sample Data ---
+
 const oldBatch: ProductBatch = { 
   id: 't-shirt-batch-old', 
   batchNumber: 'OLD-2023', 
@@ -31,35 +31,46 @@ const newBatch: ProductBatch = {
   quantity: 100, 
   productId: 't-shirt-01' 
 };
-const jnewBatch: ProductBatch = { 
+
+const jeansOldBatch: ProductBatch = { 
   id: 'jeans-batch-old', 
-  batchNumber: 'NEW-2026', 
+  batchNumber: 'JEANS-OLD-2023', 
   sellingPrice: 7000, 
-  costPrice: 1800, 
-  quantity: 100, 
-  productId: 'jeans-01' 
+  costPrice: 4000, 
+  quantity: 50, 
+  productId: 'jeans-01'
 };
+
+const jeansNewBatch: ProductBatch = { 
+  id: 'jeans-batch-new', 
+  batchNumber: 'JEANS-NEW-2024', 
+  sellingPrice: 8000, 
+  costPrice: 5000, 
+  quantity: 30, 
+  productId: 'jeans-01'
+};
+
 const sampleProducts: Product[] = [
   { 
-    id: 't-shirt-01', 
+    id: 't-shirt-01',
     name: 'T-Shirt', 
-    sellingPrice: 2500, 
+    sellingPrice: 2500,
     batches: [oldBatch, newBatch], 
     category: 'Apparel', 
     units: {baseUnit: 'pcs'}, 
-    stock: 200 , 
+    stock: 200, 
     defaultQuantity: 1, 
     isActive: true, 
     isService: false 
   },
   { 
-    id: 'jeans-batch-old', 
+    id: 'jeans-01',
     name: 'Jeans', 
-    sellingPrice: 7000, 
-    batches: [jnewBatch], 
+    sellingPrice: 8000,
+    batches: [jeansOldBatch, jeansNewBatch],
     category: 'Apparel', 
     units: {baseUnit: 'pcs'}, 
-    stock: 50, 
+    stock: 80, 
     defaultQuantity: 1, 
     isActive: true, 
     isService: false 
@@ -83,13 +94,11 @@ export default function MyNewEcommerceShop() {
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
 
-  // --- Initialize transactionId on client-side to prevent hydration error ---
   useEffect(() => {
     setTransactionId(`txn-${Date.now()}`);
   }, []);
 
 
-  // --- Global Keydown Listener Logic ---
   useEffect(() => {
 
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
@@ -124,13 +133,6 @@ export default function MyNewEcommerceShop() {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
   }, []);
-
-  // Reset one-time rules when campaign changes
-  useEffect(() => {
-    if (transactionId) { // Only run if transactionId is set
-      resetOneTimeRulesForCampaign(activeCampaign.id, transactionId);
-    }
-  }, [activeCampaign, transactionId]);
 
   const updateCartQuantity = (saleItemId: string, change: number) => {
     setCart(currentCart => {
@@ -176,32 +178,30 @@ export default function MyNewEcommerceShop() {
     });
   };
 
-  // Clear cart and reset transaction
   const clearCart = () => {
     setCart([]);
     const newTransactionId = `txn-${Date.now()}`;
     setTransactionId(newTransactionId);
-    resetOneTimeRulesForCampaign(activeCampaign.id, newTransactionId);
-    console.log(`// නව Transaction ID: ${newTransactionId}`);
   };
 
-  // Complete transaction and start new one
   const completeTransaction = () => {
-    console.log(`// Transaction ${transactionId} සම්පූර්ණයි!`);
+    console.log(`Transaction ${transactionId} Complete!`);
     clearCart();
   };
 
   const discountResult: DiscountResult = useMemo(() => {
-    // [UI] වට්ටම් නැවත ගණනය කරනවා... 'isOneTimePerTransaction' අගය = true
+    const campaignForCalculation = activeCampaign;
+    // console.log(`[UI] Re-calculating... 'isOneTimePerTransaction' = ${campaignForCalculation.isOneTimePerTransaction}`);
+    
     return calculateDiscountsForItems({ 
       saleItems: cart, 
-      activeCampaign, 
+      activeCampaign: campaignForCalculation, 
       allProducts: sampleProducts,
       transactionId,
       config: {
-        enableLogging: true,
+        enableLogging: process.env.NODE_ENV === 'development',
         enableValidation: true,
-        maxDiscountPercentage: 80 // Safety limit: maximum 80% total discount
+        maxDiscountPercentage: 80
       }
     });
   }, [cart, activeCampaign, transactionId]);
@@ -210,7 +210,6 @@ export default function MyNewEcommerceShop() {
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Left Column: Products & Campaign Selector */}
         <div className="lg:col-span-2">
           <header className="mb-6">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
@@ -240,7 +239,6 @@ export default function MyNewEcommerceShop() {
               onProductSelect={addToCart}
             />
 
-            {/* Transaction Controls */}
             <div className="flex gap-3">
               <button
                 onClick={clearCart}
@@ -259,7 +257,6 @@ export default function MyNewEcommerceShop() {
           </div>
         </div>
 
-        {/* Right Column: Cart & Summary */}
         <aside className="lg:sticky lg:top-8 h-fit">
           <ShoppingCart
             cart={cart}
@@ -267,14 +264,12 @@ export default function MyNewEcommerceShop() {
             onUpdateQuantity={updateCartQuantity}
           />
           
-          {/* Discount Behavior Analysis */}
           <DiscountBehaviorPanel 
             discountResult={discountResult}
             activeCampaign={activeCampaign}
             transactionId={transactionId}
           />
           
-          {/* Discount Debug Info */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
               <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
