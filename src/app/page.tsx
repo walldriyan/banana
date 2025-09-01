@@ -13,7 +13,8 @@ import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 import DiscountBehaviorPanel from '@/components/DiscountBehaviorPanel';
 import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
 import { buyMoreSaveMore } from '@/lib/buymore-campain';
-import { TransactionDialog } from '@/components/transaction/TransactionDialog';
+import { TransactionDialogContent } from '@/components/transaction/TransactionDialogContent';
+import { useDrawer } from '@/hooks/use-drawer';
 
 
 const oldBatch: ProductBatch = {
@@ -94,8 +95,8 @@ export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
   const [transactionId, setTransactionId] = useState<string>('');
-  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const productSearchRef = useRef<SearchableProductInputRef>(null);
+  const drawer = useDrawer();
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
 
@@ -105,7 +106,6 @@ export default function MyNewEcommerceShop() {
 
 
   useEffect(() => {
-
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
 
@@ -115,8 +115,6 @@ export default function MyNewEcommerceShop() {
         target.isContentEditable;
 
       const isInteracting =
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'SELECT' ||
         target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
 
       if (isTyping || isInteracting) {
@@ -190,14 +188,28 @@ export default function MyNewEcommerceShop() {
 
 
   const handleTransactionComplete = () => {
-    setIsTransactionDialogOpen(false);
+    drawer.closeDrawer();
     clearCart();
     // You can add a success toast here if you like
   };
 
+  const openTransactionDrawer = () => {
+    drawer.openDrawer({
+      title: 'Complete Transaction',
+      content: (
+        <TransactionDialogContent
+          cart={cart}
+          discountResult={discountResult}
+          transactionId={transactionId}
+          onTransactionComplete={handleTransactionComplete}
+        />
+      ),
+    });
+  };
+
+
   const discountResult: DiscountResult = useMemo(() => {
     const campaignForCalculation = activeCampaign;
-    // console.log(`[UI] Re-calculating... 'isOneTimePerTransaction' = ${campaignForCalculation.isOneTimePerTransaction}`);
 
     return calculateDiscountsForItems({
       saleItems: cart,
@@ -253,21 +265,12 @@ export default function MyNewEcommerceShop() {
                 Clear Cart
               </button>
               <button
-                onClick={() => setIsTransactionDialogOpen(true)}
+                onClick={openTransactionDrawer}
                 disabled={cart.length === 0}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Complete Transaction
               </button>
-
-              <TransactionDialog
-                isOpen={isTransactionDialogOpen}
-                onClose={() => setIsTransactionDialogOpen(false)}
-                cart={cart}
-                discountResult={discountResult}
-                transactionId={transactionId}
-                onTransactionComplete={handleTransactionComplete}
-              />
             </div>
           </div>
         </div>
