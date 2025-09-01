@@ -1,16 +1,18 @@
 // src/components/transaction/receipt-templates/ThermalReceipt.tsx
 import React from 'react';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
-import { Separator } from '@/components/ui/separator';
 
 interface ThermalReceiptProps {
   data: DatabaseReadyTransaction;
+  showAsGiftReceipt?: boolean; // New prop to control the display mode
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function ThermalReceipt({ data }: ThermalReceiptProps) {
+export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalReceiptProps) {
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
+
+  const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
 
   return (
     <div className="bg-white text-black font-mono text-xs max-w-[300px] mx-auto p-2">
@@ -33,21 +35,34 @@ export function ThermalReceipt({ data }: ThermalReceiptProps) {
 
       <table className="w-full">
         <thead>
-          <tr>
-            <th className="text-left font-bold">Item</th>
-            <th className="text-center font-bold">Qty</th>
-            <th className="text-right font-bold">Price</th>
-            <th className="text-right font-bold">Total</th>
+          <tr className="font-bold">
+            <th className="text-left">Item</th>
+            <th className="text-center">Qty</th>
+            <th className="text-right">Price</th>
+            <th className="text-right">Total</th>
           </tr>
         </thead>
         <tbody>
           {transactionLines.map((item, index) => (
-            <tr key={index}>
-              <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
-              <td className="text-center">{item.quantity}</td>
-              <td className="text-right">{item.unitPrice.toFixed(2)}</td>
-              <td className="text-right">{item.lineTotal.toFixed(2)}</td>
-            </tr>
+            <React.Fragment key={index}>
+              <tr>
+                <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
+                <td className="text-center">{item.quantity}</td>
+                <td className="text-right">{item.unitPrice.toFixed(2)}</td>
+                <td className="text-right">{item.lineTotalAfterDiscount.toFixed(2)}</td>
+              </tr>
+              {item.lineDiscount > 0 && !showAsGiftReceipt && (
+                 <tr>
+                    <td colSpan={3} className="text-right italic text-gray-600">
+                      (Discount: 
+                        <span className="line-through mx-1">{item.lineTotalBeforeDiscount.toFixed(2)}</span>)
+                    </td>
+                    <td className="text-right font-semibold text-green-700">
+                      -{item.lineDiscount.toFixed(2)}
+                    </td>
+                 </tr>
+              )}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
@@ -59,19 +74,29 @@ export function ThermalReceipt({ data }: ThermalReceiptProps) {
           <span>Subtotal:</span>
           <span>{transactionHeader.subtotal.toFixed(2)}</span>
         </div>
-        {transactionHeader.totalDiscountAmount > 0 && (
+        
+        {transactionHeader.totalDiscountAmount > 0 && !showAsGiftReceipt && (
           <div className="flex justify-between font-bold text-green-700">
             <span>Total Discounts:</span>
             <span>({transactionHeader.totalDiscountAmount.toFixed(2)})</span>
           </div>
         )}
+        
         <div className="flex justify-between font-bold text-base">
           <span>TOTAL:</span>
-          <span>Rs. {transactionHeader.finalTotal.toFixed(2)}</span>
+          <span>Rs. {finalTotalToShow.toFixed(2)}</span>
         </div>
+
+        {transactionHeader.totalDiscountAmount > 0 && showAsGiftReceipt && (
+          <div className="flex justify-between font-bold text-blue-700">
+            <span>Your Savings:</span>
+            <span>Rs. {transactionHeader.totalDiscountAmount.toFixed(2)}</span>
+          </div>
+        )}
       </section>
 
-      {appliedDiscountsLog.length > 0 && (
+      {/* Hide applied discounts log in gift mode to avoid confusion */}
+      {appliedDiscountsLog.length > 0 && !showAsGiftReceipt && (
         <>
           <Line />
           <section className="my-1">
@@ -94,7 +119,7 @@ export function ThermalReceipt({ data }: ThermalReceiptProps) {
         </div>
         <div className="flex justify-between font-bold">
           <span>Balance Due:</span>
-          <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
+          <span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span>
         </div>
       </section>
 

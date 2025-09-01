@@ -18,6 +18,8 @@ import type { SaleItem } from '@/types';
 import type { DiscountResult } from '@/discount-engine/core/result';
 import { transformTransactionDataForDb } from '@/lib/pos-data-transformer';
 import type { CustomerData, PaymentData, DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
 
 interface TransactionDialogProps {
   isOpen: boolean;
@@ -37,6 +39,7 @@ export function TransactionDialog({
   onTransactionComplete,
 }: TransactionDialogProps) {
   const [step, setStep] = useState<'details' | 'print'>('details');
+  const [showFullPrice, setShowFullPrice] = useState(false); // New state for the toggle
   const [customerData, setCustomerData] = useState<CustomerData>({
     name: 'Walk-in Customer',
     phone: '',
@@ -113,17 +116,25 @@ export function TransactionDialog({
         {step === 'print' && finalTransactionData && (
           <>
             <DialogHeader>
-              <DialogTitle>Print Preview</DialogTitle>
-              <DialogDescription>
-                This is a preview of the final receipt.
-              </DialogDescription>
+                <DialogTitle>Print Preview</DialogTitle>
+                <DialogDescription>
+                    This is a preview of the final receipt. You can toggle the billing mode.
+                </DialogDescription>
             </DialogHeader>
             <div className="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-md">
-              <PrintPreview data={finalTransactionData} />
+              <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setStep('details')}>Back to Details</Button>
-              <Button onClick={handleConfirmAndPrint}>Confirm & Print</Button>
+            <DialogFooter className="items-center">
+                <div className="flex items-center space-x-2 mr-auto">
+                    <Switch
+                        id="billing-mode"
+                        checked={showFullPrice}
+                        onCheckedChange={setShowFullPrice}
+                    />
+                    <Label htmlFor="billing-mode">Show Full Price (Gift Discount)</Label>
+                </div>
+                <Button variant="outline" onClick={() => setStep('details')}>Back to Details</Button>
+                <Button onClick={handleConfirmAndPrint}>Confirm & Print</Button>
             </DialogFooter>
           </>
         )}

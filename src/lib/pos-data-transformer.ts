@@ -1,6 +1,6 @@
 // src/lib/pos-data-transformer.ts
 import type { SaleItem, AppliedRuleInfo } from '@/types';
-import type { DiscountResult } from '@/discount-engine/core/result';
+import type { DiscountResult, LineItemResult } from '@/discount-engine/core/result';
 
 // Define types for the data we'll collect from the UI
 export interface CustomerData {
@@ -28,13 +28,16 @@ export interface DatabaseReadyTransaction {
     totalQuantity: number;
   };
   transactionLines: {
+    saleItemId: string; // Added to link with discount results
     productId: string;
     productName: string;
     batchId?: string;
     batchNumber?: string;
     quantity: number;
     unitPrice: number;
-    lineTotal: number;
+    lineTotalBeforeDiscount: number;
+    lineDiscount: number; // Total discount for this line
+    lineTotalAfterDiscount: number; // Final total for this line
   }[];
   appliedDiscountsLog: AppliedRuleInfo[];
   customerDetails: CustomerData & { id?: string }; // id can be added later
@@ -72,15 +75,24 @@ export function transformTransactionDataForDb(
     totalQuantity,
   };
 
-  const transactionLines = cart.map(item => ({
-    productId: item.id,
-    productName: item.name,
-    batchId: item.selectedBatchId,
-    batchNumber: item.selectedBatch?.batchNumber,
-    quantity: item.quantity,
-    unitPrice: item.price,
-    lineTotal: item.price * item.quantity,
-  }));
+  const transactionLines = cart.map(item => {
+    const lineItemResult: LineItemResult | undefined = discountResult.getLineItem(item.saleItemId);
+    const lineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
+    const lineTotalBeforeDiscount = item.price * item.quantity;
+    
+    return {
+      saleItemId: item.saleItemId,
+      productId: item.id,
+      productName: item.name,
+      batchId: item.selectedBatchId,
+      batchNumber: item.selectedBatch?.batchNumber,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      lineTotalBeforeDiscount: lineTotalBeforeDiscount,
+      lineDiscount: lineDiscount,
+      lineTotalAfterDiscount: lineTotalBeforeDiscount - lineDiscount,
+    };
+  });
 
   const appliedDiscountsLog = discountResult.getAppliedRulesSummary();
 
