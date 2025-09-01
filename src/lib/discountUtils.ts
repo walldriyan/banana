@@ -23,7 +23,7 @@ export function calculateDiscountsForItems(input: CalculateDiscountsInput): Disc
     return new DiscountResult({ items: [] });
   }
 
-  const engine = new DiscountEngine(activeCampaign, config);
+  const engine = new DiscountEngine(activeCampaign);
 
   const context = {
     items: saleItems.map((item) => ({

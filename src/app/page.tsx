@@ -5,13 +5,14 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { DiscountResult } from '@/discount-engine/core/result';
 import { calculateDiscountsForItems } from '@/lib/discountUtils';
-import { megaDealFest, buyMoreSaveMore, clearanceSale, vipExclusive } from '@/lib/my-campaigns';
+import { megaDealFest,  clearanceSale, vipExclusive } from '@/lib/my-campaigns';
 import { perUnitDiscounts, flatRateDiscounts, percentageVsFixed, mixedStrategy } from '@/lib/advanced-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
 import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 import DiscountBehaviorPanel from '@/components/DiscountBehaviorPanel';
 import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
+import { buyMoreSaveMore } from '@/lib/buymore-campain';
 
 
 const oldBatch: ProductBatch = { 
