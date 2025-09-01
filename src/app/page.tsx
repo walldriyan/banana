@@ -204,6 +204,7 @@ export default function MyNewEcommerceShop() {
           onTransactionComplete={handleTransactionComplete}
         />
       ),
+      closeOnOverlayClick: false
     });
   };
 

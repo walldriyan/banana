@@ -12,9 +12,8 @@ import {
 import { useDrawer } from '@/hooks/use-drawer';
 
 export function GlobalDrawer() {
-  const { isOpen, closeDrawer, content, title, description } = useDrawer();
+  const { isOpen, closeDrawer, content, title, description, closeOnOverlayClick } = useDrawer();
 
-  // We use onOpenChange to sync the state of the sheet with our context
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       closeDrawer();
@@ -23,7 +22,14 @@ export function GlobalDrawer() {
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent 
+        className="w-full sm:max-w-2xl overflow-y-auto"
+        onInteractOutside={(e) => {
+            if (!closeOnOverlayClick) {
+                e.preventDefault();
+            }
+        }}
+      >
         <SheetHeader>
           {title && <SheetTitle>{title}</SheetTitle>}
           {description && <SheetDescription>{description}</SheetDescription>}

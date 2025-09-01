@@ -7,6 +7,7 @@ interface DrawerOptions {
   content: React.ReactNode;
   title?: string;
   description?: string;
+  closeOnOverlayClick?: boolean;
 }
 
 interface DrawerContextType {
@@ -14,6 +15,7 @@ interface DrawerContextType {
   content: React.ReactNode | null;
   title: string | null;
   description: string | null;
+  closeOnOverlayClick: boolean;
   openDrawer: (options: DrawerOptions) => void;
   closeDrawer: () => void;
 }
@@ -25,11 +27,13 @@ export function GlobalDrawerProvider({ children }: { children: React.ReactNode }
   const [content, setContent] = useState<React.ReactNode | null>(null);
   const [title, setTitle] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
+  const [closeOnOverlayClick, setCloseOnOverlayClick] = useState(true);
 
   const openDrawer = useCallback((options: DrawerOptions) => {
     setContent(options.content);
     setTitle(options.title || null);
     setDescription(options.description || null);
+    setCloseOnOverlayClick(options.closeOnOverlayClick ?? true);
     setIsOpen(true);
   }, []);
 
@@ -40,7 +44,7 @@ export function GlobalDrawerProvider({ children }: { children: React.ReactNode }
       setContent(null);
       setTitle(null);
       setDescription(null);
-    }, 200);
+    }, 150);
   }, []);
 
   const value = useMemo(() => ({
@@ -48,9 +52,10 @@ export function GlobalDrawerProvider({ children }: { children: React.ReactNode }
     content,
     title,
     description,
+    closeOnOverlayClick,
     openDrawer,
     closeDrawer,
-  }), [isOpen, content, title, description, openDrawer, closeDrawer]);
+  }), [isOpen, content, title, description, closeOnOverlayClick, openDrawer, closeDrawer]);
 
   return (
     <GlobalDrawerContext.Provider value={value}>
