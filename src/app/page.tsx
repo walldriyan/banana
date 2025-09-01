@@ -53,7 +53,7 @@ const sampleProducts: Product[] = [
     isService: false 
   },
   { 
-    id: 'jeans-01', 
+    id: 'jeans-batch-old', 
     name: 'Jeans', 
     sellingPrice: 7000, 
     batches: [jnewBatch], 
