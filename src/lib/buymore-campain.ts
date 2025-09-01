@@ -8,33 +8,34 @@ export const buyMoreSaveMore: DiscountSet = {
     isDefault: false,
     isOneTimePerTransaction: true,
   
-    // productConfigurations: [],
+    productConfigurations: [],
   
     batchConfigurations: [
-        // {
-        //   id: 'buymore-old-tshirt-batch-config',
-        //   productBatchId: 't-shirt-batch-old',
-        //   discountSetId: 'promo-buy-more',
-        //   isActiveForBatchInCampaign: true,
-        //   priority: 1,
-        //   lineItemQuantityRuleJson: {
-        //       isEnabled: true, 
-        //       name: 'Old T-Shirt Batch Deal', 
-        //       type: 'fixed',
-        //       value: 150,
-        //       conditionMin: 2,
-        //       applyFixedOnce: false,
-        //       description: 'Extra Rs.150 off each old batch T-shirt when buying 2+'
-        //   },
-        //   lineItemValueRuleJson: null,
-        // },
+        {
+          id: 'buymore-old-tshirt-batch-config',
+          productBatchId: 't-shirt-batch-old',
+          discountSetId: 'promo-buy-more',
+          isActiveForBatchInCampaign: true,
+          priority: 1,
+          lineItemQuantityRuleJson: {
+              isEnabled: true, 
+              name: 'Old T-Shirt Batch Deal', 
+              type: 'fixed',
+              value: 150,
+              conditionMin: 2,
+              applyFixedOnce: false,
+              description: 'Extra Rs.150 off each old batch T-shirt when buying 2+'
+          },
+          lineItemValueRuleJson: null,
+        },
         {
           id: 'buymore-old-jeans-batch-config',
           productBatchId: 'jeans-batch-old',
           discountSetId: 'promo-buy-more',
           isActiveForBatchInCampaign: true,
           priority: 1,
-          lineItemValueRuleJson: {
+          lineItemValueRuleJson: null,
+          lineItemQuantityRuleJson: {
               isEnabled: true, 
               name: '001 Old Jeans Batch Flat Discount', 
               type: 'fixed', 
@@ -42,56 +43,54 @@ export const buyMoreSaveMore: DiscountSet = {
               conditionMax:10,
               value: 222, 
               applyFixedOnce: true,
-              description: 'Flat Rs.800 off old batch jeans line when value over Rs.14,000'
+              description: 'Flat Rs.222 off old batch jeans line when quantity is between 8 and 10'
           },
-          lineItemQuantityRuleJson: null,
         },
-        // ✅ FIX: Added rules for NEW batches
-        // {
-        //   id: 'buymore-new-tshirt-batch-config',
-        //   productBatchId: 't-shirt-batch-new',
-        //   discountSetId: 'promo-buy-more',
-        //   isActiveForBatchInCampaign: true,
-        //   priority: 1,
-        //   lineItemQuantityRuleJson: {
-        //       isEnabled: true, 
-        //       name: 'New T-Shirt Offer', 
-        //       type: 'percentage',
-        //       value: 10, // 10% off
-        //       conditionMin: 3, // when buying 3 or more
-        //       applyFixedOnce: false,
-        //       description: '10% off each new T-shirt when buying 3 or more'
-        //   },
-        //   lineItemValueRuleJson: null,
-        // },
-        // {
-        //   id: 'buymore-new-jeans-batch-config',
-        //   productBatchId: 'jeans-batch-new',
-        //   discountSetId: 'promo-buy-more',
-        //   isActiveForBatchInCampaign: true,
-        //   priority: 1,
-        //   lineItemQuantityRuleJson: {
-        //       isEnabled: true, 
-        //       name: 'New Jeans Bulk Discount', 
-        //       type: 'fixed', 
-        //       value: 7, 
-        //       conditionMin: 4,
-        //       applyFixedOnce: true, // Rs. 600 off EACH
-        //       description: 'Rs.600 off each new pair of jeans when buying 2 or more'
-        //   },
-        //   lineItemValueRuleJson: null,
-        // }
+        {
+          id: 'buymore-new-tshirt-batch-config',
+          productBatchId: 't-shirt-batch-new',
+          discountSetId: 'promo-buy-more',
+          isActiveForBatchInCampaign: true,
+          priority: 1,
+          lineItemQuantityRuleJson: {
+              isEnabled: true, 
+              name: 'New T-Shirt Offer', 
+              type: 'percentage',
+              value: 10,
+              conditionMin: 3,
+              applyFixedOnce: false,
+              description: '10% off each new T-shirt when buying 3 or more'
+          },
+          lineItemValueRuleJson: null,
+        },
+        {
+          id: 'buymore-new-jeans-batch-config',
+          productBatchId: 'jeans-batch-new',
+          discountSetId: 'promo-buy-more',
+          isActiveForBatchInCampaign: true,
+          priority: 1,
+          lineItemQuantityRuleJson: {
+              isEnabled: true, 
+              name: 'New Jeans Bulk Discount', 
+              type: 'fixed', 
+              value: 600, 
+              conditionMin: 2,
+              applyFixedOnce: false,
+              description: 'Rs.600 off each new pair of jeans when buying 2 or more'
+          },
+          lineItemValueRuleJson: null,
+        }
     ],
   
-    // globalCartQuantityRuleJson: {
-    //     isEnabled: true,
-    //     name: 'Shopping Haul Bonus',
-    //     type: 'fixed',
-    //     value: 400, 
-    //     conditionMin: 5,
-    //     applyFixedOnce: true,
-    //     description: 'Rs.400 bonus discount for buying 5+ items (once per transaction)'
-    // },
+    globalCartQuantityRuleJson: {
+        isEnabled: true,
+        name: 'Shopping Haul Bonus',
+        type: 'fixed',
+        value: 400, 
+        conditionMin: 5,
+        applyFixedOnce: true,
+        description: 'Rs.400 bonus discount for buying 5+ items (once per transaction)'
+    },
     
     buyGetRulesJson: [],
     globalCartPriceRuleJson: null,
