@@ -239,7 +239,8 @@ export const mixedStrategy: DiscountSet = {
     }
   ],
 
-  batchConfigurations: [],
+  batchConfigurations: [
+  ],
   buyGetRulesJson: [],
   globalCartPriceRuleJson: null,
   globalCartQuantityRuleJson: null,

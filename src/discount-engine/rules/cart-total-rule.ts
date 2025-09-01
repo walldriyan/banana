@@ -1,15 +1,21 @@
-// src/discount-engine/rules/cart-total-rule.ts
+// ===== FILE 3: src/discount-engine/rules/cart-total-rule.ts =====
 import { IDiscountRule } from './interface';
-import { DiscountContext } from '../core/context';
+import { DiscountContext, LineItemData } from '../core/context';
 import { DiscountResult } from '../core/result';
 import type { DiscountSet } from '@/types';
 import { evaluateRule, generateRuleId, isOneTimeRule, validateRuleConfig } from '../utils/helpers';
 
 export class CartTotalRule implements IDiscountRule {
   private campaign: DiscountSet;
+  
+  readonly isPotentiallyRepeatable: boolean = false; // Cart rules typically aren't repeatable
 
   constructor(campaign: DiscountSet) {
     this.campaign = campaign;
+  }
+
+  getId(item?: LineItemData): string {
+    return `cart-${this.campaign.id}`;
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
@@ -17,6 +23,8 @@ export class CartTotalRule implements IDiscountRule {
         (sum, li) => sum + li.netPrice, 0
     );
     const totalQuantity = context.items.reduce((sum, item) => sum + item.quantity, 0);
+
+    console.log(`Processing cart rules: subtotal=${subtotalAfterItemDiscounts}, totalQty=${totalQuantity}`);
 
     const rules = [
       { 
@@ -35,7 +43,12 @@ export class CartTotalRule implements IDiscountRule {
     
     // Apply first valid cart rule only
     for (const rule of rules) {
-      if (!rule.config?.isEnabled) continue;
+      if (!rule.config?.isEnabled) {
+        console.log(`Cart rule ${rule.type} is not enabled`);
+        continue;
+      }
+
+      console.log(`Evaluating cart rule ${rule.type}:`, rule.config);
 
       // Validate rule configuration
       const validation = validateRuleConfig(rule.config);
@@ -52,9 +65,13 @@ export class CartTotalRule implements IDiscountRule {
         rule.valueToTest
       );
       
+      console.log(`Cart rule evaluation result for ${rule.type}: discount=${discountAmount}`);
+      
       if (discountAmount > 0) {
         const ruleId = generateRuleId('cart', this.campaign.id, rule.type);
         const isOneTime = isOneTimeRule(rule.config, this.campaign.isOneTimePerTransaction);
+
+        console.log(`Applying cart discount: ruleId=${ruleId}, amount=${discountAmount}, isOneTime=${isOneTime}`);
 
         result.addCartDiscount({
             ruleId,
@@ -72,6 +89,8 @@ export class CartTotalRule implements IDiscountRule {
         
         // Stop after first successful cart rule application
         break;
+      } else {
+        console.log(`Cart rule ${rule.type} did not qualify for discount`);
       }
     }
   }
