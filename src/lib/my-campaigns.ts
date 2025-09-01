@@ -187,9 +187,9 @@ export const buyMoreSaveMore: DiscountSet = {
             isEnabled: true, 
             name: 'New Jeans Bulk Discount', 
             type: 'fixed', 
-            value: 600, 
-            conditionMin: 2,
-            applyFixedOnce: false, // Rs. 600 off EACH
+            value: 7, 
+            conditionMin: 4,
+            applyFixedOnce: true, // Rs. 600 off EACH
             description: 'Rs.600 off each new pair of jeans when buying 2 or more'
         },
         lineItemValueRuleJson: null,
