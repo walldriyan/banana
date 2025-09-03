@@ -34,17 +34,16 @@ export const buyMoreSaveMore: DiscountSet = {
           discountSetId: 'promo-buy-more',
           isActiveForBatchInCampaign: true,
           priority: 1,
-          lineItemValueRuleJson: null,
-          lineItemQuantityRuleJson: {
-              isEnabled: true, 
-              name: '001 Old Jeans Batch Flat Discount', 
-              type: 'fixed', 
-              conditionMin: 8,
-              conditionMax:10,
-              value: 222, 
-              applyFixedOnce: true,
-              description: 'Flat Rs.222 off old batch jeans line when quantity is between 8 and 10'
+          lineItemValueRuleJson: {
+            isEnabled: true,
+            name: 'Old Jeans Batch Flat Discount',
+            type: 'fixed',
+            value: 800,
+            conditionMin: 14000,
+            applyFixedOnce: true,
+            description: 'Flat Rs.800 off old batch jeans line when value over Rs.14,000'
           },
+          lineItemQuantityRuleJson: null,
         },
         {
           id: 'buymore-new-tshirt-batch-config',
@@ -58,8 +57,9 @@ export const buyMoreSaveMore: DiscountSet = {
               type: 'percentage',
               value: 10,
               conditionMin: 3,
+              conditionMax: 5,
               applyFixedOnce: false,
-              description: '10% off each new T-shirt when buying 3 or more'
+              description: '10% off each new T-shirt when buying 3 to 5 units'
           },
           lineItemValueRuleJson: null,
         },
@@ -83,7 +83,7 @@ export const buyMoreSaveMore: DiscountSet = {
     ],
   
     globalCartQuantityRuleJson: {
-        isEnabled: true,
+        isEnabled: false,
         name: 'Shopping Haul Bonus',
         type: 'fixed',
         value: 400, 

@@ -1,19 +1,22 @@
-// src/app/page.tsx
+// src/app/(pos)/page.tsx
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
-import { DiscountResult } from '@/discount-engine/core/result';
-import { calculateDiscountsForItems } from '@/lib/discountUtils';
-import { megaDealFest, clearanceSale, vipExclusive } from '@/lib/my-campaigns';
-import { perUnitDiscounts, flatRateDiscounts, percentageVsFixed, mixedStrategy } from '@/lib/advanced-campaigns';
+// import { DiscountResult } from '@/discount-engine/core/result';
+import { allCampaigns, megaDealFest } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
 import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 import DiscountBehaviorPanel from '@/components/DiscountBehaviorPanel';
 import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
-import { buyMoreSaveMore } from '@/lib/buymore-campain';
-import { TransactionDialog } from '@/components/transaction/TransactionDialog';
+import { TransactionDialogContent } from '@/components/transaction/TransactionDialogContent';
+import { useDrawer } from '@/hooks/use-drawer';
+import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
+import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { History } from 'lucide-react';
 
 
 const oldBatch: ProductBatch = {
@@ -79,23 +82,33 @@ const sampleProducts: Product[] = [
   },
 ];
 
-const allCampaigns = [
-  megaDealFest,
-  buyMoreSaveMore,
-  clearanceSale,
-  vipExclusive,
-  perUnitDiscounts,
-  flatRateDiscounts,
-  percentageVsFixed,
-  mixedStrategy
-];
+
+// A plain object to represent the initial state of the discount result
+// We add dummy methods to prevent initial render errors.
+const initialDiscountResult = {
+  lineItems: [],
+  totalItemDiscount: 0,
+  totalCartDiscount: 0,
+  appliedCartRules: [],
+  originalSubtotal: 0,
+  totalDiscount: 0,
+  finalTotal: 0,
+  getLineItem: (saleItemId: string) => undefined,
+  getAppliedRulesSummary: () => [],
+};
+
 
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
   const [transactionId, setTransactionId] = useState<string>('');
-  const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   const productSearchRef = useRef<SearchableProductInputRef>(null);
+  const drawer = useDrawer();
+  const { toast } = useToast();
+
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
+
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
 
@@ -103,9 +116,41 @@ export default function MyNewEcommerceShop() {
     setTransactionId(createNewTransactionId());
   }, []);
 
+  // Recalculate discounts when cart or campaign changes
+  useEffect(() => {
+    const recalculate = async () => {
+      if (cart.length === 0) {
+        setDiscountResult(initialDiscountResult);
+        return;
+      }
+      setIsCalculating(true);
+      const result = await calculateDiscountsAction(cart, activeCampaign);
+      if (result.success && result.data) {
+        // We receive a plain object from the server action, not a class instance.
+        // We need to re-attach any methods our components rely on.
+        setDiscountResult({
+          ...result.data,
+          // Recreate the getLineItem method on the client
+          getLineItem: (saleItemId: string) => result.data.lineItems.find((li: any) => li.saleItemId === saleItemId),
+          // Recreate the getAppliedRulesSummary method on the client
+          getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Discount Error",
+          description: result.error,
+        });
+        setDiscountResult(initialDiscountResult);
+      }
+      setIsCalculating(false);
+    };
+
+    recalculate();
+  }, [cart, activeCampaign, toast]);
+
 
   useEffect(() => {
-
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement;
 
@@ -115,8 +160,6 @@ export default function MyNewEcommerceShop() {
         target.isContentEditable;
 
       const isInteracting =
-        target.tagName === 'BUTTON' ||
-        target.tagName === 'SELECT' ||
         target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
 
       if (isTyping || isInteracting) {
@@ -190,27 +233,30 @@ export default function MyNewEcommerceShop() {
 
 
   const handleTransactionComplete = () => {
-    setIsTransactionDialogOpen(false);
+    drawer.closeDrawer();
     clearCart();
-    // You can add a success toast here if you like
+    toast({
+        title: "Transaction Complete!",
+        description: "The cart has been cleared and a new transaction is ready.",
+    });
   };
 
-  const discountResult: DiscountResult = useMemo(() => {
-    const campaignForCalculation = activeCampaign;
-    // console.log(`[UI] Re-calculating... 'isOneTimePerTransaction' = ${campaignForCalculation.isOneTimePerTransaction}`);
-
-    return calculateDiscountsForItems({
-      saleItems: cart,
-      activeCampaign: campaignForCalculation,
-      allProducts: sampleProducts,
-      transactionId,
-      config: {
-        enableLogging: process.env.NODE_ENV === 'development',
-        enableValidation: true,
-        maxDiscountPercentage: 80
-      }
+  const openTransactionDrawer = () => {
+    drawer.openDrawer({
+      title: 'Complete Transaction',
+      content: (
+        <TransactionDialogContent
+          cart={cart}
+          discountResult={discountResult}
+          transactionId={transactionId}
+          activeCampaign={activeCampaign}
+          onTransactionComplete={handleTransactionComplete}
+        />
+      ),
+      closeOnOverlayClick: false,
+      drawerClassName: "sm:max-w-4xl" 
     });
-  }, [cart, activeCampaign, transactionId]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
@@ -218,11 +264,21 @@ export default function MyNewEcommerceShop() {
 
         <div className="lg:col-span-2">
           <header className="mb-6">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
-            <p className="text-base text-gray-500 mt-2">
-              Search for products by name or barcode and add them to your cart.
-            </p>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
+                <p className="text-base text-gray-500 mt-2">
+                  Search for products by name or barcode and add them to your cart.
+                </p>
+              </div>
+              <Link href="/history" passHref>
+                <Button variant="outline">
+                  <History className="mr-2 h-4 w-4" />
+                  View History
+                </Button>
+              </Link>
+            </div>
+            <div className="text-sm text-gray-400 mt-4">
               Transaction ID: {transactionId}
               {activeCampaign.isOneTimePerTransaction && (
                 <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs">
@@ -230,6 +286,7 @@ export default function MyNewEcommerceShop() {
                 </span>
               )}
             </div>
+             {isCalculating && <div className="text-sm text-blue-500 mt-2 animate-pulse">Calculating discounts...</div>}
           </header>
 
           <div className="space-y-6">
@@ -253,21 +310,12 @@ export default function MyNewEcommerceShop() {
                 Clear Cart
               </button>
               <button
-                onClick={() => setIsTransactionDialogOpen(true)}
-                disabled={cart.length === 0}
+                onClick={openTransactionDrawer}
+                disabled={cart.length === 0 || isCalculating}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Complete Transaction
               </button>
-
-              <TransactionDialog
-                isOpen={isTransactionDialogOpen}
-                onClose={() => setIsTransactionDialogOpen(false)}
-                cart={cart}
-                discountResult={discountResult}
-                transactionId={transactionId}
-                onTransactionComplete={handleTransactionComplete}
-              />
             </div>
           </div>
         </div>
@@ -285,7 +333,7 @@ export default function MyNewEcommerceShop() {
             transactionId={transactionId}
           />
 
-          {process.env.NODE_ENV === 'development' && (
+          {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
               <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
               <div className="space-y-1 text-blue-700">

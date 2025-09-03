@@ -1,19 +1,19 @@
 // src/components/POSUI/ShoppingCart.tsx
 import React from 'react';
 import type { SaleItem } from '@/types';
-import { DiscountResult } from '@/discount-engine/core/result';
+// import { DiscountResult } from '@/discount-engine/core/result';
 import CartItemCard from './CartItemCard';
 import OrderSummary from './OrderSummary';
 
 interface ShoppingCartProps {
   cart: SaleItem[];
-  discountResult: DiscountResult;
+  discountResult: any; // Using any because it's a plain object from server, not a class instance
   onUpdateQuantity: (saleItemId: string, change: number) => void;
 }
 
 const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpdateQuantity }) => {
   const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const finalTotal = originalTotal - (discountResult.totalItemDiscount + discountResult.totalCartDiscount);
+  const finalTotal = discountResult?.finalTotal || originalTotal;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
@@ -22,14 +22,17 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpd
         {cart.length === 0 ? (
           <p className="text-center text-gray-500 py-8">Your cart is empty.</p>
         ) : (
-          cart.map((item) => (
-            <CartItemCard
-              key={item.saleItemId}
-              item={item}
-              discountResult={discountResult.getLineItem(item.saleItemId)}
-              onUpdateQuantity={onUpdateQuantity}
-            />
-          ))
+          cart.map((item) => {
+            return (
+              <CartItemCard
+                key={item.saleItemId}
+                item={item}
+                // Pass the entire discount result down to the card
+                discountResult={discountResult} 
+                onUpdateQuantity={onUpdateQuantity}
+              />
+            );
+          })
         )}
       </div>
 
