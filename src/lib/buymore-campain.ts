@@ -38,10 +38,10 @@ export const buyMoreSaveMore: DiscountSet = {
               isEnabled: true, 
               name: 'Old Jeans Batch Flat Discount', 
               type: 'fixed', 
-              value: 800, 
-              conditionMin: 14000,
+              value: 3, 
+              conditionMax: 7001,
               applyFixedOnce: true,
-              description: 'Flat Rs.800 off old batch jeans line when value over Rs.14,000'
+              description: 'Flat '
           },
           lineItemQuantityRuleJson: null,
         },
