@@ -25,7 +25,7 @@ export default function RootLayout({
         <GlobalDrawerProvider>
           {children}
           <GlobalDrawer />
-          {/* <Toaster /> */}
+          <Toaster />
         </GlobalDrawerProvider>
       </body>
     </html>
