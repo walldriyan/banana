@@ -1,9 +1,9 @@
 // src/components/refund/RefundDialogContent.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import type { DatabaseReadyTransaction, TransactionLine } from '@/lib/pos-data-transformer';
-import type { SaleItem, Product, ProductBatch, DiscountSet } from '@/types';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
+import type { SaleItem, Product, ProductBatch } from '@/types';
 import { transactionLinesToSaleItems } from '@/lib/pos-data-transformer';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -70,11 +70,15 @@ export function RefundDialogContent({
   // Recalculate discounts whenever the refund cart changes
   useEffect(() => {
     const recalculate = async () => {
+      // Set processing to true at the beginning
+      setIsProcessing(true);
+
       if (refundCart.length === 0) {
         setDiscountResult(initialDiscountResult);
+        setIsProcessing(false); // Set to false even for empty cart
         return;
       }
-      setIsProcessing(true);
+      
       const result = await calculateDiscountsAction(refundCart, activeCampaign);
       if (result.success && result.data) {
         setDiscountResult({
@@ -88,12 +92,18 @@ export function RefundDialogContent({
         });
         setDiscountResult(initialDiscountResult);
       }
+      // Set processing to false at the end
       setIsProcessing(false);
     };
-    recalculate();
-  }, [refundCart, activeCampaign, toast]);
 
-  const updateRefundQuantity = (saleItemId: string, change: number) => {
+    // This check ensures we don't run the calculation on the initial empty cart state
+    // before it's populated by the other useEffect.
+    if (refundCart.length > 0 || (originalTransaction && refundCart.length === 0)) {
+        recalculate();
+    }
+  }, [refundCart, activeCampaign, toast, originalTransaction]);
+
+  const updateRefundQuantity = useCallback((saleItemId: string, change: number) => {
     setRefundCart(currentCart => {
       const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
       if (itemIndex === -1) return currentCart;
@@ -103,16 +113,20 @@ export function RefundDialogContent({
       
       const updatedCart = [...currentCart];
       const currentItem = updatedCart[itemIndex];
-      const newQuantity = currentItem.quantity + change;
+      // Ensure newQuantity is a number
+      const newQuantity = Number(currentItem.quantity) + Number(change);
 
       if (newQuantity <= 0) {
-        updatedCart.splice(itemIndex, 1); // Remove item if quantity is zero or less
-      } else if (newQuantity <= maxQty) {
+        return updatedCart.filter(item => item.saleItemId !== saleItemId);
+      } 
+      
+      if (newQuantity <= maxQty) {
         updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity };
       }
+      
       return updatedCart;
     });
-  };
+  }, [originalTransaction]);
 
   const handleProcessRefund = async () => {
     setIsProcessing(true);
@@ -166,7 +180,7 @@ export function RefundDialogContent({
             type="button" 
             variant="destructive" 
             onClick={handleProcessRefund}
-            disabled={isProcessing || refundAmount <= 0}
+            disabled={isProcessing || refundAmount < 0}
         >
           {isProcessing ? "Processing..." : `Confirm & Refund Rs. ${refundAmount.toFixed(2)}`}
         </Button>

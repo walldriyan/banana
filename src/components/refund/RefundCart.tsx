@@ -19,12 +19,17 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines }:
         <CardTitle>Items to Refund/Keep</CardTitle>
       </CardHeader>
       <CardContent>
-        {cart.length === 0 ? (
-          <p className="text-gray-500">All items removed. Full refund will be processed.</p>
+        {originalTransactionLines.length === 0 ? (
+          <p className="text-gray-500">Original transaction has no items.</p>
+        ) : cart.length === 0 ? (
+          <p className="text-center py-4 px-2 bg-yellow-50 text-yellow-800 rounded-lg">
+            All items removed. A full refund will be processed for all items in the original transaction.
+          </p>
         ) : (
           <div className="space-y-4">
             {cart.map(item => {
-              const originalQty = originalTransactionLines.find(l => l.saleItemId === item.saleItemId)?.quantity || 0;
+              const originalLine = originalTransactionLines.find(l => l.saleItemId === item.saleItemId);
+              const originalQty = originalLine?.quantity || 0;
               return (
                 <div key={item.saleItemId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div>
@@ -33,7 +38,10 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines }:
                   </div>
                   <div className="flex items-center gap-2">
                     <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(item.saleItemId, -1)}>-</Button>
-                    <span className="font-bold w-10 text-center">{item.quantity} / {originalQty}</span>
+                    <span className="font-bold w-12 text-center text-base">
+                      {item.quantity} 
+                      <span className="text-sm font-normal text-gray-500"> / {originalQty}</span>
+                    </span>
                     <Button 
                         size="icon" 
                         variant="outline" 
