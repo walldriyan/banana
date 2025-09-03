@@ -16,6 +16,9 @@ import { TransactionDialogContent } from '@/components/transaction/TransactionDi
 import { useDrawer } from '@/hooks/use-drawer';
 import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { History } from 'lucide-react';
 
 
 const oldBatch: ProductBatch = {
@@ -140,7 +143,7 @@ export default function MyNewEcommerceShop() {
         setDiscountResult({
           ...result.data,
           // Recreate the getLineItem method on the client
-          getLineItem: (saleItemId: string) => result.data.lineItems.find((li: any) => li.lineId === saleItemId),
+          getLineItem: (saleItemId: string) => result.data.lineItems.find((li: any) => li.saleItemId === saleItemId),
           // Recreate the getAppliedRulesSummary method on the client
           getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
         });
@@ -272,11 +275,21 @@ export default function MyNewEcommerceShop() {
 
         <div className="lg:col-span-2">
           <header className="mb-6">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
-            <p className="text-base text-gray-500 mt-2">
-              Search for products by name or barcode and add them to your cart.
-            </p>
-            <div className="text-sm text-gray-400 mt-1">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
+                <p className="text-base text-gray-500 mt-2">
+                  Search for products by name or barcode and add them to your cart.
+                </p>
+              </div>
+              <Link href="/history" passHref>
+                <Button variant="outline">
+                  <History className="mr-2 h-4 w-4" />
+                  View History
+                </Button>
+              </Link>
+            </div>
+            <div className="text-sm text-gray-400 mt-4">
               Transaction ID: {transactionId}
               {activeCampaign.isOneTimePerTransaction && (
                 <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs">
