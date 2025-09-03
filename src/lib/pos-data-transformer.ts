@@ -1,5 +1,5 @@
 // src/lib/pos-data-transformer.ts
-import type { SaleItem, AppliedRuleInfo, Product } from '@/types';
+import type { SaleItem, AppliedRuleInfo, Product, DiscountSet } from '@/types';
 import type { DiscountResult, LineItemResult } from '@/discount-engine/core/result';
 
 // Define types for the data we'll collect from the UI
@@ -25,6 +25,7 @@ export interface TransactionHeader {
     totalItems: number;
     totalQuantity: number;
     status: 'completed' | 'refund' | 'pending';
+    campaignId: string; // Crucial for refunds
     originalTransactionId?: string; // For refunds
 }
 
@@ -57,6 +58,7 @@ interface TransformerInput {
   transactionId: string;
   customerData: CustomerData;
   paymentData: PaymentData;
+  activeCampaign: DiscountSet; // Now required
   status?: 'completed' | 'refund' | 'pending';
   originalTransactionId?: string;
 }
@@ -75,6 +77,7 @@ export function transformTransactionDataForDb(
     transactionId, 
     customerData, 
     paymentData,
+    activeCampaign,
     status = 'completed',
     originalTransactionId
   } = input;
@@ -91,6 +94,7 @@ export function transformTransactionDataForDb(
     totalItems,
     totalQuantity,
     status,
+    campaignId: activeCampaign.id, // Store the campaign ID
     ...(originalTransactionId && { originalTransactionId }),
   };
 

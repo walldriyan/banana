@@ -3,15 +3,17 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
-import type { SaleItem, Product, ProductBatch } from '@/types';
+import type { SaleItem, Product, ProductBatch, DiscountSet } from '@/types';
 import { transactionLinesToSaleItems } from '@/lib/pos-data-transformer';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { processRefundAction } from '@/lib/actions/refund.actions';
-import { megaDealFest } from '@/lib/my-campaigns'; // Assuming this is the campaign to use
+import { findCampaignById } from '@/lib/my-campaigns';
 import { RefundCart } from './RefundCart';
 import { RefundSummary } from './RefundSummary';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Terminal } from 'lucide-react';
 
 // Mock product data for mapping transaction lines back to products.
 // In a real app, this would come from a database or a shared context.
@@ -53,22 +55,35 @@ export function RefundDialogContent({
   onRefundComplete,
 }: RefundDialogContentProps) {
   const [refundCart, setRefundCart] = useState<SaleItem[]>([]);
-  const [isProcessing, setIsProcessing] = useState(true); // Start as true
+  const [isProcessing, setIsProcessing] = useState(true);
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
+  const [activeCampaign, setActiveCampaign] = useState<DiscountSet | null>(null);
   const { toast } = useToast();
 
+  // Find the original campaign when the component mounts
   useEffect(() => {
+    const campaignId = originalTransaction.transactionHeader.campaignId;
+    if (campaignId) {
+      const foundCampaign = findCampaignById(campaignId);
+      if (foundCampaign) {
+        setActiveCampaign(foundCampaign);
+      } else {
+        console.error(`Campaign with ID "${campaignId}" not found!`);
+        // Handle error, maybe show a message to the user
+      }
+    }
     // Initialize the refund cart with items from the original transaction
     const items = transactionLinesToSaleItems(originalTransaction.transactionLines, sampleProducts);
     setRefundCart(items);
   }, [originalTransaction]);
-  
-  // This is the campaign that was likely used for the original purchase.
-  // In a real app, you might store this with the transaction.
-  const activeCampaign = useMemo(() => megaDealFest, []);
 
-  // Recalculate discounts whenever the refund cart changes
+  // Recalculate discounts whenever the refund cart or the campaign changes
   useEffect(() => {
+    if (!activeCampaign) {
+      // Don't calculate until campaign is loaded
+      return;
+    }
+
     const recalculate = async () => {
       setIsProcessing(true);
 
@@ -132,12 +147,17 @@ export function RefundDialogContent({
   }, [originalTransaction]);
 
   const handleProcessRefund = async () => {
+    if (!activeCampaign) {
+        toast({ variant: "destructive", title: "Refund Error", description: "Original discount campaign could not be loaded." });
+        return;
+    }
     setIsProcessing(true);
     try {
         const result = await processRefundAction({
             originalTransaction,
             refundCart,
             refundDiscountResult: discountResult,
+            activeCampaign,
         });
 
         if (result.success && result.data) {
@@ -162,6 +182,19 @@ export function RefundDialogContent({
   };
   
   const refundAmount = originalTransaction.transactionHeader.finalTotal - discountResult.finalTotal;
+
+  if (!activeCampaign) {
+    return (
+        <Alert variant="destructive">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Campaign Error!</AlertTitle>
+            <AlertDescription>
+                The original discount campaign for this transaction could not be found. 
+                Cannot proceed with an accurate refund calculation.
+            </AlertDescription>
+        </Alert>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full">

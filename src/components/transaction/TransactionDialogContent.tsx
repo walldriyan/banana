@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CustomerInfoPanel } from './CustomerInfoPanel';
 import { PaymentPanel } from './PaymentPanel';
 import { PrintPreview } from './PrintPreview';
-import type { SaleItem } from '@/types';
+import type { SaleItem, DiscountSet } from '@/types';
 import type { DiscountResult } from '@/discount-engine/core/result';
 import { transformTransactionDataForDb } from '@/lib/pos-data-transformer';
 import type { CustomerData, PaymentData, DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
@@ -23,6 +23,7 @@ interface TransactionDialogContentProps {
   cart: SaleItem[];
   discountResult: DiscountResult;
   transactionId: string;
+  activeCampaign: DiscountSet; // Now we need the campaign to store its ID
   onTransactionComplete: () => void;
 }
 
@@ -30,6 +31,7 @@ export function TransactionDialogContent({
   cart,
   discountResult,
   transactionId,
+  activeCampaign, // Receive active campaign
   onTransactionComplete,
 }: TransactionDialogContentProps) {
   const [step, setStep] = useState<'details' | 'print'>('details');
@@ -85,6 +87,7 @@ export function TransactionDialogContent({
       transactionId,
       customerData: data.customer,
       paymentData: data.payment,
+      activeCampaign: activeCampaign, // Pass the campaign to the transformer
     });
     
     try {

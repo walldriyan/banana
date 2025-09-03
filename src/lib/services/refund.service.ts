@@ -8,12 +8,13 @@
 import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import { transformTransactionDataForDb } from '../pos-data-transformer';
 import type { DiscountResult } from '@/discount-engine/core/result';
-import type { SaleItem } from '@/types';
+import type { SaleItem, DiscountSet } from '@/types';
 
 interface RefundProcessingInput {
     originalTransaction: DatabaseReadyTransaction;
     refundCart: SaleItem[]; // The items the customer is KEEPING
     refundDiscountResult: DiscountResult; // The recalculated discount result for kept items
+    activeCampaign: DiscountSet; // The campaign used for the original transaction
 }
 
 /**
@@ -22,7 +23,7 @@ interface RefundProcessingInput {
  * @returns A new DatabaseReadyTransaction object with status 'refund'.
  */
 export function processRefund(payload: RefundProcessingInput): DatabaseReadyTransaction {
-  const { originalTransaction, refundCart, refundDiscountResult } = payload;
+  const { originalTransaction, refundCart, refundDiscountResult, activeCampaign } = payload;
   
   const originalTotal = originalTransaction.transactionHeader.finalTotal;
   const newTotal = refundDiscountResult.finalTotal;
@@ -47,6 +48,7 @@ export function processRefund(payload: RefundProcessingInput): DatabaseReadyTran
     },
     status: 'refund',
     originalTransactionId: originalTransaction.transactionHeader.transactionId,
+    activeCampaign: activeCampaign, // Pass the original campaign
   });
 
   return refundTransaction;

@@ -4,14 +4,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 // import { DiscountResult } from '@/discount-engine/core/result';
-import { megaDealFest, clearanceSale, vipExclusive } from '@/lib/my-campaigns';
-import { perUnitDiscounts, flatRateDiscounts, percentageVsFixed, mixedStrategy } from '@/lib/advanced-campaigns';
+import { allCampaigns, megaDealFest } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
 import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
 import DiscountBehaviorPanel from '@/components/DiscountBehaviorPanel';
 import type { SearchableProductInputRef } from '@/components/POSUI/SearchableProductInput';
-import { buyMoreSaveMore } from '@/lib/buymore-campain';
 import { TransactionDialogContent } from '@/components/transaction/TransactionDialogContent';
 import { useDrawer } from '@/hooks/use-drawer';
 import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
@@ -84,16 +82,6 @@ const sampleProducts: Product[] = [
   },
 ];
 
-const allCampaigns = [
-  megaDealFest,
-  buyMoreSaveMore,
-  clearanceSale,
-  vipExclusive,
-  perUnitDiscounts,
-  flatRateDiscounts,
-  percentageVsFixed,
-  mixedStrategy
-];
 
 // A plain object to represent the initial state of the discount result
 // We add dummy methods to prevent initial render errors.
@@ -261,6 +249,7 @@ export default function MyNewEcommerceShop() {
           cart={cart}
           discountResult={discountResult}
           transactionId={transactionId}
+          activeCampaign={activeCampaign}
           onTransactionComplete={handleTransactionComplete}
         />
       ),

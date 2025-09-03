@@ -11,6 +11,7 @@ interface ProcessRefundPayload {
     originalTransaction: DatabaseReadyTransaction;
     refundCart: SaleItem[];
     refundDiscountResult: any; // Simplified for action, core service uses DiscountResult
+    activeCampaign: DiscountSet; // The campaign used for recalculation
 }
 
 /**
@@ -29,6 +30,7 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
             originalTransaction: payload.originalTransaction,
             refundCart: payload.refundCart,
             refundDiscountResult: payload.refundDiscountResult,
+            activeCampaign: payload.activeCampaign,
         });
         
         // Save the newly created refund transaction to the local DB
