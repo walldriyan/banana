@@ -13,6 +13,8 @@ import type { CustomerData, PaymentData, DatabaseReadyTransaction } from '@/lib/
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
+import { saveTransaction } from '@/lib/actions/transaction.actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
@@ -29,6 +31,7 @@ export function TransactionDialogContent({
 }: TransactionDialogContentProps) {
   const [step, setStep] = useState<'details' | 'print'>('details');
   const [showFullPrice, setShowFullPrice] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [customerData, setCustomerData] = useState<CustomerData>({
     name: 'Walk-in Customer',
     phone: '',
@@ -42,6 +45,7 @@ export function TransactionDialogContent({
   });
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const drawer = useDrawer();
+  const { toast } = useToast();
 
   useEffect(() => {
     // Reset payment data when the component is shown for a new transaction
@@ -53,7 +57,8 @@ export function TransactionDialogContent({
     });
   }, [discountResult.finalTotal]);
 
-  const handleConfirmAndPreview = () => {
+  const handleConfirmAndPreview = async () => {
+    setIsSaving(true);
     const preparedData = transformTransactionDataForDb({
       cart,
       discountResult,
@@ -61,13 +66,31 @@ export function TransactionDialogContent({
       customerData,
       paymentData,
     });
-    console.log('Transaction Data Prepared for DB:', JSON.stringify(preparedData, null, 2));
-    setFinalTransactionData(preparedData);
-    setStep('print');
+    
+    try {
+      // This now calls our robust action handler
+      await saveTransaction(preparedData);
+      setFinalTransactionData(preparedData);
+      setStep('print');
+      toast({
+        title: "Transaction Saved Locally",
+        description: "The transaction has been saved to the local offline database.",
+      });
+    } catch (error) {
+      console.error("Failed to save transaction:", error);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleConfirmAndPrint = () => {
+  const handlePrintAndFinish = () => {
     console.log("Printing receipt...");
+    // In a real app, you'd trigger window.print() here on a print-formatted page/iframe
     onTransactionComplete();
   };
 
@@ -88,7 +111,7 @@ export function TransactionDialogContent({
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep('details')}>Back to Details</Button>
-                <Button onClick={handleConfirmAndPrint}>Confirm & Print</Button>
+                <Button onClick={handlePrintAndFinish}>Finish & Print</Button>
             </div>
         </div>
       </div>
@@ -107,7 +130,9 @@ export function TransactionDialogContent({
       </div>
       <div className="flex-shrink-0 pt-4 mt-4 border-t flex justify-end gap-2">
         <Button variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
-        <Button onClick={handleConfirmAndPreview}>Confirm & Preview Receipt</Button>
+        <Button onClick={handleConfirmAndPreview} disabled={isSaving}>
+          {isSaving ? "Saving..." : "Confirm & Preview Receipt"}
+        </Button>
       </div>
     </div>
   );
