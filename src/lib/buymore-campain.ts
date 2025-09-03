@@ -59,7 +59,7 @@ export const buyMoreSaveMore: DiscountSet = {
               conditionMin: 3,
               conditionMax: 5,
               applyFixedOnce: false,
-              description: '10% off each new T-shirt when buying 3 or more'
+              description: '10% off each new T-shirt when buying 3 to 5 units'
           },
           lineItemValueRuleJson: null,
         },
