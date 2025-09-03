@@ -11,7 +11,7 @@ import { PrintPreview } from './PrintPreview';
 import type { SaleItem, DiscountSet } from '@/types';
 import type { DiscountResult } from '@/discount-engine/core/result';
 import { transformTransactionDataForDb } from '@/lib/pos-data-transformer';
-import type { CustomerData, PaymentData, DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
+import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
@@ -21,9 +21,9 @@ import { transactionFormSchema, type TransactionFormValues } from '@/lib/validat
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
-  discountResult: DiscountResult;
+  discountResult: any; // Using any for plain object from server
   transactionId: string;
-  activeCampaign: DiscountSet; // Now we need the campaign to store its ID
+  activeCampaign: DiscountSet;
   onTransactionComplete: () => void;
 }
 
@@ -31,7 +31,7 @@ export function TransactionDialogContent({
   cart,
   discountResult,
   transactionId,
-  activeCampaign, // Receive active campaign
+  activeCampaign,
   onTransactionComplete,
 }: TransactionDialogContentProps) {
   const [step, setStep] = useState<'details' | 'print'>('details');
@@ -54,15 +54,17 @@ export function TransactionDialogContent({
         paymentMethod: 'cash',
         outstandingAmount: 0,
         isInstallment: false,
+        finalTotal: 0, // Initialize finalTotal
       },
     },
-    mode: 'onChange', 
+    mode: 'onChange',
   });
   
   const { handleSubmit, reset, formState: { isValid } } = methods;
 
   useEffect(() => {
     // Reset form with new totals when discountResult changes
+    const finalTotal = discountResult.finalTotal || 0;
     reset({
         customer: {
             name: 'Walk-in Customer',
@@ -70,10 +72,11 @@ export function TransactionDialogContent({
             address: '',
         },
         payment: {
-            paidAmount: discountResult.finalTotal,
+            paidAmount: finalTotal, // Default paid amount to the final total
             paymentMethod: 'cash',
             outstandingAmount: 0,
             isInstallment: false,
+            finalTotal: finalTotal, // Pass finalTotal to the form context
         }
     });
   }, [discountResult, reset]);
@@ -87,7 +90,7 @@ export function TransactionDialogContent({
       transactionId,
       customerData: data.customer,
       paymentData: data.payment,
-      activeCampaign: activeCampaign, // Pass the campaign to the transformer
+      activeCampaign: activeCampaign,
     });
     
     try {

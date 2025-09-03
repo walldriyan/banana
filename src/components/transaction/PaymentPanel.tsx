@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { FormItem, FormMessage } from '../ui/form';
+import { FormItem, FormLabel, FormMessage, FormControl } from '../ui/form';
 
 interface PaymentPanelProps {
   finalTotal: number;
@@ -22,10 +22,19 @@ interface PaymentPanelProps {
 export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
   const { control, watch, setValue, formState: { errors } } = useFormContext();
   const paidAmount = watch('payment.paidAmount');
+  const isInstallment = watch('payment.isInstallment');
+
+  useEffect(() => {
+    // When isInstallment is toggled, re-validate the paidAmount field
+    // to apply the new rules immediately.
+  }, [isInstallment]);
 
   useEffect(() => {
     const outstanding = finalTotal - (paidAmount || 0);
+    // Outstanding amount is only relevant if it's positive (customer owes money)
     setValue('payment.outstandingAmount', outstanding > 0 ? outstanding : 0, { shouldValidate: true });
+    setValue('payment.finalTotal', finalTotal, { shouldValidate: true });
+
   }, [paidAmount, finalTotal, setValue]);
 
   return (
@@ -40,15 +49,17 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
         </div>
 
         <FormItem>
-          <Label htmlFor="paymentMethod">Payment Method</Label>
+          <FormLabel>Payment Method</FormLabel>
           <Controller
             control={control}
             name="payment.paymentMethod"
             render={({ field }) => (
               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <SelectTrigger id="paymentMethod">
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
+                <FormControl>
+                  <SelectTrigger id="paymentMethod">
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
                   <SelectItem value="card">Card</SelectItem>
@@ -63,23 +74,23 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
         </FormItem>
 
         <FormItem>
-          <Label htmlFor="paidAmount">Amount Paid</Label>
+          <FormLabel>Amount Paid</FormLabel>
            <Controller
             control={control}
             name="payment.paidAmount"
             render={({ field }) => (
-              <Input
-                {...field}
-                id="paidAmount"
-                type="number"
-                placeholder="e.g., 5000.00"
-                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-              />
+              <FormControl>
+                <Input
+                  {...field}
+                  id="paidAmount"
+                  type="number"
+                  placeholder="e.g., 5000.00"
+                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                />
+              </FormControl>
             )}
           />
-           {errors.payment?.paidAmount && (
-            <FormMessage>{errors.payment.paidAmount.message?.toString()}</FormMessage>
-          )}
+          <FormMessage>{errors.payment?.paidAmount?.message?.toString()}</FormMessage>
         </FormItem>
         
         <FormItem>
@@ -97,11 +108,13 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
             control={control}
             name="payment.isInstallment"
             render={({ field }) => (
+              <FormControl>
                 <Switch 
                     id="installment-mode" 
                     checked={field.value}
                     onCheckedChange={field.onChange}
                 />
+              </FormControl>
             )}
            />
           <Label htmlFor="installment-mode">Pay by Installments</Label>
