@@ -73,7 +73,7 @@ export function RefundDialogContent({
       setIsProcessing(true);
 
       if (refundCart.length === 0) {
-        setDiscountResult(initialDiscountResult);
+        setDiscountResult({ ...initialDiscountResult, finalTotal: 0 });
         setIsProcessing(false);
         return;
       }
@@ -95,34 +95,38 @@ export function RefundDialogContent({
       setIsProcessing(false);
     };
     
-    recalculate();
+    // Only run if refundCart has been initialized
+    if(refundCart.length > 0 || originalTransaction.transactionLines.length > 0) {
+      recalculate();
+    }
 
-  }, [refundCart, activeCampaign, toast]);
+  }, [refundCart, activeCampaign, toast, originalTransaction.transactionLines.length]);
 
   const updateRefundQuantity = useCallback((saleItemId: string, change: number) => {
     setRefundCart(currentCart => {
       const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
       if (itemIndex === -1) return currentCart;
-
-      const originalItem = originalTransaction.transactionLines.find(line => line.saleItemId === saleItemId);
-      const maxQty = originalItem?.quantity || 0;
       
       const updatedCart = [...currentCart];
       const currentItem = updatedCart[itemIndex];
+
+      const originalLine = originalTransaction.transactionLines.find(line => line.productId === currentItem.id && line.batchId === currentItem.selectedBatchId);
+      const maxQty = originalLine?.quantity || 0;
+
       const newQuantity = Number(currentItem.quantity) + Number(change);
 
       if (newQuantity <= 0) {
-        // Remove item from cart if quantity is zero or less
         return updatedCart.filter(item => item.saleItemId !== saleItemId);
       } 
       
       if (newQuantity <= maxQty) {
         updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity };
+        return updatedCart;
       }
       
-      return updatedCart;
+      return currentCart; // Return original cart if no change
     });
-  }, [originalTransaction]); // FIX: Added originalTransaction to dependency array
+  }, [originalTransaction]);
 
   const handleProcessRefund = async () => {
     setIsProcessing(true);

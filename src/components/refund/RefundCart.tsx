@@ -28,7 +28,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines }:
         ) : (
           <div className="space-y-4">
             {cart.map(item => {
-              const originalLine = originalTransactionLines.find(l => l.saleItemId === item.saleItemId);
+              const originalLine = originalTransactionLines.find(l => l.productId === item.id && l.batchId === item.selectedBatchId);
               const originalQty = originalLine?.quantity || 0;
               return (
                 <div key={item.saleItemId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
