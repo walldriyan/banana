@@ -10,6 +10,14 @@ interface CartItemCardProps {
 }
 
 const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpdateQuantity }) => {
+  // --- DEBUG CONSOLE LOG ---
+  // This will log the props received by the component to the browser's developer console.
+  console.log(`[CartItemCard: ${item.name} (${item.saleItemId})]`, {
+    item,
+    discountResult,
+  });
+  // --- END DEBUG CONSOLE LOG ---
+
   const hasDiscounts = discountResult && discountResult.appliedRules && discountResult.appliedRules.length > 0;
 
   return (
