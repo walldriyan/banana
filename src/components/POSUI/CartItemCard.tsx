@@ -1,24 +1,22 @@
 // src/components/POSUI/CartItemCard.tsx
 import React from 'react';
 import type { SaleItem } from '@/types';
-import type { LineItemResult } from '@/discount-engine/core/result';
+import type { DiscountResult } from '@/discount-engine/core/result'; // We can use the parent type
 
 interface CartItemCardProps {
   item: SaleItem;
-  discountResult: LineItemResult | undefined;
+  discountResult: DiscountResult | undefined;
   onUpdateQuantity: (saleItemId: string, change: number) => void;
 }
 
 const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpdateQuantity }) => {
-  // --- DEBUG CONSOLE LOG ---
-  // This will log the props received by the component to the browser's developer console.
-  console.log(`[CartItemCard: ${item.name} (${item.saleItemId})]`, {
-    item,
-    discountResult,
-  });
-  // --- END DEBUG CONSOLE LOG ---
 
-  const hasDiscounts = discountResult && discountResult.appliedRules && discountResult.appliedRules.length > 0;
+  // Find the specific line item result from the main discount result object
+  const lineItemResult = (discountResult && discountResult.lineItems) 
+    ? discountResult.lineItems.find(li => li.lineId === item.saleItemId) 
+    : undefined;
+
+  const hasDiscounts = lineItemResult && lineItemResult.appliedRules && lineItemResult.appliedRules.length > 0;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 ease-in-out">
@@ -50,11 +48,11 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
           </button>
         </div>
       </div>
-      {hasDiscounts && (
+      {hasDiscounts && lineItemResult && (
         <div className="mt-3 text-xs text-green-800 space-y-1">
           <div className="border-t border-dashed border-green-200 pt-2">
              <div className="font-bold text-green-900 mb-1">Applied Discounts:</div>
-            {discountResult.appliedRules.map((rule, i) => (
+            {lineItemResult.appliedRules.map((rule, i) => (
               <p key={i} className="flex justify-between items-center">
                 <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
                 <span className="font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
