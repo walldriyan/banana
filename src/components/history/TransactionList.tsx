@@ -9,16 +9,18 @@ import { useDrawer } from '@/hooks/use-drawer';
 import { RefundDialogContent } from '../refund/RefundDialogContent';
 
 interface TransactionListProps {
-  transactions: DatabaseReadyTransaction[];
+  originalTransactions: DatabaseReadyTransaction[];
+  refundMap: Map<string, DatabaseReadyTransaction>;
   onRefresh: () => void;
 }
 
-export function TransactionList({ transactions, onRefresh }: TransactionListProps) {
+export function TransactionList({ originalTransactions, refundMap, onRefresh }: TransactionListProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<DatabaseReadyTransaction | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const drawer = useDrawer();
 
-  const handleViewDetails = (transaction: DatabaseReadyTransaction) => {
+  const handleViewDetails = (transaction: DatabaseReadyTransaction | undefined) => {
+    if (!transaction) return;
     setSelectedTransaction(transaction);
     setIsDetailsDialogOpen(true);
   };
@@ -46,7 +48,7 @@ export function TransactionList({ transactions, onRefresh }: TransactionListProp
     });
   };
 
-  if (transactions.length === 0) {
+  if (originalTransactions.length === 0) {
     return (
       <div className="text-center py-10 px-4">
         <h3 className="text-xl font-semibold text-gray-700">No Transactions Found</h3>
@@ -60,14 +62,18 @@ export function TransactionList({ transactions, onRefresh }: TransactionListProp
   return (
     <>
         <div className="space-y-4">
-            {transactions.map((tx) => (
-                <TransactionCard
-                key={tx.transactionHeader.transactionId}
-                transaction={tx}
-                onViewDetails={handleViewDetails}
-                onRefund={handleRefund}
-                />
-            ))}
+            {originalTransactions.map((tx) => {
+                const refundTx = refundMap.get(tx.transactionHeader.transactionId);
+                return (
+                    <TransactionCard
+                        key={tx.transactionHeader.transactionId}
+                        transaction={tx}
+                        refundTransaction={refundTx}
+                        onViewDetails={handleViewDetails}
+                        onRefund={handleRefund}
+                    />
+                );
+            })}
         </div>
 
         <TransactionDetailsDialog

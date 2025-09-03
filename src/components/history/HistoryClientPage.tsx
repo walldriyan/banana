@@ -1,7 +1,7 @@
 // src/components/history/HistoryClientPage.tsx
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { getPendingTransactions } from '@/lib/db/local-db';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { TransactionList } from './TransactionList';
@@ -15,12 +15,12 @@ export function HistoryClientPage() {
   const fetchTransactions = useCallback(async () => {
     try {
       setIsLoading(true);
-      const pendingTxs = await getPendingTransactions();
-      pendingTxs.sort((a, b) => 
+      const allTxs = await getPendingTransactions();
+      allTxs.sort((a, b) => 
         new Date(b.transactionHeader.transactionDate).getTime() - 
         new Date(a.transactionHeader.transactionDate).getTime()
       );
-      setTransactions(pendingTxs);
+      setTransactions(allTxs);
       setError(null);
     } catch (err) {
       console.error("Failed to fetch transactions:", err);
@@ -33,6 +33,23 @@ export function HistoryClientPage() {
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
+
+  // Memoize the separation of original and refund transactions to avoid re-calculation on every render
+  const { originalTransactions, refundMap } = useMemo(() => {
+    const originalTxs: DatabaseReadyTransaction[] = [];
+    const refundMap = new Map<string, DatabaseReadyTransaction>();
+
+    transactions.forEach(tx => {
+      if (tx.transactionHeader.status === 'refund' && tx.transactionHeader.originalTransactionId) {
+        refundMap.set(tx.transactionHeader.originalTransactionId, tx);
+      } else {
+        originalTxs.push(tx);
+      }
+    });
+
+    return { originalTransactions: originalTxs, refundMap };
+  }, [transactions]);
+
 
   if (isLoading) {
     return (
@@ -55,7 +72,11 @@ export function HistoryClientPage() {
 
   return (
     <div>
-        <TransactionList transactions={transactions} onRefresh={fetchTransactions} />
+        <TransactionList 
+            originalTransactions={originalTransactions}
+            refundMap={refundMap}
+            onRefresh={fetchTransactions} 
+        />
     </div>
   );
 }

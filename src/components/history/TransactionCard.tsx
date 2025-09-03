@@ -4,19 +4,26 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { format } from 'date-fns';
-import { ReceiptText, RefreshCw } from 'lucide-react';
+import { ReceiptText, RefreshCw, FileText, FileBadge } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 
+
 interface TransactionCardProps {
   transaction: DatabaseReadyTransaction;
+  refundTransaction?: DatabaseReadyTransaction;
   onViewDetails: (transaction: DatabaseReadyTransaction) => void;
   onRefund: (transaction: DatabaseReadyTransaction) => void;
 }
 
-export function TransactionCard({ transaction, onViewDetails, onRefund }: TransactionCardProps) {
+export function TransactionCard({ 
+    transaction, 
+    refundTransaction, 
+    onViewDetails, 
+    onRefund 
+}: TransactionCardProps) {
   const { transactionHeader, customerDetails } = transaction;
-  const isRefunded = transactionHeader.status === 'refund';
+  const isRefunded = !!refundTransaction;
 
   return (
     <Card className={cn("hover:shadow-lg transition-shadow", isRefunded && "bg-orange-50 border-orange-200")}>
@@ -32,9 +39,9 @@ export function TransactionCard({ transaction, onViewDetails, onRefund }: Transa
             {transactionHeader.transactionId}
           </span>
         </CardTitle>
-        {isRefunded && transactionHeader.originalTransactionId && (
+        {isRefunded && refundTransaction?.transactionHeader.transactionId && (
             <p className="text-xs text-gray-500">
-                Original Txn: {transactionHeader.originalTransactionId}
+                Refund Txn: {refundTransaction.transactionHeader.transactionId}
             </p>
         )}
       </CardHeader>
@@ -59,15 +66,28 @@ export function TransactionCard({ transaction, onViewDetails, onRefund }: Transa
         </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => onViewDetails(transaction)}>
-            <ReceiptText className="mr-2 h-4 w-4"/>
-            View Details
-        </Button>
-        {!isRefunded && (
-          <Button variant="destructive" onClick={() => onRefund(transaction)}>
-            <RefreshCw className="mr-2 h-4 w-4"/>
-            Refund
-          </Button>
+        {isRefunded ? (
+            <>
+                <Button variant="secondary" onClick={() => onViewDetails(transaction)}>
+                    <FileText className="mr-2 h-4 w-4"/>
+                    View Original Bill
+                </Button>
+                <Button variant="outline" onClick={() => onViewDetails(refundTransaction)}>
+                    <FileBadge className="mr-2 h-4 w-4"/>
+                    View Refund Bill
+                </Button>
+            </>
+        ) : (
+            <>
+                <Button variant="outline" onClick={() => onViewDetails(transaction)}>
+                    <ReceiptText className="mr-2 h-4 w-4"/>
+                    View Details
+                </Button>
+                <Button variant="destructive" onClick={() => onRefund(transaction)}>
+                    <RefreshCw className="mr-2 h-4 w-4"/>
+                    Refund
+                </Button>
+            </>
         )}
       </CardFooter>
     </Card>
