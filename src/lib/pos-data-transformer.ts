@@ -1,5 +1,5 @@
 // src/lib/pos-data-transformer.ts
-import type { SaleItem, AppliedRuleInfo } from '@/types';
+import type { SaleItem, AppliedRuleInfo, Product } from '@/types';
 import type { DiscountResult, LineItemResult } from '@/discount-engine/core/result';
 
 // Define types for the data we'll collect from the UI
@@ -16,9 +16,7 @@ export interface PaymentData {
   isInstallment: boolean;
 }
 
-// This is the final, structured object ready for a database
-export interface DatabaseReadyTransaction {
-  transactionHeader: {
+export interface TransactionHeader {
     transactionId: string;
     transactionDate: string; // ISO 8601 format
     subtotal: number;
@@ -26,9 +24,12 @@ export interface DatabaseReadyTransaction {
     finalTotal: number;
     totalItems: number;
     totalQuantity: number;
-  };
-  transactionLines: {
-    saleItemId: string; // Added to link with discount results
+    status: 'completed' | 'refund' | 'pending';
+    originalTransactionId?: string; // For refunds
+}
+
+export interface TransactionLine {
+    saleItemId: string; 
     productId: string;
     productName: string;
     batchId?: string;
@@ -36,9 +37,15 @@ export interface DatabaseReadyTransaction {
     quantity: number;
     unitPrice: number;
     lineTotalBeforeDiscount: number;
-    lineDiscount: number; // Total discount for this line
-    lineTotalAfterDiscount: number; // Final total for this line
-  }[];
+    lineDiscount: number; 
+    lineTotalAfterDiscount: number;
+}
+
+
+// This is the final, structured object ready for a database
+export interface DatabaseReadyTransaction {
+  transactionHeader: TransactionHeader,
+  transactionLines: TransactionLine[];
   appliedDiscountsLog: AppliedRuleInfo[];
   customerDetails: CustomerData & { id?: string }; // id can be added later
   paymentDetails: PaymentData;
@@ -50,6 +57,8 @@ interface TransformerInput {
   transactionId: string;
   customerData: CustomerData;
   paymentData: PaymentData;
+  status?: 'completed' | 'refund' | 'pending';
+  originalTransactionId?: string;
 }
 
 /**
@@ -60,12 +69,20 @@ interface TransformerInput {
 export function transformTransactionDataForDb(
   input: TransformerInput
 ): DatabaseReadyTransaction {
-  const { cart, discountResult, transactionId, customerData, paymentData } = input;
+  const { 
+    cart, 
+    discountResult, 
+    transactionId, 
+    customerData, 
+    paymentData,
+    status = 'completed',
+    originalTransactionId
+  } = input;
 
   const totalQuantity = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalItems = cart.length;
 
-  const transactionHeader = {
+  const transactionHeader: TransactionHeader = {
     transactionId,
     transactionDate: new Date().toISOString(),
     subtotal: discountResult.originalSubtotal,
@@ -73,9 +90,11 @@ export function transformTransactionDataForDb(
     finalTotal: discountResult.finalTotal,
     totalItems,
     totalQuantity,
+    status,
+    ...(originalTransactionId && { originalTransactionId }),
   };
 
-  const transactionLines = cart.map(item => {
+  const transactionLines: TransactionLine[] = cart.map(item => {
     const lineItemResult: LineItemResult | undefined = discountResult.getLineItem(item.saleItemId);
     const lineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
     const lineTotalBeforeDiscount = item.price * item.quantity;
@@ -105,4 +124,39 @@ export function transformTransactionDataForDb(
   };
 
   return databaseReadyObject;
+}
+
+// Helper to convert DB transaction lines back to SaleItems for the refund cart
+export function transactionLinesToSaleItems(lines: TransactionLine[], products: Product[]): SaleItem[] {
+    return lines.map(line => {
+        const product = products.find(p => p.id === line.productId);
+        const batch = product?.batches?.find(b => b.id === line.batchId);
+        
+        if (!product) {
+            // This is a fallback in case the product was deleted.
+            // A more robust solution might handle this differently.
+            return {
+                id: line.productId,
+                name: line.productName,
+                sellingPrice: line.unitPrice,
+                stock: 0,
+                units: { baseUnit: 'pcs' },
+                isService: false,
+                isActive: false,
+                defaultQuantity: 1,
+                saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                quantity: line.quantity,
+                price: line.unitPrice,
+            }
+        }
+        
+        return {
+            ...product,
+            saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            quantity: line.quantity,
+            selectedBatchId: batch?.id,
+            selectedBatch: batch,
+            price: line.unitPrice, // Use the price from the original transaction
+        };
+    });
 }

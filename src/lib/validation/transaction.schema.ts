@@ -12,16 +12,13 @@ export const paymentSchema = z.object({
   paymentMethod: z.enum(['cash', 'card', 'online'], {
     errorMap: () => ({ message: "Please select a valid payment method." }),
   }),
-  outstandingAmount: z.number().min(0),
+  outstandingAmount: z.number(), // Can be negative for refunds
   isInstallment: z.boolean(),
 });
 
 export const transactionFormSchema = z.object({
     customer: customerSchema,
     payment: paymentSchema,
-}).refine(data => data.payment.paidAmount >= 0, {
-    message: "Paid amount must be a positive number.",
-    path: ["payment", "paidAmount"],
 });
 
 

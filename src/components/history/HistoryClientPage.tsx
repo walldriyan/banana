@@ -1,7 +1,7 @@
 // src/components/history/HistoryClientPage.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getPendingTransactions } from '@/lib/db/local-db';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { TransactionList } from './TransactionList';
@@ -12,34 +12,34 @@ export function HistoryClientPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchTransactions() {
-      try {
-        setIsLoading(true);
-        const pendingTxs = await getPendingTransactions();
-        // Sort by most recent first
-        pendingTxs.sort((a, b) => 
-          new Date(b.transactionHeader.transactionDate).getTime() - 
-          new Date(a.transactionHeader.transactionDate).getTime()
-        );
-        setTransactions(pendingTxs);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch transactions:", err);
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      } finally {
-        setIsLoading(false);
-      }
+  const fetchTransactions = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const pendingTxs = await getPendingTransactions();
+      pendingTxs.sort((a, b) => 
+        new Date(b.transactionHeader.transactionDate).getTime() - 
+        new Date(a.transactionHeader.transactionDate).getTime()
+      );
+      setTransactions(pendingTxs);
+      setError(null);
+    } catch (err) {
+      console.error("Failed to fetch transactions:", err);
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+    } finally {
+      setIsLoading(false);
     }
-    fetchTransactions();
   }, []);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   if (isLoading) {
     return (
         <div className="space-y-4">
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
         </div>
     )
   }
@@ -55,7 +55,7 @@ export function HistoryClientPage() {
 
   return (
     <div>
-        <TransactionList transactions={transactions} />
+        <TransactionList transactions={transactions} onRefresh={fetchTransactions} />
     </div>
   );
 }
