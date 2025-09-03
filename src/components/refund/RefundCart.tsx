@@ -77,7 +77,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                         New Total: Rs. {originalLineTotal.toFixed(2)}
                       </span>
                       {hasDiscounts && (
-                        <span className="font-bold text-lg text-green-700">
+                        <span className="font-bold text-sm text-green-700">
                           Final Price: Rs. {finalLineTotal.toFixed(2)}
                         </span>
                       )}
