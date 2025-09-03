@@ -14,6 +14,7 @@ import { RefundCart } from './RefundCart';
 import { RefundSummary } from './RefundSummary';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Terminal } from 'lucide-react';
+import { saveTransaction } from '@/lib/db/local-db';
 
 // Mock product data for mapping transaction lines back to products.
 // In a real app, this would come from a database or a shared context.
@@ -153,7 +154,6 @@ export function RefundDialogContent({
     }
     setIsProcessing(true);
     try {
-        // This object only contains plain data, safe to pass to a Server Action.
         const payload = {
             originalTransaction,
             refundCart,
@@ -163,9 +163,12 @@ export function RefundDialogContent({
         const result = await processRefundAction(payload);
 
         if (result.success && result.data) {
+            // THE FIX: Save the transaction on the client side after getting the object from the server.
+            await saveTransaction(result.data);
+            
             toast({
                 title: "Refund Processed Successfully",
-                description: `New transaction ${result.data.transactionHeader.transactionId} created.`,
+                description: `New transaction ${result.data.transactionHeader.transactionId} created and saved locally.`,
             });
             onRefundComplete();
         } else {
