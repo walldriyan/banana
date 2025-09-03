@@ -101,6 +101,7 @@ export default function MyNewEcommerceShop() {
   const createNewTransactionId = () => `txn-${Date.now()}`;
 
   useEffect(() => {
+    // This now correctly runs only on the client, preventing hydration mismatch.
     setTransactionId(createNewTransactionId());
   }, []);
 
@@ -204,7 +205,8 @@ export default function MyNewEcommerceShop() {
           onTransactionComplete={handleTransactionComplete}
         />
       ),
-      closeOnOverlayClick: false
+      closeOnOverlayClick: false,
+      drawerClassName: "sm:max-w-4xl" // Example of setting a custom width
     });
   };
 

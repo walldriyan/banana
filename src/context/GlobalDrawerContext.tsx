@@ -8,6 +8,7 @@ interface DrawerOptions {
   title?: string;
   description?: string;
   closeOnOverlayClick?: boolean;
+  drawerClassName?: string; //  Allows passing custom classes for styling, e.g., width
 }
 
 interface DrawerContextType {
@@ -16,6 +17,7 @@ interface DrawerContextType {
   title: string | null;
   description: string | null;
   closeOnOverlayClick: boolean;
+  drawerClassName: string | null;
   openDrawer: (options: DrawerOptions) => void;
   closeDrawer: () => void;
 }
@@ -28,12 +30,14 @@ export function GlobalDrawerProvider({ children }: { children: React.ReactNode }
   const [title, setTitle] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
   const [closeOnOverlayClick, setCloseOnOverlayClick] = useState(true);
+  const [drawerClassName, setDrawerClassName] = useState<string | null>(null);
 
   const openDrawer = useCallback((options: DrawerOptions) => {
     setContent(options.content);
     setTitle(options.title || null);
     setDescription(options.description || null);
     setCloseOnOverlayClick(options.closeOnOverlayClick ?? true);
+    setDrawerClassName(options.drawerClassName || null); // Set custom class
     setIsOpen(true);
   }, []);
 
@@ -44,6 +48,7 @@ export function GlobalDrawerProvider({ children }: { children: React.ReactNode }
       setContent(null);
       setTitle(null);
       setDescription(null);
+      setDrawerClassName(null); // Reset custom class
     }, 150);
   }, []);
 
@@ -53,9 +58,10 @@ export function GlobalDrawerProvider({ children }: { children: React.ReactNode }
     title,
     description,
     closeOnOverlayClick,
+    drawerClassName,
     openDrawer,
     closeDrawer,
-  }), [isOpen, content, title, description, closeOnOverlayClick, openDrawer, closeDrawer]);
+  }), [isOpen, content, title, description, closeOnOverlayClick, drawerClassName, openDrawer, closeDrawer]);
 
   return (
     <GlobalDrawerContext.Provider value={value}>

@@ -10,9 +10,10 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { useDrawer } from '@/hooks/use-drawer';
+import { cn } from '@/lib/utils';
 
 export function GlobalDrawer() {
-  const { isOpen, closeDrawer, content, title, description, closeOnOverlayClick } = useDrawer();
+  const { isOpen, closeDrawer, content, title, description, closeOnOverlayClick, drawerClassName } = useDrawer();
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -23,7 +24,7 @@ export function GlobalDrawer() {
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetContent 
-        className="w-full sm:max-w-2xl overflow-y-auto"
+        className={cn("w-full sm:max-w-2xl overflow-y-auto", drawerClassName)} // Combine default and custom classes
         onInteractOutside={(e) => {
             if (!closeOnOverlayClick) {
                 e.preventDefault();
