@@ -70,10 +70,8 @@ export function RefundDialogContent({
         setActiveCampaign(foundCampaign);
       } else {
         console.error(`Campaign with ID "${campaignId}" not found!`);
-        // Handle error, maybe show a message to the user
       }
     }
-    // Initialize the refund cart with items from the original transaction
     const items = transactionLinesToSaleItems(originalTransaction.transactionLines, sampleProducts);
     setRefundCart(items);
   }, [originalTransaction]);
@@ -81,7 +79,6 @@ export function RefundDialogContent({
   // Recalculate discounts whenever the refund cart or the campaign changes
   useEffect(() => {
     if (!activeCampaign) {
-      // Don't calculate until campaign is loaded
       return;
     }
 
@@ -89,7 +86,6 @@ export function RefundDialogContent({
       setIsProcessing(true);
 
       if (refundCart.length === 0) {
-        // If cart is empty, full refund, so new bill total is 0
         setDiscountResult({ ...initialDiscountResult, finalTotal: 0, originalSubtotal: 0 });
         setIsProcessing(false);
         return;
@@ -138,7 +134,6 @@ export function RefundDialogContent({
       }
 
       if (newQuantity === 0) {
-         // Filter out the item if its quantity becomes zero
         return updatedCart.filter(item => item.saleItemId !== saleItemId);
       } else {
         updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity };
@@ -156,14 +151,15 @@ export function RefundDialogContent({
     try {
         const payload = {
             originalTransaction,
-            refundCart,
+            refundCart, // this is the list of items being KEPT
             activeCampaign,
         };
 
+        // Server action does ALL the work and returns the final object
         const result = await processRefundAction(payload);
 
         if (result.success && result.data) {
-            // THE FIX: Save the transaction on the client side after getting the object from the server.
+            // Client is ONLY responsible for saving the object returned by the server
             await saveTransaction(result.data);
             
             toast({
@@ -186,7 +182,13 @@ export function RefundDialogContent({
     }
   };
   
-  const refundAmount = originalTransaction.transactionHeader.finalTotal - discountResult.finalTotal;
+  // The amount the customer originally paid
+  const originalPaidAmount = originalTransaction.paymentDetails.paidAmount;
+  // The value of the items the customer is keeping
+  const newTotalToPay = discountResult.finalTotal;
+  // The final cash to be returned or collected
+  const finalRefundAmount = originalPaidAmount - newTotalToPay;
+
 
   if (!activeCampaign) {
     return (
@@ -213,7 +215,7 @@ export function RefundDialogContent({
         <RefundSummary
           originalTransaction={originalTransaction}
           newDiscountResult={discountResult}
-          refundAmount={refundAmount}
+          finalRefundAmount={finalRefundAmount}
           isProcessing={isProcessing}
         />
       </div>
@@ -222,9 +224,13 @@ export function RefundDialogContent({
             type="button" 
             variant="destructive" 
             onClick={handleProcessRefund}
-            disabled={isProcessing || refundAmount < 0}
+            disabled={isProcessing}
         >
-          {isProcessing ? "Processing..." : `Confirm & Refund Rs. ${refundAmount.toFixed(2)}`}
+          {isProcessing ? "Processing..." : 
+           finalRefundAmount > 0 ? `Refund Rs. ${finalRefundAmount.toFixed(2)}` :
+           finalRefundAmount < 0 ? `Collect Rs. ${(-finalRefundAmount).toFixed(2)}` :
+           `Confirm Refund (No Charge)`
+          }
         </Button>
       </div>
     </div>

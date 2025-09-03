@@ -3,16 +3,23 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
+import { Badge } from '../ui/badge';
 
 interface RefundSummaryProps {
   originalTransaction: DatabaseReadyTransaction;
   newDiscountResult: any; // Recalculated result for kept items
-  refundAmount: number;
+  finalRefundAmount: number;
   isProcessing: boolean;
 }
 
-export function RefundSummary({ originalTransaction, newDiscountResult, refundAmount, isProcessing }: RefundSummaryProps) {
-  const originalTotal = originalTransaction.transactionHeader.finalTotal;
+export function RefundSummary({ originalTransaction, newDiscountResult, finalRefundAmount, isProcessing }: RefundSummaryProps) {
+  const { transactionHeader, paymentDetails } = originalTransaction;
+
+  const originalTotal = transactionHeader.finalTotal;
+  const originalPaid = paymentDetails.paidAmount;
+  const originalOutstanding = paymentDetails.outstandingAmount;
+  const originalIsInstallment = paymentDetails.isInstallment;
+
   const newSubtotal = newDiscountResult.originalSubtotal;
   const newTotalDiscount = newDiscountResult.totalDiscount;
   const newFinalTotal = newDiscountResult.finalTotal;
@@ -26,12 +33,27 @@ export function RefundSummary({ originalTransaction, newDiscountResult, refundAm
       <CardContent className="space-y-4">
         
         {/* Original Bill Info */}
-        <div className="p-3 bg-gray-100 rounded-lg space-y-1">
+        <div className="p-3 bg-gray-100 rounded-lg space-y-2">
             <h4 className="font-semibold text-gray-700 mb-1">Original Bill</h4>
             <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Original Paid Amount:</span>
+                <span className="text-gray-600">Original Bill Total:</span>
                 <span className="font-semibold">Rs. {originalTotal.toFixed(2)}</span>
             </div>
+            <div className="flex justify-between items-center text-sm">
+                <span className="text-gray-600">Amount Paid:</span>
+                <span className="font-semibold text-green-700">Rs. {originalPaid.toFixed(2)}</span>
+            </div>
+            {originalOutstanding > 0 && (
+                <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600">Outstanding:</span>
+                    <span className="font-semibold text-red-600">Rs. {originalOutstanding.toFixed(2)}</span>
+                </div>
+            )}
+            {originalIsInstallment && (
+                <div className='pt-1'>
+                    <Badge variant="outline">Installment Payment</Badge>
+                </div>
+            )}
         </div>
 
         {/* New Bill (Kept Items) Info */}
@@ -77,13 +99,28 @@ export function RefundSummary({ originalTransaction, newDiscountResult, refundAm
 
         {/* Final Refund Amount */}
         <div className="border-t pt-4 mt-4">
-          <div className="flex justify-between items-center text-2xl font-bold text-red-600">
-            <span>Amount to Refund:</span>
-            <span>Rs. {refundAmount.toFixed(2)}</span>
+          <div className="flex justify-between items-center text-2xl font-bold">
+            {finalRefundAmount > 0 ? (
+                <>
+                    <span className='text-green-600'>Amount to Refund:</span>
+                    <span className='text-green-600'>Rs. {finalRefundAmount.toFixed(2)}</span>
+                </>
+            ) : finalRefundAmount < 0 ? (
+                <>
+                    <span className='text-red-600'>Amount to Collect:</span>
+                    <span className='text-red-600'>Rs. {(-finalRefundAmount).toFixed(2)}</span>
+                </>
+            ) : (
+                <>
+                    <span>No Change:</span>
+                    <span>Rs. 0.00</span>
+                </>
+            )}
+            
           </div>
         </div>
         
-        {isProcessing && <p className="text-blue-500 animate-pulse text-center mt-2">Recalculating discounts...</p>}
+        {isProcessing && <p className="text-blue-500 animate-pulse text-center mt-2">Recalculating...</p>}
       </CardContent>
     </Card>
   );

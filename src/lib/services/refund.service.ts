@@ -26,30 +26,37 @@ interface RefundProcessingInput {
 export function processRefund(payload: RefundProcessingInput): DatabaseReadyTransaction {
   const { originalTransaction, refundCart, refundDiscountResult, activeCampaign } = payload;
   
-  const originalTotal = originalTransaction.transactionHeader.finalTotal;
-  const newTotal = refundDiscountResult.finalTotal;
-  const refundAmount = originalTotal - newTotal;
+  // The amount the customer originally paid
+  const originalPaidAmount = originalTransaction.paymentDetails.paidAmount;
+  // The value of the items the customer is now keeping
+  const newTotalToPay = refundDiscountResult.finalTotal;
 
-  // Create a new transaction ID for the refund record
+  // Positive value means we give money back.
+  // Negative value means the customer has to pay more (e.g. they returned a discounted item and kept a full price one).
+  const cashToReturnOrCollect = originalPaidAmount - newTotalToPay;
+
+  // The new outstanding amount is the new total bill minus what was originally paid.
+  // If this is negative, it means the customer overpaid, so the outstanding is 0.
+  const newOutstandingAmount = Math.max(0, newTotalToPay - originalPaidAmount);
+  
   const refundTransactionId = `refund-${Date.now()}`;
 
-  // The refund transaction represents the state of the *kept* items,
-  // but the payment details reflect the *refunded* amount.
   const refundTransaction = transformTransactionDataForDb({
     cart: refundCart,
     discountResult: refundDiscountResult,
     transactionId: refundTransactionId,
     customerData: originalTransaction.customerDetails,
     paymentData: {
-      // The "paidAmount" for a refund transaction is the negative value of what's returned
-      paidAmount: -refundAmount,
-      paymentMethod: 'cash', // Or original method
-      outstandingAmount: 0,
-      isInstallment: false,
+      // "paidAmount" for a refund transaction is the NET cash change.
+      // A positive value means we received cash (customer paid us), a negative value means we gave cash back.
+      paidAmount: -cashToReturnOrCollect, 
+      paymentMethod: originalTransaction.paymentDetails.paymentMethod,
+      outstandingAmount: newOutstandingAmount,
+      isInstallment: newOutstandingAmount > 0, // It's an installment if there's an outstanding balance
     },
     status: 'refund',
     originalTransactionId: originalTransaction.transactionHeader.transactionId,
-    activeCampaign: activeCampaign, // Pass the original campaign
+    activeCampaign: activeCampaign,
   });
 
   return refundTransaction;
