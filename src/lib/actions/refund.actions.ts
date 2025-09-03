@@ -5,7 +5,6 @@ import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import type { SaleItem, DiscountSet } from '@/types';
 import { processRefund } from '../services/refund.service';
 import { saveTransaction } from '../db/local-db';
-import type { DiscountResult } from '@/discount-engine/core/result';
 
 interface ProcessRefundPayload {
     originalTransaction: DatabaseReadyTransaction;
@@ -17,15 +16,15 @@ interface ProcessRefundPayload {
 /**
  * Server action to process a refund.
  * It takes the original transaction and the "kept" items to calculate the refund
- * and save a new transaction record.
+ * and save a new transaction record. This is a pure server-side operation.
  * 
  * @param payload - The data required for the refund.
  * @returns A result object with success status and either the new transaction or an error message.
  */
 export async function processRefundAction(payload: ProcessRefundPayload) {
     try {
-        // The processRefund service function is a pure server-side function
-        // that handles all the business logic for creating the refund transaction.
+        // 1. The processRefund service function is a pure server-side function
+        //    that handles all the business logic for creating the refund transaction object.
         const refundTransaction = processRefund({
             originalTransaction: payload.originalTransaction,
             refundCart: payload.refundCart,
@@ -33,15 +32,16 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
             activeCampaign: payload.activeCampaign,
         });
         
-        // Save the newly created refund transaction to the local DB
+        // 2. Save the newly created refund transaction to the local DB (or any other DB).
+        //    This saves the refund as a new, separate entry. The original transaction is untouched.
         await saveTransaction(refundTransaction);
 
-        // Return a success status and the data to the client component.
+        // 3. Return a success status and the data to the client component.
         return { success: true, data: refundTransaction };
 
     } catch (error) {
         console.error("[REFUND_ACTION_ERROR]", error);
-        // Return a failure status and a clear error message.
+        // 4. Return a failure status and a clear error message.
         return {
             success: false,
             error: error instanceof Error ? error.message : "An unknown error occurred while processing the refund."

@@ -13,12 +13,14 @@ import type { SaleItem, DiscountSet } from '@/types';
 interface RefundProcessingInput {
     originalTransaction: DatabaseReadyTransaction;
     refundCart: SaleItem[]; // The items the customer is KEEPING
-    refundDiscountResult: DiscountResult; // The recalculated discount result for kept items
+    refundDiscountResult: any; // The recalculated discount result for kept items, passed as a plain object
     activeCampaign: DiscountSet; // The campaign used for the original transaction
 }
 
 /**
  * Processes a refund and creates a new transaction record for it.
+ * This is a pure function that only handles data transformation and logic,
+ * it does not perform any I/O operations like saving to a DB.
  * @param payload - The data required to process the refund.
  * @returns A new DatabaseReadyTransaction object with status 'refund'.
  */
