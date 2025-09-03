@@ -6,6 +6,7 @@ import { Button } from '../ui/button';
 import { format } from 'date-fns';
 import { ReceiptText, RefreshCw } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 interface TransactionCardProps {
   transaction: DatabaseReadyTransaction;
