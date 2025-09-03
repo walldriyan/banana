@@ -144,7 +144,7 @@ export function RefundDialogContent({
         return updatedCart;
       }
     });
-  }, [originalTransaction]);
+  }, [originalTransaction.transactionLines]);
 
   const handleProcessRefund = async () => {
     if (!activeCampaign) {
@@ -153,12 +153,14 @@ export function RefundDialogContent({
     }
     setIsProcessing(true);
     try {
-        const result = await processRefundAction({
+        // This object only contains plain data, safe to pass to a Server Action.
+        const payload = {
             originalTransaction,
             refundCart,
-            refundDiscountResult: discountResult,
             activeCampaign,
-        });
+        };
+
+        const result = await processRefundAction(payload);
 
         if (result.success && result.data) {
             toast({
