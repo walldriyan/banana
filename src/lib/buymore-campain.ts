@@ -57,7 +57,8 @@ export const buyMoreSaveMore: DiscountSet = {
               type: 'percentage',
               value: 10,
               conditionMin: 3,
-              applyFixedOnce: false,
+              conditionMax: 5,
+              applyFixedOnce: true,
               description: '10% off each new T-shirt when buying 3 or more'
           },
           lineItemValueRuleJson: null,
@@ -82,7 +83,7 @@ export const buyMoreSaveMore: DiscountSet = {
     ],
   
     globalCartQuantityRuleJson: {
-        isEnabled: true,
+        isEnabled: false,
         name: 'Shopping Haul Bonus',
         type: 'fixed',
         value: 400, 
