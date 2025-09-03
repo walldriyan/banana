@@ -7,7 +7,6 @@
 
 import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import { transformTransactionDataForDb } from '../pos-data-transformer';
-import type { DiscountResult } from '@/discount-engine/core/result';
 import type { SaleItem, DiscountSet } from '@/types';
 
 interface RefundProcessingInput {
