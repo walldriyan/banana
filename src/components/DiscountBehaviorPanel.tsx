@@ -96,7 +96,7 @@ export default function DiscountBehaviorPanel({
             <div><strong>applyFixedOnce: true</strong> = Fixed amount applied once per line item (quantity නොබලා)</div>
             <div><strong>applyFixedOnce: false</strong> = Fixed amount × quantity (quantity වැඩි වෙනකොට discount එකත් වැඩි)</div>
             <div><strong>Percentage rules</strong> = Always calculated on total line value (quantity ගැන automatic)</div>
-            <div><strong>Rule Priority</strong> = Custom > Batch > Product > Default > Cart</div>
+            <div><strong>Rule Priority</strong> = Custom &gt; Batch &gt; Product &gt; Default &gt; Cart</div>
           </div>
         </div>
       </div>
