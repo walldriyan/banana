@@ -23,7 +23,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpd
           <p className="text-center text-gray-500 py-8">Your cart is empty.</p>
         ) : (
           cart.map((item) => {
-            // Safely call getLineItem if it exists
+            // Safely call getLineItem if it exists and it's a function
             const lineItemDiscount = (discountResult && typeof discountResult.getLineItem === 'function')
               ? discountResult.getLineItem(item.saleItemId)
               : undefined;
@@ -32,7 +32,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpd
               <CartItemCard
                 key={item.saleItemId}
                 item={item}
-                discountResult={lineItemDiscount}
+                discountResult={lineItemDiscount} // Pass the specific line item's discount result
                 onUpdateQuantity={onUpdateQuantity}
               />
             );
