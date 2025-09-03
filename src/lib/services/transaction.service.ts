@@ -1,4 +1,5 @@
 // src/lib/services/transaction.service.ts
+'use client';
 
 /**
  * This service encapsulates all business logic related to handling a transaction.
@@ -12,7 +13,7 @@ import { insertTransaction } from '../db/local-db';
 // A simple mock to check network status on the server.
 // In a real app, this would be more complex. For now, we assume it's always "offline"
 // to force local saves.
-const isServerOnline = () => false;
+const isClientOnline = () => typeof navigator !== 'undefined' && navigator.onLine;
 
 export class TransactionService {
   /**
@@ -34,10 +35,10 @@ export class TransactionService {
     //   throw new Error(`Invalid transaction data: ${validationResult.error.message}`);
     // }
 
-    const isOnline = isServerOnline();
+    const isOnline = isClientOnline();
 
     if (isOnline) {
-      // TODO: Step 2a - Implement server-side saving logic (e.g., call Prisma to save to PostgreSQL)
+      // TODO: Step 2a - Implement server-side saving logic (e.g., call a server action/API route)
       // For now, we'll log and save locally as a fallback.
       console.log('Network is online. Would attempt to save to remote server.');
       await insertTransaction(transactionData); // Fallback to local save for now

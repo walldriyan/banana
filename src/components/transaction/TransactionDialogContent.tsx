@@ -13,8 +13,8 @@ import type { CustomerData, PaymentData, DatabaseReadyTransaction } from '@/lib/
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
-import { saveTransaction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
+import { TransactionService } from '@/lib/services/transaction.service';
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
@@ -68,8 +68,8 @@ export function TransactionDialogContent({
     });
     
     try {
-      // This now calls our robust action handler
-      await saveTransaction(preparedData);
+      // This now calls our client-side service
+      await TransactionService.save(preparedData);
       setFinalTransactionData(preparedData);
       setStep('print');
       toast({
