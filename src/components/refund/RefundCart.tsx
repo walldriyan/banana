@@ -29,10 +29,13 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
         ) : (
           <div className="space-y-4">
             {cart.map(item => {
-              const originalLine = originalTransactionLines.find(l => l.productId === item.id && l.batchId === item.selectedBatchId);
+              const originalLine = originalTransactionLines.find(l => l.productId === item.id && (l.batchId || null) === (item.selectedBatchId || null));
               const originalQty = originalLine?.quantity || 0;
               const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
-              const hasDiscounts = lineItemResult && lineItemResult.appliedRules && lineItemResult.appliedRules.length > 0;
+              
+              const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
+              const originalLineTotal = item.price * item.quantity;
+              const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
 
               return (
                 <div key={item.saleItemId} className="p-3 bg-gray-50 rounded-lg border">
@@ -56,17 +59,31 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                       >+</Button>
                     </div>
                   </div>
-                  {hasDiscounts && lineItemResult && (
-                    <div className="mt-2 text-xs text-green-800 space-y-1 border-t border-dashed border-green-200 pt-2">
-                      <div className="font-semibold text-green-900 mb-1">Recalculated Discounts:</div>
-                      {lineItemResult.appliedRules.map((rule: any, i: number) => (
-                        <p key={i} className="flex justify-between items-center">
-                          <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
-                          <span className="font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
-                        </p>
-                      ))}
+                  
+                  <div className="mt-3 border-t border-dashed pt-3">
+                    {hasDiscounts && lineItemResult && (
+                      <div className="mb-2 text-xs text-green-800 space-y-1">
+                        <div className="font-bold text-green-900 mb-1">Recalculated Discounts:</div>
+                        {lineItemResult.appliedRules.map((rule: any, i: number) => (
+                          <p key={i} className="flex justify-between items-center">
+                            <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
+                            <span className="font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                    <div className="flex justify-between items-baseline text-sm">
+                      <span className={hasDiscounts ? "text-gray-500 line-through" : "text-gray-600 font-semibold"}>
+                        New Total: Rs. {originalLineTotal.toFixed(2)}
+                      </span>
+                      {hasDiscounts && (
+                        <span className="font-bold text-lg text-green-700">
+                          Final Price: Rs. {finalLineTotal.toFixed(2)}
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
+
                 </div>
               );
             })}
