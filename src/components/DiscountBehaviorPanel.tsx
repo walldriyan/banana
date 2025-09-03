@@ -1,9 +1,9 @@
 import React from 'react';
-import { DiscountResult } from '@/discount-engine/core/result';
+// import { DiscountResult } from '@/discount-engine/core/result';
 import type { DiscountSet } from '@/types';
 
 interface DiscountBehaviorPanelProps {
-  discountResult: DiscountResult;
+  discountResult: any; // Using any because it's a plain object from server, not a class instance
   activeCampaign: DiscountSet;
   transactionId: string;
 }
@@ -13,7 +13,9 @@ export default function DiscountBehaviorPanel({
   activeCampaign, 
   transactionId 
 }: DiscountBehaviorPanelProps) {
-  const appliedRules = discountResult.getAppliedRulesSummary();
+  const appliedRules = (discountResult && typeof discountResult.getAppliedRulesSummary === 'function') 
+    ? discountResult.getAppliedRulesSummary() 
+    : [];
   
   return (
     <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
@@ -71,19 +73,19 @@ export default function DiscountBehaviorPanel({
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <div className="text-gray-600">Original Subtotal:</div>
-            <div className="font-semibold">Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
+            <div className="font-semibold">Rs.{(discountResult?.originalSubtotal || 0).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-gray-600">Total Discount:</div>
-            <div className="font-semibold text-green-600">-Rs.{discountResult.totalDiscount.toFixed(2)}</div>
+            <div className="font-semibold text-green-600">-Rs.{(discountResult?.totalDiscount || 0).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-gray-600">Item Discounts:</div>
-            <div className="font-medium">-Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
+            <div className="font-medium">-Rs.{(discountResult?.totalItemDiscount || 0).toFixed(2)}</div>
           </div>
           <div>
             <div className="text-gray-600">Cart Discounts:</div>
-            <div className="font-medium">-Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
+            <div className="font-medium">-Rs.{(discountResult?.totalCartDiscount || 0).toFixed(2)}</div>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
-import { DiscountResult } from '@/discount-engine/core/result';
+// import { DiscountResult } from '@/discount-engine/core/result';
 import { megaDealFest, clearanceSale, vipExclusive } from '@/lib/my-campaigns';
 import { perUnitDiscounts, flatRateDiscounts, percentageVsFixed, mixedStrategy } from '@/lib/advanced-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -93,6 +93,7 @@ const allCampaigns = [
 ];
 
 // A plain object to represent the initial state of the discount result
+// We add dummy methods to prevent initial render errors.
 const initialDiscountResult = {
   lineItems: [],
   totalItemDiscount: 0,
@@ -101,6 +102,7 @@ const initialDiscountResult = {
   originalSubtotal: 0,
   totalDiscount: 0,
   finalTotal: 0,
+  getLineItem: (saleItemId: string) => undefined,
   getAppliedRulesSummary: () => [],
 };
 
@@ -132,13 +134,15 @@ export default function MyNewEcommerceShop() {
       }
       setIsCalculating(true);
       const result = await calculateDiscountsAction(cart, activeCampaign);
-      if (result.success) {
-        // We receive a plain object, not a class instance.
-        // We need to add back any methods if the components rely on them.
+      if (result.success && result.data) {
+        // We receive a plain object from the server action, not a class instance.
+        // We need to re-attach any methods our components rely on.
         setDiscountResult({
           ...result.data,
+          // Recreate the getLineItem method on the client
           getLineItem: (saleItemId: string) => result.data.lineItems.find((li: any) => li.lineId === saleItemId),
-          getAppliedRulesSummary: () => result.data.appliedRulesSummary
+          // Recreate the getAppliedRulesSummary method on the client
+          getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
         });
       } else {
         toast({
