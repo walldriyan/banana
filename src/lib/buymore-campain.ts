@@ -54,7 +54,7 @@ export const buyMoreSaveMore: DiscountSet = {
           lineItemQuantityRuleJson: {
               isEnabled: true, 
               name: 'New T-Shirt Offer', 
-              type: 'percentage',
+              type: 'fixed',
               value: 10,
               conditionMin: 3,
               conditionMax: 5,
