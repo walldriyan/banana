@@ -53,7 +53,7 @@ export function RefundDialogContent({
   onRefundComplete,
 }: RefundDialogContentProps) {
   const [refundCart, setRefundCart] = useState<SaleItem[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(true); // Start as true
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
   const { toast } = useToast();
 
@@ -70,12 +70,11 @@ export function RefundDialogContent({
   // Recalculate discounts whenever the refund cart changes
   useEffect(() => {
     const recalculate = async () => {
-      // Set processing to true at the beginning
       setIsProcessing(true);
 
       if (refundCart.length === 0) {
         setDiscountResult(initialDiscountResult);
-        setIsProcessing(false); // Set to false even for empty cart
+        setIsProcessing(false);
         return;
       }
       
@@ -84,6 +83,7 @@ export function RefundDialogContent({
         setDiscountResult({
           ...result.data,
           getLineItem: (saleItemId: string) => result.data.lineItems.find((li: any) => li.saleItemId === saleItemId),
+          getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
         });
       } else {
         toast({
@@ -92,16 +92,12 @@ export function RefundDialogContent({
         });
         setDiscountResult(initialDiscountResult);
       }
-      // Set processing to false at the end
       setIsProcessing(false);
     };
+    
+    recalculate();
 
-    // This check ensures we don't run the calculation on the initial empty cart state
-    // before it's populated by the other useEffect.
-    if (refundCart.length > 0 || (originalTransaction && refundCart.length === 0)) {
-        recalculate();
-    }
-  }, [refundCart, activeCampaign, toast, originalTransaction]);
+  }, [refundCart, activeCampaign, toast]);
 
   const updateRefundQuantity = useCallback((saleItemId: string, change: number) => {
     setRefundCart(currentCart => {
@@ -113,10 +109,10 @@ export function RefundDialogContent({
       
       const updatedCart = [...currentCart];
       const currentItem = updatedCart[itemIndex];
-      // Ensure newQuantity is a number
       const newQuantity = Number(currentItem.quantity) + Number(change);
 
       if (newQuantity <= 0) {
+        // Remove item from cart if quantity is zero or less
         return updatedCart.filter(item => item.saleItemId !== saleItemId);
       } 
       
@@ -126,7 +122,7 @@ export function RefundDialogContent({
       
       return updatedCart;
     });
-  }, [originalTransaction]);
+  }, [originalTransaction]); // FIX: Added originalTransaction to dependency array
 
   const handleProcessRefund = async () => {
     setIsProcessing(true);
