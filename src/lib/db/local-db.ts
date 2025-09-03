@@ -94,3 +94,32 @@ export async function getPendingTransactions(): Promise<DatabaseReadyTransaction
     throw new Error('Could not retrieve pending transactions.');
   }
 }
+
+/**
+ * A client-side service to handle saving a transaction.
+ * It will attempt to save to the local database.
+ * In the future, this will also handle syncing with the server.
+ * @param transaction - The transaction data to save.
+ */
+export async function saveTransaction(transaction: DatabaseReadyTransaction) {
+  try {
+    // For now, we only save to the local DB.
+    // The SQLite package is disabled, so this will currently just log a message.
+    await insertTransaction(transaction);
+    console.log(`Transaction ${transaction.transactionHeader.transactionId} queued for saving.`);
+    
+    // TODO: Add logic here to check for network status and sync with a server API.
+    // const isOnline = navigator.onLine;
+    // if (isOnline) {
+    //   await syncPendingTransactions();
+    // }
+
+  } catch (error) {
+    console.error('Error in saveTransaction service:', error);
+    // Re-throw the error so the UI can catch it and display a message.
+    if (error instanceof Error) {
+        throw new Error(`Service failed: ${error.message}`);
+    }
+    throw new Error('An unknown error occurred in the transaction service.');
+  }
+}

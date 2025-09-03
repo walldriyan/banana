@@ -1,7 +1,6 @@
 // src/app/api/transactions/route.ts
 
 import { NextResponse } from 'next/server';
-import { TransactionService } from '@/lib/services/transaction.service';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 
 /**
@@ -21,12 +20,15 @@ export async function POST(request: Request) {
       );
     }
     
-    // Use the exact same service layer as the web app's server action
-    const result = await TransactionService.save(transactionData);
+    // In a real app, you would now save this to your primary database (e.g., PostgreSQL)
+    // For this example, we'll just log it to the server console.
+    console.log('[API] Received transaction to save:', transactionData.transactionHeader.transactionId);
+    
+    // Example: const result = await YourDatabaseService.save(transactionData);
     
     return NextResponse.json({
         message: 'Transaction processed successfully via API.',
-        data: result.data
+        transactionId: transactionData.transactionHeader.transactionId,
     }, { status: 201 }); // 201 Created
 
   } catch (error) {

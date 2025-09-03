@@ -14,7 +14,7 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
-import { TransactionService } from '@/lib/services/transaction.service';
+import { saveTransaction } from '@/lib/db/local-db';
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
@@ -69,7 +69,7 @@ export function TransactionDialogContent({
     
     try {
       // This now calls our client-side service
-      await TransactionService.save(preparedData);
+      await saveTransaction(preparedData);
       setFinalTransactionData(preparedData);
       setStep('print');
       toast({
