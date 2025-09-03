@@ -1,10 +1,9 @@
-// src/app/page.tsx
+// src/app/(pos)/page.tsx
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { DiscountResult } from '@/discount-engine/core/result';
-import { calculateDiscountsForItems } from '@/lib/discountUtils';
 import { megaDealFest, clearanceSale, vipExclusive } from '@/lib/my-campaigns';
 import { perUnitDiscounts, flatRateDiscounts, percentageVsFixed, mixedStrategy } from '@/lib/advanced-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -15,6 +14,8 @@ import type { SearchableProductInputRef } from '@/components/POSUI/SearchablePro
 import { buyMoreSaveMore } from '@/lib/buymore-campain';
 import { TransactionDialogContent } from '@/components/transaction/TransactionDialogContent';
 import { useDrawer } from '@/hooks/use-drawer';
+import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
+import { useToast } from '@/hooks/use-toast';
 
 
 const oldBatch: ProductBatch = {
@@ -91,19 +92,67 @@ const allCampaigns = [
   mixedStrategy
 ];
 
+// A plain object to represent the initial state of the discount result
+const initialDiscountResult = {
+  lineItems: [],
+  totalItemDiscount: 0,
+  totalCartDiscount: 0,
+  appliedCartRules: [],
+  originalSubtotal: 0,
+  totalDiscount: 0,
+  finalTotal: 0,
+  getAppliedRulesSummary: () => [],
+};
+
+
 export default function MyNewEcommerceShop() {
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
   const drawer = useDrawer();
+  const { toast } = useToast();
+
+  const [isCalculating, setIsCalculating] = useState(false);
+  const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
+
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
 
   useEffect(() => {
-    // This now correctly runs only on the client, preventing hydration mismatch.
     setTransactionId(createNewTransactionId());
   }, []);
+
+  // Recalculate discounts when cart or campaign changes
+  useEffect(() => {
+    const recalculate = async () => {
+      if (cart.length === 0) {
+        setDiscountResult(initialDiscountResult);
+        return;
+      }
+      setIsCalculating(true);
+      const result = await calculateDiscountsAction(cart, activeCampaign);
+      if (result.success) {
+        // We receive a plain object, not a class instance.
+        // We need to add back any methods if the components rely on them.
+        setDiscountResult({
+          ...result.data,
+          getLineItem: (saleItemId: string) => result.data.lineItems.find((li: any) => li.lineId === saleItemId),
+          getAppliedRulesSummary: () => result.data.appliedRulesSummary
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Discount Error",
+          description: result.error,
+        });
+        setDiscountResult(initialDiscountResult);
+      }
+      setIsCalculating(false);
+    };
+
+    recalculate();
+  }, [cart, activeCampaign, toast]);
 
 
   useEffect(() => {
@@ -191,7 +240,10 @@ export default function MyNewEcommerceShop() {
   const handleTransactionComplete = () => {
     drawer.closeDrawer();
     clearCart();
-    // You can add a success toast here if you like
+    toast({
+        title: "Transaction Complete!",
+        description: "The cart has been cleared and a new transaction is ready.",
+    });
   };
 
   const openTransactionDrawer = () => {
@@ -206,26 +258,9 @@ export default function MyNewEcommerceShop() {
         />
       ),
       closeOnOverlayClick: false,
-      drawerClassName: "sm:max-w-4xl" // Example of setting a custom width
+      drawerClassName: "sm:max-w-4xl" 
     });
   };
-
-
-  const discountResult: DiscountResult = useMemo(() => {
-    const campaignForCalculation = activeCampaign;
-
-    return calculateDiscountsForItems({
-      saleItems: cart,
-      activeCampaign: campaignForCalculation,
-      allProducts: sampleProducts,
-      transactionId,
-      config: {
-        enableLogging: process.env.NODE_ENV === 'development',
-        enableValidation: true,
-        maxDiscountPercentage: 80
-      }
-    });
-  }, [cart, activeCampaign, transactionId]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
@@ -245,6 +280,7 @@ export default function MyNewEcommerceShop() {
                 </span>
               )}
             </div>
+             {isCalculating && <div className="text-sm text-blue-500 mt-2 animate-pulse">Calculating discounts...</div>}
           </header>
 
           <div className="space-y-6">
@@ -269,7 +305,7 @@ export default function MyNewEcommerceShop() {
               </button>
               <button
                 onClick={openTransactionDrawer}
-                disabled={cart.length === 0}
+                disabled={cart.length === 0 || isCalculating}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Complete Transaction
@@ -291,7 +327,7 @@ export default function MyNewEcommerceShop() {
             transactionId={transactionId}
           />
 
-          {process.env.NODE_ENV === 'development' && (
+          {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
               <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
               <div className="space-y-1 text-blue-700">
