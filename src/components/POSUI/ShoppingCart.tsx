@@ -13,7 +13,7 @@ interface ShoppingCartProps {
 
 const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpdateQuantity }) => {
   const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const finalTotal = originalTotal - (discountResult?.totalItemDiscount + discountResult?.totalCartDiscount || 0);
+  const finalTotal = discountResult?.finalTotal || originalTotal;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
