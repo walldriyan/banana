@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { CustomerInfoPanel } from './CustomerInfoPanel';
 import { PaymentPanel } from './PaymentPanel';
@@ -15,6 +17,7 @@ import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
 import { saveTransaction } from '@/lib/db/local-db';
+import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
@@ -32,43 +35,59 @@ export function TransactionDialogContent({
   const [step, setStep] = useState<'details' | 'print'>('details');
   const [showFullPrice, setShowFullPrice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [customerData, setCustomerData] = useState<CustomerData>({
-    name: 'Walk-in Customer',
-    phone: '',
-    address: '',
-  });
-  const [paymentData, setPaymentData] = useState<PaymentData>({
-    paidAmount: 0,
-    paymentMethod: 'cash',
-    outstandingAmount: 0,
-    isInstallment: false,
-  });
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Reset payment data when the component is shown for a new transaction
-    setPaymentData({
-      paidAmount: discountResult.finalTotal,
-      paymentMethod: 'cash',
-      outstandingAmount: 0,
-      isInstallment: false,
-    });
-  }, [discountResult.finalTotal]);
+  const methods = useForm<TransactionFormValues>({
+    resolver: zodResolver(transactionFormSchema),
+    defaultValues: {
+      customer: {
+        name: 'Walk-in Customer',
+        phone: '',
+        address: '',
+      },
+      payment: {
+        paidAmount: 0,
+        paymentMethod: 'cash',
+        outstandingAmount: 0,
+        isInstallment: false,
+      },
+    },
+    mode: 'onChange', 
+  });
+  
+  const { handleSubmit, reset, formState: { isValid } } = methods;
 
-  const handleConfirmAndPreview = async () => {
+  useEffect(() => {
+    // Reset form with new totals when discountResult changes
+    reset({
+        customer: {
+            name: 'Walk-in Customer',
+            phone: '',
+            address: '',
+        },
+        payment: {
+            paidAmount: discountResult.finalTotal,
+            paymentMethod: 'cash',
+            outstandingAmount: 0,
+            isInstallment: false,
+        }
+    });
+  }, [discountResult, reset]);
+
+
+  const processTransaction = async (data: TransactionFormValues) => {
     setIsSaving(true);
     const preparedData = transformTransactionDataForDb({
       cart,
       discountResult,
       transactionId,
-      customerData,
-      paymentData,
+      customerData: data.customer,
+      paymentData: data.payment,
     });
     
     try {
-      // This now calls our client-side service
       await saveTransaction(preparedData);
       setFinalTransactionData(preparedData);
       setStep('print');
@@ -90,7 +109,6 @@ export function TransactionDialogContent({
 
   const handlePrintAndFinish = () => {
     console.log("Printing receipt...");
-    // In a real app, you'd trigger window.print() here on a print-formatted page/iframe
     onTransactionComplete();
   };
 
@@ -119,21 +137,19 @@ export function TransactionDialogContent({
   }
 
   return (
-    <div className="flex flex-col">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 flex-grow">
-        <CustomerInfoPanel data={customerData} onDataChange={setCustomerData} />
-        <PaymentPanel
-          data={paymentData}
-          onDataChange={setPaymentData}
-          finalTotal={discountResult.finalTotal}
-        />
-      </div>
-      <div className="flex-shrink-0 pt-4 mt-4 border-t flex justify-end gap-2">
-        <Button variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
-        <Button onClick={handleConfirmAndPreview} disabled={isSaving}>
-          {isSaving ? "Saving..." : "Confirm & Preview Receipt"}
-        </Button>
-      </div>
-    </div>
+    <FormProvider {...methods}>
+      <form onSubmit={handleSubmit(processTransaction)} className="flex flex-col">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 flex-grow">
+          <CustomerInfoPanel />
+          <PaymentPanel finalTotal={discountResult.finalTotal} />
+        </div>
+        <div className="flex-shrink-0 pt-4 mt-4 border-t flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
+          <Button type="submit" disabled={isSaving || !isValid}>
+            {isSaving ? "Saving..." : "Confirm & Preview Receipt"}
+          </Button>
+        </div>
+      </form>
+    </FormProvider>
   );
 }

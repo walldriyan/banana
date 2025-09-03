@@ -1,6 +1,7 @@
 // src/components/transaction/PaymentPanel.tsx
 'use client';
 import React, { useEffect } from 'react';
+import { useFormContext, Controller } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -12,35 +13,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { PaymentData } from '@/lib/pos-data-transformer';
+import { FormItem, FormMessage } from '../ui/form';
 
 interface PaymentPanelProps {
-  data: PaymentData;
-  onDataChange: (data: PaymentData) => void;
   finalTotal: number;
 }
 
-export function PaymentPanel({ data, onDataChange, finalTotal }: PaymentPanelProps) {
+export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
+  const { control, watch, setValue, formState: { errors } } = useFormContext();
+  const paidAmount = watch('payment.paidAmount');
+
   useEffect(() => {
-    const outstanding = finalTotal - data.paidAmount;
-    if (outstanding !== data.outstandingAmount) {
-      onDataChange({ ...data, outstandingAmount: outstanding > 0 ? outstanding : 0 });
-    }
-  }, [data.paidAmount, finalTotal, onDataChange, data]);
-
-
-  const handlePaidAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const paid = parseFloat(e.target.value) || 0;
-    onDataChange({ ...data, paidAmount: paid });
-  };
-  
-  const handlePaymentMethodChange = (value: 'cash' | 'card' | 'online') => {
-      onDataChange({ ...data, paymentMethod: value });
-  };
-
-  const handleInstallmentChange = (checked: boolean) => {
-    onDataChange({ ...data, isInstallment: checked });
-  };
+    const outstanding = finalTotal - (paidAmount || 0);
+    setValue('payment.outstandingAmount', outstanding > 0 ? outstanding : 0, { shouldValidate: true });
+  }, [paidAmount, finalTotal, setValue]);
 
   return (
     <Card>
@@ -53,44 +39,73 @@ export function PaymentPanel({ data, onDataChange, finalTotal }: PaymentPanelPro
           <div>Rs. {finalTotal.toFixed(2)}</div>
         </div>
 
-        <div className="space-y-2">
+        <FormItem>
           <Label htmlFor="paymentMethod">Payment Method</Label>
-          <Select value={data.paymentMethod} onValueChange={handlePaymentMethodChange}>
-            <SelectTrigger id="paymentMethod">
-              <SelectValue placeholder="Select method" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="cash">Cash</SelectItem>
-              <SelectItem value="card">Card</SelectItem>
-              <SelectItem value="online">Online</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <Controller
+            control={control}
+            name="payment.paymentMethod"
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger id="paymentMethod">
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+           {errors.payment?.paymentMethod && (
+            <FormMessage>{errors.payment.paymentMethod.message?.toString()}</FormMessage>
+          )}
+        </FormItem>
 
-        <div className="space-y-2">
+        <FormItem>
           <Label htmlFor="paidAmount">Amount Paid</Label>
-          <Input
-            id="paidAmount"
-            type="number"
-            value={data.paidAmount}
-            onChange={handlePaidAmountChange}
-            placeholder="e.g., 5000.00"
+           <Controller
+            control={control}
+            name="payment.paidAmount"
+            render={({ field }) => (
+              <Input
+                {...field}
+                id="paidAmount"
+                type="number"
+                placeholder="e.g., 5000.00"
+                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+              />
+            )}
           />
-        </div>
+           {errors.payment?.paidAmount && (
+            <FormMessage>{errors.payment.paidAmount.message?.toString()}</FormMessage>
+          )}
+        </FormItem>
         
-        <div className="text-2xl font-bold text-red-600 text-center p-3 bg-red-50 rounded-lg">
-          <div>Outstanding</div>
-          <div>Rs. {data.outstandingAmount.toFixed(2)}</div>
-        </div>
+        <FormItem>
+            <div className="text-2xl font-bold text-red-600 text-center p-3 bg-red-50 rounded-lg">
+            <div>Outstanding</div>
+            <div>Rs. {watch('payment.outstandingAmount').toFixed(2)}</div>
+            </div>
+             {errors.payment?.outstandingAmount && (
+                <FormMessage>{errors.payment.outstandingAmount.message?.toString()}</FormMessage>
+            )}
+        </FormItem>
 
-        <div className="flex items-center space-x-2 pt-4">
-          <Switch 
-            id="installment-mode" 
-            checked={data.isInstallment}
-            onCheckedChange={handleInstallmentChange}
-          />
+        <FormItem className="flex items-center space-x-2 pt-4">
+           <Controller
+            control={control}
+            name="payment.isInstallment"
+            render={({ field }) => (
+                <Switch 
+                    id="installment-mode" 
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                />
+            )}
+           />
           <Label htmlFor="installment-mode">Pay by Installments</Label>
-        </div>
+        </FormItem>
 
       </CardContent>
     </Card>

@@ -1,20 +1,14 @@
 // src/components/transaction/CustomerInfoPanel.tsx
 'use client';
 import React from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import type { CustomerData } from '@/lib/pos-data-transformer';
+import { FormItem, FormMessage } from '@/components/ui/form';
 
-interface CustomerInfoPanelProps {
-  data: CustomerData;
-  onDataChange: (data: CustomerData) => void;
-}
-
-export function CustomerInfoPanel({ data, onDataChange }: CustomerInfoPanelProps) {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onDataChange({ ...data, [e.target.name]: e.target.value });
-  };
+export function CustomerInfoPanel() {
+  const { register, formState: { errors } } = useFormContext();
 
   return (
     <Card>
@@ -22,36 +16,39 @@ export function CustomerInfoPanel({ data, onDataChange }: CustomerInfoPanelProps
         <CardTitle>Customer Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Customer Name</Label>
+        <FormItem>
+          <Label htmlFor="customerName">Customer Name</Label>
           <Input
-            id="name"
-            name="name"
-            value={data.name}
-            onChange={handleChange}
+            id="customerName"
+            {...register('customer.name')}
             placeholder="e.g., John Doe"
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">Phone Number</Label>
+          {errors.customer?.name && (
+            <FormMessage>{errors.customer.name.message?.toString()}</FormMessage>
+          )}
+        </FormItem>
+        <FormItem>
+          <Label htmlFor="customerPhone">Phone Number</Label>
           <Input
-            id="phone"
-            name="phone"
-            value={data.phone}
-            onChange={handleChange}
+            id="customerPhone"
+            {...register('customer.phone')}
             placeholder="e.g., 0771234567"
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="address">Address</Label>
+           {errors.customer?.phone && (
+            <FormMessage>{errors.customer.phone.message?.toString()}</FormMessage>
+          )}
+        </FormItem>
+        <FormItem>
+          <Label htmlFor="customerAddress">Address</Label>
           <Input
-            id="address"
-            name="address"
-            value={data.address}
-            onChange={handleChange}
+            id="customerAddress"
+            {...register('customer.address')}
             placeholder="e.g., 123, Main St, Colombo"
           />
-        </div>
+           {errors.customer?.address && (
+            <FormMessage>{errors.customer.address.message?.toString()}</FormMessage>
+          )}
+        </FormItem>
       </CardContent>
     </Card>
   );
