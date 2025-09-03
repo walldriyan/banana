@@ -3,8 +3,9 @@
 import React from 'react';
 import type { SaleItem } from '@/types';
 import type { TransactionLine } from '@/lib/pos-data-transformer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Separator } from '../ui/separator';
 
 interface RefundCartProps {
   cart: SaleItem[];
@@ -15,11 +16,11 @@ interface RefundCartProps {
 
 export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, discountResult }: RefundCartProps) {
   return (
-    <Card>
+    <Card className="flex flex-col h-full">
       <CardHeader>
         <CardTitle>Items to Keep</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-grow overflow-y-auto">
         {originalTransactionLines.length === 0 ? (
           <p className="text-gray-500">Original transaction has no items.</p>
         ) : cart.length === 0 ? (
@@ -62,7 +63,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                   
                   <div className="mt-3 border-t border-dashed pt-3">
                     {hasDiscounts && lineItemResult && (
-                      <div className="mb-2 text-xs text-green-800 space-y-1">
+                      <div className="mb-2 text-xs text-green-800 bg-green-50 p-2 rounded-md space-y-1">
                         <div className="font-bold text-green-900 mb-1">Recalculated Discounts:</div>
                         {lineItemResult.appliedRules.map((rule: any, i: number) => (
                           <p key={i} className="flex justify-between items-center">
@@ -77,7 +78,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                         New Total: Rs. {originalLineTotal.toFixed(2)}
                       </span>
                       {hasDiscounts && (
-                        <span className="font-bold text-xs text-green-700">
+                        <span className="font-bold text-lg text-green-700">
                           Final Price: Rs. {finalLineTotal.toFixed(2)}
                         </span>
                       )}
@@ -90,6 +91,28 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
           </div>
         )}
       </CardContent>
+      {cart.length > 0 && discountResult && (
+        <>
+          <Separator className="mt-auto" />
+          <CardFooter className="p-4 bg-gray-50">
+            <div className="w-full space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="font-medium">Rs. {discountResult.originalSubtotal.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Discounts:</span>
+                <span className="font-medium text-green-600">-Rs. {discountResult.totalDiscount.toFixed(2)}</span>
+              </div>
+              <Separator className="my-1" />
+              <div className="flex justify-between font-bold text-base">
+                <span className="text-gray-800">New Total:</span>
+                <span className="text-blue-700">Rs. {discountResult.finalTotal.toFixed(2)}</span>
+              </div>
+            </div>
+          </CardFooter>
+        </>
+      )}
     </Card>
   );
 }
