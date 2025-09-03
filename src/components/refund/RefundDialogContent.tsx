@@ -73,7 +73,8 @@ export function RefundDialogContent({
       setIsProcessing(true);
 
       if (refundCart.length === 0) {
-        setDiscountResult({ ...initialDiscountResult, finalTotal: 0 });
+        // If cart is empty, full refund, so new bill total is 0
+        setDiscountResult({ ...initialDiscountResult, finalTotal: 0, originalSubtotal: 0 });
         setIsProcessing(false);
         return;
       }
@@ -95,12 +96,9 @@ export function RefundDialogContent({
       setIsProcessing(false);
     };
     
-    // Only run if refundCart has been initialized
-    if(refundCart.length > 0 || originalTransaction.transactionLines.length > 0) {
-      recalculate();
-    }
+    recalculate();
 
-  }, [refundCart, activeCampaign, toast, originalTransaction.transactionLines.length]);
+  }, [refundCart, activeCampaign, toast]);
 
   const updateRefundQuantity = useCallback((saleItemId: string, change: number) => {
     setRefundCart(currentCart => {
@@ -113,18 +111,23 @@ export function RefundDialogContent({
       const originalLine = originalTransaction.transactionLines.find(line => line.productId === currentItem.id && line.batchId === currentItem.selectedBatchId);
       const maxQty = originalLine?.quantity || 0;
 
-      const newQuantity = Number(currentItem.quantity) + Number(change);
+      let newQuantity = Number(currentItem.quantity) + Number(change);
 
-      if (newQuantity <= 0) {
-        return updatedCart.filter(item => item.saleItemId !== saleItemId);
-      } 
+      if (newQuantity < 0) {
+        newQuantity = 0;
+      }
       
-      if (newQuantity <= maxQty) {
+      if (newQuantity > maxQty) {
+        newQuantity = maxQty;
+      }
+
+      if (newQuantity === 0) {
+         // Filter out the item if its quantity becomes zero
+        return updatedCart.filter(item => item.saleItemId !== saleItemId);
+      } else {
         updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity };
         return updatedCart;
       }
-      
-      return currentCart; // Return original cart if no change
     });
   }, [originalTransaction]);
 
@@ -167,10 +170,11 @@ export function RefundDialogContent({
           cart={refundCart}
           onUpdateQuantity={updateRefundQuantity}
           originalTransactionLines={originalTransaction.transactionLines}
+          discountResult={discountResult}
         />
         <RefundSummary
-          originalTotal={originalTransaction.transactionHeader.finalTotal}
-          newTotal={discountResult.finalTotal}
+          originalTransaction={originalTransaction}
+          newDiscountResult={discountResult}
           refundAmount={refundAmount}
           isProcessing={isProcessing}
         />
