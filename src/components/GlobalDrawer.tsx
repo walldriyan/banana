@@ -33,7 +33,8 @@ export function GlobalDrawer() {
       >
         <SheetHeader>
           {title && <SheetTitle>{title}</SheetTitle>}
-          {description && <SheetDescription>{description}</SheetDescription>}
+          {/* Ensure SheetDescription is rendered for accessibility, even if empty. */}
+          <SheetDescription>{description}</SheetDescription>
         </SheetHeader>
         <div className="mt-4">{content}</div>
       </SheetContent>
