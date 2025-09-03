@@ -34,17 +34,16 @@ export const buyMoreSaveMore: DiscountSet = {
           discountSetId: 'promo-buy-more',
           isActiveForBatchInCampaign: true,
           priority: 1,
-          lineItemValueRuleJson: null,
-          lineItemQuantityRuleJson: {
+          lineItemValueRuleJson: {
               isEnabled: true, 
-              name: '001 Old Jeans Batch Flat Discount', 
+              name: 'Old Jeans Batch Flat Discount', 
               type: 'fixed', 
-              conditionMin: 8,
-              conditionMax:10,
-              value: 222, 
+              conditionMin: 14000,
+              value: 800, 
               applyFixedOnce: true,
-              description: 'Flat Rs.222 off old batch jeans line when quantity is between 8 and 10'
+              description: 'Flat Rs.800 off old batch jeans line when value over Rs.14,000'
           },
+          lineItemQuantityRuleJson: null,
         },
         {
           id: 'buymore-new-tshirt-batch-config',
