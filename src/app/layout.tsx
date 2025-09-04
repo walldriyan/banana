@@ -5,6 +5,10 @@ import { GlobalDrawerProvider } from '@/context/GlobalDrawerContext';
 import { GlobalDrawer } from '@/components/GlobalDrawer';
 import AuthProvider from '@/components/auth/AuthProvider';
 
+// This forces the entire app to be dynamically rendered, which can help
+// with strange caching and fetch errors in certain environments.
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Tailwind Starter',
   description: 'A simple Next.js app with Tailwind CSS.',
