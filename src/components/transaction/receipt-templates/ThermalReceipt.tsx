@@ -4,18 +4,24 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 
 interface ThermalReceiptProps {
   data: DatabaseReadyTransaction;
-  showAsGiftReceipt?: boolean;
   originalTransaction?: DatabaseReadyTransaction | null;
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransaction }: ThermalReceiptProps) {
+export function ThermalReceipt({ data, originalTransaction }: ThermalReceiptProps) {
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
+
+  // *** THE DEFINITIVE FIX ***
+  // The decision to show gift/discount mode is now SOLELY based on the
+  // `isGiftReceipt` flag that is permanently saved in the transaction data.
+  // This removes all ambiguity and incorrect dynamic checks.
+  const showAsGiftReceipt = transactionHeader.isGiftReceipt ?? false;
 
   const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
   const isRefund = transactionHeader.status === 'refund';
 
+  // For a refund receipt, this is the net cash change.
   const refundCashChange = paymentDetails.paidAmount;
 
   // This is the original amount the customer paid in the transaction that is being refunded.
