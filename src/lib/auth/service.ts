@@ -76,6 +76,7 @@ export async function getUserPermissions(user: User): Promise<string[]> {
 
 /**
  * Finds a user's role from the permissions config.
+ * This function is async to comply with Next.js 'use server' module rules.
  * @param username - The username to look up.
  * @returns The user's role key, or null if not found.
  */

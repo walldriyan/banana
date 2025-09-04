@@ -9,8 +9,12 @@ export const authOptions: NextAuthOptions = {
   },
   // A secret is required for JWT sessions.
   // In a real production app, this should be a long, random string
-  // set in your environment variables.
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-super-secret-key-for-development',
+  // set in your environment variables via .env.local or your hosting provider.
+  // SINHALA COMMENT:
+  // Production (සැබෑ යෙදුම) සඳහා, මෙම NEXTAUTH_SECRET අගය, ඔබගේ hosting provider එකේ (උදා: Vercel, Firebase)
+  // environment variable එකක් ලෙස, ඉතාමත් ආරක්ෂිත, දිගු, අහඹු අක්ෂර මාලාවක් ලෙස සැකසිය යුතුය.
+  // Development (සංවර්ධන) පරිසරය සඳහා, අපි .env.local ගොනුවේ ඇති අගය හෝ පහත fallback අගය භාවිතා කරමු.
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-super-secret-key-for-development-if-env-is-not-set',
   // Define authentication providers
   providers: [
     CredentialsProvider({
@@ -25,10 +29,13 @@ export const authOptions: NextAuthOptions = {
         }
 
         // --- DUMMY USER AUTHENTICATION ---
-        // In a real app, you would look up the user in a database
-        // and verify the password hash.
+        // SINHALA COMMENT:
+        // Development (සංවර්ධන) පරිසරය සඳහා, අපි මෙහි තාවකාලික (dummy) user-ලොග්-වීමේ තර්කනයක් භාවිතා කරමු.
+        // Production (සැබෑ යෙදුම) සඳහා, මෙතැනදී, ඔබගේ සැබෑ දත්ත ගබඩාව (database) වෙත request එකක් යවා,
+        // පරිශීලකයා සහ මුරපදය (password hash) නිවැරදිදැයි පරීක්ෂා කළ යුතුය.
         const role = await findUserRole(credentials.username);
         
+        // For any dummy user, the password is 'password'
         if (role && credentials.password === 'password') {
           const user = {
             id: credentials.username,
