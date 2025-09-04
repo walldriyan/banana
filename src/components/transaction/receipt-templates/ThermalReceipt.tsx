@@ -18,6 +18,7 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
 
   const refundCashChange = paymentDetails.paidAmount;
 
+  // This is the original amount the customer paid in the transaction that is being refunded.
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
 
   return (
@@ -70,7 +71,8 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
                     <span className='text-blue-700'>-{item.lineDiscount.toFixed(2)}</span>)
                   </td>
                   <td className="text-right">
-                    {item.lineTotalAfterDiscount.toFixed(2)}
+                    {/* This column is aligned with "Our Price", so it should show per-item price after discount again */}
+                    {(item.lineTotalAfterDiscount / item.quantity).toFixed(2)}
                   </td>
                 </tr>
               )}
