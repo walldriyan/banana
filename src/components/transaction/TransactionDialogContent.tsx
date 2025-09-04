@@ -112,11 +112,20 @@ export function TransactionDialogContent({
 
     setIsSaving(true);
     try {
-      // Save the final, potentially modified (by the toggle) transaction data
-      await saveTransaction(finalTransactionData);
+      // Create the final version of the data right before saving,
+      // ensuring it captures the latest toggle state.
+      const dataToSave: DatabaseReadyTransaction = {
+        ...finalTransactionData,
+        transactionHeader: {
+            ...finalTransactionData.transactionHeader,
+            isGiftReceipt: showFullPrice
+        }
+      };
+
+      await saveTransaction(dataToSave);
       toast({
         title: "Transaction Saved",
-        description: `Transaction ${finalTransactionData.transactionHeader.transactionId} saved.`,
+        description: `Transaction ${dataToSave.transactionHeader.transactionId} saved.`,
       });
       console.log("Printing receipt...");
       onTransactionComplete();
@@ -132,23 +141,6 @@ export function TransactionDialogContent({
         setIsSaving(false);
     }
   };
-
-  // Effect to update the transaction data for printing if the toggle is changed
-  useEffect(() => {
-    if (step === 'print' && finalTransactionData) {
-        setFinalTransactionData(prevData => {
-            if (!prevData) return null;
-            // Create a new object with the updated gift receipt status
-            return {
-                ...prevData,
-                transactionHeader: {
-                    ...prevData.transactionHeader,
-                    isGiftReceipt: showFullPrice
-                }
-            };
-        });
-    }
-  }, [showFullPrice, step, finalTransactionData]);
 
 
   if (step === 'print' && finalTransactionData) {
