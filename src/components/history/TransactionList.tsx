@@ -28,21 +28,26 @@ interface TransactionListProps {
 
 export function TransactionList({ originalTransactions, refundMap, onRefresh }: TransactionListProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<DatabaseReadyTransaction | null>(null);
+  const [originalTransactionForRefundView, setOriginalTransactionForRefundView] = useState<DatabaseReadyTransaction | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
 
-  const handleViewDetails = (transaction: DatabaseReadyTransaction | undefined) => {
+  const handleViewDetails = (transaction: DatabaseReadyTransaction, originalTxForRefundContext?: DatabaseReadyTransaction) => {
     if (!transaction) return;
     setSelectedTransaction(transaction);
+    setOriginalTransactionForRefundView(originalTxForRefundContext || null);
     setIsDetailsDialogOpen(true);
   };
 
   const handleDetailsDialogClose = () => {
     setIsDetailsDialogOpen(false);
-    setTimeout(() => setSelectedTransaction(null), 150);
+    setTimeout(() => {
+        setSelectedTransaction(null)
+        setOriginalTransactionForRefundView(null);
+    }, 150);
   };
   
   const handleRefund = (transaction: DatabaseReadyTransaction) => {
@@ -110,7 +115,7 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
                         key={tx.transactionHeader.transactionId}
                         transaction={tx}
                         refundTransaction={refundTx}
-                        onViewDetails={handleViewDetails}
+                        onViewDetails={(transactionToView) => handleViewDetails(transactionToView, tx)}
                         onRefund={handleRefund}
                         onDeleteRefund={handleDeleteRefund}
                     />
@@ -122,6 +127,7 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
             isOpen={isDetailsDialogOpen}
             onOpenChange={handleDetailsDialogClose}
             transaction={selectedTransaction}
+            originalTransaction={originalTransactionForRefundView}
         />
 
         <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

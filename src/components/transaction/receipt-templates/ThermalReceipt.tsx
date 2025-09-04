@@ -4,12 +4,13 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 
 interface ThermalReceiptProps {
   data: DatabaseReadyTransaction;
-  showAsGiftReceipt?: boolean; // New prop to control the display mode
+  showAsGiftReceipt?: boolean;
+  originalTransaction?: DatabaseReadyTransaction | null; // Make it optional
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalReceiptProps) {
+export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransaction }: ThermalReceiptProps) {
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
 
   const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
@@ -19,7 +20,8 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
   const refundCashChange = paymentDetails.paidAmount;
 
   // This is the original amount the customer paid in the transaction that is being refunded.
-  const originalPaidAmountForRefundContext = originalTransaction.paymentDetails.paidAmount;
+  // It's ONLY available if the originalTransaction is passed in.
+  const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
 
   return (
     <div className="bg-white text-black font-mono text-xs max-w-[300px] mx-auto p-2 ">
@@ -131,7 +133,7 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
             <>
                 <div className="flex justify-between font-bold">
                     <span>Original Bill Paid:</span>
-                    <span>{originalPaidAmountForRefundContext.toFixed(2)}</span>
+                    <span>{originalPaidAmountForRefundContext?.toFixed(2) ?? 'N/A'}</span>
                 </div>
                  <div className="flex justify-between font-bold">
                     <span>New Bill Total:</span>
