@@ -1,7 +1,7 @@
 // src/components/auth/AuthProvider.tsx
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
+import { SessionProvider, useSession } from 'next-auth/react';
 import { useSessionStore } from '@/store/session-store';
 import type { Session } from 'next-auth';
 import { useEffect } from 'react';
@@ -39,7 +39,7 @@ function ZustandSessionInitializer() {
     const { setSession } = useSessionStore();
     
     useEffect(() => {
-        console.log("AuthProvider: Initializing Zustand store with dummy session.");
+        console.log("AuthProvider: Initializing Zustand store with dummy session:", dummyManagerSession);
         setSession({
             user: dummyManagerSession.user,
             permissions: dummyManagerSession.user.permissions || [],
@@ -56,7 +56,7 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  console.log("AuthProvider: Rendering with static SessionProvider.");
+  console.log("AuthProvider: Rendering with static SessionProvider to avoid client fetch.");
   return (
     // The `session` prop here forces a static session, bypassing the fetch request.
     // However, the useSession hook within components still attempts to fetch.
