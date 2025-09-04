@@ -108,11 +108,11 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
   return (
     <>
         <div className="space-y-4">
-            {originalTransactions.map((tx) => {
+            {originalTransactions.map((tx, index) => {
                 const refundTx = refundMap.get(tx.transactionHeader.transactionId);
                 return (
                     <TransactionCard
-                        key={tx.transactionHeader.transactionId}
+                        key={`${tx.transactionHeader.transactionId}-${index}`}
                         transaction={tx}
                         refundTransaction={refundTx}
                         onViewDetails={(transactionToView) => handleViewDetails(transactionToView, tx)}
