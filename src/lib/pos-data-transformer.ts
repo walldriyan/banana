@@ -16,6 +16,16 @@ export interface PaymentData {
   isInstallment: boolean;
 }
 
+export interface CompanyDetails {
+    companyId: string;
+    companyName: string;
+}
+
+export interface UserDetails {
+    userId: string;
+    userName: string;
+}
+
 export interface TransactionHeader {
     transactionId: string;
     transactionDate: string; // ISO 8601 format
@@ -50,6 +60,8 @@ export interface DatabaseReadyTransaction {
   appliedDiscountsLog: AppliedRuleInfo[];
   customerDetails: CustomerData & { id?: string }; // id can be added later
   paymentDetails: PaymentData;
+  companyDetails: CompanyDetails;
+  userDetails: UserDetails;
 }
 
 interface TransformerInput {
@@ -123,12 +135,25 @@ export function transformTransactionDataForDb(
 
   const appliedDiscountsLog = discountResult.appliedRulesSummary || [];
 
+  // Dummy data for multi-tenancy as requested
+  const companyDetails: CompanyDetails = {
+    companyId: 'comp-001',
+    companyName: 'Default Company'
+  };
+
+  const userDetails: UserDetails = {
+    userId: 'user-001',
+    userName: 'Default User'
+  };
+
   const databaseReadyObject: DatabaseReadyTransaction = {
     transactionHeader,
     transactionLines,
     appliedDiscountsLog,
     customerDetails: customerData,
     paymentDetails: paymentData,
+    companyDetails,
+    userDetails,
   };
 
   return databaseReadyObject;
