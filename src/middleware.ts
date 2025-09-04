@@ -1,17 +1,12 @@
-export { default } from "next-auth/middleware"
+// This middleware is temporarily disabled to bypass the login page for development.
+// It can be re-enabled by restoring the original content.
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-// The middleware will protect all routes by default
-// We are excluding the login page from protection to avoid a redirect loop
-export const config = { 
-    matcher: [
-        /*
-         * Match all request paths except for the ones starting with:
-         * - api (API routes)
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * - login (the login page)
-         */
-        '/((?!api|_next/static|_next/image|favicon.ico|login).*)',
-    ] 
+export function middleware(request: NextRequest) {
+  return NextResponse.next();
 }
+
+export const config = {
+  matcher: [],
+};
