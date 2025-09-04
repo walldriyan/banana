@@ -18,11 +18,8 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
   // For refunds, paidAmount for the refund transaction itself is the net cash change.
   const refundCashChange = paymentDetails.paidAmount;
 
-  // For display purposes on the receipt, we need the original amount paid by the customer.
-  // This can be derived from the refund transaction's payment details.
-  // Original Paid = New Total + Outstanding - Refund Cash Change
-  // e.g. New Total=100, Outstanding=20, Refund Cash Change = -30 (we gave back 30) => Original Paid = 100 + 20 - (-30) = 150.
-  const originalPaidAmount = transactionHeader.finalTotal + paymentDetails.outstandingAmount - refundCashChange;
+  // This is the original amount the customer paid in the transaction that is being refunded.
+  const originalPaidAmountForRefundContext = originalTransaction.paymentDetails.paidAmount;
 
   return (
     <div className="bg-white text-black font-mono text-xs max-w-[300px] mx-auto p-2 ">
@@ -134,24 +131,24 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
             <>
                 <div className="flex justify-between font-bold">
                     <span>Original Bill Paid:</span>
-                    <span>{originalPaidAmount.toFixed(2)}</span>
+                    <span>{originalPaidAmountForRefundContext.toFixed(2)}</span>
                 </div>
                  <div className="flex justify-between font-bold">
                     <span>New Bill Total:</span>
                     <span>{finalTotalToShow.toFixed(2)}</span>
                 </div>
                 <Line/>
-                {refundCashChange > 0 ? (
+                {refundCashChange < 0 ? (
+                     <div className="flex justify-between font-bold text-green-700">
+                        <span>Amount Returned to Customer:</span>
+                        <span>{(-refundCashChange).toFixed(2)}</span>
+                    </div>
+                ) : refundCashChange > 0 ? (
                     <div className="flex justify-between font-bold text-red-700">
                         <span>Amount Collected from Customer:</span>
                         <span>{refundCashChange.toFixed(2)}</span>
                     </div>
-                ) : (
-                    <div className="flex justify-between font-bold text-green-700">
-                        <span>Amount Returned to Customer:</span>
-                        <span>{(-refundCashChange).toFixed(2)}</span>
-                    </div>
-                )}
+                ) : null}
                 
                 {paymentDetails.outstandingAmount > 0 && (
                     <div className="flex justify-between font-bold">
