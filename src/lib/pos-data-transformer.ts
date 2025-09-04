@@ -37,6 +37,7 @@ export interface TransactionHeader {
     status: 'completed' | 'refund' | 'pending';
     campaignId: string; // Crucial for refunds
     originalTransactionId?: string; // For refunds
+    isGiftReceipt?: boolean;
 }
 
 export interface TransactionLine {
@@ -71,6 +72,7 @@ interface TransformerInput {
   customerData: CustomerData;
   paymentData: PaymentData;
   activeCampaign: DiscountSet; // Now required
+  isGiftReceipt: boolean; // Explicitly pass the gift receipt status
   status?: 'completed' | 'refund' | 'pending';
   originalTransactionId?: string;
 }
@@ -90,6 +92,7 @@ export function transformTransactionDataForDb(
     customerData, 
     paymentData,
     activeCampaign,
+    isGiftReceipt, // Use the passed in value
     status = 'completed',
     originalTransactionId
   } = input;
@@ -107,6 +110,7 @@ export function transformTransactionDataForDb(
     totalQuantity,
     status,
     campaignId: activeCampaign.id, // Store the campaign ID
+    isGiftReceipt: isGiftReceipt, // Save the gift receipt status
     ...(originalTransactionId && { originalTransactionId }),
   };
 

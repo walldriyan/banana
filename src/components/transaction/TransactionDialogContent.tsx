@@ -91,16 +91,36 @@ export function TransactionDialogContent({
       customerData: data.customer,
       paymentData: data.payment,
       activeCampaign: activeCampaign,
+      isGiftReceipt: showFullPrice, // Pass the current state of the toggle
     });
     
+    setFinalTransactionData(preparedData); // Set the prepared data for the print preview
+    setStep('print');
+    setIsSaving(false);
+    
+  };
+
+  const handlePrintAndFinish = async () => {
+    if (!finalTransactionData) {
+        toast({
+            variant: "destructive",
+            title: "Save Failed",
+            description: "Transaction data is not available to save.",
+        });
+        return;
+    };
+
+    setIsSaving(true);
     try {
-      await saveTransaction(preparedData);
-      setFinalTransactionData(preparedData);
-      setStep('print');
+      // Save the final, potentially modified (by the toggle) transaction data
+      await saveTransaction(finalTransactionData);
       toast({
-        title: "Transaction Saved Locally",
-        description: "The transaction has been saved to the local offline database.",
+        title: "Transaction Saved",
+        description: `Transaction ${finalTransactionData.transactionHeader.transactionId} saved.`,
       });
+      console.log("Printing receipt...");
+      onTransactionComplete();
+
     } catch (error) {
       console.error("Failed to save transaction:", error);
       toast({
@@ -109,14 +129,27 @@ export function TransactionDialogContent({
         description: error instanceof Error ? error.message : "An unknown error occurred.",
       });
     } finally {
-      setIsSaving(false);
+        setIsSaving(false);
     }
   };
 
-  const handlePrintAndFinish = () => {
-    console.log("Printing receipt...");
-    onTransactionComplete();
-  };
+  // Effect to update the transaction data for printing if the toggle is changed
+  useEffect(() => {
+    if (step === 'print' && finalTransactionData) {
+        setFinalTransactionData(prevData => {
+            if (!prevData) return null;
+            // Create a new object with the updated gift receipt status
+            return {
+                ...prevData,
+                transactionHeader: {
+                    ...prevData.transactionHeader,
+                    isGiftReceipt: showFullPrice
+                }
+            };
+        });
+    }
+  }, [showFullPrice, step, finalTransactionData]);
+
 
   if (step === 'print' && finalTransactionData) {
     return (
@@ -135,7 +168,9 @@ export function TransactionDialogContent({
             </div>
             <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setStep('details')}>Back to Details</Button>
-                <Button onClick={handlePrintAndFinish}>Finish & Print</Button>
+                <Button onClick={handlePrintAndFinish} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save, Finish & Print"}
+                </Button>
             </div>
         </div>
       </div>
@@ -152,7 +187,7 @@ export function TransactionDialogContent({
         <div className="flex-shrink-0 pt-4 mt-4 border-t flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
           <Button type="submit" disabled={isSaving || !isValid}>
-            {isSaving ? "Saving..." : "Confirm & Preview Receipt"}
+            {isSaving ? "Processing..." : "Confirm & Preview Receipt"}
           </Button>
         </div>
       </form>
