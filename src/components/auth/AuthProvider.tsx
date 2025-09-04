@@ -1,7 +1,7 @@
 // src/components/auth/AuthProvider.tsx
 'use client';
 
-import { SessionProvider, useSession } from 'next-auth/react';
+import { SessionProvider } from 'next-auth/react';
 import { useSessionStore } from '@/store/session-store';
 import type { Session } from 'next-auth';
 import { useEffect } from 'react';
@@ -40,11 +40,13 @@ function ZustandSessionInitializer() {
     
     useEffect(() => {
         console.log("AuthProvider: Initializing Zustand store with dummy session:", dummyManagerSession);
-        setSession({
-            user: dummyManagerSession.user,
-            permissions: dummyManagerSession.user.permissions || [],
-            status: 'authenticated',
-        });
+        if (dummyManagerSession.user) {
+            setSession({
+                user: dummyManagerSession.user,
+                permissions: dummyManagerSession.user.permissions || [],
+                status: 'authenticated',
+            });
+        }
     }, [setSession]);
 
     return null; // This component doesn't render anything.

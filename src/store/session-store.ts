@@ -7,7 +7,7 @@ interface SessionState {
   user: User | null;
   permissions: string[];
   status: SessionStatus;
-  setSession: (session: { user: User; permissions: string[], status: SessionStatus }) => void;
+  setSession: (session: { user: User | null; permissions: string[], status: SessionStatus }) => void;
   clearSession: () => void;
 }
 
