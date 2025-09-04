@@ -57,10 +57,7 @@ export class LineItemResult {
 
     const originalLineTotal = this.originalPrice * this.quantity;
     // Ensure the discount doesn't exceed the remaining value of the line item
-    const applicableDiscount = Math.min(
-      application.discountAmount,
-      originalLineTotal - this.totalDiscount
-    );
+    const applicableDiscount = Math.min(application.discountAmount,originalLineTotal - this.totalDiscount );
 
     if (applicableDiscount > 0) {
       this.totalDiscount += applicableDiscount;
@@ -71,6 +68,7 @@ export class LineItemResult {
         this.markOneTimeRuleAsApplied(application.ruleId);
       }
     }
+    
   }
 
   get netPrice(): number {

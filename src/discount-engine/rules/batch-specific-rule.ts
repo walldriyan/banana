@@ -22,41 +22,37 @@ export class BatchSpecificRule implements IDiscountRule {
 
   apply(context: DiscountContext, result: DiscountResult): void {
     if (!this.config.isActiveForBatchInCampaign) {
-      console.log(`Batch configuration ${this.config.id} is not active`);
+      // console.log(`[BatchRule] Config ${this.config.id} is inactive.`);
       return;
     }
 
     // Find the line item that corresponds to this specific batch
     const targetLineItem = context.items.find(
-      (item) => {
-        const matches = item.batchId === this.config.productBatchId;
-        console.log(`Checking item ${item.lineId}: batchId=${item.batchId}, target=${this.config.productBatchId}, matches=${matches}`);
-        return matches;
-      }
+      (item) => item.batchId === this.config.productBatchId
     );
 
     if (!targetLineItem) {
-      console.log(`No line item found for batch ${this.config.productBatchId}`);
-      console.log('Available items:', context.items.map(i => ({ lineId: i.lineId, batchId: i.batchId, productId: i.productId })));
+      // This is expected if the cart doesn't contain this specific batch
+      // console.log(`[BatchRule] No line item found for batch ${this.config.productBatchId}`);
       return;
     }
     
-    console.log(`Found target line item for batch ${this.config.productBatchId}:`, targetLineItem);
+    console.log(`[BatchRule] Found target item ${targetLineItem.lineId} for batch ${this.config.productBatchId}`);
     
     const lineResult = result.getLineItem(targetLineItem.lineId);
     if (!lineResult) {
-      console.log(`No line result found for ${targetLineItem.lineId}`);
+      console.error(`[BatchRule] CRITICAL: No line result found for ${targetLineItem.lineId}, though item exists.`);
       return;
     }
     
-    // Check if a higher-priority discount exists
+    // Check if a higher-priority discount (like a custom one) already exists
     if (lineResult.totalDiscount > 0) {
-      console.log(`Higher priority discount already applied to ${targetLineItem.lineId}, skipping batch rule`);
+      console.log(`[BatchRule] Higher priority discount already applied to ${targetLineItem.lineId}, skipping batch rule.`);
       return;
     }
     
     const lineTotal = targetLineItem.price * targetLineItem.quantity;
-    console.log(`Processing batch rule for line ${targetLineItem.lineId}: price=${targetLineItem.price}, qty=${targetLineItem.quantity}, total=${lineTotal}`);
+    console.log(`[BatchRule] Processing for line ${targetLineItem.lineId}: price=${targetLineItem.price}, qty=${targetLineItem.quantity}, lineTotal=${lineTotal}`);
     
     // Define rules in priority order
     const rulesToConsider = [
@@ -77,18 +73,18 @@ export class BatchSpecificRule implements IDiscountRule {
     // Apply first valid rule only
     for (const ruleEntry of rulesToConsider) {
       if (!ruleEntry.config?.isEnabled) {
-        console.log(`Rule ${ruleEntry.type} is not enabled`);
+        // console.log(`[BatchRule] Rule type ${ruleEntry.type} is not enabled in config.`);
         continue;
       }
-
-      console.log(`Evaluating rule ${ruleEntry.type}:`, ruleEntry.config);
 
       // Validate rule configuration
       const validation = validateRuleConfig(ruleEntry.config);
       if (!validation.isValid) {
-        console.warn(`Invalid batch rule configuration for ${ruleEntry.type}:`, validation.errors);
+        console.warn(`[BatchRule] Invalid config for ${ruleEntry.type}:`, validation.errors);
         continue;
       }
+      
+      console.log(`[BatchRule] Evaluating rule '${ruleEntry.config.name}' (${ruleEntry.type})`);
 
       const discountAmount = evaluateRule(
           ruleEntry.config,
@@ -98,13 +94,12 @@ export class BatchSpecificRule implements IDiscountRule {
           ruleEntry.valueToTest
       );
 
-      console.log(`Rule evaluation result for ${ruleEntry.type}: discount=${discountAmount}`);
 
       if (discountAmount > 0) {
         const ruleId = generateRuleId('batch', this.config.id, ruleEntry.type, targetLineItem.productId, targetLineItem.batchId);
         const isOneTime = isOneTimeRule(ruleEntry.config, this.config.discountSet?.isOneTimePerTransaction);
 
-        console.log(`Applying batch discount: ruleId=${ruleId}, amount=${discountAmount}, isOneTime=${isOneTime}`);
+        console.log(`[BatchRule] SUCCESS: Applying batch discount: ruleId=${ruleId}, amount=${discountAmount}, isOneTime=${isOneTime}`);
 
         lineResult.addDiscount({
             ruleId,
@@ -117,14 +112,15 @@ export class BatchSpecificRule implements IDiscountRule {
                 totalCalculatedDiscount: discountAmount,
                 ruleType: ruleEntry.type,
                 productIdAffected: targetLineItem.productId,
+                batchIdAffected: targetLineItem.batchId,
                 appliedOnce: isOneTime
             }
         });
         
-        // Stop after first successful rule application
-        break;
+        // Stop after first successful rule application for this batch item
+        return; 
       } else {
-        console.log(`Rule ${ruleEntry.type} did not qualify for discount`);
+        // console.log(`[BatchRule] Rule ${ruleEntry.type} did not qualify for discount.`);
       }
     }
   }

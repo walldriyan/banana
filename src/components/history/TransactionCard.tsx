@@ -4,9 +4,15 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { format } from 'date-fns';
-import { ReceiptText, RefreshCw, FileText, FileBadge } from 'lucide-react';
+import { ReceiptText, RefreshCw, FileText, FileBadge, Trash2, MoreVertical } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 interface TransactionCardProps {
@@ -14,13 +20,15 @@ interface TransactionCardProps {
   refundTransaction?: DatabaseReadyTransaction;
   onViewDetails: (transaction: DatabaseReadyTransaction) => void;
   onRefund: (transaction: DatabaseReadyTransaction) => void;
+  onDeleteRefund: (refundTransactionId: string) => void;
 }
 
 export function TransactionCard({ 
     transaction, 
     refundTransaction, 
     onViewDetails, 
-    onRefund 
+    onRefund,
+    onDeleteRefund,
 }: TransactionCardProps) {
   const { transactionHeader, customerDetails } = transaction;
   const isRefunded = !!refundTransaction;
@@ -66,16 +74,35 @@ export function TransactionCard({
         </div>
       </CardContent>
       <CardFooter className="flex justify-end gap-2">
-        {isRefunded ? (
+        {isRefunded && refundTransaction ? (
             <>
                 <Button variant="secondary" onClick={() => onViewDetails(transaction)}>
                     <FileText className="mr-2 h-4 w-4"/>
                     View Original Bill
                 </Button>
-                <Button variant="outline" onClick={() => onViewDetails(refundTransaction)}>
-                    <FileBadge className="mr-2 h-4 w-4"/>
-                    View Refund Bill
-                </Button>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">
+                      <FileBadge className="mr-2 h-4 w-4"/>
+                      Refund Bill
+                      <MoreVertical className="ml-2 h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onViewDetails(refundTransaction)}>
+                      <ReceiptText className="mr-2 h-4 w-4" />
+                      <span>View Refund Bill</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                      onClick={() => onDeleteRefund(refundTransaction.transactionHeader.transactionId)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete Refund Bill</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
             </>
         ) : (
             <>

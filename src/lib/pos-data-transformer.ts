@@ -54,7 +54,7 @@ export interface DatabaseReadyTransaction {
 
 interface TransformerInput {
   cart: SaleItem[];
-  discountResult: DiscountResult;
+  discountResult: any; // Received as a plain object, not a class instance
   transactionId: string;
   customerData: CustomerData;
   paymentData: PaymentData;
@@ -99,7 +99,11 @@ export function transformTransactionDataForDb(
   };
 
   const transactionLines: TransactionLine[] = cart.map(item => {
-    const lineItemResult: LineItemResult | undefined = discountResult.getLineItem(item.saleItemId);
+    // **FIX:** The `discountResult` from a server action is a plain object,
+    // so we can't use the `.getLineItem()` method. Instead, we find the
+    // matching line item directly in the `lineItems` array.
+    const lineItemResult = discountResult.lineItems.find((li: any) => li.lineId === item.saleItemId);
+
     const lineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
     const lineTotalBeforeDiscount = item.price * item.quantity;
     
@@ -117,7 +121,7 @@ export function transformTransactionDataForDb(
     };
   });
 
-  const appliedDiscountsLog = discountResult.getAppliedRulesSummary();
+  const appliedDiscountsLog = discountResult.appliedRulesSummary || [];
 
   const databaseReadyObject: DatabaseReadyTransaction = {
     transactionHeader,

@@ -17,12 +17,14 @@ interface TransactionDetailsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   transaction: DatabaseReadyTransaction | null;
+  originalTransaction?: DatabaseReadyTransaction | null; // Optional: for refund context
 }
 
 export function TransactionDetailsDialog({
   isOpen,
   onOpenChange,
   transaction,
+  originalTransaction,
 }: TransactionDetailsDialogProps) {
   if (!transaction) return null;
 
@@ -37,7 +39,7 @@ export function TransactionDetailsDialog({
         </DialogHeader>
 
         <div className="my-4 bg-gray-100 p-4 rounded-lg overflow-y-auto max-h-[60vh]">
-          <ThermalReceipt data={transaction} />
+          <ThermalReceipt data={transaction} originalTransaction={originalTransaction} />
         </div>
 
         <div className="flex justify-end gap-2">

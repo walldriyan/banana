@@ -99,7 +99,18 @@ const initialDiscountResult = {
 
 
 export default function MyNewEcommerceShop() {
+
+
+
+
   const [cart, setCart] = useState<SaleItem[]>([]);
+
+
+
+
+
+
+
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
@@ -242,6 +253,11 @@ export default function MyNewEcommerceShop() {
   };
 
   const openTransactionDrawer = () => {
+
+
+
+
+
     drawer.openDrawer({
       title: 'Complete Transaction',
       content: (
@@ -276,6 +292,7 @@ export default function MyNewEcommerceShop() {
                   <History className="mr-2 h-4 w-4" />
                   View History
                 </Button>
+        
               </Link>
             </div>
             <div className="text-sm text-gray-400 mt-4">
