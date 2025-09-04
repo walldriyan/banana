@@ -1,3 +1,4 @@
+// src/lib/auth/service.ts
 'use server';
 
 import { User } from 'next-auth';
@@ -78,7 +79,7 @@ export async function getUserPermissions(user: User): Promise<string[]> {
  * @param username - The username to look up.
  * @returns The user's role key, or null if not found.
  */
-export function findUserRole(username: string): Role | null {
+export async function findUserRole(username: string): Promise<Role | null> {
    const userConfig = (permissionsConfig.users as Record<string, UserPermissions>)[username];
    return userConfig?.role || null;
 }
