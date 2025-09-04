@@ -84,6 +84,7 @@ export function TransactionDialogContent({
 
   const processTransaction = async (data: TransactionFormValues) => {
     setIsSaving(true);
+    // The `showFullPrice` state at this moment is what matters for the initial preview
     const preparedData = transformTransactionDataForDb({
       cart,
       discountResult,
@@ -94,7 +95,7 @@ export function TransactionDialogContent({
       isGiftReceipt: showFullPrice, // Pass the current state of the toggle
     });
     
-    setFinalTransactionData(preparedData); // Set the prepared data for the print preview
+    setFinalTransactionData(preparedData);
     setStep('print');
     setIsSaving(false);
     
@@ -113,12 +114,12 @@ export function TransactionDialogContent({
     setIsSaving(true);
     try {
       // Create the final version of the data right before saving,
-      // ensuring it captures the latest toggle state.
+      // ensuring it captures the latest toggle state from the print preview screen.
       const dataToSave: DatabaseReadyTransaction = {
         ...finalTransactionData,
         transactionHeader: {
             ...finalTransactionData.transactionHeader,
-            isGiftReceipt: showFullPrice
+            isGiftReceipt: showFullPrice 
         }
       };
 
