@@ -3,6 +3,9 @@ import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getUserPermissions, findUserRole } from './service';
 
+console.log('[authOptions] File loaded.');
+console.log('[authOptions] NEXTAUTH_SECRET from env:', process.env.NEXTAUTH_SECRET ? 'Loaded' : 'NOT LOADED');
+
 
 export const authOptions: NextAuthOptions = {
   session: {
@@ -21,7 +24,10 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
+        console.log('[authOptions] Authorize function called with credentials:', credentials?.username);
+
         if (!credentials?.username || !credentials?.password) {
+          console.log('[authOptions] Authorize failed: Missing username or password.');
           return null;
         }
 
@@ -31,6 +37,7 @@ export const authOptions: NextAuthOptions = {
         // Production (සැබෑ යෙදුම) සඳහා, මෙතැනදී, ඔබගේ සැබෑ දත්ත ගබඩාව (database) වෙත request එකක් යවා,
         // පරිශීලකයා සහ මුරපදය (password hash) නිවැරදිදැයි පරීක්ෂා කළ යුතුය.
         const role = await findUserRole(credentials.username);
+        console.log(`[authOptions] Role found for ${credentials.username}:`, role);
         
         // For any dummy user, the password is 'password'
         if (role && credentials.password === 'password') {
@@ -40,10 +47,11 @@ export const authOptions: NextAuthOptions = {
             role: role,
             permissions: [] // Permissions will be added in the jwt callback
           };
+          console.log('[authOptions] Authorize success, returning user:', user.name);
           return user;
         }
         // --- END DUMMY USER AUTHENTICATION ---
-
+        console.log('[authOptions] Authorize failed: Invalid credentials.');
         return null;
       },
     }),
