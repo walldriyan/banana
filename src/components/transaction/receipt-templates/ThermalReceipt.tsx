@@ -5,7 +5,7 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 interface ThermalReceiptProps {
   data: DatabaseReadyTransaction;
   showAsGiftReceipt?: boolean;
-  originalTransaction?: DatabaseReadyTransaction | null; // Make it optional
+  originalTransaction?: DatabaseReadyTransaction | null;
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
@@ -16,11 +16,8 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
   const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
   const isRefund = transactionHeader.status === 'refund';
 
-  // For refunds, paidAmount for the refund transaction itself is the net cash change.
   const refundCashChange = paymentDetails.paidAmount;
 
-  // This is the original amount the customer paid in the transaction that is being refunded.
-  // It's ONLY available if the originalTransaction is passed in.
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
 
   return (
@@ -52,7 +49,6 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
             <th className="text-center">Qty</th>
             <th className="text-right">Price</th>
             <th className="text-right">Our Price</th>
-            {/* <th className="text-right">Total</th> */}
           </tr>
         </thead>
         <tbody>
@@ -61,19 +57,19 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
               <tr>
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
                 <td className="text-center">{item.quantity}</td>
-
                 <td className="text-right">{item.unitPrice.toFixed(2)}</td>
-                <td className="text-right text-green-700 font-semibold ">{(item.lineTotalAfterDiscount / item.quantity).toFixed(2)}</td>
-                {/* <td className="text-right">{item.lineTotalAfterDiscount.toFixed(2)}</td> */}
+                <td className="text-right text-green-700 font-semibold">
+                  {(item.lineTotalAfterDiscount / item.quantity).toFixed(2)}
+                </td>
               </tr>
               {item.lineDiscount > 0 && !showAsGiftReceipt && (
                 <tr>
                   <td colSpan={3} className="text-right italic text-gray-600">
                     (Discount:
-                    <span className="line-through mx-1">{item.lineTotalBeforeDiscount.toFixed(2)} </span>
-                    <span className='text-blue-700'>-{item.lineDiscount.toFixed(2)} </span>)
+                    <span className="line-through mx-1">{item.lineTotalBeforeDiscount.toFixed(2)}</span>
+                    <span className='text-blue-700'>-{item.lineDiscount.toFixed(2)}</span>)
                   </td>
-                  <td className="text-right ">
+                  <td className="text-right">
                     {item.lineTotalAfterDiscount.toFixed(2)}
                   </td>
                 </tr>
@@ -127,7 +123,6 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
 
       <Line />
       
-      {/* Payment Section - Conditional Rendering */}
       <section className="my-1 space-y-1">
         {isRefund ? (
             <>
@@ -150,7 +145,12 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
                         <span>Amount Collected from Customer:</span>
                         <span>{refundCashChange.toFixed(2)}</span>
                     </div>
-                ) : null}
+                ) : (
+                    <div className="flex justify-between font-bold">
+                        <span>Net Change:</span>
+                        <span>0.00</span>
+                    </div>
+                )}
                 
                 {paymentDetails.outstandingAmount > 0 && (
                     <div className="flex justify-between font-bold">
