@@ -8,9 +8,6 @@ console.log('[authOptions] NEXTAUTH_SECRET from env:', process.env.NEXTAUTH_SECR
 
 
 export const authOptions: NextAuthOptions = {
-  session: {
-    strategy: 'jwt',
-  },
   // SINHALA COMMENT:
   // Production (සැබෑ යෙදුම) සඳහා, මෙම NEXTAUTH_SECRET අගය, ඔබගේ hosting provider එකේ (උදා: Vercel, Firebase)
   // environment variable එකක් ලෙස, ඉතාමත් ආරක්ෂිත, දිගු, අහඹු අක්ෂර මාලාවක් ලෙස සැකසිය යුතුය.
