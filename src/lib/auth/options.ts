@@ -7,6 +7,10 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
   },
+  // A secret is required for JWT sessions.
+  // In a real production app, this should be a long, random string
+  // set in your environment variables.
+  secret: process.env.NEXTAUTH_SECRET || 'fallback-super-secret-key-for-development',
   // Define authentication providers
   providers: [
     CredentialsProvider({
@@ -23,9 +27,7 @@ export const authOptions: NextAuthOptions = {
         // --- DUMMY USER AUTHENTICATION ---
         // In a real app, you would look up the user in a database
         // and verify the password hash.
-        // For this demo, we accept any username from our permissions file
-        // with the password "password".
-        const role = findUserRole(credentials.username);
+        const role = await findUserRole(credentials.username);
         
         if (role && credentials.password === 'password') {
           const user = {
@@ -60,15 +62,10 @@ export const authOptions: NextAuthOptions = {
     // This callback is called whenever a session is checked.
     // We transfer the data from the JWT to the session object.
     async session({ session, token }) {
-      if (token) {
-        session.user = {
-          id: token.id,
-          name: session.user.name,
-          email: session.user.email,
-          image: session.user.image,
-          role: token.role,
-          permissions: token.permissions,
-        };
+      if (token && session.user) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as any;
+        session.user.permissions = token.permissions as string[];
       }
       return session;
     },
