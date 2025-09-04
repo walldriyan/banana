@@ -139,6 +139,8 @@ export interface AppliedRuleInfo {
 }
 
 // User interface for future customer-specific discounts
+// This User interface is for general app logic, not the NextAuth user session.
+// The NextAuth User type is extended in src/lib/auth/types.ts
 export interface User {
   id: string;
   name: string;

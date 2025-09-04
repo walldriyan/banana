@@ -13,12 +13,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 
 
 interface TransactionCardProps {
   transaction: DatabaseReadyTransaction;
   refundTransaction?: DatabaseReadyTransaction;
-  onViewDetails: (transaction: DatabaseReadyTransaction) => void;
+  onViewDetails: (transaction: DatabaseReadyTransaction, originalTx?: DatabaseReadyTransaction) => void;
   onRefund: (transaction: DatabaseReadyTransaction) => void;
   onDeleteRefund: (refundTransactionId: string) => void;
 }
@@ -90,17 +91,19 @@ export function TransactionCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onViewDetails(refundTransaction)}>
+                    <DropdownMenuItem onClick={() => onViewDetails(refundTransaction, transaction)}>
                       <ReceiptText className="mr-2 h-4 w-4" />
                       <span>View Refund Bill</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem 
-                      className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                      onClick={() => onDeleteRefund(refundTransaction.transactionHeader.transactionId)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete Refund Bill</span>
-                    </DropdownMenuItem>
+                    <AuthorizationGuard permissionKey='bills.delete'>
+                        <DropdownMenuItem 
+                        className="text-red-600 focus:text-red-600 focus:bg-red-50"
+                        onClick={() => onDeleteRefund(refundTransaction.transactionHeader.transactionId)}
+                        >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete Refund Bill</span>
+                        </DropdownMenuItem>
+                    </AuthorizationGuard>
                   </DropdownMenuContent>
                 </DropdownMenu>
             </>
@@ -110,10 +113,12 @@ export function TransactionCard({
                     <ReceiptText className="mr-2 h-4 w-4"/>
                     View Details
                 </Button>
-                <Button variant="destructive" onClick={() => onRefund(transaction)}>
-                    <RefreshCw className="mr-2 h-4 w-4"/>
-                    Refund
-                </Button>
+                <AuthorizationGuard permissionKey='refund.process'>
+                    <Button variant="destructive" onClick={() => onRefund(transaction)}>
+                        <RefreshCw className="mr-2 h-4 w-4"/>
+                        Refund
+                    </Button>
+                </AuthorizationGuard>
             </>
         )}
       </CardFooter>

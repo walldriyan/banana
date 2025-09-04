@@ -17,6 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { History } from 'lucide-react';
+import { useSessionStore } from '@/store/session-store';
+import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
+import { LogoutButton } from '@/components/auth/LogoutButton';
 
 
 const oldBatch: ProductBatch = {
@@ -100,17 +103,7 @@ const initialDiscountResult = {
 
 export default function MyNewEcommerceShop() {
 
-
-
-
   const [cart, setCart] = useState<SaleItem[]>([]);
-
-
-
-
-
-
-
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
@@ -119,6 +112,8 @@ export default function MyNewEcommerceShop() {
 
   const [isCalculating, setIsCalculating] = useState(false);
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
+
+  const user = useSessionStore(state => state.user);
 
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
@@ -253,11 +248,6 @@ export default function MyNewEcommerceShop() {
   };
 
   const openTransactionDrawer = () => {
-
-
-
-
-
     drawer.openDrawer({
       title: 'Complete Transaction',
       content: (
@@ -283,17 +273,22 @@ export default function MyNewEcommerceShop() {
             <div className="flex justify-between items-start">
               <div>
                 <h1 className="text-4xl font-bold tracking-tight text-gray-900">My New Shop</h1>
-                <p className="text-base text-gray-500 mt-2">
-                  Search for products by name or barcode and add them to your cart.
+                 <p className="text-base text-gray-500 mt-2">
+                    Welcome, {user?.name || 'User'}! ({user?.role})
                 </p>
               </div>
-              <Link href="/history" passHref>
-                <Button variant="outline">
-                  <History className="mr-2 h-4 w-4" />
-                  View History
-                </Button>
-        
-              </Link>
+              <div className="flex items-center gap-2">
+                <AuthorizationGuard permissionKey='history.view'>
+                    <Link href="/history" passHref>
+                        <Button variant="outline">
+                        <History className="mr-2 h-4 w-4" />
+                        View History
+                        </Button>
+                    </Link>
+                </AuthorizationGuard>
+                <LogoutButton />
+              </div>
+
             </div>
             <div className="text-sm text-gray-400 mt-4">
               Transaction ID: {transactionId}
@@ -306,35 +301,39 @@ export default function MyNewEcommerceShop() {
              {isCalculating && <div className="text-sm text-blue-500 mt-2 animate-pulse">Calculating discounts...</div>}
           </header>
 
-          <div className="space-y-6">
-            <CampaignSelector
-              activeCampaign={activeCampaign}
-              allCampaigns={allCampaigns}
-              onCampaignChange={setActiveCampaign}
-            />
+          <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
+            <div className="space-y-6">
+                <CampaignSelector
+                activeCampaign={activeCampaign}
+                allCampaigns={allCampaigns}
+                onCampaignChange={setActiveCampaign}
+                />
 
-            <SearchableProductInput
-              ref={productSearchRef}
-              products={sampleProducts}
-              onProductSelect={addToCart}
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={clearCart}
-                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-              >
-                Clear Cart
-              </button>
-              <button
-                onClick={openTransactionDrawer}
-                disabled={cart.length === 0 || isCalculating}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-              >
-                Complete Transaction
-              </button>
+                <SearchableProductInput
+                ref={productSearchRef}
+                products={sampleProducts}
+                onProductSelect={addToCart}
+                />
+                
+                <AuthorizationGuard permissionKey='pos.create.transaction'>
+                    <div className="flex gap-3">
+                        <button
+                            onClick={clearCart}
+                            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                        >
+                            Clear Cart
+                        </button>
+                        <button
+                            onClick={openTransactionDrawer}
+                            disabled={cart.length === 0 || isCalculating}
+                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Complete Transaction
+                        </button>
+                    </div>
+                </AuthorizationGuard>
             </div>
-          </div>
+          </AuthorizationGuard>
         </div>
 
         <aside className="lg:sticky lg:top-8 h-fit">
