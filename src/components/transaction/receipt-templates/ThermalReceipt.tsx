@@ -5,18 +5,21 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 interface ThermalReceiptProps {
   data: DatabaseReadyTransaction;
   originalTransaction?: DatabaseReadyTransaction | null;
+  showAsGiftReceipt?: boolean; // Now optional
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function ThermalReceipt({ data, originalTransaction }: ThermalReceiptProps) {
+export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: showAsGiftReceiptProp }: ThermalReceiptProps) {
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
 
-  // *** THE DEFINITIVE FIX ***
-  // The decision to show gift/discount mode is now SOLELY based on the
-  // `isGiftReceipt` flag that is permanently saved in the transaction data.
-  // This removes all ambiguity and incorrect dynamic checks.
-  const showAsGiftReceipt = transactionHeader.isGiftReceipt ?? false;
+  // *** THE DEFINITIVE FIX V2 ***
+  // The decision to show gift/discount mode is now hierarchical:
+  // 1. If the `showAsGiftReceipt` prop is provided (from the live toggle), it takes highest priority.
+  // 2. If it's not provided (like in the History view), it falls back to the permanently saved `isGiftReceipt` flag in the transaction data.
+  const showAsGiftReceipt = showAsGiftReceiptProp !== undefined 
+    ? showAsGiftReceiptProp 
+    : (transactionHeader.isGiftReceipt ?? false);
 
   const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
   const isRefund = transactionHeader.status === 'refund';
