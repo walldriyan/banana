@@ -5,7 +5,6 @@ import { SessionProvider } from 'next-auth/react';
 import { useSessionStore } from '@/store/session-store';
 import type { Session } from 'next-auth';
 import { useEffect } from 'react';
-import { SessionUpdater } from './SessionUpdater';
 
 // --- DEVELOPMENT WORKAROUND ---
 // This dummy session is used to bypass the login flow during development.
