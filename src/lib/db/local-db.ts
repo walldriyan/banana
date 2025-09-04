@@ -56,6 +56,32 @@ export async function saveTransaction(transaction: DatabaseReadyTransaction) {
   }
 }
 
+
+/**
+ * Deletes a specific transaction from localStorage by its ID.
+ * @param transactionId - The ID of the transaction to delete.
+ */
+export async function deleteTransaction(transactionId: string): Promise<void> {
+    try {
+      if (typeof window === 'undefined') {
+        console.warn("Cannot delete transaction, window is not available.");
+        return;
+      }
+      const existingTransactions = await getPendingTransactions();
+      const newTransactions = existingTransactions.filter(
+        (tx) => tx.transactionHeader.transactionId !== transactionId
+      );
+  
+      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newTransactions));
+      console.log(`Transaction ${transactionId} deleted from localStorage.`);
+
+    } catch (error) {
+      console.error('LocalStorage Error deleting transaction:', error);
+      throw new Error('Could not delete transaction from local storage.');
+    }
+}
+
+
 /**
  * Clears all pending transactions from localStorage.
  * This would be called after successfully syncing with a server.

@@ -7,6 +7,18 @@ import { TransactionCard } from './TransactionCard';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
 import { useDrawer } from '@/hooks/use-drawer';
 import { RefundDialogContent } from '../refund/RefundDialogContent';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { useToast } from '@/hooks/use-toast';
+import { deleteTransaction } from '@/lib/db/local-db';
 
 interface TransactionListProps {
   originalTransactions: DatabaseReadyTransaction[];
@@ -17,7 +29,10 @@ interface TransactionListProps {
 export function TransactionList({ originalTransactions, refundMap, onRefresh }: TransactionListProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<DatabaseReadyTransaction | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
   const drawer = useDrawer();
+  const { toast } = useToast();
 
   const handleViewDetails = (transaction: DatabaseReadyTransaction | undefined) => {
     if (!transaction) return;
@@ -48,6 +63,32 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
     });
   };
 
+  const handleDeleteRefund = (refundTransactionId: string) => {
+    setTransactionToDelete(refundTransactionId);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteRefund = async () => {
+    if (!transactionToDelete) return;
+    try {
+        await deleteTransaction(transactionToDelete);
+        toast({
+            title: "Refund Deleted",
+            description: `The refund transaction has been successfully removed.`,
+        });
+        onRefresh();
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Delete Failed",
+            description: "Could not delete the refund transaction.",
+        });
+    } finally {
+        setIsDeleteDialogOpen(false);
+        setTransactionToDelete(null);
+    }
+  };
+
   if (originalTransactions.length === 0) {
     return (
       <div className="text-center py-10 px-4">
@@ -71,6 +112,7 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
                         refundTransaction={refundTx}
                         onViewDetails={handleViewDetails}
                         onRefund={handleRefund}
+                        onDeleteRefund={handleDeleteRefund}
                     />
                 );
             })}
@@ -81,6 +123,24 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
             onOpenChange={handleDetailsDialogClose}
             transaction={selectedTransaction}
         />
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action will permanently delete the refund transaction. The original
+                        transaction will become refundable again. You cannot undo this action.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDeleteRefund} className="bg-red-600 hover:bg-red-700">
+                        Confirm Delete
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     </>
   );
 }
