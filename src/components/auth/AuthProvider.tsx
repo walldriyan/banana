@@ -47,7 +47,8 @@ function ZustandSessionInitializer() {
                 status: 'authenticated',
             });
         }
-    }, [setSession]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // ‼️ FIX: Use an empty dependency array to run this effect only once on mount.
 
     return null; // This component doesn't render anything.
 }
