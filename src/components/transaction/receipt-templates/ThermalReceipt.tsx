@@ -74,7 +74,7 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false, originalTransa
                     {/* This column is aligned with "Our Price", so it should show per-item price after discount again */}
                     {(item.lineTotalAfterDiscount / item.quantity).toFixed(2)}
                     
-                    console.log(Item.lineTotalAfterDiscount);
+                   
                     
                   </td>
                 </tr>
