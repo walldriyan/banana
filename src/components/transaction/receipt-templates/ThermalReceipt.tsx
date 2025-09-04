@@ -13,6 +13,10 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
 
   const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
+  const isRefund = transactionHeader.status === 'refund';
+
+  // For refunds, paidAmount can be negative (money returned) or positive (money collected)
+  const refundAmount = paymentDetails.paidAmount;
 
   return (
     <div className="bg-white text-black font-mono text-xs max-w-[300px] mx-auto p-2 ">
@@ -22,6 +26,9 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
         <p>Tel: 011-2345678</p>
         <p>Date: {new Date(transactionHeader.transactionDate).toLocaleString()}</p>
         <p>Receipt No: {transactionHeader.transactionId}</p>
+        {isRefund && transactionHeader.originalTransactionId && (
+            <p className='font-bold'>(REFUND for: {transactionHeader.originalTransactionId})</p>
+        )}
       </header>
 
       <Line />
@@ -99,9 +106,7 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
         )}
       </section>
 
-      {/* Hide applied discounts log in gift mode to avoid confusion */}
-      {/* && !showAsGiftReceipt */}
-      {appliedDiscountsLog.length > 0  && (
+      {appliedDiscountsLog.length > 0 && !showAsGiftReceipt && (
         <>
           <Line />
           <section className="my-1">
@@ -115,31 +120,52 @@ export function ThermalReceipt({ data, showAsGiftReceipt = false }: ThermalRecei
         </>
       )}
 
-      {/* {appliedDiscountsLog.length > 0 && !showAsGiftReceipt && (
-        <>
-          <Line />
-          <section className="my-1">
-            <h2 className="font-bold text-center">APPLIED DISCOUNTS</h2>
-            {appliedDiscountsLog.map((discount, index) => (
-              <div key={index} className="text-left">
-                - {discount.sourceRuleName} ({discount.totalCalculatedDiscount.toFixed(2)})
-              </div>
-            ))}
-          </section>
-        </>
-      )} */}
-
       <Line />
-
+      
+      {/* Payment Section - Conditional Rendering */}
       <section className="my-1 space-y-1">
-        <div className="flex justify-between">
-          <span>Paid ({paymentDetails.paymentMethod}):</span>
-          <span>{paymentDetails.paidAmount.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between font-bold">
-          <span>Balance Due:</span>
-          <span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span>
-        </div>
+        {isRefund ? (
+            <>
+                <div className="flex justify-between font-bold">
+                    <span>Original Bill Paid:</span>
+                    <span>{(paymentDetails.outstandingAmount + finalTotalToShow - refundAmount).toFixed(2)}</span>
+                </div>
+                 <div className="flex justify-between font-bold">
+                    <span>New Bill Total:</span>
+                    <span>{finalTotalToShow.toFixed(2)}</span>
+                </div>
+                <Line/>
+                {refundAmount < 0 ? (
+                    <div className="flex justify-between font-bold text-green-700">
+                        <span>Amount Returned to Customer:</span>
+                        <span>{(-refundAmount).toFixed(2)}</span>
+                    </div>
+                ) : (
+                    <div className="flex justify-between font-bold text-red-700">
+                        <span>Amount Collected from Customer:</span>
+                        <span>{refundAmount.toFixed(2)}</span>
+                    </div>
+                )}
+                
+                {paymentDetails.outstandingAmount > 0 && (
+                    <div className="flex justify-between font-bold">
+                        <span>New Outstanding:</span>
+                        <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
+                    </div>
+                )}
+            </>
+        ) : (
+            <>
+                <div className="flex justify-between">
+                    <span>Paid ({paymentDetails.paymentMethod}):</span>
+                    <span>{paymentDetails.paidAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between font-bold">
+                    <span>Balance Due:</span>
+                    <span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span>
+                </div>
+            </>
+        )}
       </section>
 
       <Line />
