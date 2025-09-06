@@ -2,7 +2,7 @@
 import { IDiscountRule } from './interface';
 import { DiscountContext, LineItemData } from '../core/context';
 import { DiscountResult } from '../core/result';
-import { generateRuleId } from '../utils/helpers';
+import { generateRuleId, evaluateRule } from '../utils/helpers';
 
 export class CustomItemDiscountRule implements IDiscountRule {
   readonly isPotentiallyRepeatable: boolean = false; // Custom discounts are unique
@@ -22,19 +22,30 @@ export class CustomItemDiscountRule implements IDiscountRule {
 
       let discountAmount = 0;
       const lineTotal = item.price * item.quantity;
-      const applyOnce = item.customApplyFixedOnce ?? false; // Default to per-unit if not specified
+      const applyOnce = item.customApplyFixedOnce ?? false; 
 
-      if (item.customDiscountType === 'fixed') {
-        if (applyOnce) {
-          // Apply the fixed discount only once for the entire line item
-          discountAmount = item.customDiscountValue;
-        } else {
-          // Apply the fixed discount for each unit in the line item
-          discountAmount = item.customDiscountValue * item.quantity;
-        }
+      if (item.customDiscountType === 'fixed' && applyOnce) {
+        // *** THE DEFINITIVE FIX ***
+        // If it's a fixed discount meant to be applied only once,
+        // we directly use the value and DO NOT multiply by quantity.
+        // This bypasses the evaluateRule helper which was causing the issue.
+        discountAmount = item.customDiscountValue;
       } else {
-        // Percentage is always calculated on the total value of the line
-        discountAmount = lineTotal * (item.customDiscountValue / 100);
+        // For percentage discounts OR per-unit fixed discounts, use the helper
+        const tempRuleConfig = {
+          isEnabled: true,
+          name: 'Custom Rule',
+          type: item.customDiscountType!,
+          value: item.customDiscountValue,
+          applyFixedOnce: applyOnce
+        };
+         discountAmount = evaluateRule(
+            tempRuleConfig,
+            item.price,
+            item.quantity,
+            lineTotal,
+            lineTotal // For custom rules, condition is always met, so test against lineTotal
+        );
       }
 
 
