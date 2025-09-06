@@ -34,6 +34,7 @@ export interface SaleItem extends Product {
   customDiscountValue?: number;
   customDiscountType?: 'fixed' | 'percentage';
   customApplyFixedOnce?: boolean; // New field to control custom fixed discount behavior
+  originalQuantity?: number; // For refund context: the quantity in the original transaction
 }
 
 // වට්ටම් නීතියක් - Enhanced with better validation and metadata

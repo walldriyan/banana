@@ -27,14 +27,28 @@ export class CustomItemDiscountRule implements IDiscountRule {
 
       let discountAmount = 0;
       const lineTotal = item.price * item.quantity;
-      // This is the flag from the UI switch. If true, it should be a one-time discount.
+      
+      const isOneTimeFixed = item.customDiscountType === 'fixed' && item.customApplyFixedOnce;
+      // This is the special case for one-time fixed discount.
       const applyOnce = item.customApplyFixedOnce ?? false; 
 
-      if (item.customDiscountType === 'fixed' && applyOnce) {
+      if (isOneTimeFixed) {
         // This is the special case for one-time fixed discount.
-        // It should NOT be multiplied by quantity.
         console.log(`[CustomItemDiscountRule] Applying a single, one-time fixed discount.`);
-        discountAmount = item.customDiscountValue;
+
+        // Check if this is a partial refund scenario
+        if (item.originalQuantity && item.originalQuantity > item.quantity) {
+            // Pro-rate the discount
+            const originalDiscount = item.customDiscountValue;
+            const originalQty = item.originalQuantity;
+            const currentQty = item.quantity;
+            discountAmount = (originalDiscount / originalQty) * currentQty;
+            console.log(`[CustomItemDiscountRule] Pro-rated refund discount: (${originalDiscount} / ${originalQty}) * ${currentQty} = ${discountAmount}`);
+        } else {
+             // Normal sale or full refund, apply the discount as is
+            discountAmount = item.customDiscountValue;
+        }
+
       } else {
         // For percentage discounts OR per-unit fixed discounts, use the helper
         console.log(`[CustomItemDiscountRule] Using evaluateRule for percentage or per-unit fixed discount.`);

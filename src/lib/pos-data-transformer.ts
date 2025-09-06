@@ -185,6 +185,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 quantity: line.quantity,
                 price: line.unitPrice,
+                originalQuantity: line.quantity, // Set original quantity for refund logic
                 // Restore custom discount info
                 customDiscountValue: line.customDiscountValue,
                 customDiscountType: line.customDiscountType,
@@ -199,6 +200,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
             selectedBatchId: batch?.id,
             selectedBatch: batch,
             price: line.unitPrice,
+            originalQuantity: line.quantity, // Set original quantity for refund logic
             // Restore custom discount info
             customDiscountValue: line.customDiscountValue,
             customDiscountType: line.customDiscountType,
