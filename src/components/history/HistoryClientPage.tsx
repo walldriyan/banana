@@ -6,21 +6,36 @@ import { getPendingTransactions } from '@/lib/db/local-db';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { TransactionList } from './TransactionList';
 import { Skeleton } from '../ui/skeleton';
+import { TransactionSearchBar } from './TransactionSearchBar';
+import { Button } from '../ui/button';
+import { ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 export function HistoryClientPage() {
   const [transactions, setTransactions] = useState<DatabaseReadyTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchTransactions = useCallback(async () => {
     try {
       setIsLoading(true);
       const allTxs = await getPendingTransactions();
-      allTxs.sort((a, b) => 
+      
+      // FIX for duplicate keys: Ensure all transactions are unique by ID before setting state
+      const uniqueTransactionsMap = allTxs.reduce((acc, current) => {
+        // If a transaction with the same ID already exists, the newer one replaces the older one.
+        acc.set(current.transactionHeader.transactionId, current);
+        return acc;
+      }, new Map<string, DatabaseReadyTransaction>());
+      
+      const uniqueTransactions = Array.from(uniqueTransactionsMap.values());
+
+      uniqueTransactions.sort((a, b) => 
         new Date(b.transactionHeader.transactionDate).getTime() - 
         new Date(a.transactionHeader.transactionDate).getTime()
       );
-      setTransactions(allTxs);
+      setTransactions(uniqueTransactions);
       setError(null);
     } catch (err) {
       console.error("Failed to fetch transactions:", err);
@@ -39,7 +54,15 @@ export function HistoryClientPage() {
     const originalTxs: DatabaseReadyTransaction[] = [];
     const refundMap = new Map<string, DatabaseReadyTransaction>();
 
-    transactions.forEach(tx => {
+    // Filter transactions based on the search query first
+    const filteredTransactions = transactions.filter(tx => {
+        const query = searchQuery.toLowerCase();
+        const txIdMatch = tx.transactionHeader.transactionId.toLowerCase().includes(query);
+        const customerNameMatch = tx.customerDetails.name.toLowerCase().includes(query);
+        return txIdMatch || customerNameMatch;
+    });
+
+    filteredTransactions.forEach(tx => {
       if (tx.transactionHeader.status === 'refund' && tx.transactionHeader.originalTransactionId) {
         refundMap.set(tx.transactionHeader.originalTransactionId, tx);
       } else {
@@ -48,12 +71,13 @@ export function HistoryClientPage() {
     });
 
     return { originalTransactions: originalTxs, refundMap };
-  }, [transactions]);
+  }, [transactions, searchQuery]);
 
 
   if (isLoading) {
     return (
         <div className="space-y-4">
+            <Skeleton className="h-16 w-full" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
@@ -71,12 +95,33 @@ export function HistoryClientPage() {
   }
 
   return (
-    <div>
-        <TransactionList 
-            originalTransactions={originalTransactions}
-            refundMap={refundMap}
-            onRefresh={fetchTransactions} 
-        />
-    </div>
+    <>
+      <header className="bg-white shadow-sm sticky top-0 z-10 rounded-lg mb-6">
+        <div className="flex items-center justify-between gap-4 p-4">
+            <div className="flex items-center gap-4">
+                <Link href="/" passHref>
+                <Button variant="outline" size="icon">
+                    <ArrowLeft />
+                </Button>
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-900 hidden sm:block">
+                Transaction History
+                </h1>
+            </div>
+            <div className="flex-1 max-w-sm md:max-w-md">
+                <TransactionSearchBar 
+                    searchQuery={searchQuery} 
+                    setSearchQuery={setSearchQuery} 
+                />
+            </div>
+        </div>
+      </header>
+      
+      <TransactionList 
+          originalTransactions={originalTransactions}
+          refundMap={refundMap}
+          onRefresh={fetchTransactions} 
+      />
+    </>
   );
 }
