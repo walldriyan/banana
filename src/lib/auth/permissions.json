@@ -1,0 +1,51 @@
+{
+  "roles": {
+    "admin": {
+      "name": "Administrator",
+      "inherits": null,
+      "permissions": [
+        "access_all"
+      ]
+    },
+    "manager": {
+      "name": "Manager",
+      "inherits": "cashier",
+      "permissions": [
+        "history.view",
+        "bills.update",
+        "bills.delete",
+        "refund.process"
+      ]
+    },
+    "cashier": {
+      "name": "Cashier",
+      "inherits": null,
+      "permissions": [
+        "pos.view",
+        "pos.create.transaction"
+      ]
+    }
+  },
+  "users": {
+    "admin": {
+      "role": "admin",
+      "overrides": {
+        "permissions": []
+      }
+    },
+    "manager_user": {
+      "role": "manager",
+      "overrides": {
+        "permissions": []
+      }
+    },
+    "cashier_user": {
+      "role": "cashier",
+      "overrides": {
+        "permissions": [
+          "history.view"
+        ]
+      }
+    }
+  }
+}

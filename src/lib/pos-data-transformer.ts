@@ -1,6 +1,5 @@
 // src/lib/pos-data-transformer.ts
 import type { SaleItem, AppliedRuleInfo, Product, DiscountSet } from '@/types';
-import type { DiscountResult, LineItemResult } from '@/discount-engine/core/result';
 
 // Define types for the data we'll collect from the UI
 export interface CustomerData {
@@ -16,6 +15,16 @@ export interface PaymentData {
   isInstallment: boolean;
 }
 
+export interface CompanyDetails {
+    companyId: string;
+    companyName: string;
+}
+
+export interface UserDetails {
+    userId: string;
+    userName: string;
+}
+
 export interface TransactionHeader {
     transactionId: string;
     transactionDate: string; // ISO 8601 format
@@ -27,6 +36,7 @@ export interface TransactionHeader {
     status: 'completed' | 'refund' | 'pending';
     campaignId: string; // Crucial for refunds
     originalTransactionId?: string; // For refunds
+    isGiftReceipt?: boolean;
 }
 
 export interface TransactionLine {
@@ -40,6 +50,10 @@ export interface TransactionLine {
     lineTotalBeforeDiscount: number;
     lineDiscount: number; 
     lineTotalAfterDiscount: number;
+    // Add fields to store the manual override state
+    customDiscountValue?: number;
+    customDiscountType?: 'fixed' | 'percentage';
+    customApplyFixedOnce?: boolean; // Persist the one-time choice
 }
 
 
@@ -50,6 +64,8 @@ export interface DatabaseReadyTransaction {
   appliedDiscountsLog: AppliedRuleInfo[];
   customerDetails: CustomerData & { id?: string }; // id can be added later
   paymentDetails: PaymentData;
+  companyDetails: CompanyDetails;
+  userDetails: UserDetails;
 }
 
 interface TransformerInput {
@@ -58,7 +74,8 @@ interface TransformerInput {
   transactionId: string;
   customerData: CustomerData;
   paymentData: PaymentData;
-  activeCampaign: DiscountSet; // Now required
+  activeCampaign: DiscountSet;
+  isGiftReceipt?: boolean;
   status?: 'completed' | 'refund' | 'pending';
   originalTransactionId?: string;
 }
@@ -78,6 +95,7 @@ export function transformTransactionDataForDb(
     customerData, 
     paymentData,
     activeCampaign,
+    isGiftReceipt,
     status = 'completed',
     originalTransactionId
   } = input;
@@ -94,14 +112,12 @@ export function transformTransactionDataForDb(
     totalItems,
     totalQuantity,
     status,
-    campaignId: activeCampaign.id, // Store the campaign ID
+    campaignId: activeCampaign.id,
+    isGiftReceipt: isGiftReceipt ?? false,
     ...(originalTransactionId && { originalTransactionId }),
   };
 
   const transactionLines: TransactionLine[] = cart.map(item => {
-    // **FIX:** The `discountResult` from a server action is a plain object,
-    // so we can't use the `.getLineItem()` method. Instead, we find the
-    // matching line item directly in the `lineItems` array.
     const lineItemResult = discountResult.lineItems.find((li: any) => li.lineId === item.saleItemId);
 
     const lineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
@@ -118,10 +134,24 @@ export function transformTransactionDataForDb(
       lineTotalBeforeDiscount: lineTotalBeforeDiscount,
       lineDiscount: lineDiscount,
       lineTotalAfterDiscount: lineTotalBeforeDiscount - lineDiscount,
+      // Save the custom override information
+      customDiscountValue: item.customDiscountValue,
+      customDiscountType: item.customDiscountType,
+      customApplyFixedOnce: item.customApplyFixedOnce, // Persist this crucial flag
     };
   });
 
   const appliedDiscountsLog = discountResult.appliedRulesSummary || [];
+
+  const companyDetails: CompanyDetails = {
+    companyId: 'comp-001',
+    companyName: 'Default Company'
+  };
+
+  const userDetails: UserDetails = {
+    userId: 'user-001',
+    userName: 'Default User'
+  };
 
   const databaseReadyObject: DatabaseReadyTransaction = {
     transactionHeader,
@@ -129,6 +159,8 @@ export function transformTransactionDataForDb(
     appliedDiscountsLog,
     customerDetails: customerData,
     paymentDetails: paymentData,
+    companyDetails,
+    userDetails,
   };
 
   return databaseReadyObject;
@@ -141,8 +173,6 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
         const batch = product?.batches?.find(b => b.id === line.batchId);
         
         if (!product) {
-            // This is a fallback in case the product was deleted.
-            // A more robust solution might handle this differently.
             return {
                 id: line.productId,
                 name: line.productName,
@@ -155,6 +185,11 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 quantity: line.quantity,
                 price: line.unitPrice,
+                originalQuantity: line.quantity, // Set original quantity for refund logic
+                // Restore custom discount info
+                customDiscountValue: line.customDiscountValue,
+                customDiscountType: line.customDiscountType,
+                customApplyFixedOnce: line.customApplyFixedOnce, // Restore this crucial flag
             }
         }
         
@@ -164,7 +199,12 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
             quantity: line.quantity,
             selectedBatchId: batch?.id,
             selectedBatch: batch,
-            price: line.unitPrice, // Use the price from the original transaction
+            price: line.unitPrice,
+            originalQuantity: line.quantity, // Set original quantity for refund logic
+            // Restore custom discount info
+            customDiscountValue: line.customDiscountValue,
+            customDiscountType: line.customDiscountType,
+            customApplyFixedOnce: line.customApplyFixedOnce, // Restore this crucial flag
         };
     });
 }

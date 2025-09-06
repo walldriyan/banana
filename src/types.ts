@@ -33,6 +33,8 @@ export interface SaleItem extends Product {
   price: number; // The actual price used for the sale (could be from batch or product)
   customDiscountValue?: number;
   customDiscountType?: 'fixed' | 'percentage';
+  customApplyFixedOnce?: boolean; // New field to control custom fixed discount behavior
+  originalQuantity?: number; // For refund context: the quantity in the original transaction
 }
 
 // වට්ටම් නීතියක් - Enhanced with better validation and metadata
@@ -139,6 +141,8 @@ export interface AppliedRuleInfo {
 }
 
 // User interface for future customer-specific discounts
+// This User interface is for general app logic, not the NextAuth user session.
+// The NextAuth User type is extended in src/lib/auth/types.ts
 export interface User {
   id: string;
   name: string;

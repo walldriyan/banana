@@ -26,37 +26,37 @@ interface RefundProcessingInput {
 export function processRefund(payload: RefundProcessingInput): DatabaseReadyTransaction {
   const { originalTransaction, refundCart, refundDiscountResult, activeCampaign } = payload;
   
-  // The amount the customer originally paid
   const originalPaidAmount = originalTransaction.paymentDetails.paidAmount;
-  // The value of the items the customer is now keeping
-  const newTotalToPay = refundDiscountResult.finalTotal;
+  const newTotalForKeptItems = refundDiscountResult.finalTotal;
 
-  // Positive value means we give money back.
-  // Negative value means the customer has to pay more (e.g. they returned a discounted item and kept a full price one).
-  const cashToReturnOrCollect = originalPaidAmount - newTotalToPay;
-
-  // The new outstanding amount is the new total bill minus what was originally paid.
-  // If this is negative, it means the customer overpaid, so the outstanding is 0.
-  const newOutstandingAmount = Math.max(0, newTotalToPay - originalPaidAmount);
+  // This is the net cash change.
+  // Positive: Customer needs to pay more.
+  // Negative: Customer gets money back.
+  const netCashChange = newTotalForKeptItems - originalPaidAmount;
   
   const refundTransactionId = `refund-${Date.now()}`;
 
+  // When creating the refund transaction, we don't need to consider a "gift receipt" mode.
+  // The refund receipt should always show the full financial details.
   const refundTransaction = transformTransactionDataForDb({
     cart: refundCart,
     discountResult: refundDiscountResult,
     transactionId: refundTransactionId,
     customerData: originalTransaction.customerDetails,
     paymentData: {
-      // "paidAmount" for a refund transaction is the NET cash change.
-      // A positive value means we received cash (customer paid us), a negative value means we gave cash back.
-      paidAmount: -cashToReturnOrCollect, 
+      // `paidAmount` in the new transaction represents the CASH CHANGE.
+      // If customer gets 500 back, paidAmount is -500.
+      // If customer has to pay 200 more, paidAmount is 200.
+      paidAmount: netCashChange,
       paymentMethod: originalTransaction.paymentDetails.paymentMethod,
-      outstandingAmount: newOutstandingAmount,
-      isInstallment: newOutstandingAmount > 0, // It's an installment if there's an outstanding balance
+      outstandingAmount: 0, // Refunds settle the difference, no new outstanding amount.
+      isInstallment: false, // Refunds are final settlements.
+      finalTotal: newTotalForKeptItems, // This is the total of what the customer is keeping now
     },
     status: 'refund',
     originalTransactionId: originalTransaction.transactionHeader.transactionId,
     activeCampaign: activeCampaign,
+    isGiftReceipt: false, // Refunds are financial documents, never gift receipts.
   });
 
   return refundTransaction;
