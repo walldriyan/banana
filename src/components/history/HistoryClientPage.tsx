@@ -1,4 +1,4 @@
-// src/components/history/HistoryClientPage.tsx
+{// src/components/history/HistoryClientPage.tsx
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -22,10 +22,12 @@ export function HistoryClientPage() {
       setIsLoading(true);
       const allTxs = await getPendingTransactions();
       
-      // FIX for duplicate keys: Ensure all transactions are unique by ID before setting state
       const uniqueTransactionsMap = allTxs.reduce((acc, current) => {
+        const existingTx = acc.get(current.transactionHeader.transactionId);
         // If a transaction with the same ID already exists, the newer one replaces the older one.
-        acc.set(current.transactionHeader.transactionId, current);
+        if (!existingTx || new Date(current.transactionHeader.transactionDate) > new Date(existingTx.transactionHeader.transactionDate)) {
+             acc.set(current.transactionHeader.transactionId, current);
+        }
         return acc;
       }, new Map<string, DatabaseReadyTransaction>());
       
@@ -49,18 +51,23 @@ export function HistoryClientPage() {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  // Memoize the separation of original and refund transactions to avoid re-calculation on every render
-  const { originalTransactions, refundMap } = useMemo(() => {
-    const originalTxs: DatabaseReadyTransaction[] = [];
-    const refundMap = new Map<string, DatabaseReadyTransaction>();
-
-    // Filter transactions based on the search query first
-    const filteredTransactions = transactions.filter(tx => {
-        const query = searchQuery.toLowerCase();
+  const filteredTransactions = useMemo(() => {
+    if (!searchQuery) {
+        return transactions;
+    }
+    const query = searchQuery.toLowerCase();
+    return transactions.filter(tx => {
         const txIdMatch = tx.transactionHeader.transactionId.toLowerCase().includes(query);
         const customerNameMatch = tx.customerDetails.name.toLowerCase().includes(query);
         return txIdMatch || customerNameMatch;
     });
+  }, [transactions, searchQuery]);
+
+
+  // Memoize the separation of original and refund transactions to avoid re-calculation on every render
+  const { originalTransactions, refundMap } = useMemo(() => {
+    const originalTxs: DatabaseReadyTransaction[] = [];
+    const refundMap = new Map<string, DatabaseReadyTransaction>();
 
     filteredTransactions.forEach(tx => {
       if (tx.transactionHeader.status === 'refund' && tx.transactionHeader.originalTransactionId) {
@@ -71,7 +78,7 @@ export function HistoryClientPage() {
     });
 
     return { originalTransactions: originalTxs, refundMap };
-  }, [transactions, searchQuery]);
+  }, [filteredTransactions]);
 
 
   if (isLoading) {
@@ -112,6 +119,7 @@ export function HistoryClientPage() {
                 <TransactionSearchBar 
                     searchQuery={searchQuery} 
                     setSearchQuery={setSearchQuery} 
+                    allTransactions={transactions}
                 />
             </div>
         </div>
