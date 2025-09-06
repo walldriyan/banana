@@ -1,10 +1,11 @@
 // src/components/history/TransactionSearchBar.tsx
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { format } from 'date-fns';
-import { ReceiptText } from 'lucide-react';
+import { ReceiptText, X } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface TransactionSearchBarProps {
   searchQuery: string;
@@ -13,21 +14,30 @@ interface TransactionSearchBarProps {
 }
 
 export function TransactionSearchBar({ searchQuery, setSearchQuery, allTransactions }: TransactionSearchBarProps) {
-    const [inputValue, setInputValue] = useState('');
+    const [inputValue, setInputValue] = useState(searchQuery);
+
+    // When the external searchQuery changes (e.g., from pagination clearing it), update the internal input value
+    useEffect(() => {
+        setInputValue(searchQuery);
+    }, [searchQuery]);
 
     const handleSelect = (transactionId: string) => {
         setSearchQuery(transactionId);
-        setInputValue(''); // Reset the visual input to clear the dropdown
+        setInputValue(transactionId); // Keep the selected value in the input
     };
 
-    // Filter transactions for suggestions only when input value is present
-    const suggestedTransactions = inputValue.length > 1 
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setInputValue('');
+    };
+
+    const suggestedTransactions = inputValue.length > 1 && inputValue !== searchQuery
         ? allTransactions.filter(tx => {
             const query = inputValue.toLowerCase();
             const txIdMatch = tx.transactionHeader.transactionId.toLowerCase().includes(query);
             const customerNameMatch = tx.customerDetails.name.toLowerCase().includes(query);
             return txIdMatch || customerNameMatch;
-          }).slice(0, 10) // Limit suggestions to the top 10
+          }).slice(0, 10)
         : [];
 
     return (
@@ -38,19 +48,23 @@ export function TransactionSearchBar({ searchQuery, setSearchQuery, allTransacti
                     placeholder="Search by ID or Name..."
                     value={inputValue}
                     onValueChange={setInputValue}
-                    onBlur={() => {
-                        // When blurring, if there's text, set it as the final search query
-                        if (inputValue) {
-                            setSearchQuery(inputValue);
-                        }
-                    }}
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                             setSearchQuery(inputValue);
                         }
                     }}
-                    className="w-full h-11"
+                    className="w-full h-11 pr-8"
                 />
+                {inputValue && (
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                        onClick={handleClearSearch}
+                    >
+                        <X className="h-4 w-4" />
+                    </Button>
+                )}
             </div>
 
             {suggestedTransactions.length > 0 && (
