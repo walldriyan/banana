@@ -27,9 +27,12 @@ export function processRefund(payload: RefundProcessingInput): DatabaseReadyTran
   const { originalTransaction, refundCart, refundDiscountResult, activeCampaign } = payload;
   
   const originalPaidAmount = originalTransaction.paymentDetails.paidAmount;
-  const newTotalToPay = refundDiscountResult.finalTotal;
-  const cashToReturnOrCollect = originalPaidAmount - newTotalToPay;
-  const newOutstandingAmount = Math.max(0, newTotalToPay - originalPaidAmount);
+  const newTotalForKeptItems = refundDiscountResult.finalTotal;
+
+  // This is the net cash change.
+  // Positive: Customer needs to pay more.
+  // Negative: Customer gets money back.
+  const netCashChange = newTotalForKeptItems - originalPaidAmount;
   
   const refundTransactionId = `refund-${Date.now()}`;
 
@@ -41,10 +44,14 @@ export function processRefund(payload: RefundProcessingInput): DatabaseReadyTran
     transactionId: refundTransactionId,
     customerData: originalTransaction.customerDetails,
     paymentData: {
-      paidAmount: -cashToReturnOrCollect, 
+      // `paidAmount` in the new transaction represents the CASH CHANGE.
+      // If customer gets 500 back, paidAmount is -500.
+      // If customer has to pay 200 more, paidAmount is 200.
+      paidAmount: netCashChange,
       paymentMethod: originalTransaction.paymentDetails.paymentMethod,
-      outstandingAmount: newOutstandingAmount,
-      isInstallment: newOutstandingAmount > 0,
+      outstandingAmount: 0, // Refunds settle the difference, no new outstanding amount.
+      isInstallment: false, // Refunds are final settlements.
+      finalTotal: newTotalForKeptItems, // This is the total of what the customer is keeping now
     },
     status: 'refund',
     originalTransactionId: originalTransaction.transactionHeader.transactionId,

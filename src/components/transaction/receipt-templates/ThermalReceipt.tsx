@@ -24,8 +24,8 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
   const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
   const isRefund = transactionHeader.status === 'refund';
 
-  // For a refund receipt, this is the net cash change.
-  const refundCashChange = paymentDetails.paidAmount;
+  // For a refund receipt, this is the net cash change. For a normal sale, it's the change given.
+  const finalCashChange = paymentDetails.paidAmount - finalTotalToShow;
 
   // This is the original amount the customer paid in the transaction that is being refunded.
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
@@ -58,7 +58,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             <th className="text-left">Item</th>
             <th className="text-center">Qty</th>
             <th className="text-right">Price</th>
-            <th className="text-right">Our Price</th>
+            <th className="text-right">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -68,23 +68,17 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
                 <td className="text-center">{item.quantity}</td>
                 <td className="text-right">{item.unitPrice.toFixed(2)}</td>
-                <td className="text-right text-green-700 font-semibold">
-                  {(item.lineTotalAfterDiscount / item.quantity).toFixed(2)}
+                <td className="text-right">
+                  {item.lineTotalBeforeDiscount.toFixed(2)}
                 </td>
               </tr>
               {item.lineDiscount > 0 && !showAsGiftReceipt && (
                 <tr>
                   <td colSpan={3} className="text-right italic text-gray-600">
-                    (Discount:
-                    <span className="line-through mx-1">{item.lineTotalBeforeDiscount.toFixed(2)}</span>
-                    <span className='text-blue-700'>-{item.lineDiscount.toFixed(2)}</span>)
+                    (Discount)
                   </td>
-                  <td className="text-right">
-                    {/* This column is aligned with "Our Price", so it should show per-item price after discount again */}
-                    {(item.lineTotalAfterDiscount / item.quantity).toFixed(2)}
-
-
-
+                  <td className="text-right italic text-gray-600">
+                    - {item.lineDiscount.toFixed(2)}
                   </td>
                 </tr>
               )}
@@ -112,12 +106,15 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           <span>TOTAL:</span>
           <span>Rs. {finalTotalToShow.toFixed(2)}</span>
         </div>
-        <Line />
+        
         {transactionHeader.totalDiscountAmount > 0 && showAsGiftReceipt && (
-          <div className="flex justify-between font-bold text-blue-700">
-            <span>Your Savings:</span>
-            <span>Rs. {transactionHeader.totalDiscountAmount.toFixed(2)}</span>
-          </div>
+          <>
+            <Line />
+            <div className="flex justify-between font-bold text-blue-700">
+                <span>Your Savings:</span>
+                <span>Rs. {transactionHeader.totalDiscountAmount.toFixed(2)}</span>
+            </div>
+          </>
         )}
       </section>
 
@@ -149,15 +146,16 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
               <span>{finalTotalToShow.toFixed(2)}</span>
             </div>
             <Line />
-            {refundCashChange < 0 ? (
-              <div className="flex justify-between font-bold text-green-700">
-                <span>Amount Returned to Customer:</span>
-                <span>{(-refundCashChange).toFixed(2)}</span>
-              </div>
-            ) : refundCashChange > 0 ? (
+            {/* Net cash change for the refund transaction */}
+            {(paymentDetails.paidAmount > 0) ? (
               <div className="flex justify-between font-bold text-red-700">
                 <span>Amount Collected from Customer:</span>
-                <span>{refundCashChange.toFixed(2)}</span>
+                <span>{paymentDetails.paidAmount.toFixed(2)}</span>
+              </div>
+            ) : (paymentDetails.paidAmount < 0) ? (
+              <div className="flex justify-between font-bold text-green-700">
+                <span>Amount Returned to Customer:</span>
+                <span>{(-paymentDetails.paidAmount).toFixed(2)}</span>
               </div>
             ) : (
               <div className="flex justify-between font-bold">
@@ -165,7 +163,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                 <span>0.00</span>
               </div>
             )}
-
+            
             {paymentDetails.outstandingAmount > 0 && (
               <div className="flex justify-between font-bold">
                 <span>New Outstanding:</span>
@@ -175,37 +173,22 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           </>
         ) : (
           <>
-            {/* paid cash or credit */}
             <div className="flex justify-between">
               <span>Paid ({paymentDetails.paymentMethod}):</span>
               <span>{paymentDetails.paidAmount.toFixed(2)}</span>
             </div>
 
-            {/* due */}
-            <div className="flex justify-between font-bold">
-
-
-              {showAsGiftReceipt ? (
-                <><span> Gift:</span><span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span></>) :
-                (<><span>   Balance Due:</span><span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span></>)}
-
-
-              {/* <span>   Balance Due:</span> */}
-              {/* <span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span> */}
-
-              {paymentDetails.outstandingAmount > 0 && (
-                <div className="flex justify-between font-bold">
+            {paymentDetails.outstandingAmount > 0 ? (
+               <div className="flex justify-between font-bold text-red-600">
                   <span>Outstanding:</span>
                   <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
                 </div>
-              )}
-
-
-
-            </div>
-            {/* due */}
-
-
+            ) : (
+                <div className="flex justify-between">
+                  <span>Change:</span>
+                  <span>{finalCashChange.toFixed(2)}</span>
+                </div>
+            )}
           </>
         )}
       </section>
