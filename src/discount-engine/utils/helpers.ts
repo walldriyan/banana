@@ -22,39 +22,40 @@ export function evaluateRule(
 
   if (!ruleConfig || !ruleConfig.isEnabled) return 0;
   
-  const value = valueToTestCondition ?? lineTotalValue;
+  // For quantity-based conditions, the value to test is the current item quantity.
+  // For value-based conditions, it's the total line value.
+  const valueToTest = valueToTestCondition ?? lineTotalValue;
 
   const conditionMet =
-    value >= (ruleConfig.conditionMin ?? 0) &&
-    value <= (ruleConfig.conditionMax ?? Infinity);
+    valueToTest >= (ruleConfig.conditionMin ?? 0) &&
+    valueToTest <= (ruleConfig.conditionMax ?? Infinity);
 
+  // If the fundamental condition for the discount is not met with the current state,
+  // no discount should be applied, regardless of any other logic.
   if (!conditionMet) {
-    console.log(`[evaluateRule] Condition not met: ${value} is not between ${ruleConfig.conditionMin ?? 0} and ${ruleConfig.conditionMax ?? 'Infinity'}`);
+    console.log(`[evaluateRule] Condition not met: ${valueToTest} is not between ${ruleConfig.conditionMin ?? 0} and ${ruleConfig.conditionMax ?? 'Infinity'}. No discount.`);
     return 0;
   }
 
   let discountAmount = 0;
   if (ruleConfig.type === 'fixed') {
+    // If it's a one-time fixed discount, apply it once.
     if (ruleConfig.applyFixedOnce) {
-      // Apply the fixed discount only once for the entire line item, regardless of quantity
-      // මේක මගින් quantity කීයක් තිබුණත් discount එක එක වරක් විතරක් apply වෙනවා
       discountAmount = ruleConfig.value;
       console.log(`[evaluateRule] Fixed (One-Time) discount calculated: ${discountAmount}`);
     } else {
-      // Apply the fixed discount for each unit in the line item
-      // මේක මගින් quantity එක වැඩි වෙනකොට discount එකත් වැඩි වෙනවා
+      // Otherwise, apply it per unit.
       discountAmount = ruleConfig.value * itemQuantity;
-      console.log(`[evaluateRule] Fixed (Per-Unit) discount calculated: ${ruleConfig.value} * ${itemQuantity} = ${discountAmount}`);
+       console.log(`[evaluateRule] Fixed (Per-Unit) discount calculated: ${ruleConfig.value} * ${itemQuantity} = ${discountAmount}`);
     }
   } else { // percentage
     // Percentage is always calculated on the total value of the line
-    // Percentage rules quantity එකට බලපාන්නේ නැහැ - line total එකට apply වෙනවා
     discountAmount = lineTotalValue * (ruleConfig.value / 100);
     console.log(`[evaluateRule] Percentage discount calculated: ${lineTotalValue} * ${ruleConfig.value / 100} = ${discountAmount}`);
   }
   
+  // Ensure discount is not more than the line's total value and not negative.
   const finalDiscount = Math.max(0, Math.min(discountAmount, lineTotalValue));
-  // Ensure discount is not more than the line's total value
   console.log(`[evaluateRule] Final discount after validation: ${finalDiscount}`);
   return finalDiscount;
 }
@@ -118,11 +119,12 @@ export function validateRuleConfig(ruleConfig: SpecificDiscountRuleConfig | null
     errors.push('Percentage discount cannot exceed 100%');
   }
   
-  if (ruleConfig.conditionMin !== undefined && ruleConfig.conditionMin < 0) {
+  if (ruleConfig.conditionMin !== undefined && ruleConfig.conditionMin !== null && ruleConfig.conditionMin < 0) {
     errors.push('Minimum condition cannot be negative');
   }
   
-  if (ruleConfig.conditionMax !== undefined && ruleConfig.conditionMin !== undefined && 
+  if (ruleConfig.conditionMax !== undefined && ruleConfig.conditionMax !== null && 
+      ruleConfig.conditionMin !== undefined && ruleConfig.conditionMin !== null &&
       ruleConfig.conditionMax < ruleConfig.conditionMin) {
     errors.push('Maximum condition cannot be less than minimum condition');
   }

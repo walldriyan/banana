@@ -36,6 +36,7 @@ export const defaultDiscounts: DiscountSet = {
       value: 2,
       // No minimum condition, applies to everything
       conditionMin: 0,
+      
       description: 'A standard 2% discount on all line items.',
       applyFixedOnce: true
   },
