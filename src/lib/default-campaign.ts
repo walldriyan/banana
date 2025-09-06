@@ -32,7 +32,7 @@ export const defaultDiscounts: DiscountSet = {
   defaultLineItemValueRuleJson: {
       isEnabled: true,
       name: 'Default 2% Item Discount',
-      type: 'fixed',
+      type: 'percentage',
       value: 2,
       // No minimum condition, applies to everything
       conditionMin: 0,
