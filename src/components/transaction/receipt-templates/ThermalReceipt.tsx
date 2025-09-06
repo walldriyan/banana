@@ -59,6 +59,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             <th className="text-center">Qty</th>
             <th className="text-right">Price</th>
             <th className="text-right">Total</th>
+            <th className="text-right">hi</th>
           </tr>
         </thead>
         <tbody>
@@ -70,6 +71,9 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                 <td className="text-right">{item.unitPrice.toFixed(2)}</td>
                 <td className="text-right">
                   {item.lineTotalBeforeDiscount.toFixed(2)}
+                </td>
+                <td className="text-right">
+                  {item.lineTotalAfterDiscount.toFixed(2)}
                 </td>
               </tr>
               {item.lineDiscount > 0 && !showAsGiftReceipt && (
