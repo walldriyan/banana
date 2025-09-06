@@ -17,8 +17,8 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
   // The decision to show gift/discount mode is now hierarchical:
   // 1. If the `showAsGiftReceipt` prop is provided (from the live toggle), it takes highest priority.
   // 2. If it's not provided (like in the History view), it falls back to the permanently saved `isGiftReceipt` flag in the transaction data.
-  const showAsGiftReceipt = showAsGiftReceiptProp !== undefined 
-    ? showAsGiftReceiptProp 
+  const showAsGiftReceipt = showAsGiftReceiptProp !== undefined
+    ? showAsGiftReceiptProp
     : (transactionHeader.isGiftReceipt ?? false);
 
   const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
@@ -39,7 +39,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
         <p>Date: {new Date(transactionHeader.transactionDate).toLocaleString()}</p>
         <p>Receipt No: {transactionHeader.transactionId}</p>
         {isRefund && transactionHeader.originalTransactionId && (
-            <p className='font-bold'>(REFUND for: {transactionHeader.originalTransactionId})</p>
+          <p className='font-bold'>(REFUND for: {transactionHeader.originalTransactionId})</p>
         )}
       </header>
 
@@ -82,9 +82,9 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                   <td className="text-right">
                     {/* This column is aligned with "Our Price", so it should show per-item price after discount again */}
                     {(item.lineTotalAfterDiscount / item.quantity).toFixed(2)}
-                    
-                   
-                    
+
+
+
                   </td>
                 </tr>
               )}
@@ -136,54 +136,77 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
       )}
 
       <Line />
-      
+
       <section className="my-1 space-y-1">
         {isRefund ? (
-            <>
-                <div className="flex justify-between font-bold">
-                    <span>Original Bill Paid:</span>
-                    <span>{originalPaidAmountForRefundContext?.toFixed(2) ?? 'N/A'}</span>
-                </div>
-                 <div className="flex justify-between font-bold">
-                    <span>New Bill Total:</span>
-                    <span>{finalTotalToShow.toFixed(2)}</span>
-                </div>
-                <Line/>
-                {refundCashChange < 0 ? (
-                     <div className="flex justify-between font-bold text-green-700">
-                        <span>Amount Returned to Customer:</span>
-                        <span>{(-refundCashChange).toFixed(2)}</span>
-                    </div>
-                ) : refundCashChange > 0 ? (
-                    <div className="flex justify-between font-bold text-red-700">
-                        <span>Amount Collected from Customer:</span>
-                        <span>{refundCashChange.toFixed(2)}</span>
-                    </div>
-                ) : (
-                    <div className="flex justify-between font-bold">
-                        <span>Net Change:</span>
-                        <span>0.00</span>
-                    </div>
-                )}
-                
-                {paymentDetails.outstandingAmount > 0 && (
-                    <div className="flex justify-between font-bold">
-                        <span>New Outstanding:</span>
-                        <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
-                    </div>
-                )}
-            </>
+          <>
+            <div className="flex justify-between font-bold">
+              <span>Original Bill Paid:</span>
+              <span>{originalPaidAmountForRefundContext?.toFixed(2) ?? 'N/A'}</span>
+            </div>
+            <div className="flex justify-between font-bold">
+              <span>New Bill Total:</span>
+              <span>{finalTotalToShow.toFixed(2)}</span>
+            </div>
+            <Line />
+            {refundCashChange < 0 ? (
+              <div className="flex justify-between font-bold text-green-700">
+                <span>Amount Returned to Customer:</span>
+                <span>{(-refundCashChange).toFixed(2)}</span>
+              </div>
+            ) : refundCashChange > 0 ? (
+              <div className="flex justify-between font-bold text-red-700">
+                <span>Amount Collected from Customer:</span>
+                <span>{refundCashChange.toFixed(2)}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between font-bold">
+                <span>Net Change:</span>
+                <span>0.00</span>
+              </div>
+            )}
+
+            {paymentDetails.outstandingAmount > 0 && (
+              <div className="flex justify-between font-bold">
+                <span>New Outstanding:</span>
+                <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
+              </div>
+            )}
+          </>
         ) : (
-            <>
-                <div className="flex justify-between">
-                    <span>Paid ({paymentDetails.paymentMethod}):</span>
-                    <span>{paymentDetails.paidAmount.toFixed(2)}</span>
-                </div>
+          <>
+            {/* paid cash or credit */}
+            <div className="flex justify-between">
+              <span>Paid ({paymentDetails.paymentMethod}):</span>
+              <span>{paymentDetails.paidAmount.toFixed(2)}</span>
+            </div>
+
+            {/* due */}
+            <div className="flex justify-between font-bold">
+
+
+              {showAsGiftReceipt ? (
+                <><span> Gift:</span><span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span></>) :
+                (<><span>   Balance Due:</span><span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span></>)}
+
+
+              {/* <span>   Balance Due:</span> */}
+              {/* <span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span> */}
+
+              {paymentDetails.outstandingAmount > 0 && (
                 <div className="flex justify-between font-bold">
-                    <span>Balance Due:</span>
-                    <span>{(finalTotalToShow - paymentDetails.paidAmount).toFixed(2)}</span>
+                  <span>Outstanding:</span>
+                  <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
                 </div>
-            </>
+              )}
+
+
+
+            </div>
+            {/* due */}
+
+
+          </>
         )}
       </section>
 
