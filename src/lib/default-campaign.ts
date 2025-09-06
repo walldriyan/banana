@@ -13,7 +13,7 @@ export const defaultDiscounts: DiscountSet = {
   description: 'A baseline 2% discount on all items. Can be overridden by other campaigns or manual discounts.',
   isActive: true,
   isDefault: true,
-  isOneTimePerTransaction: false,
+  isOneTimePerTransaction: true,
 
   // No product-specific configurations needed for a simple default
   productConfigurations: [],
@@ -32,12 +32,12 @@ export const defaultDiscounts: DiscountSet = {
   defaultLineItemValueRuleJson: {
       isEnabled: true,
       name: 'Default 2% Item Discount',
-      type: 'percentage',
+      type: 'fixed',
       value: 2,
       // No minimum condition, applies to everything
       conditionMin: 0,
       description: 'A standard 2% discount on all line items.',
-      applyFixedOnce: false
+      applyFixedOnce: true
   },
 
   defaultLineItemQuantityRuleJson: null,

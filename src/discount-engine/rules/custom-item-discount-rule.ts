@@ -22,19 +22,26 @@ export class CustomItemDiscountRule implements IDiscountRule {
 
       let discountAmount = 0;
       const lineTotal = item.price * item.quantity;
+      const applyOnce = item.customApplyFixedOnce ?? false; // Default to per-unit if not specified
 
       if (item.customDiscountType === 'fixed') {
-        // Fixed amount OFF PER UNIT
-        discountAmount = item.customDiscountValue * item.quantity;
+        if (applyOnce) {
+          // Apply the fixed discount only once for the entire line item
+          discountAmount = item.customDiscountValue;
+        } else {
+          // Apply the fixed discount for each unit in the line item
+          discountAmount = item.customDiscountValue * item.quantity;
+        }
       } else {
-        // Percentage off the total line value
+        // Percentage is always calculated on the total value of the line
         discountAmount = lineTotal * (item.customDiscountValue / 100);
       }
+
 
       // Ensure discount doesn't exceed the line total
       discountAmount = Math.min(discountAmount, lineTotal);
       
-      console.log(`Custom discount calculation: lineTotal=${lineTotal}, discountAmount=${discountAmount}`);
+      console.log(`Custom discount calculation: lineTotal=${lineTotal}, discountAmount=${discountAmount}, applyOnce=${applyOnce}`);
       
       if (discountAmount > 0) {
         const ruleId = generateRuleId('custom', item.lineId, 'manual_discount', item.productId);
@@ -45,14 +52,14 @@ export class CustomItemDiscountRule implements IDiscountRule {
           ruleId,
           discountAmount,
           description: `Custom ${item.customDiscountType} discount of ${item.customDiscountValue} applied manually.`,
-          isOneTime: false, // Custom discounts are typically not one-time restricted
+          isOneTime: applyOnce, // Pass the one-time flag to the result
           appliedRuleInfo: {
             discountCampaignName: "Manual Discount",
             sourceRuleName: `Custom ${item.customDiscountType === 'fixed' ? 'Fixed' : 'Percentage'} Discount`,
             totalCalculatedDiscount: discountAmount,
             ruleType: 'custom_item_discount',
             productIdAffected: item.productId,
-            appliedOnce: false
+            appliedOnce: applyOnce,
           },
         });
       }

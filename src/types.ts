@@ -33,6 +33,7 @@ export interface SaleItem extends Product {
   price: number; // The actual price used for the sale (could be from batch or product)
   customDiscountValue?: number;
   customDiscountType?: 'fixed' | 'percentage';
+  customApplyFixedOnce?: boolean; // New field to control custom fixed discount behavior
 }
 
 // වට්ටම් නීතියක් - Enhanced with better validation and metadata

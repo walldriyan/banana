@@ -8,15 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useDrawer } from '@/hooks/use-drawer';
+import { Switch } from '../ui/switch';
 
 interface CustomDiscountFormProps {
   item: SaleItem;
-  onApplyDiscount: (saleItemId: string, type: 'fixed' | 'percentage', value: number) => void;
+  onApplyDiscount: (saleItemId: string, type: 'fixed' | 'percentage', value: number, applyOnce: boolean) => void;
 }
 
 export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountFormProps) {
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(item.customDiscountType || 'percentage');
   const [discountValue, setDiscountValue] = useState<number | string>(item.customDiscountValue || '');
+  const [applyOnce, setApplyOnce] = useState<boolean>(item.customApplyFixedOnce ?? true);
   const [error, setError] = useState<string>('');
   const drawer = useDrawer();
 
@@ -32,14 +34,21 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
       setError('Percentage discount cannot exceed 100.');
       return;
     }
+    if (discountType === 'fixed' && valueAsNumber > item.price) {
+        setError('Fixed discount cannot be greater than the item price.');
+        return;
+    }
+
 
     setError('');
-    onApplyDiscount(item.saleItemId, discountType, valueAsNumber);
+    // For percentage discounts, `applyOnce` is irrelevant, but we pass it anyway.
+    // The logic to ignore it is in the discount engine.
+    onApplyDiscount(item.saleItemId, discountType, valueAsNumber, applyOnce);
   };
   
   const handleRemoveDiscount = () => {
     // A value of 0 will effectively remove the custom discount
-    onApplyDiscount(item.saleItemId, 'fixed', 0);
+    onApplyDiscount(item.saleItemId, 'fixed', 0, false);
   }
 
   return (
@@ -74,6 +83,23 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
         />
         {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
       </div>
+
+       {discountType === 'fixed' && (
+        <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+            <div className="space-y-0.5">
+                <Label htmlFor="apply-mode">Application Mode</Label>
+                <p className="text-[0.8rem] text-muted-foreground">
+                   {applyOnce ? 'Apply as a single, one-time discount for the line.' : 'Apply discount to each unit in the line.'}
+                </p>
+            </div>
+            <Switch
+                id="apply-mode"
+                checked={!applyOnce}
+                onCheckedChange={(checked) => setApplyOnce(!checked)}
+            />
+        </div>
+      )}
+
 
       <div className="flex justify-between items-center pt-4 border-t">
         <Button 

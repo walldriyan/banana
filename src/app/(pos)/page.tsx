@@ -239,13 +239,19 @@ export default function MyNewEcommerceShop() {
     setTransactionId(createNewTransactionId());
   };
 
-  const handleApplyCustomDiscount = (saleItemId: string, type: 'fixed' | 'percentage', value: number) => {
+  const handleApplyCustomDiscount = (
+    saleItemId: string, 
+    type: 'fixed' | 'percentage', 
+    value: number, 
+    applyOnce: boolean
+  ) => {
     setCart(currentCart => currentCart.map(item => {
         if (item.saleItemId === saleItemId) {
             return {
                 ...item,
                 customDiscountType: type,
                 customDiscountValue: value,
+                customApplyFixedOnce: applyOnce,
             };
         }
         return item;
