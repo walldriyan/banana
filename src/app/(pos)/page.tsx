@@ -20,6 +20,8 @@ import { History } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
+import { defaultDiscounts } from '@/lib/default-campaign';
+import { CustomDiscountForm } from '@/components/POSUI/CustomDiscountForm';
 
 
 const oldBatch: ProductBatch = {
@@ -104,7 +106,7 @@ const initialDiscountResult = {
 export default function MyNewEcommerceShop() {
 
   const [cart, setCart] = useState<SaleItem[]>([]);
-  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(megaDealFest);
+  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(defaultDiscounts);
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
   const drawer = useDrawer();
@@ -237,6 +239,38 @@ export default function MyNewEcommerceShop() {
     setTransactionId(createNewTransactionId());
   };
 
+  const handleApplyCustomDiscount = (saleItemId: string, type: 'fixed' | 'percentage', value: number) => {
+    setCart(currentCart => currentCart.map(item => {
+        if (item.saleItemId === saleItemId) {
+            return {
+                ...item,
+                customDiscountType: type,
+                customDiscountValue: value,
+            };
+        }
+        return item;
+    }));
+    drawer.closeDrawer();
+    toast({
+        title: "Custom Discount Applied!",
+        description: `A custom ${type} discount of ${value} was applied to the item.`,
+    });
+  };
+
+  const openCustomDiscountDrawer = (item: SaleItem) => {
+    drawer.openDrawer({
+        title: `Override Discount for ${item.name}`,
+        description: "Apply a special, one-time discount for this line item.",
+        content: (
+            <CustomDiscountForm
+                item={item}
+                onApplyDiscount={handleApplyCustomDiscount}
+            />
+        ),
+        drawerClassName: "sm:max-w-md"
+    });
+  };
+
 
   const handleTransactionComplete = () => {
     drawer.closeDrawer();
@@ -341,6 +375,7 @@ export default function MyNewEcommerceShop() {
             cart={cart}
             discountResult={discountResult}
             onUpdateQuantity={updateCartQuantity}
+            onOverrideDiscount={openCustomDiscountDrawer}
           />
 
           <DiscountBehaviorPanel

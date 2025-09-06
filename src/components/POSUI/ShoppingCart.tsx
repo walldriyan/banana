@@ -9,9 +9,10 @@ interface ShoppingCartProps {
   cart: SaleItem[];
   discountResult: any; // Using any because it's a plain object from server, not a class instance
   onUpdateQuantity: (saleItemId: string, change: number) => void;
+  onOverrideDiscount: (item: SaleItem) => void;
 }
 
-const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpdateQuantity }) => {
+const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
   const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const finalTotal = discountResult?.finalTotal || originalTotal;
 
@@ -30,6 +31,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpd
                 // Pass the entire discount result down to the card
                 discountResult={discountResult} 
                 onUpdateQuantity={onUpdateQuantity}
+                onOverrideDiscount={onOverrideDiscount}
               />
             );
           })
