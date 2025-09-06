@@ -53,6 +53,7 @@ export interface TransactionLine {
     // Add fields to store the manual override state
     customDiscountValue?: number;
     customDiscountType?: 'fixed' | 'percentage';
+    customApplyFixedOnce?: boolean; // Persist the one-time choice
 }
 
 
@@ -136,6 +137,7 @@ export function transformTransactionDataForDb(
       // Save the custom override information
       customDiscountValue: item.customDiscountValue,
       customDiscountType: item.customDiscountType,
+      customApplyFixedOnce: item.customApplyFixedOnce, // Persist this crucial flag
     };
   });
 
@@ -186,6 +188,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 // Restore custom discount info
                 customDiscountValue: line.customDiscountValue,
                 customDiscountType: line.customDiscountType,
+                customApplyFixedOnce: line.customApplyFixedOnce, // Restore this crucial flag
             }
         }
         
@@ -199,6 +202,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
             // Restore custom discount info
             customDiscountValue: line.customDiscountValue,
             customDiscountType: line.customDiscountType,
+            customApplyFixedOnce: line.customApplyFixedOnce, // Restore this crucial flag
         };
     });
 }
