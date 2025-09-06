@@ -17,6 +17,9 @@ export function evaluateRule(
   lineTotalValue: number,
   valueToTestCondition?: number
 ): number {
+  // DEBUG: Log all inputs to this core function
+  console.log('[evaluateRule] Inputs:', { ruleConfig, itemPrice, itemQuantity, lineTotalValue, valueToTestCondition });
+
   if (!ruleConfig || !ruleConfig.isEnabled) return 0;
   
   const value = valueToTestCondition ?? lineTotalValue;
@@ -25,7 +28,10 @@ export function evaluateRule(
     value >= (ruleConfig.conditionMin ?? 0) &&
     value <= (ruleConfig.conditionMax ?? Infinity);
 
-  if (!conditionMet) return 0;
+  if (!conditionMet) {
+    console.log(`[evaluateRule] Condition not met: ${value} is not between ${ruleConfig.conditionMin ?? 0} and ${ruleConfig.conditionMax ?? 'Infinity'}`);
+    return 0;
+  }
 
   let discountAmount = 0;
   if (ruleConfig.type === 'fixed') {
@@ -33,19 +39,24 @@ export function evaluateRule(
       // Apply the fixed discount only once for the entire line item, regardless of quantity
       // මේක මගින් quantity කීයක් තිබුණත් discount එක එක වරක් විතරක් apply වෙනවා
       discountAmount = ruleConfig.value;
+      console.log(`[evaluateRule] Fixed (One-Time) discount calculated: ${discountAmount}`);
     } else {
       // Apply the fixed discount for each unit in the line item
       // මේක මගින් quantity එක වැඩි වෙනකොට discount එකත් වැඩි වෙනවා
       discountAmount = ruleConfig.value * itemQuantity;
+      console.log(`[evaluateRule] Fixed (Per-Unit) discount calculated: ${ruleConfig.value} * ${itemQuantity} = ${discountAmount}`);
     }
   } else { // percentage
     // Percentage is always calculated on the total value of the line
     // Percentage rules quantity එකට බලපාන්නේ නැහැ - line total එකට apply වෙනවා
     discountAmount = lineTotalValue * (ruleConfig.value / 100);
+    console.log(`[evaluateRule] Percentage discount calculated: ${lineTotalValue} * ${ruleConfig.value / 100} = ${discountAmount}`);
   }
   
+  const finalDiscount = Math.max(0, Math.min(discountAmount, lineTotalValue));
   // Ensure discount is not more than the line's total value
-  return Math.max(0, Math.min(discountAmount, lineTotalValue));
+  console.log(`[evaluateRule] Final discount after validation: ${finalDiscount}`);
+  return finalDiscount;
 }
 
 /**

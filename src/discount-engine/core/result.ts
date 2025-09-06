@@ -49,9 +49,12 @@ export class LineItemResult {
   }
 
   addDiscount(application: DiscountApplication): void {
+    // DEBUG: Log the discount application being added
+    console.log(`[LineItemResult] addDiscount called for line ${this.lineId}:`, application);
+    
     // Check one-time rule logic
     if (application.isOneTime && this.hasOneTimeRuleBeenApplied(application.ruleId)) {
-      console.log(`One-time rule ${application.ruleId} already applied to line ${this.lineId}, skipping.`);
+      console.log(`[LineItemResult] One-time rule ${application.ruleId} already applied to line ${this.lineId}, skipping.`);
       return;
     }
 
@@ -62,11 +65,15 @@ export class LineItemResult {
     if (applicableDiscount > 0) {
       this.totalDiscount += applicableDiscount;
       this.appliedRules.push({ ...application, discountAmount: applicableDiscount });
+      console.log(`[LineItemResult] Discount of ${applicableDiscount} applied. New total discount for line ${this.lineId}: ${this.totalDiscount}`);
       
       // Mark one-time rule as applied if applicable
       if (application.isOneTime) {
         this.markOneTimeRuleAsApplied(application.ruleId);
+        console.log(`[LineItemResult] Marked rule ${application.ruleId} as one-time applied.`);
       }
+    } else {
+        console.log(`[LineItemResult] Applicable discount for rule ${application.ruleId} is 0 or less. No discount added.`);
     }
     
   }
