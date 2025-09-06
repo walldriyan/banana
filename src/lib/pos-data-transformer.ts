@@ -1,6 +1,5 @@
 // src/lib/pos-data-transformer.ts
 import type { SaleItem, AppliedRuleInfo, Product, DiscountSet } from '@/types';
-import type { DiscountResult, LineItemResult } from '@/discount-engine/core/result';
 
 // Define types for the data we'll collect from the UI
 export interface CustomerData {
@@ -51,6 +50,9 @@ export interface TransactionLine {
     lineTotalBeforeDiscount: number;
     lineDiscount: number; 
     lineTotalAfterDiscount: number;
+    // Add fields to store the manual override state
+    customDiscountValue?: number;
+    customDiscountType?: 'fixed' | 'percentage';
 }
 
 
@@ -71,8 +73,8 @@ interface TransformerInput {
   transactionId: string;
   customerData: CustomerData;
   paymentData: PaymentData;
-  activeCampaign: DiscountSet; // Now required
-  isGiftReceipt: boolean; // Explicitly pass the gift receipt status
+  activeCampaign: DiscountSet;
+  isGiftReceipt?: boolean;
   status?: 'completed' | 'refund' | 'pending';
   originalTransactionId?: string;
 }
@@ -92,7 +94,7 @@ export function transformTransactionDataForDb(
     customerData, 
     paymentData,
     activeCampaign,
-    isGiftReceipt, // Use the passed in value
+    isGiftReceipt,
     status = 'completed',
     originalTransactionId
   } = input;
@@ -109,15 +111,12 @@ export function transformTransactionDataForDb(
     totalItems,
     totalQuantity,
     status,
-    campaignId: activeCampaign.id, // Store the campaign ID
-    isGiftReceipt: isGiftReceipt, // Save the gift receipt status
+    campaignId: activeCampaign.id,
+    isGiftReceipt: isGiftReceipt ?? false,
     ...(originalTransactionId && { originalTransactionId }),
   };
 
   const transactionLines: TransactionLine[] = cart.map(item => {
-    // **FIX:** The `discountResult` from a server action is a plain object,
-    // so we can't use the `.getLineItem()` method. Instead, we find the
-    // matching line item directly in the `lineItems` array.
     const lineItemResult = discountResult.lineItems.find((li: any) => li.lineId === item.saleItemId);
 
     const lineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
@@ -134,12 +133,14 @@ export function transformTransactionDataForDb(
       lineTotalBeforeDiscount: lineTotalBeforeDiscount,
       lineDiscount: lineDiscount,
       lineTotalAfterDiscount: lineTotalBeforeDiscount - lineDiscount,
+      // Save the custom override information
+      customDiscountValue: item.customDiscountValue,
+      customDiscountType: item.customDiscountType,
     };
   });
 
   const appliedDiscountsLog = discountResult.appliedRulesSummary || [];
 
-  // Dummy data for multi-tenancy as requested
   const companyDetails: CompanyDetails = {
     companyId: 'comp-001',
     companyName: 'Default Company'
@@ -170,8 +171,6 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
         const batch = product?.batches?.find(b => b.id === line.batchId);
         
         if (!product) {
-            // This is a fallback in case the product was deleted.
-            // A more robust solution might handle this differently.
             return {
                 id: line.productId,
                 name: line.productName,
@@ -184,6 +183,9 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 quantity: line.quantity,
                 price: line.unitPrice,
+                // Restore custom discount info
+                customDiscountValue: line.customDiscountValue,
+                customDiscountType: line.customDiscountType,
             }
         }
         
@@ -193,7 +195,10 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
             quantity: line.quantity,
             selectedBatchId: batch?.id,
             selectedBatch: batch,
-            price: line.unitPrice, // Use the price from the original transaction
+            price: line.unitPrice,
+            // Restore custom discount info
+            customDiscountValue: line.customDiscountValue,
+            customDiscountType: line.customDiscountType,
         };
     });
 }

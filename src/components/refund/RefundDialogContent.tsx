@@ -1,7 +1,7 @@
 // src/components/refund/RefundDialogContent.tsx
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import type { SaleItem, Product, ProductBatch, DiscountSet } from '@/types';
 import { transactionLinesToSaleItems } from '@/lib/pos-data-transformer';
@@ -72,6 +72,7 @@ export function RefundDialogContent({
         console.error(`Campaign with ID "${campaignId}" not found!`);
       }
     }
+    // Use the updated transactionLinesToSaleItems which now restores custom discounts
     const items = transactionLinesToSaleItems(originalTransaction.transactionLines, sampleProducts);
     setRefundCart(items);
   }, [originalTransaction]);
@@ -120,7 +121,7 @@ export function RefundDialogContent({
       const updatedCart = [...currentCart];
       const currentItem = updatedCart[itemIndex];
 
-      const originalLine = originalTransaction.transactionLines.find(line => line.productId === currentItem.id && line.batchId === currentItem.selectedBatchId);
+      const originalLine = originalTransaction.transactionLines.find(line => line.productId === currentItem.id && (line.batchId || null) === (currentItem.selectedBatchId || null));
       const maxQty = originalLine?.quantity || 0;
 
       let newQuantity = Number(currentItem.quantity) + Number(change);
@@ -155,11 +156,9 @@ export function RefundDialogContent({
             activeCampaign,
         };
 
-        // Server action does ALL the work and returns the final object
         const result = await processRefundAction(payload);
 
         if (result.success && result.data) {
-            // Client is ONLY responsible for saving the object returned by the server
             await saveTransaction(result.data);
             
             toast({
@@ -182,11 +181,8 @@ export function RefundDialogContent({
     }
   };
   
-  // The amount the customer originally paid
   const originalPaidAmount = originalTransaction.paymentDetails.paidAmount;
-  // The value of the items the customer is keeping
   const newTotalToPay = discountResult.finalTotal;
-  // The final cash to be returned or collected
   const finalRefundAmount = originalPaidAmount - newTotalToPay;
 
 
