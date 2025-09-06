@@ -18,6 +18,8 @@ interface CustomDiscountFormProps {
 export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountFormProps) {
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(item.customDiscountType || 'percentage');
   const [discountValue, setDiscountValue] = useState<number | string>(item.customDiscountValue || '');
+  // applyOnce = true means "Apply as a single, one-time discount"
+  // applyOnce = false means "Apply discount to each unit"
   const [applyOnce, setApplyOnce] = useState<boolean>(item.customApplyFixedOnce ?? true);
   const [error, setError] = useState<string>('');
   const drawer = useDrawer();
@@ -34,9 +36,13 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
       setError('Percentage discount cannot exceed 100.');
       return;
     }
-    if (discountType === 'fixed' && valueAsNumber > item.price) {
-        setError('Fixed discount cannot be greater than the item price.');
+    if (discountType === 'fixed' && valueAsNumber > item.price && applyOnce === false) {
+        setError('Per-unit fixed discount cannot be greater than the unit price.');
         return;
+    }
+    if (discountType === 'fixed' && valueAsNumber > (item.price * item.quantity) && applyOnce === true) {
+      setError('One-time fixed discount cannot be greater than the line total.');
+      return;
     }
 
 
@@ -87,14 +93,16 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
        {discountType === 'fixed' && (
         <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
             <div className="space-y-0.5">
-                <Label htmlFor="apply-mode">Application Mode</Label>
+                <Label htmlFor="apply-mode">Apply Per-Unit</Label>
                 <p className="text-[0.8rem] text-muted-foreground">
-                   {applyOnce ? 'Apply as a single, one-time discount for the line.' : 'Apply discount to each unit in the line.'}
+                   {applyOnce ? 'OFF: Discount is applied once to the whole line.' : 'ON: Discount is multiplied by quantity.'}
                 </p>
             </div>
             <Switch
                 id="apply-mode"
+                // The switch is "ON" when we want to apply per-unit (applyOnce = false)
                 checked={!applyOnce}
+                // When checked (ON), it means apply per unit, so set applyOnce to false.
                 onCheckedChange={(checked) => setApplyOnce(!checked)}
             />
         </div>
