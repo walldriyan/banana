@@ -8,7 +8,7 @@ import OrderSummary from './OrderSummary';
 interface ShoppingCartProps {
   cart: SaleItem[];
   discountResult: any; // Using any because it's a plain object from server, not a class instance
-  onUpdateQuantity: (saleItemId: string, change: number) => void;
+  onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
   onOverrideDiscount: (item: SaleItem) => void;
 }
 

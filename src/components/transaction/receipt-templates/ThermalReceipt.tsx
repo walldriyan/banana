@@ -59,6 +59,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             <th className="text-center">Qty</th>
             <th className="text-right">Price</th>
             <th className="text-right">Total</th>
+            <th className="text-right">Our Price</th>
           </tr>
         </thead>
         <tbody>
@@ -66,10 +67,14 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             <React.Fragment key={index}>
               <tr>
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
-                <td className="text-center">{item.quantity}</td>
+                <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
+              
                 <td className="text-right">{item.unitPrice.toFixed(2)}</td>
                 <td className="text-right">
                   {item.lineTotalBeforeDiscount.toFixed(2)}
+                </td>
+                <td className="text-right">
+                  {item.lineTotalAfterDiscount.toFixed(2)}
                 </td>
               </tr>
               {item.lineDiscount > 0 && !showAsGiftReceipt && (

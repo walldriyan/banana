@@ -27,7 +27,7 @@ export interface ProductBatch {
 // Cart එකේ ඇති භාණ්ඩයක්
 export interface SaleItem extends Product {
   saleItemId: string; // Cart එකේදී වෙන් කර ගැනීමට
-  quantity: number;
+  quantity: number; // The TOTAL converted base unit quantity (e.g., 600 tablets)
   selectedBatchId?: string;
   selectedBatch?: ProductBatch | null; // කුමන batch එකෙන්ද ආවේ කියා දැනගැනීමට
   price: number; // The actual price used for the sale (could be from batch or product)
@@ -35,7 +35,11 @@ export interface SaleItem extends Product {
   customDiscountType?: 'fixed' | 'percentage';
   customApplyFixedOnce?: boolean; // New field to control custom fixed discount behavior
   originalQuantity?: number; // For refund context: the quantity in the original transaction
+  // New properties for unit conversion UI
+  displayUnit: string;      // What unit is currently shown in the dropdown (e.g., 'box')
+  displayQuantity: number;  // The quantity relevant to the displayUnit (e.g., 2)
 }
+
 
 // වට්ටම් නීතියක් - Enhanced with better validation and metadata
 export interface SpecificDiscountRuleConfig {
@@ -58,7 +62,6 @@ export interface UnitDefinition {
   derivedUnits?: {
       name: string;
       conversionFactor: number;
-      threshold: number;
   }[];
 }
 

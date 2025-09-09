@@ -21,12 +21,21 @@ export class DefaultItemRule implements IDiscountRule {
   apply(context: DiscountContext, result: DiscountResult): void {
     context.items.forEach((item) => {
       const lineResult = result.getLineItem(item.lineId);
-      // If a discount (e.g., custom, batch, product-specific) has already been applied, skip default rules for this item.
       if (!lineResult) {
         console.log(`No line result found for ${item.lineId}`);
         return;
       }
       
+      // *** THE FIX ***
+      // If a custom discount has been MANUALLY SET (even to 0), 
+      // we should NOT apply any default discounts.
+      // A custom value being present signifies user intent to override all campaign rules.
+      if (item.customDiscountValue !== undefined) {
+        console.log(`Custom discount value is set for ${item.lineId}, skipping default rule.`);
+        return;
+      }
+      
+      // If a higher-priority discount (e.g., batch, product-specific) has already been applied, skip default rules for this item.
       if (lineResult.totalDiscount > 0) {
         console.log(`Higher priority discount already applied to ${item.lineId}, skipping default rule`);
         return;
@@ -67,7 +76,7 @@ export class DefaultItemRule implements IDiscountRule {
       // Apply first valid default rule only
       for (const rule of rules) {
         if (!rule.config?.isEnabled) {
-          console.log(`Default rule ${rule.type} is not enabled`);
+          // console.log(`Default rule ${rule.type} is not enabled`);
           continue;
         }
 
@@ -114,7 +123,7 @@ export class DefaultItemRule implements IDiscountRule {
           // Stop after first successful default rule application
           break;
         } else {
-          console.log(`Default rule ${rule.type} did not qualify for discount`);
+          // console.log(`Default rule ${rule.type} did not qualify for discount`);
         }
       }
     });
