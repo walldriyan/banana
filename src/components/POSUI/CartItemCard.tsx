@@ -2,13 +2,13 @@
 import React from 'react';
 import type { SaleItem } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Tag } from 'lucide-react';
-// import type { DiscountResult } from '@/discount-engine/core/result';
+import { Tag, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CartItemCardProps {
   item: SaleItem;
   discountResult: any; // Using any because it's a plain object from server, not a class instance
-  onUpdateQuantity: (saleItemId: string, change: number) => void;
+  onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
   onOverrideDiscount: (item: SaleItem) => void;
 }
 
@@ -21,15 +21,15 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
   const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
   const originalLineTotal = item.price * item.quantity;
   const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
-
-  const effectiveDiscountRate = originalLineTotal > 0
-    ? (lineItemResult?.totalDiscount / originalLineTotal) * 100
-    : 0;
   
   const isCustomDiscount = item.customDiscountValue !== undefined;
 
+  const allUnits = [{ name: item.units.baseUnit, conversionFactor: 1 }, ...(item.units.derivedUnits || [])];
+  const hasDerivedUnits = allUnits.length > 1;
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 ease-in-out">
+      {/* Top section: Name and Price */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex-grow">
           <p className="font-semibold text-gray-900">
@@ -40,25 +40,60 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
               </span>
             )}
           </p>
-          <p className="text-sm text-gray-600">Rs. {item.price.toFixed(2)} / unit</p>
+          <p className="text-sm text-gray-600">Rs. {item.price.toFixed(2)} / {item.units.baseUnit}</p>
         </div>
+        <p className="text-right font-bold text-lg text-gray-800">
+          Rs. {finalLineTotal.toFixed(2)}
+        </p>
+      </div>
+
+      {/* Middle section: Quantity and Unit Controls */}
+      <div className="mt-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => onUpdateQuantity(item.saleItemId, -1)}
+           <button
+            onClick={() => onUpdateQuantity(item.saleItemId, item.displayQuantity - 1)}
             className="rounded-full w-7 h-7 border bg-white flex items-center justify-center shadow-sm hover:bg-gray-100 transition"
           >
             -
           </button>
-          <span className="w-8 text-center font-medium">{item.quantity}</span>
+          <span className="w-8 text-center font-medium">{item.displayQuantity}</span>
           <button
-            onClick={() => onUpdateQuantity(item.saleItemId, 1)}
+            onClick={() => onUpdateQuantity(item.saleItemId, item.displayQuantity + 1)}
             className="rounded-full w-7 h-7 border bg-white flex items-center justify-center shadow-sm hover:bg-gray-100 transition"
           >
             +
           </button>
         </div>
+        
+        {hasDerivedUnits ? (
+            <Select 
+                value={item.displayUnit}
+                onValueChange={(newUnit) => onUpdateQuantity(item.saleItemId, item.displayQuantity, newUnit)}
+            >
+                <SelectTrigger className="w-[120px] h-9">
+                    <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                    {allUnits.map(u => (
+                        <SelectItem key={u.name} value={u.name}>{u.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        ) : (
+            <span className="text-sm text-gray-500 px-3">{item.units.baseUnit}</span>
+        )}
+
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-gray-400 hover:text-red-500 hover:bg-red-50 w-8 h-8"
+            onClick={() => onUpdateQuantity(item.saleItemId, 0)} // Setting quantity to 0 removes it
+        >
+            <Trash2 className="h-4 w-4"/>
+        </Button>
       </div>
       
+      {/* Bottom section: Discounts */}
       <div className="mt-3 border-t border-dashed pt-3">
         {hasDiscounts && lineItemResult ? (
           <div className="mb-2 space-y-1">
@@ -69,7 +104,6 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
                     Override
                 </Button>
              </div>
-             {/* Show custom discount info if it exists */}
              {isCustomDiscount && item.customDiscountType && (
                  <p className="flex justify-between items-center text-xs bg-yellow-50 text-yellow-800 p-2 rounded-md">
                     <span className="font-bold truncate pr-2">Manual Override</span>
@@ -78,7 +112,6 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
                     </span>
                  </p>
              )}
-             {/* Show rule-based discounts only if no custom one is applied */}
              {!isCustomDiscount && lineItemResult.appliedRules.map((rule: any, i: number) => (
                 <p key={i} className="flex justify-between items-center text-xs">
                     <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
@@ -95,13 +128,13 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
             </div>
         )}
 
-        <div className="flex justify-between items-baseline text-sm mt-2">
-          <span className={hasDiscounts ? "text-gray-500 line-through" : "text-gray-600 font-semibold"}>
-            Original: Rs. {originalLineTotal.toFixed(2)}
+        <div className="flex justify-between items-baseline text-xs mt-2">
+           <span className="text-gray-500">
+            Total Base Qty: {item.quantity.toFixed(2)} {item.units.baseUnit}
           </span>
           {hasDiscounts && (
-            <span className="font-bold text-lg text-green-700">
-              Final: Rs. {finalLineTotal.toFixed(2)}
+             <span className="text-gray-500 line-through">
+                Original: Rs. {originalLineTotal.toFixed(2)}
             </span>
           )}
         </div>

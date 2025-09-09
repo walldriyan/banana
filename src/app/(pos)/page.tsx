@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
+import type { Product, SaleItem, DiscountSet, ProductBatch, UnitDefinition } from '@/types';
 // import { DiscountResult } from '@/discount-engine/core/result';
 import { allCampaigns, megaDealFest } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -67,7 +67,13 @@ const sampleProducts: Product[] = [
     sellingPrice: 2500,
     batches: [oldBatch, newBatch],
     category: 'Apparel',
-    units: { baseUnit: 'pcs' },
+    units: { 
+      baseUnit: 'piece',
+      derivedUnits: [
+        { name: 'dozen', conversionFactor: 12 },
+        { name: 'box', conversionFactor: 48 },
+      ]
+    },
     stock: 200,
     defaultQuantity: 1,
     isActive: true,
@@ -79,8 +85,25 @@ const sampleProducts: Product[] = [
     sellingPrice: 8000,
     batches: [jeansOldBatch, jeansNewBatch],
     category: 'Apparel',
-    units: { baseUnit: 'pcs' },
+    units: { baseUnit: 'piece' },
     stock: 80,
+    defaultQuantity: 1,
+    isActive: true,
+    isService: false
+  },
+   {
+    id: 'sugar-01',
+    name: 'Sugar',
+    sellingPrice: 4, // Price per gram
+    category: 'Groceries',
+    units: { 
+      baseUnit: 'g',
+      derivedUnits: [
+        { name: 'kg', conversionFactor: 1000 },
+        { name: '5kg pack', conversionFactor: 5000 },
+      ]
+    },
+    stock: 100000, // 100kg in grams
     defaultQuantity: 1,
     isActive: true,
     isService: false
@@ -190,41 +213,68 @@ export default function MyNewEcommerceShop() {
     };
   }, []);
 
-  const updateCartQuantity = (saleItemId: string, change: number) => {
+
+  const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
     setCart(currentCart => {
-      const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
-      if (itemIndex === -1) return currentCart;
+        const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
+        if (itemIndex === -1) return currentCart;
 
-      const updatedCart = [...currentCart];
-      const currentItem = updatedCart[itemIndex];
-      const newQuantity = currentItem.quantity + change;
+        const updatedCart = [...currentCart];
+        const currentItem = updatedCart[itemIndex];
 
-      if (newQuantity <= 0) {
-        updatedCart.splice(itemIndex, 1);
-      } else {
-        updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity };
-      }
-      return updatedCart;
+        // If the new quantity is zero or less, remove the item
+        if (newDisplayQuantity <= 0) {
+            updatedCart.splice(itemIndex, 1);
+            return updatedCart;
+        }
+
+        const unitToUse = newDisplayUnit || currentItem.displayUnit;
+        const allUnits = [{ name: currentItem.units.baseUnit, conversionFactor: 1 }, ...(currentItem.units.derivedUnits || [])];
+        const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+        const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+
+        // Calculate the new total quantity in the base unit
+        const newBaseQuantity = newDisplayQuantity * conversionFactor;
+
+        updatedCart[itemIndex] = {
+            ...currentItem,
+            displayUnit: unitToUse,
+            displayQuantity: newDisplayQuantity,
+            quantity: newBaseQuantity // This is the total base unit quantity
+        };
+        
+        return updatedCart;
     });
-  };
+};
+
 
   const addToCart = (product: Product, batch?: ProductBatch) => {
     setCart(currentCart => {
-      const existingItem = currentCart.find(item =>
+      // For simplicity in this implementation, we will treat items with different batches as separate cart entries.
+      // A more complex system might merge them or check stock across batches.
+      const existingItemIndex = currentCart.findIndex(item =>
         item.id === product.id && item.selectedBatchId === batch?.id
       );
 
-      if (existingItem) {
-        return currentCart.map(item =>
-          item.saleItemId === existingItem.saleItemId
-            ? { ...item, quantity: item.quantity + 1 }
+      if (existingItemIndex !== -1) {
+        // If item already exists, just increase its quantity by 1 base unit
+        const existingItem = currentCart[existingItemIndex];
+        const newDisplayQuantity = existingItem.displayQuantity + 1;
+        const newBaseQuantity = existingItem.quantity + 1;
+
+        return currentCart.map((item, index) =>
+          index === existingItemIndex
+            ? { ...item, displayQuantity: newDisplayQuantity, quantity: newBaseQuantity }
             : item
         );
       } else {
+        // If new, add it to the cart with default base unit quantities
         const saleItem: SaleItem = {
           ...product,
           saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          quantity: 1,
+          quantity: 1, // Total base units
+          displayQuantity: 1, // Quantity of the selected unit
+          displayUnit: product.units.baseUnit, // Default to base unit
           selectedBatchId: batch?.id,
           selectedBatch: batch,
           price: batch ? batch.sellingPrice : product.sellingPrice,
@@ -380,7 +430,7 @@ export default function MyNewEcommerceShop() {
           <ShoppingCart
             cart={cart}
             discountResult={discountResult}
-            onUpdateQuantity={updateCartQuantity}
+            onUpdateQuantity={handleCartUpdate}
             onOverrideDiscount={openCustomDiscountDrawer}
           />
 
