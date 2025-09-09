@@ -4,6 +4,7 @@ import type { SaleItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tag, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 interface CartItemCardProps {
   item: SaleItem;
@@ -26,6 +27,16 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
 
   const allUnits = [{ name: item.units.baseUnit, conversionFactor: 1 }, ...(item.units.derivedUnits || [])];
   const hasDerivedUnits = allUnits.length > 1;
+
+  const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow empty input for user-friendliness, treat as 0
+    const newQuantity = value === '' ? 0 : parseFloat(value);
+    if (!isNaN(newQuantity) && newQuantity >= 0) {
+      onUpdateQuantity(item.saleItemId, newQuantity);
+    }
+  };
+
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 transition-all duration-200 ease-in-out">
@@ -56,7 +67,19 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
           >
             -
           </button>
-          <span className="w-8 text-center font-medium">{item.displayQuantity}</span>
+           <Input
+                type="number"
+                value={item.displayQuantity}
+                onChange={handleQuantityInputChange}
+                onBlur={(e) => {
+                    // If the user leaves the input empty, set it back to 1 to avoid confusion
+                    if (e.target.value === '' || parseFloat(e.target.value) <= 0) {
+                        onUpdateQuantity(item.saleItemId, 1);
+                    }
+                }}
+                className="w-20 h-9 text-center"
+                step="0.01" // Allow decimal inputs
+            />
           <button
             onClick={() => onUpdateQuantity(item.saleItemId, item.displayQuantity + 1)}
             className="rounded-full w-7 h-7 border bg-white flex items-center justify-center shadow-sm hover:bg-gray-100 transition"
