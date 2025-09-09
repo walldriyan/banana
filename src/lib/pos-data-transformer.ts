@@ -45,7 +45,9 @@ export interface TransactionLine {
     productName: string;
     batchId?: string;
     batchNumber?: string;
-    quantity: number;
+    quantity: number; // Base unit quantity
+    displayUnit: string; // The unit shown to the user (e.g., 'box')
+    displayQuantity: number; // The quantity of the display unit (e.g., 2)
     unitPrice: number;
     lineTotalBeforeDiscount: number;
     lineDiscount: number; 
@@ -130,6 +132,8 @@ export function transformTransactionDataForDb(
       batchId: item.selectedBatchId,
       batchNumber: item.selectedBatch?.batchNumber,
       quantity: item.quantity,
+      displayUnit: item.displayUnit,
+      displayQuantity: item.displayQuantity,
       unitPrice: item.price,
       lineTotalBeforeDiscount: lineTotalBeforeDiscount,
       lineDiscount: lineDiscount,
@@ -137,7 +141,7 @@ export function transformTransactionDataForDb(
       // Save the custom override information
       customDiscountValue: item.customDiscountValue,
       customDiscountType: item.customDiscountType,
-      customApplyFixedOnce: item.customApplyFixedOnce, // Persist this crucial flag
+      customApplyFixedOnce: item.customApplyFixedOnce,
     };
   });
 
@@ -170,41 +174,47 @@ export function transformTransactionDataForDb(
 export function transactionLinesToSaleItems(lines: TransactionLine[], products: Product[]): SaleItem[] {
     return lines.map(line => {
         const product = products.find(p => p.id === line.productId);
-        const batch = product?.batches?.find(b => b.id === line.batchId);
         
         if (!product) {
+            // Fallback for products that might not exist in the current product list
+            // This is a rare case but good to handle
+            const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             return {
                 id: line.productId,
                 name: line.productName,
                 sellingPrice: line.unitPrice,
-                stock: 0,
-                units: { baseUnit: 'pcs' },
+                stock: 0, // Cannot determine stock
+                units: { baseUnit: line.displayUnit || 'unit' },
                 isService: false,
                 isActive: false,
                 defaultQuantity: 1,
-                saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                saleItemId,
                 quantity: line.quantity,
                 price: line.unitPrice,
-                originalQuantity: line.quantity, // Set original quantity for refund logic
-                // Restore custom discount info
+                originalQuantity: line.quantity,
+                displayUnit: line.displayUnit,
+                displayQuantity: line.displayQuantity,
                 customDiscountValue: line.customDiscountValue,
                 customDiscountType: line.customDiscountType,
-                customApplyFixedOnce: line.customApplyFixedOnce, // Restore this crucial flag
-            }
+                customApplyFixedOnce: line.customApplyFixedOnce,
+            };
         }
+        
+        const batch = product?.batches?.find(b => b.id === line.batchId);
         
         return {
             ...product,
             saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            quantity: line.quantity,
+            quantity: line.quantity, // Base unit quantity
+            displayUnit: line.displayUnit,
+            displayQuantity: line.displayQuantity,
             selectedBatchId: batch?.id,
             selectedBatch: batch,
             price: line.unitPrice,
             originalQuantity: line.quantity, // Set original quantity for refund logic
-            // Restore custom discount info
             customDiscountValue: line.customDiscountValue,
             customDiscountType: line.customDiscountType,
-            customApplyFixedOnce: line.customApplyFixedOnce, // Restore this crucial flag
+            customApplyFixedOnce: line.customApplyFixedOnce,
         };
     });
 }

@@ -67,7 +67,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             <React.Fragment key={index}>
               <tr>
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
-                <td className="text-center">{item.quantity}</td>
+                <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
               
                 <td className="text-right">{item.unitPrice.toFixed(2)}</td>
                 <td className="text-right">
