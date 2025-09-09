@@ -94,7 +94,7 @@ const sampleProducts: Product[] = [
    {
     id: 'sugar-01',
     name: 'Sugar',
-    sellingPrice: 4, // Price per gram
+    sellingPrice: 2, // Price per gram
     category: 'Groceries',
     units: { 
       baseUnit: 'g',
