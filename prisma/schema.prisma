@@ -3,164 +3,157 @@
 
 generator client {
   provider      = "prisma-client-js"
-  // The following line is the ideal fix for OpenSSL/environment issues
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
   engineType    = "library"
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "sqlite"
-  // Hardcoding the path directly to avoid any environment variable confusion.
-  // This forces Prisma to look for the database file inside the 'prisma' directory.
   url      = "file:./dev.db"
 }
 
-// ==================
-// Foundational Models
-// ==================
-
 model Company {
-  id           String    @id @default(cuid())
-  name         String    @unique
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id           String        @id @default(cuid())
+  name         String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   users        User[]
-  customers    Customer[]
   products     Product[]
+  customers    Customer[]
   transactions Transaction[]
 }
 
 model User {
   id        String    @id @default(cuid())
-  name      String
-  role      String // e.g., 'admin', 'manager', 'cashier'
+  email     String    @unique
+  name      String?
+  role      String    @default("cashier")
   companyId String
   company   Company   @relation(fields: [companyId], references: [id])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   transactions Transaction[]
 
-  @@unique([name, companyId])
+  @@index([companyId])
 }
-
-model Customer {
-  id          String    @id @default(cuid())
-  name        String
-  phone       String?
-  address     String?
-  companyId   String
-  company     Company   @relation(fields: [companyId], references: [id])
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  transactions Transaction[]
-}
-
-// ==================
-// Product Models
-// ==================
 
 model Product {
-  id           String    @id @default(cuid())
+  id           String        @id @default(cuid())
   name         String
   sellingPrice Float
   category     String?
+  unitsJson    String // Storing units as a JSON string
   stock        Int
-  unitsJson    String // Storing complex unit data as a JSON string
-  isService    Boolean
-  isActive     Boolean
-  defaultQuantity Float
+  isService    Boolean       @default(false)
+  isActive     Boolean       @default(true)
   companyId    String
-  company      Company   @relation(fields: [companyId], references: [id])
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  company      Company       @relation(fields: [companyId], references: [id])
   batches      ProductBatch[]
   lineItems    LineItem[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([companyId])
 }
 
 model ProductBatch {
-  id            String    @id @default(cuid())
-  batchNumber   String
-  sellingPrice  Float
-  costPrice     Float
-  quantity      Float
-  productId     String
-  product       Product   @relation(fields: [productId], references: [id])
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  lineItems     LineItem[]
+  id           String   @id @default(cuid())
+  batchNumber  String
+  sellingPrice Float
+  costPrice    Float
+  quantity     Int
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id])
+  lineItems    LineItem[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  // A batch is unique to its number within a specific product and company
-  @@unique([batchNumber, productId])
+  @@unique([productId, batchNumber])
+  @@index([productId])
 }
 
-// ====================
-// Transactional Models
-// ====================
+model Customer {
+  id        String        @id @default(cuid())
+  name      String
+  phone     String?
+  address   String?
+  companyId String
+  company   Company       @relation(fields: [companyId], references: [id])
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@index([companyId])
+}
 
 model Transaction {
-  id                  String    @id
-  transactionDate     DateTime  @default(now())
-  subtotal            Float
-  totalDiscountAmount Float
-  finalTotal          Float
-  totalItems          Int
-  totalQuantity       Float
-  status              String // 'completed', 'refund', 'pending'
-  campaignId          String
-  isGiftReceipt       Boolean
+  id                   String               @id @default(cuid())
+  transactionDate      DateTime             @default(now())
+  subtotal             Float
+  totalDiscountAmount  Float
+  finalTotal           Float
+  totalItems           Int
+  totalQuantity        Float
+  status               String               @default("completed") // e.g., 'completed', 'refund'
+  campaignId           String?
   originalTransactionId String?
-
-  companyId           String
-  company             Company   @relation(fields: [companyId], references: [id])
+  isGiftReceipt        Boolean              @default(false)
   
-  customerId          String
-  customer            Customer  @relation(fields: [customerId], references: [id])
-
-  userId              String
-  user                User      @relation(fields: [userId], references: [id])
-
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  companyId            String
+  company              Company              @relation(fields: [companyId], references: [id])
   
-  lines               LineItem[]
-  payment             Payment?
-  appliedDiscounts    AppliedDiscountLog[]
+  userId               String
+  user                 User                 @relation(fields: [userId], references: [id])
+  
+  customerId           String
+  customer             Customer             @relation(fields: [customerId], references: [id])
+
+  payment              Payment?
+  lineItems            LineItem[]
+  appliedDiscounts     AppliedDiscountLog[]
+
+  @@index([customerId])
+  @@index([userId])
+  @@index([companyId])
 }
 
 model LineItem {
-  id                        String      @id @default(cuid())
-  productName               String
-  batchNumber               String?
-  quantity                  Float
-  displayUnit               String
-  displayQuantity           Float
-  unitPrice                 Float
-  lineTotalBeforeDiscount   Float
-  lineDiscount              Float
-  lineTotalAfterDiscount    Float
-  customDiscountValue       Float?
-  customDiscountType        String?
-  customApplyFixedOnce      Boolean?
+  id                       String      @id @default(cuid())
+  productName              String
+  quantity                 Float
+  displayUnit              String
+  displayQuantity          Float
+  unitPrice                Float
+  lineTotalBeforeDiscount  Float
+  lineDiscount             Float
+  lineTotalAfterDiscount   Float
+  customDiscountValue      Float?
+  customDiscountType       String?
+  customApplyFixedOnce     Boolean?
+  
+  transactionId            String
+  transaction              Transaction @relation(fields: [transactionId], references: [id])
+  
+  productId                String
+  product                  Product     @relation(fields: [productId], references: [id])
 
-  transactionId             String
-  transaction               Transaction @relation(fields: [transactionId], references: [id])
+  batchId                  String?
+  batch                    ProductBatch? @relation(fields: [batchId], references: [id])
 
-  productId                 String
-  product                   Product     @relation(fields: [productId], references: [id])
-
-  batchId                   String?
-  batch                     ProductBatch? @relation(fields: [batchId], references: [id])
+  @@index([transactionId])
+  @@index([productId])
+  @@index([batchId])
 }
 
 model Payment {
-  id                  String      @id @default(cuid())
-  paidAmount          Float
-  paymentMethod       String // 'cash', 'card', 'online'
-  outstandingAmount   Float
-  isInstallment       Boolean
+  id                String      @id @default(cuid())
+  paidAmount        Float
+  paymentMethod     String
+  outstandingAmount Float
+  isInstallment     Boolean
   
-  transactionId       String      @unique
-  transaction         Transaction @relation(fields: [transactionId], references: [id])
+  transactionId     String      @unique
+  transaction       Transaction @relation(fields: [transactionId], references: [id])
 }
 
 model AppliedDiscountLog {
@@ -172,7 +165,9 @@ model AppliedDiscountLog {
   productIdAffected       String?
   batchIdAffected         String?
   appliedOnce             Boolean?
-
+  
   transactionId           String
   transaction             Transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([transactionId])
 }
