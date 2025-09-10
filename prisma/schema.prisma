@@ -1,67 +1,62 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma
 
 generator client {
-  provider = "prisma-client-js"
-  engineType = "library"
+  provider      = "prisma-client-js"
+  // This is the correct engine type for serverless environments like Firebase/Vercel
+  engineType    = "library"
+  // For cloud databases, we need a shadow database for safe migrations
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql" // Changed from "sqlite"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL") // Comes from Supabase
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // Also comes from Supabase
 }
 
-model Product {
-  id                      String                    @id @default(cuid())
-  name                    String
-  sellingPrice            Float
-  category                String?
-  stock                   Int
-  unitsJson               Json                      @map("units_json") // Changed back to Json for PostgreSQL
-  isService               Boolean
-  isActive                Boolean
-  defaultQuantity         Float
-  batches                 ProductBatch[]
-  transactionLines        TransactionLine[]
+// -- DATA MODELS --
+
+// Customer model
+model Customer {
+  id     String @id @default(cuid())
+  name   String @unique
+  phone  String?
+  address String?
+  
+  transactions Transaction[] // Relation to Transaction model
 }
 
-model ProductBatch {
-  id                      String                    @id @default(cuid())
-  batchNumber             String                    @unique
-  sellingPrice            Float
-  costPrice               Float
-  quantity                Int
-  productId               String
-  product                 Product                   @relation(fields: [productId], references: [id])
-  transactionLines        TransactionLine[]
-}
-
+// Main Transaction model
 model Transaction {
-  id                      String                    @id
-  transactionDate         DateTime                  @default(now())
-  subtotal                Float
-  totalDiscountAmount     Float
-  finalTotal              Float
-  totalItems              Int
-  totalQuantity           Float
-  status                  String
-  campaignId              String
-  isGiftReceipt           Boolean                   @default(false)
-  originalTransactionId   String?
+  id                 String   @id
+  transactionDate    DateTime @default(now())
+  subtotal           Float
+  totalDiscountAmount Float
+  finalTotal         Float
+  totalItems         Int
+  totalQuantity      Float
+  status             String   // e.g., 'completed', 'refund'
+  campaignId         String
+  isGiftReceipt      Boolean  @default(false)
   
-  customerId              String
-  customer                Customer                  @relation(fields: [customerId], references: [id])
+  originalTransactionId String? // For refunds
   
-  payment                 Payment?
-  lines                   TransactionLine[]
-  appliedDiscounts        AppliedDiscountLog[]
-
-  @@index([originalTransactionId])
+  // Relations
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  
+  lines            TransactionLine[]
+  appliedDiscounts AppliedDiscountLog[]
+  payment          Payment?
 }
 
+// Transaction Line Item model
 model TransactionLine {
-  id                      String          @id @default(cuid())
+  id                      String  @id @default(cuid())
+  productId               String
   productName             String
+  batchId                 String?
+  batchNumber             String?
   quantity                Float
   displayUnit             String
   displayQuantity         Float
@@ -69,24 +64,32 @@ model TransactionLine {
   lineTotalBeforeDiscount Float
   lineDiscount            Float
   lineTotalAfterDiscount  Float
+  
   customDiscountValue     Float?
   customDiscountType      String?
   customApplyFixedOnce    Boolean?
-
-  productId               String
-  product                 Product         @relation(fields: [productId], references: [id])
-
-  batchId                 String?
-  batch                   ProductBatch?   @relation(fields: [batchId], references: [id])
-
-  transactionId           String
-  transaction             Transaction     @relation(fields: [transactionId], references: [id])
-
-  @@index([transactionId])
+  
+  // Relation to Transaction model
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
+// Payment details model
+model Payment {
+  id                String  @id @default(cuid())
+  paidAmount        Float
+  paymentMethod     String  // 'cash', 'card', 'online'
+  outstandingAmount Float
+  isInstallment     Boolean @default(false)
+  
+  // Relation to Transaction model
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+// Log of applied discounts model
 model AppliedDiscountLog {
-  id                      String      @id @default(cuid())
+  id                      String  @id @default(cuid())
   discountCampaignName    String
   sourceRuleName          String
   totalCalculatedDiscount Float
@@ -94,29 +97,8 @@ model AppliedDiscountLog {
   productIdAffected       String?
   batchIdAffected         String?
   appliedOnce             Boolean?
-
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id])
-
-  @@index([transactionId])
-}
-
-model Customer {
-  id          String        @id @default(cuid())
-  name        String        @unique
-  phone       String?
-  address     String?
-  role        String        @default("customer")
-  transactions Transaction[]
-}
-
-model Payment {
-  id                  String      @id @default(cuid())
-  paidAmount          Float
-  paymentMethod       String
-  outstandingAmount   Float
-  isInstallment       Boolean
-
-  transactionId       String      @unique
-  transaction         Transaction @relation(fields: [transactionId], references: [id])
+  
+  // Relation to Transaction model
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
