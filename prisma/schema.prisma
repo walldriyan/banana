@@ -2,16 +2,14 @@
 
 generator client {
   provider      = "prisma-client-js"
-  // This is the correct engine type for serverless environments like Firebase/Vercel
-  engineType    = "library"
-  // For cloud databases, we need a shadow database for safe migrations
-  previewFeatures = ["driverAdapters"]
+  
 }
 
 datasource db {
   provider          = "postgresql"
   url               = env("DATABASE_URL") // Comes from Supabase
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL") // Also comes from Supabase
+  directUrl  = env("DIRECT_URL") // Also comes from Supabase
 }
 
 // -- DATA MODELS --
