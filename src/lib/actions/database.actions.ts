@@ -49,7 +49,7 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
         status: transactionHeader.status,
         campaignId: transactionHeader.campaignId,
         isGiftReceipt: transactionHeader.isGiftReceipt,
-        // Only include originalTransactionId if it exists
+        // Only include originalTransactionId if it exists and is not undefined.
         ...(transactionHeader.originalTransactionId && { 
             originalTransactionId: transactionHeader.originalTransactionId 
         }),
@@ -101,8 +101,13 @@ export async function getTransactionsFromDb(): Promise<DatabaseReadyTransaction[
     // Re-map the Prisma-returned objects to the DatabaseReadyTransaction structure
     // This ensures the data shape remains consistent for the rest of the application.
     return transactions.map(tx => {
+        // ** THE FIX **
+        // Add a strict check. If a transaction in the DB somehow has no
+        // associated payment record, it's a data integrity issue.
+        // Throwing an error here stops the corrupt data from propagating
+        // to the UI and causing a crash.
         if (!tx.payment) {
-            throw new Error(`Transaction ${tx.id} is missing payment details.`);
+            throw new Error(`Data integrity error: Transaction ${tx.id} is missing payment details.`);
         }
         
         return {
