@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Transaction {
+  id                      String   @id @default(cuid())
+  transactionDate         DateTime
+  subtotal                Float
+  totalDiscountAmount     Float
+  finalTotal              Float
+  totalItems              Int
+  totalQuantity           Float
+  status                  String
+  campaignId              String
+  isGiftReceipt           Boolean  @default(false)
+  originalTransactionId   String?
+
+  lines             TransactionLine[]
+  appliedDiscounts  AppliedDiscountLog[]
+  customer          Customer    @relation(fields: [customerId], references: [id])
+  customerId        String
+  payment           Payment?
+
+  @@index([transactionDate])
+}
+
+model TransactionLine {
+  id                        String  @id @default(cuid())
+  saleItemId                String
+  productId                 String
+  productName               String
+  batchId                   String?
+  batchNumber               String?
+  quantity                  Float
+  displayUnit               String
+  displayQuantity           Float
+  unitPrice                 Float
+  lineTotalBeforeDiscount   Float
+  lineDiscount              Float
+  lineTotalAfterDiscount    Float
+  customDiscountValue       Float?
+  customDiscountType        String?
+  customApplyFixedOnce      Boolean?
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+}
+
+model AppliedDiscountLog {
+  id                        String  @id @default(cuid())
+  discountCampaignName      String
+  sourceRuleName            String
+  totalCalculatedDiscount   Float
+  ruleType                  String
+  productIdAffected         String?
+  batchIdAffected           String?
+  appliedOnce               Boolean?
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+}
+
+model Customer {
+  id          String        @id @default(cuid())
+  name        String
+  phone       String?
+  address     String?
+  transactions Transaction[]
+}
+
+model Payment {
+  id                  String      @id @default(cuid())
+  paidAmount          Float
+  paymentMethod       String
+  outstandingAmount   Float
+  isInstallment       Boolean
+  
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String      @unique
+}

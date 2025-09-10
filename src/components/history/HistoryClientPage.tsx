@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { getPendingTransactions } from '@/lib/db/local-db';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { TransactionList } from './TransactionList';
 import { Skeleton } from '../ui/skeleton';
@@ -10,6 +9,8 @@ import { TransactionSearchBar } from './TransactionSearchBar';
 import { Button } from '../ui/button';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { getTransactionsFromDb } from '@/lib/actions/database.actions';
+
 
 const ITEMS_PER_PAGE = 10;
 
@@ -23,7 +24,8 @@ export function HistoryClientPage() {
   const fetchTransactions = useCallback(async () => {
     try {
       setIsLoading(true);
-      const allTxs = await getPendingTransactions();
+      // Replace local-db call with new server action
+      const allTxs = await getTransactionsFromDb();
       
       const uniqueTransactionsMap = allTxs.reduce((acc, current) => {
         const existingTx = acc.get(current.transactionHeader.transactionId);

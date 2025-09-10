@@ -18,7 +18,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { deleteTransaction } from '@/lib/db/local-db';
+import { deleteTransactionFromDb } from '@/lib/actions/database.actions';
+
 
 interface TransactionListProps {
   originalTransactions: DatabaseReadyTransaction[];
@@ -76,7 +77,8 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
   const confirmDeleteRefund = async () => {
     if (!transactionToDelete) return;
     try {
-        await deleteTransaction(transactionToDelete);
+        // Replace local-db call with new server action
+        await deleteTransactionFromDb(transactionToDelete);
         toast({
             title: "Refund Deleted",
             description: `The refund transaction has been successfully removed.`,

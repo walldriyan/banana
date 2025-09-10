@@ -14,7 +14,7 @@ import { RefundCart } from './RefundCart';
 import { RefundSummary } from './RefundSummary';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Terminal } from 'lucide-react';
-import { saveTransaction } from '@/lib/db/local-db';
+
 
 // Mock product data for mapping transaction lines back to products.
 // In a real app, this would come from a database or a shared context.
@@ -159,11 +159,9 @@ export function RefundDialogContent({
         const result = await processRefundAction(payload);
 
         if (result.success && result.data) {
-            await saveTransaction(result.data);
-            
             toast({
                 title: "Refund Processed Successfully",
-                description: `New transaction ${result.data.transactionHeader.transactionId} created and saved locally.`,
+                description: `New transaction ${result.data.transactionHeader.transactionId} created and saved to database.`,
             });
             onRefundComplete();
         } else {

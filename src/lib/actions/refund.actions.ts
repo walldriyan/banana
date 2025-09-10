@@ -5,7 +5,8 @@ import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import type { SaleItem, DiscountSet } from '@/types';
 import { processRefund } from '../services/refund.service';
 import { calculateDiscounts } from '../services/discount.service';
-import { saveTransaction } from '../db/local-db';
+import { saveTransactionToDb } from './database.actions';
+
 
 interface ProcessRefundPayload {
     originalTransaction: DatabaseReadyTransaction;
@@ -40,12 +41,15 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
             activeCampaign,
         });
         
-        // 3. DO NOT SAVE HERE. Return the prepared data to the client.
+        // 3. Save the refund transaction to the database
+        await saveTransactionToDb(refundTransaction);
+
+        // 4. Return the prepared data to the client to confirm success
         return { success: true, data: refundTransaction };
 
     } catch (error) {
         console.error("[REFUND_ACTION_ERROR]", error);
-        // 4. Return a failure status and a clear error message.
+        // 5. Return a failure status and a clear error message.
         return {
             success: false,
             error: error instanceof Error ? error.message : "An unknown error occurred while processing the refund."

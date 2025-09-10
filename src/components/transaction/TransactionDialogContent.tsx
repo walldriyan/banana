@@ -16,8 +16,9 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
-import { saveTransaction } from '@/lib/db/local-db';
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
+import { saveTransactionToDb } from '@/lib/actions/database.actions';
+
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
@@ -122,8 +123,9 @@ export function TransactionDialogContent({
             isGiftReceipt: showFullPrice 
         }
       };
-
-      await saveTransaction(dataToSave);
+      
+      // Replace local-db call with new server action
+      await saveTransactionToDb(dataToSave);
       toast({
         title: "Transaction Saved",
         description: `Transaction ${dataToSave.transactionHeader.transactionId} saved.`,
