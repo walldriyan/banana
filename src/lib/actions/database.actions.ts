@@ -6,6 +6,8 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 
 /**
  * Saves a complete transaction object to the SQLite database via Prisma.
+ * It uses a Prisma transaction to ensure all writes succeed or none do,
+ * guaranteeing data integrity.
  * @param transactionData - The complete transaction object.
  */
 export async function saveTransactionToDb(transactionData: DatabaseReadyTransaction) {
@@ -17,24 +19,24 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
     paymentDetails,
   } = transactionData;
 
-  // Use a transaction to ensure all or nothing is written
+  // Use a transaction to ensure all or nothing is written. This is the "secure commit".
   return prisma.$transaction(async (tx) => {
-    // Find or create the customer
-    let customer = await tx.customer.findFirst({
-      where: { name: customerDetails.name }, // Simple find by name for this example
+    // Step 1: Find or Create the Customer
+    // Upsert is a convenient way to do this: it finds a user or creates one if not found.
+    const customer = await tx.customer.upsert({
+        where: { name: customerDetails.name }, // For this example, we assume customer names are unique.
+        update: {
+            phone: customerDetails.phone,
+            address: customerDetails.address
+        },
+        create: {
+            name: customerDetails.name,
+            phone: customerDetails.phone,
+            address: customerDetails.address,
+        }
     });
 
-    if (!customer) {
-      customer = await tx.customer.create({
-        data: {
-          name: customerDetails.name,
-          phone: customerDetails.phone,
-          address: customerDetails.address,
-        },
-      });
-    }
-
-    // Create the main transaction record
+    // Step 2: Create the main transaction record
     const newTransaction = await tx.transaction.create({
       data: {
         id: transactionHeader.transactionId,
@@ -48,7 +50,9 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
         campaignId: transactionHeader.campaignId,
         isGiftReceipt: transactionHeader.isGiftReceipt,
         originalTransactionId: transactionHeader.originalTransactionId,
-        customerId: customer.id,
+        customerId: customer.id, // Link to the found or created customer
+        
+        // Step 3: Create related records simultaneously
         payment: {
           create: {
             ...paymentDetails,

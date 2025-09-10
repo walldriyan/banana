@@ -2,53 +2,58 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider      = "prisma-client-js"
-  // The binaryTargets option below is the fix for the libssl error.
-  // It tells Prisma to generate query engines for multiple OpenSSL versions.
-  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  // The 'binaryTargets' line is a fix for deployment environments that may not have the default OpenSSL version.
+  // It tells Prisma to generate query engines compatible with multiple OpenSSL versions.
+  binaryTargets   = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  // This line tells Prisma to look for the database connection string in the .env file.
+  url      = env("DATABASE_URL")
 }
 
-// Data model for a customer
+// ==================================
+// Data Models for the POS System
+// ==================================
+
+// Customer Information
 model Customer {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String?
-  address      String?
+  id          String        @id @default(cuid())
+  name        String
+  phone       String?
+  address     String?
   transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
-// Data model for a transaction
+// Main Transaction Model
 model Transaction {
-  id                    String                 @id
-  transactionDate       DateTime               @default(now())
-  subtotal              Float
-  totalDiscountAmount   Float
-  finalTotal            Float
-  totalItems            Int
-  totalQuantity         Float
-  status                String // "completed", "refund", "pending"
-  campaignId            String
-  isGiftReceipt         Boolean                @default(false)
+  id                  String        @id
+  transactionDate     DateTime      @default(now())
+  subtotal            Float
+  totalDiscountAmount Float
+  finalTotal          Float
+  totalItems          Int
+  totalQuantity       Float
+  status              String // "completed", "refund", "pending"
+  campaignId          String
+  isGiftReceipt       Boolean       @default(false)
   originalTransactionId String?
-  customerId            String
-  customer              Customer               @relation(fields: [customerId], references: [id])
-  payment               Payment?
-  lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscountLog[]
-  originalTransaction   Transaction?           @relation("Refunds", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  refunds               Transaction[]          @relation("Refunds")
+
+  // Relations
+  customer            Customer      @relation(fields: [customerId], references: [id])
+  customerId          String
+  lines               TransactionLine[]
+  appliedDiscounts    AppliedDiscountLog[]
+  payment             Payment?
 }
 
-// Data model for a single line in a transaction
+// Individual lines within a transaction
 model TransactionLine {
-  id                      String      @id @default(cuid())
+  id                      String   @id @default(cuid())
   saleItemId              String
   productId               String
   productName             String
@@ -64,24 +69,15 @@ model TransactionLine {
   customDiscountValue     Float?
   customDiscountType      String?
   customApplyFixedOnce    Boolean?
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id])
+
+  // Relation
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
 }
 
-// Data model for the payment details of a transaction
-model Payment {
-  id                String      @id @default(cuid())
-  paidAmount        Float
-  paymentMethod     String
-  outstandingAmount Float
-  isInstallment     Boolean
-  transactionId     String      @unique
-  transaction       Transaction @relation(fields: [transactionId], references: [id])
-}
-
-// Data model for logging applied discounts
+// Log of applied discounts for auditing
 model AppliedDiscountLog {
-  id                      String      @id @default(cuid())
+  id                      String   @id @default(cuid())
   discountCampaignName    String
   sourceRuleName          String
   totalCalculatedDiscount Float
@@ -89,6 +85,21 @@ model AppliedDiscountLog {
   productIdAffected       String?
   batchIdAffected         String?
   appliedOnce             Boolean?
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id])
+
+  // Relation
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+}
+
+// Payment details for a transaction
+model Payment {
+  id                String   @id @default(cuid())
+  paidAmount        Float
+  paymentMethod     String // "cash", "card", "online"
+  outstandingAmount Float
+  isInstallment     Boolean
+
+  // Relation (One-to-One)
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String      @unique
 }
