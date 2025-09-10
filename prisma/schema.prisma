@@ -1,7 +1,12 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
-  provider     = "prisma-client-js"
-  engineType   = "library"
-  binaryTargets = ["native", "rhel-openssl-1.1.x"]
+  provider      = "prisma-client-js"
+  // This is the definitive fix for the OpenSSL/Schema Engine errors in this environment
+  engineType    = "library"
+  // This is required for deploying to some serverless environments
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -9,146 +14,139 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+
+// -------------------
+// Core Models
+// -------------------
+
 model Company {
-  id             String         @id @default(cuid())
-  name           String         @unique
-  users          User[]
-  products       Product[]
-  customers      Customer[]
-  transactions   Transaction[]
-  productBatches ProductBatch[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users    User[]
+  products Product[]
+  customers Customer[]
+  transactions Transaction[]
 }
 
 model User {
-  id           String        @id @default(cuid())
-  name         String
-  role         String // e.g., 'admin', 'manager', 'cashier'
-  companyId    String
-  Company      Company       @relation(fields: [companyId], references: [id])
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  role      String   // e.g., 'admin', 'manager', 'cashier'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
   transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-}
-
-model Product {
-  id              String         @id @default(cuid())
-  name            String
-  sellingPrice    Float
-  category        String?
-  stock           Int
-  unitsJson       String // Storing complex unit data as a JSON string
-  isService       Boolean
-  isActive        Boolean
-  defaultQuantity Int
-  companyId       String
-  Company         Company        @relation(fields: [companyId], references: [id])
-  batches         ProductBatch[]
-  lineItems       LineItem[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-}
-
-model ProductBatch {
-  id           String     @id @default(cuid())
-  batchNumber  String
-  sellingPrice Float
-  costPrice    Float
-  quantity     Int
-  productId    String
-  Product      Product    @relation(fields: [productId], references: [id])
-  companyId    String
-  Company      Company    @relation(fields: [companyId], references: [id])
-  lineItems    LineItem[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
 }
 
 model Customer {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String?
-  address      String?
-  companyId    String
-  Company      Company       @relation(fields: [companyId], references: [id])
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([name, companyId])
+  company   Company @relation(fields: [companyId], references: [id])
+  companyId String
+
+  transactions Transaction[]
 }
+
+
+// -------------------
+// Product & Inventory Models
+// -------------------
+
+model Product {
+  id            String   @id @default(cuid())
+  name          String
+  category      String?
+  sellingPrice  Float
+  unitsJson     String   // Storing unit definitions as a stringified JSON
+  stock         Int      @default(0)
+  isService     Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  defaultQuantity Float  @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  company       Company @relation(fields: [companyId], references: [id])
+  companyId     String
+
+  batches      ProductBatch[]
+  lineItems    TransactionLine[]
+}
+
+model ProductBatch {
+  id            String   @id @default(cuid())
+  batchNumber   String
+  sellingPrice  Float
+  costPrice     Float
+  quantity      Float
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+}
+
+// -------------------
+// Transaction Models
+// -------------------
 
 model Transaction {
-  id                    String                 @id @default(cuid())
-  transactionDate       DateTime               @default(now())
-  subtotal              Float
-  totalDiscountAmount   Float
-  finalTotal            Float
-  totalItems            Int
-  totalQuantity         Float
-  status                String // "completed", "refund", "pending"
-  campaignId            String
-  isGiftReceipt         Boolean                @default(false)
+  id                  String    @id
+  transactionDate     DateTime  @default(now())
+  subtotal            Float
+  totalDiscountAmount Float
+  finalTotal          Float
+  totalItems          Int
+  totalQuantity       Float
+  status              String    // 'completed', 'refund', 'pending'
+  campaignId          String
+  isGiftReceipt       Boolean   @default(false)
   originalTransactionId String?
-  companyId             String
-  Company               Company                @relation(fields: [companyId], references: [id])
-  userId                String
-  User                  User                   @relation(fields: [userId], references: [id])
-  customerId            String
-  Customer              Customer               @relation(fields: [customerId], references: [id])
-  payment               Payment?
-  lines                 LineItem[]
-  appliedDiscounts      AppliedDiscountLog[]
-  createdAt             DateTime               @default(now())
-  updatedAt             DateTime               @updatedAt
+
+  company    Company @relation(fields: [companyId], references: [id])
+  companyId  String
+  
+  user       User @relation(fields: [userId], references: [id])
+  userId     String
+
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+
+  lines            TransactionLine[]
+  payment          Payment?
+  appliedDiscounts AppliedDiscountLog[]
 }
 
-model Payment {
-  id                String      @id @default(cuid())
-  paidAmount        Float
-  paymentMethod     String // "cash", "card", "online"
-  outstandingAmount Float
-  isInstallment     Boolean
-  transactionId     String      @unique
-  Transaction       Transaction @relation(fields: [transactionId], references: [id])
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-}
+model TransactionLine {
+  id                      String   @id @default(cuid())
+  productName             String
+  batchNumber             String?
+  quantity                Float    // Base unit quantity
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+  
+  // Custom discount state
+  customDiscountValue     Float?
+  customDiscountType      String?  // 'fixed' or 'percentage'
+  customApplyFixedOnce    Boolean?
 
-model LineItem {
-  id                       String        @id @default(cuid())
-  productName              String
-  quantity                 Float
-  displayUnit              String
-  displayQuantity          Float
-  unitPrice                Float
-  lineTotalBeforeDiscount  Float
-  lineDiscount             Float
-  lineTotalAfterDiscount   Float
-  customDiscountValue      Float?
-  customDiscountType       String? // "fixed" or "percentage"
-  customApplyFixedOnce     Boolean?
-  transactionId            String
-  Transaction              Transaction   @relation(fields: [transactionId], references: [id])
-  productId                String
-  Product                  Product       @relation(fields: [productId], references: [id])
-  batchId                  String?
-  ProductBatch             ProductBatch? @relation(fields: [batchId], references: [id])
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
-}
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
 
-model AppliedDiscountLog {
-  id                      String      @id @default(cuid())
-  discountCampaignName    String
-  sourceRuleName          String
-  totalCalculatedDiscount Float
-  ruleType                String
-  productIdAffected       String?
-  batchIdAffected         String?
-  appliedOnce             Boolean?
-  transactionId           String
-  Transaction             Transaction @relation(fields: [transactionId], references: [id])
-  createdAt               DateTime    @default(now())
-}
+  product   Product @relation(fields
