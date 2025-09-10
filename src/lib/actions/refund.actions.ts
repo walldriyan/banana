@@ -20,7 +20,6 @@ interface ProcessRefundPayload {
  * 1. Recalculates discounts for the items being kept.
  * 2. Creates the new refund transaction object.
  * 3. IT DOES NOT SAVE. It returns the final object to the client.
- * The client will then handle saving the data to its local storage.
  * This fixes the "Client Reference" error by not calling client-code from the server.
  * 
  * @param payload - The data required for the refund, containing only plain objects.

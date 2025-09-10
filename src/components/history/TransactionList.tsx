@@ -101,7 +101,7 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
       <div className="text-center py-10 px-4">
         <h3 className="text-xl font-semibold text-gray-700">No Transactions Found</h3>
         <p className="text-gray-500 mt-2">
-          It looks like there are no transactions saved in the local database yet.
+          It looks like there are no transactions saved in the database yet.
         </p>
       </div>
     );
