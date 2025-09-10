@@ -51,7 +51,9 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
         isGiftReceipt: transactionHeader.isGiftReceipt,
         // Only include originalTransactionId if it exists and is not undefined.
         ...(transactionHeader.originalTransactionId && { 
-            originalTransactionId: transactionHeader.originalTransactionId 
+            originalTransaction: {
+                connect: { id: transactionHeader.originalTransactionId }
+            }
         }),
         customerId: customer.id, // Link to the found or created customer
         
@@ -101,11 +103,11 @@ export async function getTransactionsFromDb(): Promise<DatabaseReadyTransaction[
     // Re-map the Prisma-returned objects to the DatabaseReadyTransaction structure
     // This ensures the data shape remains consistent for the rest of the application.
     return transactions.map(tx => {
-        // ** THE FIX **
+        // ** THE DEFINITIVE FIX **
         // Add a strict check. If a transaction in the DB somehow has no
-        // associated payment record, it's a data integrity issue.
-        // Throwing an error here stops the corrupt data from propagating
-        // to the UI and causing a crash.
+        // associated payment record (it's null or undefined), it's a data 
+        // integrity issue. Throwing an error here stops the corrupt data 
+        // from propagating to the UI and causing a crash.
         if (!tx.payment) {
             throw new Error(`Data integrity error: Transaction ${tx.id} is missing payment details.`);
         }
@@ -159,9 +161,25 @@ export async function deleteTransactionFromDb(transactionId: string): Promise<vo
   // Prisma requires cascading deletes to be set up in the schema or handled manually.
   // For simplicity, we'll delete related records manually in a transaction.
   await prisma.$transaction(async (tx) => {
+    
+    // First, find if this transaction is an original transaction for any refunds
+    const refundTransactions = await tx.transaction.findMany({
+        where: { originalTransactionId: transactionId }
+    });
+
+    // If there are refunds, disassociate them first
+    for (const refund of refundTransactions) {
+        await tx.transaction.update({
+            where: { id: refund.id },
+            data: { originalTransactionId: null }
+        });
+    }
+    
     await tx.appliedDiscountLog.deleteMany({ where: { transactionId } });
     await tx.transactionLine.deleteMany({ where: { transactionId } });
     await tx.payment.deleteMany({ where: { transactionId } });
+
+    // Finally, delete the transaction itself
     await tx.transaction.delete({ where: { id: transactionId } });
   });
 }
