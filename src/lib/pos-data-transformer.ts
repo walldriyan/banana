@@ -40,7 +40,7 @@ export interface TransactionHeader {
 }
 
 export interface TransactionLine {
-    saleItemId: string; 
+    saleItemId: string; // This is a transient ID for the cart, NOT for the database.
     productId: string;
     productName: string;
     batchId?: string;
@@ -171,14 +171,15 @@ export function transformTransactionDataForDb(
 }
 
 // Helper to convert DB transaction lines back to SaleItems for the refund cart
-export function transactionLinesToSaleItems(lines: TransactionLine[], products: Product[]): SaleItem[] {
+export function transactionLinesToSaleItems(lines: (TransactionLine & {id?: string})[], products: Product[]): SaleItem[] {
     return lines.map(line => {
         const product = products.find(p => p.id === line.productId);
         
+        // This is a transient ID for the client-side react key. It's not saved.
+        const saleItemId = line.saleItemId || `db-line-${line.id || Math.random()}`;
+
         if (!product) {
             // Fallback for products that might not exist in the current product list
-            // This is a rare case but good to handle
-            const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             return {
                 id: line.productId,
                 name: line.productName,
@@ -204,7 +205,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
         
         return {
             ...product,
-            saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            saleItemId,
             quantity: line.quantity, // Base unit quantity
             displayUnit: line.displayUnit,
             displayQuantity: line.displayQuantity,

@@ -49,7 +49,7 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
         status: transactionHeader.status,
         campaignId: transactionHeader.campaignId,
         isGiftReceipt: transactionHeader.isGiftReceipt,
-        // *** FIX: Only include originalTransactionId if it exists ***
+        // Only include originalTransactionId if it exists
         ...(transactionHeader.originalTransactionId && { 
             originalTransactionId: transactionHeader.originalTransactionId 
         }),
@@ -65,7 +65,10 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
           },
         },
         lines: {
-          create: transactionLines.map((line) => ({ ...line })),
+          // FIX: Explicitly map the fields and exclude saleItemId, which is not in the DB schema.
+          create: transactionLines.map(({ saleItemId, ...lineData }) => ({
+            ...lineData,
+          })),
         },
         appliedDiscounts: {
           create: appliedDiscountsLog.map((log) => ({ ...log })),
@@ -117,7 +120,8 @@ export async function getTransactionsFromDb(): Promise<DatabaseReadyTransaction[
                 originalTransactionId: tx.originalTransactionId ?? undefined
             },
             transactionLines: tx.lines.map(line => ({
-                ...line
+                ...line,
+                saleItemId: `db-line-${line.id}`, // Recreate a transient saleItemId for client-side use
             })),
             appliedDiscountsLog: tx.appliedDiscounts.map(log => ({
                 ...log
