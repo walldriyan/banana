@@ -3,8 +3,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  // The following line is the fix for the OpenSSL issue
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x", "debian-openssl-1.1.x"]
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -12,48 +11,35 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==============================================================
-// App Data Models
-// ==============================================================
+model Customer {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  phone        String?
+  address      String?
+  transactions Transaction[]
+}
 
 model Transaction {
-  id                    String                 @id @default(cuid())
-  transactionDate       DateTime               @default(now())
-  subtotal              Float
-  totalDiscountAmount   Float
-  finalTotal            Float
-  totalItems            Int
-  totalQuantity         Float
-  status                String // "completed", "refund", "pending"
-  campaignId            String
-  isGiftReceipt         Boolean                @default(false)
-  originalTransactionId String?                @unique
-  
-  customerId            String
-  customer              Customer               @relation(fields: [customerId], references: [id])
-  
-  payment               Payment?
-  lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscountLog[]
-}
+  id                  String               @id
+  transactionDate     DateTime             @default(now())
+  subtotal            Float
+  totalDiscountAmount Float
+  finalTotal          Float
+  totalItems          Int
+  totalQuantity       Float
+  status              String // 'completed', 'refund', 'pending'
+  campaignId          String
+  isGiftReceipt       Boolean              @default(false)
+  originalTransactionId String?
 
-model Customer {
-  id          String        @id @default(cuid())
-  name        String        @unique
-  phone       String?
-  address     String?
-  Transaction Transaction[]
-}
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
 
-model Payment {
-  id                String      @id @default(cuid())
-  paidAmount        Float
-  paymentMethod     String // "cash", "card", "online"
-  outstandingAmount Float
-  isInstallment     Boolean
-  
-  transactionId     String      @unique
-  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  lines            TransactionLine[]
+  payment          Payment?
+  appliedDiscounts AppliedDiscountLog[]
+
+  @@index([transactionDate])
 }
 
 model TransactionLine {
@@ -71,24 +57,37 @@ model TransactionLine {
   lineDiscount            Float
   lineTotalAfterDiscount  Float
   customDiscountValue     Float?
-  customDiscountType      String? // "fixed" or "percentage"
+  customDiscountType      String?
   customApplyFixedOnce    Boolean?
-  
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([batchId])
+}
+
+model Payment {
+  id                String      @id @default(cuid())
+  paidAmount        Float
+  paymentMethod     String // 'cash', 'card', 'online'
+  outstandingAmount Float
+  isInstallment     Boolean
+
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 model AppliedDiscountLog {
-  id                      String      @id @default(cuid())
-  discountCampaignName    String
-  sourceRuleName          String
-  totalCalculatedDiscount Float
-  ruleType                String
-  productIdAffected       String?
-  batchIdAffected         String?
-  appliedOnce             Boolean?
-  
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references
-: [id], onDelete: Cascade)
+  id                       String   @id @default(cuid())
+  discountCampaignName     String
+  sourceRuleName           String
+  totalCalculatedDiscount  Float
+  ruleType                 String
+  productIdAffected        String?
+  batchIdAffected          String?
+  appliedOnce              Boolean?
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
