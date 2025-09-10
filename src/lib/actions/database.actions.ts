@@ -49,7 +49,10 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
         status: transactionHeader.status,
         campaignId: transactionHeader.campaignId,
         isGiftReceipt: transactionHeader.isGiftReceipt,
-        originalTransactionId: transactionHeader.originalTransactionId,
+        // *** FIX: Only include originalTransactionId if it exists ***
+        ...(transactionHeader.originalTransactionId && { 
+            originalTransactionId: transactionHeader.originalTransactionId 
+        }),
         customerId: customer.id, // Link to the found or created customer
         
         // Step 3: Create related records simultaneously
