@@ -55,7 +55,10 @@ export async function saveTransactionToDb(transactionData: DatabaseReadyTransact
         // Step 3: Create related records simultaneously
         payment: {
           create: {
-            ...paymentDetails,
+            paidAmount: paymentDetails.paidAmount,
+            paymentMethod: paymentDetails.paymentMethod,
+            outstandingAmount: paymentDetails.outstandingAmount,
+            isInstallment: paymentDetails.isInstallment,
           },
         },
         lines: {
