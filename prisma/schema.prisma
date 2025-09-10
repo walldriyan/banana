@@ -1,84 +1,85 @@
+
 generator client {
-  provider      = "prisma-client-js"
-  output        = "../node_modules/.prisma/client"
-  engineType    = "library"
-  binaryTargets = ["native", "debian-openssl-1.1.x"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
+  provider = "postgresql"
+  url = env("DATABASE_URL")
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 model Customer {
-  id           String        @id @default(cuid())
-  name         String        @unique
-  phone        String?
-  address      String?
+  id      String @id @default(cuid())
+  name    String @unique
+  phone   String?
+  address String?
   transactions Transaction[]
 }
 
 model Transaction {
-  id                    String                 @id
-  transactionDate       DateTime
-  subtotal              Float
-  totalDiscountAmount   Float
-  finalTotal            Float
-  totalItems            Int
-  totalQuantity         Float
-  status                String
-  campaignId            String
-  isGiftReceipt         Boolean                @default(false)
+  id                  String    @id @default(cuid())
+  transactionDate     DateTime  @default(now())
+  subtotal            Float
+  totalDiscountAmount Float
+  finalTotal          Float
+  totalItems          Int
+  totalQuantity       Float
+  status              String    // e.g., "completed", "refund"
+  campaignId          String
+  isGiftReceipt       Boolean   @default(false)
   originalTransactionId String?
-  customer              Customer               @relation(fields: [customerId], references: [id])
-  customerId            String
-  payment               Payment?
-  lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscountLog[]
-  originalTransaction   Transaction?           @relation("Refunds", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  refunds               Transaction[]          @relation("Refunds")
+  
+  customerId          String
+  customer            Customer @relation(fields: [customerId], references: [id])
+  
+  payment             Payment[]
+  lines               TransactionLine[]
+  appliedDiscounts    AppliedDiscountLog[]
 }
 
 model Payment {
-  id                String      @id @default(cuid())
+  id                String    @id @default(cuid())
   paidAmount        Float
-  paymentMethod     String
+  paymentMethod     String    // "cash", "card", "online"
   outstandingAmount Float
   isInstallment     Boolean
-  transaction       Transaction @relation(fields: [transactionId], references: [id])
-  transactionId     String      @unique
+  
+  transactionId     String
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 model TransactionLine {
-  id                       String   @id @default(cuid())
-  productId                String
-  productName              String
-  batchId                  String?
-  batchNumber              String?
-  quantity                 Float
-  displayUnit              String
-  displayQuantity          Float
-  unitPrice                Float
-  lineTotalBeforeDiscount  Float
-  lineDiscount             Float
-  lineTotalAfterDiscount   Float
-  customDiscountValue      Float?
-  customDiscountType       String?
-  customApplyFixedOnce     Boolean?
-  transaction              Transaction @relation(fields: [transactionId], references: [id])
-  transactionId            String
+  id                      String    @id @default(cuid())
+  productId               String
+  productName             String
+  batchId                 String?
+  batchNumber             String?
+  quantity                Float
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+  customDiscountValue     Float?
+  customDiscountType      String?
+  customApplyFixedOnce    Boolean?
+  
+  transactionId           String
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 model AppliedDiscountLog {
-  id                       String   @id @default(cuid())
-  discountCampaignName     String
-  sourceRuleName           String
-  totalCalculatedDiscount  Float
-  ruleType                 String
-  productIdAffected        String?
-  batchIdAffected          String?
-  appliedOnce              Boolean?
-  transaction              Transaction @relation(fields: [transactionId], references: [id])
-  transactionId            String
+  id                      String @id @default(cuid())
+  discountCampaignName    String
+  sourceRuleName          String
+  totalCalculatedDiscount Float
+  ruleType                String
+  productIdAffected       String?
+  batchIdAffected         String?
+  appliedOnce             Boolean?
+  
+  transactionId           String
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
