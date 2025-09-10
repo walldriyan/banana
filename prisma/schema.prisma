@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+
+}
+model Customer {
+  id      String @id @default(cuid())
+  name    String @unique
+  phone   String?
+  address String?
+  transactions Transaction[]
+}
+
+model Transaction {
+  id                  String    @id @default(cuid())
+  transactionDate     DateTime  @default(now())
+  subtotal            Float
+  totalDiscountAmount Float
+  finalTotal          Float
+  totalItems          Int
+  totalQuantity       Float
+  status              String    // e.g., "completed", "refund"
+  campaignId          String
+  isGiftReceipt       Boolean   @default(false)
+  originalTransactionId String?
+  
+  customerId          String
+  customer            Customer @relation(fields: [customerId], references: [id])
+  
+  payment             Payment[]
+  lines               TransactionLine[]
+  appliedDiscounts    AppliedDiscountLog[]
+}
+
+model Payment {
+  id                String    @id @default(cuid())
+  paidAmount        Float
+  paymentMethod     String    // "cash", "card", "online"
+  outstandingAmount Float
+  isInstallment     Boolean
+  
+  transactionId     String
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model TransactionLine {
+  id                      String    @id @default(cuid())
+  productId               String
+  productName             String
+  batchId                 String?
+  batchNumber             String?
+  quantity                Float
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+  customDiscountValue     Float?
+  customDiscountType      String?
+  customApplyFixedOnce    Boolean?
+  
+  transactionId           String
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model AppliedDiscountLog {
+  id                      String @id @default(cuid())
+  discountCampaignName    String
+  sourceRuleName          String
+  totalCalculatedDiscount Float
+  ruleType                String
+  productIdAffected       String?
+  batchIdAffected         String?
+  appliedOnce             Boolean?
+  
+  transactionId           String
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
