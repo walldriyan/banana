@@ -2,29 +2,30 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider     = "prisma-client-js"
-  // This is the definitive fix for the Firebase Studio environment error.
-  engineType   = "library"
-  binaryTargets = ["native", "rhel-openssl-1.1.x"]
+  provider      = "prisma-client-js"
+  // This is the definitive fix for the Firebase Studio environment compatibility issue.
+  // It forces Prisma to use the JS-based library engine instead of the binary engine.
+  engineType    = "library"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
 }
 
 datasource db {
   provider = "sqlite"
-  // This points to the dev.db file in the prisma folder
+  // This path is now hardcoded to avoid any confusion with environment variables.
+  // It points to a file named 'dev.db' inside this 'prisma' folder.
   url      = "file:./dev.db"
 }
 
 // MODELS
 
 model Company {
-  id         String        @id @default(cuid())
-  name       String        @unique
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-  users      User[]
-  customers  Customer[]
-  products   Product[]
-  batches    ProductBatch[]
+  id           String        @id @default(cuid())
+  name         String        @unique
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  users        User[]
+  products     Product[]
+  customers    Customer[]
   transactions Transaction[]
 }
 
@@ -32,117 +33,123 @@ model User {
   id        String    @id @default(cuid())
   name      String
   email     String?   @unique
-  role      String    // e.g., 'admin', 'manager', 'cashier'
-  password  String // This should be a hash in a real app
-  companyId String
-  company   Company   @relation(fields: [companyId], references: [id])
+  role      String    @default("cashier")
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  transactions Transaction[]
-}
-
-model Customer {
-  id        String    @id @default(cuid())
-  name      String
-  phone     String?
-  address   String?
-  companyId String
   company   Company   @relation(fields: [companyId], references: [id])
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  companyId String
   transactions Transaction[]
 }
 
 model Product {
-  id            String         @id @default(cuid())
-  name          String
-  sellingPrice  Float
-  category      String?
-  stock         Int
-  unitsJson     String // Storing complex unit data as a JSON string
-  isService     Boolean        @default(false)
-  isActive      Boolean        @default(true)
-  companyId     String
-  company       Company        @relation(fields: [companyId], references: [id])
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  batches       ProductBatch[]
-  lineItems     LineItem[]
-}
-
-model ProductBatch {
-  id           String     @id @default(cuid())
-  batchNumber  String
+  id           String         @id @default(cuid())
+  name         String
   sellingPrice Float
-  costPrice    Float
-  quantity     Int
-  productId    String
-  product      Product    @relation(fields: [productId], references: [id])
+  category     String?
+  stock        Float
+  isActive     Boolean        @default(true)
+  isService    Boolean        @default(false)
+  unitsJson    String // Storing complex unit data as a JSON string
+  company      Company        @relation(fields: [companyId], references: [id])
   companyId    String
-  company      Company    @relation(fields: [companyId], references: [id])
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  batches      ProductBatch[]
   lineItems    LineItem[]
 }
 
+model ProductBatch {
+  id           String    @id @default(cuid())
+  batchNumber  String
+  sellingPrice Float
+  costPrice    Float
+  quantity     Float
+  product      Product   @relation(fields: [productId], references: [id])
+  productId    String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  lineItems    LineItem[]
+}
+
+model Customer {
+  id        String        @id @default(cuid())
+  name      String
+  phone     String?
+  address   String?
+  company   Company       @relation(fields: [companyId], references: [id])
+  companyId String
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  transactions Transaction[]
+
+  @@unique([name, companyId]) // A customer is unique within a company
+}
+
 model Transaction {
-  id                  String               @id
-  transactionDate     DateTime             @default(now())
-  subtotal            Float
-  totalDiscountAmount Float
-  finalTotal          Float
-  totalItems          Int
-  totalQuantity       Float
-  status              String // 'completed', 'refund', 'pending'
-  campaignId          String
-  isGiftReceipt       Boolean              @default(false)
-  originalTransactionId String?
-
-  customerId          String
-  customer            Customer             @relation(fields: [customerId], references: [id])
-
-  userId              String
-  user                User                 @relation(fields: [userId], references: [id])
+  id                    String        @id
+  transactionDate       DateTime
+  subtotal              Float
+  totalDiscountAmount   Float
+  finalTotal            Float
+  totalItems            Int
+  totalQuantity         Float
+  status                String        @default("completed") // e.g., 'completed', 'refund', 'pending'
+  isGiftReceipt         Boolean       @default(false)
   
-  companyId           String
-  company             Company              @relation(fields: [companyId], references: [id])
+  campaignId            String? // The ID of the campaign used for this transaction
+  originalTransactionId String?       @unique // For linking refunds to original sales
 
-  payment             Payment?
-  lineItems           LineItem[]
-  appliedDiscounts    AppliedDiscountLog[]
+  company   Company   @relation(fields: [companyId], references: [id])
+  companyId String
+  
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+
+  user      User      @relation(fields: [userId], references: [id])
+  userId    String
+
+  payment   Payment?
+  lines     LineItem[]
+  appliedDiscounts AppliedDiscountLog[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 }
 
 model LineItem {
-  id                       String      @id @default(cuid())
-  productId                String
-  product                  Product     @relation(fields: [productId], references: [id])
-  productName              String
-  batchId                  String?
-  batch                    ProductBatch? @relation(fields: [batchId], references: [id])
-  batchNumber              String?
-  quantity                 Float
-  displayUnit              String
-  displayQuantity          Float
-  unitPrice                Float
-  lineTotalBeforeDiscount  Float
-  lineDiscount             Float
-  lineTotalAfterDiscount   Float
-  customDiscountValue      Float?
-  customDiscountType       String?
-  customApplyFixedOnce     Boolean?
+  id                      String      @id @default(cuid())
+  productName             String
+  quantity                Float       // Base unit quantity
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
 
-  transactionId            String
-  transaction              Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  customDiscountValue     Float?
+  customDiscountType      String?
+  customApplyFixedOnce    Boolean?
+
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+  
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+
+  batch       ProductBatch? @relation(fields: [batchId], references: [id])
+  batchId     String?
 }
+
 
 model Payment {
   id                String      @id @default(cuid())
   paidAmount        Float
-  paymentMethod     String
+  paymentMethod     String      // 'cash', 'card', 'online'
   outstandingAmount Float
   isInstallment     Boolean
+  transaction       Transaction @relation(fields: [transactionId], references: [id])
   transactionId     String      @unique
-  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 model AppliedDiscountLog {
@@ -155,6 +162,6 @@ model AppliedDiscountLog {
   batchIdAffected         String?
   appliedOnce             Boolean?
 
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
 }
