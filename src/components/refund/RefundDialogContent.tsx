@@ -220,7 +220,7 @@ export function RefundDialogContent({
             type="button" 
             variant="destructive" 
             onClick={handleProcessRefund}
-            disabled={isProcessing}
+            disabled={isProcessing || finalRefundAmount === 0}
         >
           {isProcessing ? "Processing..." : 
            finalRefundAmount > 0 ? `Refund Rs. ${finalRefundAmount.toFixed(2)}` :
