@@ -141,7 +141,7 @@ export function TransactionDialogContent({
       };
 
       // For Firebase Studio -> Save to localStorage (IndexedDB)
-      // await saveTransaction(dataToSave);
+      await saveTransaction(dataToSave);
       
       // --- For Local Development with SQLite ---
       // Uncomment the following lines to save to your local SQLite database
@@ -180,7 +180,7 @@ export function TransactionDialogContent({
   if (step === 'print' && finalTransactionData) {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-md">
+        <div className="flex-grow bg-gray-100 p-4 rounded-md">
           <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
         </div>
         <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between no-print">
