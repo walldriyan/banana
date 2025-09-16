@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveTransaction } from '@/lib/db/local-db';
 import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
-import { saveTransactionToDb } from '@/lib/actions/database.actions';
+
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
