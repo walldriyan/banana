@@ -20,14 +20,6 @@ import { Label } from '../ui/label';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
-interface TransactionDialogContentProps {
-  cart: SaleItem[];
-  discountResult: any; // Using any for plain object from server
-  transactionId: string;
-  activeCampaign: DiscountSet;
-  onTransactionComplete: () => void;
-}
-
 const receiptStyles = `
   body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; }
   .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 8px; }
@@ -173,7 +165,6 @@ export function TransactionDialogContent({
             await handlePrintAndFinish(finalTransactionData);
         }
         
-        // After everything is done, call onTransactionComplete which closes the drawer and resets the main page state.
         onTransactionComplete();
 
     } catch (error) {
@@ -219,7 +210,9 @@ export function TransactionDialogContent({
         {step === 'print' && finalTransactionData && (
           <div className='py-4'>
             <div className="bg-gray-100 p-4 rounded-lg overflow-y-auto max-h-[60vh]">
-              <ThermalReceipt data={finalTransactionData} showAsGiftReceipt={isGiftReceipt} />
+              <div style={{ maxWidth: '300px', margin: '0 auto' }}>
+                <ThermalReceipt data={finalTransactionData} showAsGiftReceipt={isGiftReceipt} />
+              </div>
             </div>
             <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
                 <div className="flex items-center space-x-2">
