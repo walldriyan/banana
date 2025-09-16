@@ -1,8 +1,9 @@
 // src/lib/actions/database.actions.ts
 'use server';
-/*
+
+import { DatabaseReadyTransaction } from '../pos-data-transformer';
 import { prisma } from '../prisma';
-import type { DatabaseReadyTransaction } from '../pos-data-transformer';
+
 import { Prisma } from '@prisma/client';
 
 /**
@@ -16,7 +17,7 @@ import { Prisma } from '@prisma/client';
  * @param data - The complete transaction data object.
  * @returns The newly created transaction object from the database.
  */
-/*
+
 export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
   const {
     transactionHeader,
@@ -114,11 +115,4 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       error: error instanceof Error ? error.message : 'An unknown database error occurred.',
     };
   }
-}
-*/
-
-// Add a placeholder function to avoid import errors when the above is commented out.
-export async function saveTransactionToDb(data: any) {
-    console.log("saveTransactionToDb is commented out. Skipping database save.");
-    return { success: true, data: { id: "dummy-txn-id" } };
 }

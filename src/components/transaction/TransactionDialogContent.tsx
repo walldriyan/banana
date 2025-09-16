@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { saveTransaction } from '@/lib/db/local-db';
 // import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
+import { saveTransactionToDb } from '@/lib/actions/database.actions';
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
@@ -125,16 +126,16 @@ export function TransactionDialogContent({
       };
 
       // For Firebase Studio -> Save to localStorage (IndexedDB)
-      await saveTransaction(dataToSave);
+      // await saveTransaction(dataToSave);
       
       // --- For Local Development with SQLite ---
       // Uncomment the following lines to save to your local SQLite database
-      /*
+      
       const dbResult = await saveTransactionToDb(dataToSave);
       if (!dbResult.success) {
         throw new Error(dbResult.error || 'Failed to save to database.');
       }
-      */
+      
       
       toast({
         title: "Transaction Saved",
