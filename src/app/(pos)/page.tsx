@@ -450,7 +450,6 @@ export default function MyNewEcommerceShop() {
                 </span>
               )}
             </div>
-             {isCalculating && <div className="text-sm text-blue-500 mt-2 animate-pulse">Calculating discounts...</div>}
           </header>
 
           <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
@@ -468,21 +467,25 @@ export default function MyNewEcommerceShop() {
                 />
                 
                 <AuthorizationGuard permissionKey='pos.create.transaction'>
-                    <div className="flex gap-3">
-                        <button
-                            onClick={clearCart}
-                            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
-                        >
-                            Clear Cart
-                        </button>
-                        <button
-                            onClick={openTransactionDrawer}
-                            disabled={cart.length === 0 || isCalculating}
-                            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                        >
-                            Complete Transaction
-                        </button>
-                    </div>
+                  <div className="flex gap-3">
+                      <button
+                          onClick={clearCart}
+                          className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+                      >
+                          Clear Cart
+                      </button>
+                      {isCalculating ? (
+                          <Skeleton className="h-10 w-48" />
+                      ) : (
+                          <button
+                              onClick={openTransactionDrawer}
+                              disabled={cart.length === 0}
+                              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                          >
+                              Complete Transaction
+                          </button>
+                      )}
+                  </div>
                 </AuthorizationGuard>
             </div>
           </AuthorizationGuard>
