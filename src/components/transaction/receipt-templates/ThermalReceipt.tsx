@@ -31,7 +31,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
 
   return (
-    <div className="bg-white text-black font-mono text-xs max-w-[300px] mx-auto p-2 ">
+    <div className="bg-white text-black font-mono text-xs max-w-[300px] mx-auto p-2 printable-area">
       <header className="text-center space-y-1">
         <h1 className="text-lg font-bold">My New Shop</h1>
         <p>123, Galle Road, Colombo 03</p>

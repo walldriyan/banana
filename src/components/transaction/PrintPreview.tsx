@@ -11,8 +11,9 @@ interface PrintPreviewProps {
 export function PrintPreview({ data, showFullPrice }: PrintPreviewProps) {
   return (
     // The white background and shadow are for the UI preview only.
-    // The printable-area class will be targeted by print-specific CSS.
-    <div className="w-full bg-white shadow-md rounded-md printable-area">
+    // The printable-area class is now applied directly inside ThermalReceipt
+    // to ensure only the receipt content is targeted by print styles.
+    <div className="w-full bg-gray-100 shadow-md rounded-md p-4">
       {/* 
         Pass the live toggle state `showFullPrice` to the ThermalReceipt.
         This ensures the receipt preview updates in real-time when the toggle is clicked.

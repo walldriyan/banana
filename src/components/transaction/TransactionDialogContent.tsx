@@ -146,10 +146,10 @@ export function TransactionDialogContent({
       // --- For Local Development with SQLite ---
       // Uncomment the following lines to save to your local SQLite database
       
-      const dbResult = await saveTransactionToDb(dataToSave);
-      if (!dbResult.success) {
-        throw new Error(dbResult.error || 'Failed to save to database.');
-      }
+      // const dbResult = await saveTransactionToDb(dataToSave);
+      // if (!dbResult.success) {
+      //   throw new Error(dbResult.error || 'Failed to save to database.');
+      // }
       
       
       toast({
@@ -180,7 +180,8 @@ export function TransactionDialogContent({
   if (step === 'print' && finalTransactionData) {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex-grow bg-gray-100 p-4 rounded-md">
+        {/* The container is now just for visual grouping in the UI, it no longer has print-related classes */}
+        <div className="flex-grow">
           <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
         </div>
         <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between no-print">
