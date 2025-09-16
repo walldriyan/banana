@@ -18,7 +18,6 @@ import { transactionFormSchema, type TransactionFormValues } from '@/lib/validat
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 
-
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
 interface TransactionDialogContentProps {
@@ -29,7 +28,6 @@ interface TransactionDialogContentProps {
   onTransactionComplete: () => void;
 }
 
-// Define the styles for the receipt directly. This ensures they are self-contained.
 const receiptStyles = `
   body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; }
   .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 8px; }
@@ -63,9 +61,11 @@ export function TransactionDialogContent({
   activeCampaign,
   onTransactionComplete,
 }: TransactionDialogContentProps) {
-  const [showFullPrice, setShowFullPrice] = useState(false);
+  const [step, setStep] = useState<'details' | 'print'>('details');
   const [isSaving, setIsSaving] = useState(false);
   const [shouldPrintBill, setShouldPrintBill] = useState(true);
+  const [showFullPrice, setShowFullPrice] = useState(false);
+  const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
 
@@ -79,16 +79,12 @@ export function TransactionDialogContent({
   const handleShouldPrintChange = (checked: boolean) => {
     setShouldPrintBill(checked);
     localStorage.setItem(PRINT_TOGGLE_STORAGE_KEY, JSON.stringify(checked));
-  }
+  };
 
   const methods = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
     defaultValues: {
-      customer: {
-        name: 'Walk-in Customer',
-        phone: '',
-        address: '',
-      },
+      customer: { name: 'Walk-in Customer', phone: '', address: '' },
       payment: {
         paidAmount: 0,
         paymentMethod: 'cash',
@@ -103,60 +99,22 @@ export function TransactionDialogContent({
   const { handleSubmit, reset, formState: { isValid, isSubmitting } } = methods;
 
   useEffect(() => {
-    const finalTotal = discountResult.finalTotal || 0;
-    reset({
-        customer: {
-            name: 'Walk-in Customer',
-            phone: '',
-            address: '',
-        },
-        payment: {
-            paidAmount: finalTotal,
-            paymentMethod: 'cash',
-            outstandingAmount: 0,
-            isInstallment: false,
-            finalTotal: finalTotal,
-        }
-    });
-  }, [discountResult, reset]);
-
-
-  const handlePrintAndFinish = async (dataToSave: DatabaseReadyTransaction) => {
-    if (shouldPrintBill) {
-        // Step 1: Get the HTML content of the receipt
-        const receiptContainer = document.createElement('div');
-        // Temporarily render the component to get its HTML
-        const ReactDOMServer = (await import('react-dom/server')).default;
-        const receiptHTML = ReactDOMServer.renderToString(
-            <ThermalReceipt data={dataToSave} showAsGiftReceipt={showFullPrice} />
-        );
-        
-        // Step 2: Create an invisible iframe
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-
-        // Step 3: Write the HTML and styles into the iframe
-        const iframeDoc = iframe.contentWindow?.document;
-        if (iframeDoc) {
-            iframeDoc.open();
-            iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
-            iframeDoc.close();
-
-            // Step 4: Print the iframe content
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-        }
-
-        // Step 5: Clean up by removing the iframe
-        setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 500); // Small delay to ensure print dialog is handled
+    if (step === 'details') {
+        const finalTotal = discountResult.finalTotal || 0;
+        reset({
+            customer: { name: 'Walk-in Customer', phone: '', address: '' },
+            payment: {
+                paidAmount: finalTotal,
+                paymentMethod: 'cash',
+                outstandingAmount: 0,
+                isInstallment: false,
+                finalTotal: finalTotal,
+            }
+        });
     }
-  };
+  }, [discountResult, reset, step]);
 
-  const processTransaction = async (data: TransactionFormValues) => {
-    setIsSaving(true);
+  const handlePreview = (data: TransactionFormValues) => {
     const preparedData = transformTransactionDataForDb({
       cart,
       discountResult,
@@ -166,18 +124,51 @@ export function TransactionDialogContent({
       activeCampaign: activeCampaign,
       isGiftReceipt: showFullPrice,
     });
-    
+    setFinalTransactionData(preparedData);
+    setStep('print');
+  };
+
+  const handlePrintAndFinish = async (dataToSave: DatabaseReadyTransaction) => {
+    if (shouldPrintBill) {
+        // Dynamically render the receipt to string
+        const ReactDOMServer = (await import('react-dom/server')).default;
+        const receiptHTML = ReactDOMServer.renderToString(
+            <ThermalReceipt data={dataToSave} showAsGiftReceipt={showFullPrice} />
+        );
+        
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+
+        const iframeDoc = iframe.contentWindow?.document;
+        if (iframeDoc) {
+            iframeDoc.open();
+            iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
+            iframeDoc.close();
+
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+        }
+
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 500);
+    }
+  };
+
+  const processTransaction = async () => {
+    if (!finalTransactionData) return;
+    setIsSaving(true);
     try {
-        await saveTransaction(preparedData);
+        await saveTransaction(finalTransactionData);
         toast({
             title: "Transaction Saved",
-            description: `Transaction ${preparedData.transactionHeader.transactionId} saved locally.`,
+            description: `Transaction ${finalTransactionData.transactionHeader.transactionId} saved locally.`,
         });
 
-        await handlePrintAndFinish(preparedData);
+        await handlePrintAndFinish(finalTransactionData);
         
-        // After saving and printing, close the drawer and complete the flow.
-        drawer.closeDrawer();
+        // After saving and printing, complete the flow.
         onTransactionComplete();
 
     } catch (error) {
@@ -192,41 +183,58 @@ export function TransactionDialogContent({
     }
   };
 
-
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(processTransaction)} className="flex flex-col no-print">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 flex-grow">
-          <CustomerInfoPanel />
-          <PaymentPanel finalTotal={discountResult.finalTotal} />
-        </div>
-         <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between no-print">
-            <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-                <Switch
-                id="billing-mode"
-                checked={showFullPrice}
-                onCheckedChange={setShowFullPrice}
-                />
-                <Label htmlFor="billing-mode">Gift Receipt</Label>
+      <div className="flex flex-col h-full no-print">
+        {step === 'details' && (
+          <form onSubmit={handleSubmit(handlePreview)}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+              <CustomerInfoPanel />
+              <PaymentPanel finalTotal={discountResult.finalTotal} />
             </div>
-            <div className="flex items-center space-x-2">
-                <Switch
-                id="print-mode"
-                checked={shouldPrintBill}
-                onCheckedChange={handleShouldPrintChange}
-                />
-                <Label htmlFor="print-mode">Print Bill</Label>
+            <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
+               <div className="flex items-center space-x-2">
+                    <Switch
+                        id="billing-mode"
+                        checked={showFullPrice}
+                        onCheckedChange={setShowFullPrice}
+                    />
+                    <Label htmlFor="billing-mode">Gift Receipt</Label>
+                </div>
+                <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
+                    <Button type="submit" disabled={!isValid || isSubmitting}>
+                        Confirm & Preview Receipt
+                    </Button>
+                </div>
             </div>
+          </form>
+        )}
+
+        {step === 'print' && finalTransactionData && (
+          <div className='py-4'>
+            <div className="bg-gray-100 p-4 rounded-lg overflow-y-auto max-h-[60vh]">
+              <ThermalReceipt data={finalTransactionData} showAsGiftReceipt={showFullPrice} />
             </div>
-            <div className="flex gap-2">
-            <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
-            <Button type="submit" disabled={isSaving || !isValid || isSubmitting}>
-                {isSaving ? "Saving..." : "Save & Finish"}
-            </Button>
+            <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        id="print-mode"
+                        checked={shouldPrintBill}
+                        onCheckedChange={handleShouldPrintChange}
+                    />
+                    <Label htmlFor="print-mode">Print Bill</Label>
+                </div>
+                <div className="flex gap-2">
+                    <Button type="button" variant="outline" onClick={() => setStep('details')}>Back</Button>
+                    <Button onClick={processTransaction} disabled={isSaving}>
+                        {isSaving ? "Saving..." : "Save & Finish"}
+                    </Button>
+                </div>
             </div>
+          </div>
+        )}
       </div>
-      </form>
     </FormProvider>
   );
 }

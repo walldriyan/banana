@@ -329,8 +329,7 @@ export default function MyNewEcommerceShop() {
 
 
   const handleTransactionComplete = () => {
-    // This is now called after printing is done and the drawer is closed.
-    // Its only job is to clear the cart and prepare for the next transaction.
+    drawer.closeDrawer();
     clearCart();
     toast({
         title: "Transaction Complete!",
