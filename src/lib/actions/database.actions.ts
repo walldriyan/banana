@@ -1,6 +1,6 @@
 // src/lib/actions/database.actions.ts
 'use server';
-/*
+
 import { prisma } from '../prisma';
 import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import { Prisma } from '@prisma/client';
@@ -11,12 +11,12 @@ import { Prisma } from '@prisma/client';
  * confirms the transaction.
  *
  * It uses a Prisma transaction to ensure all related data (customer, payment, lines, etc.)
- * is saved atomically. If any part fails, the entire transaction is rolled back.
+ * is saved atomically. If any part of fails, the entire transaction is rolled back.
  *
  * @param data - The complete transaction data object.
  * @returns The newly created transaction object from the database.
  */
-/*
+
 export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
   const {
     transactionHeader,
@@ -28,13 +28,16 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 
   try {
     const newTransaction = await prisma.$transaction(async (tx) => {
+      
+      const phoneToUse = customerDetails.phone || null;
+
       // Step 1: Find or create the customer
       const customer = await tx.customer.upsert({
-        where: { phone: customerDetails.phone || `__no-phone-${transactionHeader.transactionId}` },
+        where: { phone: phoneToUse || `__no-phone-${transactionHeader.transactionId}` },
         update: { name: customerDetails.name, address: customerDetails.address },
         create: {
           name: customerDetails.name,
-          phone: customerDetails.phone,
+          phone: phoneToUse,
           address: customerDetails.address,
         },
       });
@@ -114,11 +117,4 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       error: error instanceof Error ? error.message : 'An unknown database error occurred.',
     };
   }
-}
-*/
-
-// Add a placeholder function to avoid import errors when the above is commented out.
-export async function saveTransactionToDb(data: any) {
-    console.log("saveTransactionToDb is commented out. Skipping database save.");
-    return { success: true, data: { id: "dummy-txn-id" } };
 }
