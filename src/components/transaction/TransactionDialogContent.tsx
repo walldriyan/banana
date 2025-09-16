@@ -17,7 +17,7 @@ import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
 import { saveTransaction } from '@/lib/db/local-db';
-// import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
+import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
@@ -144,12 +144,12 @@ export function TransactionDialogContent({
       
       // --- For Local Development with SQLite ---
       // Uncomment the following lines to save to your local SQLite database
-      /*
+      
       const dbResult = await saveTransactionToDb(dataToSave);
       if (!dbResult.success) {
         throw new Error(dbResult.error || 'Failed to save to database.');
       }
-      */
+      
       
       toast({
         title: "Transaction Saved",
@@ -159,8 +159,7 @@ export function TransactionDialogContent({
       if (shouldPrintBill) {
         console.log("Printing receipt...");
         // In a real browser, this would open the print dialog
-        // window.print(); 
-        alert("Printing receipt...");
+        window.print();
       }
       onTransactionComplete();
 
