@@ -7,18 +7,16 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
 import { CustomerInfoPanel } from './CustomerInfoPanel';
 import { PaymentPanel } from './PaymentPanel';
-import { PrintPreview } from './PrintPreview';
+import { ThermalReceipt } from './receipt-templates/ThermalReceipt';
 import type { SaleItem, DiscountSet } from '@/types';
-import type { DiscountResult } from '@/discount-engine/core/result';
 import { transformTransactionDataForDb } from '@/lib/pos-data-transformer';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
-import { Label } from '../ui/label';
-import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
 import { saveTransaction } from '@/lib/db/local-db';
-import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
+import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
@@ -31,6 +29,33 @@ interface TransactionDialogContentProps {
   onTransactionComplete: () => void;
 }
 
+// Define the styles for the receipt directly. This ensures they are self-contained.
+const receiptStyles = `
+  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; }
+  .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  .text-center { text-align: center; }
+  .space-y-1 > * + * { margin-top: 4px; }
+  .text-lg { font-size: 1.125rem; }
+  .font-bold { font-weight: 700; }
+  .border-t { border-top-width: 1px; }
+  .border-dashed { border-style: dashed; }
+  .border-black { border-color: black; }
+  .my-1 { margin-top: 4px; margin-bottom: 4px; }
+  .w-full { width: 100%; }
+  .text-left { text-align: left; }
+  .text-right { text-align: right; }
+  .text-base { font-size: 1rem; }
+  .italic { font-style: italic; }
+  .text-gray-600 { color: #555; }
+  .flex { display: flex; }
+  .justify-between { justify-content: space-between; }
+  .font-bold { font-weight: bold; }
+  .text-green-700 { color: #047857; }
+  .text-blue-700 { color: #1d4ed8; }
+  .text-red-600 { color: #dc2626; }
+  .mt-2 { margin-top: 8px; }
+`;
+
 export function TransactionDialogContent({
   cart,
   discountResult,
@@ -38,10 +63,8 @@ export function TransactionDialogContent({
   activeCampaign,
   onTransactionComplete,
 }: TransactionDialogContentProps) {
-  const [step, setStep] = useState<'details' | 'print'>('details');
   const [showFullPrice, setShowFullPrice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const [shouldPrintBill, setShouldPrintBill] = useState(true);
   const drawer = useDrawer();
   const { toast } = useToast();
@@ -71,16 +94,15 @@ export function TransactionDialogContent({
         paymentMethod: 'cash',
         outstandingAmount: 0,
         isInstallment: false,
-        finalTotal: 0, // Initialize finalTotal
+        finalTotal: 0,
       },
     },
     mode: 'onChange',
   });
   
-  const { handleSubmit, reset, formState: { isValid } } = methods;
+  const { handleSubmit, reset, formState: { isValid, isSubmitting } } = methods;
 
   useEffect(() => {
-    // Reset form with new totals when discountResult changes
     const finalTotal = discountResult.finalTotal || 0;
     reset({
         customer: {
@@ -89,19 +111,52 @@ export function TransactionDialogContent({
             address: '',
         },
         payment: {
-            paidAmount: finalTotal, // Default paid amount to the final total
+            paidAmount: finalTotal,
             paymentMethod: 'cash',
             outstandingAmount: 0,
             isInstallment: false,
-            finalTotal: finalTotal, // Pass finalTotal to the form context
+            finalTotal: finalTotal,
         }
     });
   }, [discountResult, reset]);
 
 
+  const handlePrintAndFinish = async (dataToSave: DatabaseReadyTransaction) => {
+    if (shouldPrintBill) {
+        // Step 1: Get the HTML content of the receipt
+        const receiptContainer = document.createElement('div');
+        // Temporarily render the component to get its HTML
+        const ReactDOMServer = (await import('react-dom/server')).default;
+        const receiptHTML = ReactDOMServer.renderToString(
+            <ThermalReceipt data={dataToSave} showAsGiftReceipt={showFullPrice} />
+        );
+        
+        // Step 2: Create an invisible iframe
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+
+        // Step 3: Write the HTML and styles into the iframe
+        const iframeDoc = iframe.contentWindow?.document;
+        if (iframeDoc) {
+            iframeDoc.open();
+            iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
+            iframeDoc.close();
+
+            // Step 4: Print the iframe content
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
+        }
+
+        // Step 5: Clean up by removing the iframe
+        setTimeout(() => {
+            document.body.removeChild(iframe);
+        }, 500); // Small delay to ensure print dialog is handled
+    }
+  };
+
   const processTransaction = async (data: TransactionFormValues) => {
     setIsSaving(true);
-    // The `showFullPrice` state at this moment is what matters for the initial preview
     const preparedData = transformTransactionDataForDb({
       cart,
       discountResult,
@@ -109,88 +164,34 @@ export function TransactionDialogContent({
       customerData: data.customer,
       paymentData: data.payment,
       activeCampaign: activeCampaign,
-      isGiftReceipt: showFullPrice, // Pass the current state of the toggle
+      isGiftReceipt: showFullPrice,
     });
     
-    setFinalTransactionData(preparedData);
-    setStep('print');
-    setIsSaving(false);
-    
-  };
+    try {
+        await saveTransaction(preparedData);
+        toast({
+            title: "Transaction Saved",
+            description: `Transaction ${preparedData.transactionHeader.transactionId} saved locally.`,
+        });
 
-  const handlePrintAndFinish = async () => {
-    if (!finalTransactionData) {
+        await handlePrintAndFinish(preparedData);
+        
+        // After saving and printing, close the drawer and complete the flow.
+        drawer.closeDrawer();
+        onTransactionComplete();
+
+    } catch (error) {
+        console.error("Failed to save or print transaction:", error);
         toast({
             variant: "destructive",
             title: "Save Failed",
-            description: "Transaction data is not available to save.",
+            description: error instanceof Error ? error.message : "An unknown error occurred.",
         });
-        return;
-    };
-
-    setIsSaving(true);
-    try {
-      // Create the final version of the data right before saving,
-      // ensuring it captures the latest toggle state from the print preview screen.
-      const dataToSave: DatabaseReadyTransaction = {
-        ...finalTransactionData,
-        transactionHeader: {
-            ...finalTransactionData.transactionHeader,
-            isGiftReceipt: showFullPrice 
-        }
-      };
-
-      // For Firebase Studio -> Save to localStorage (IndexedDB)
-      await saveTransaction(dataToSave);
-      
-      // --- For Local Development with SQLite ---
-      // Uncomment the following lines to save to your local SQLite database
-      
-      // const dbResult = await saveTransactionToDb(dataToSave);
-      // if (!dbResult.success) {
-      //   throw new Error(dbResult.error || 'Failed to save to database.');
-      // }
-      
-      
-      toast({
-        title: "Transaction Saved",
-        description: `Transaction ${dataToSave.transactionHeader.transactionId} saved locally.`,
-      });
-      
-      if (shouldPrintBill) {
-        console.log("Printing receipt...");
-        // In a real browser, this would open the print dialog
-        window.print();
-      }
-      onTransactionComplete();
-
-    } catch (error) {
-      console.error("Failed to save transaction:", error);
-      toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred.",
-      });
     } finally {
         setIsSaving(false);
     }
   };
 
-
-  if (step === 'print' && finalTransactionData) {
-    return (
-      <PrintPreview
-        data={finalTransactionData}
-        showFullPrice={showFullPrice}
-        setShowFullPrice={setShowFullPrice}
-        shouldPrintBill={shouldPrintBill}
-        setShouldPrintBill={handleShouldPrintChange}
-        onBack={() => setStep('details')}
-        onSaveAndFinish={handlePrintAndFinish}
-        isSaving={isSaving}
-      />
-    );
-  }
 
   return (
     <FormProvider {...methods}>
@@ -199,12 +200,32 @@ export function TransactionDialogContent({
           <CustomerInfoPanel />
           <PaymentPanel finalTotal={discountResult.finalTotal} />
         </div>
-        <div className="flex-shrink-0 pt-4 mt-4 border-t flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
-          <Button type="submit" disabled={isSaving || !isValid}>
-            {isSaving ? "Processing..." : "Confirm & Preview Receipt"}
-          </Button>
-        </div>
+         <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between no-print">
+            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+                <Switch
+                id="billing-mode"
+                checked={showFullPrice}
+                onCheckedChange={setShowFullPrice}
+                />
+                <Label htmlFor="billing-mode">Gift Receipt</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Switch
+                id="print-mode"
+                checked={shouldPrintBill}
+                onCheckedChange={handleShouldPrintChange}
+                />
+                <Label htmlFor="print-mode">Print Bill</Label>
+            </div>
+            </div>
+            <div className="flex gap-2">
+            <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
+            <Button type="submit" disabled={isSaving || !isValid || isSubmitting}>
+                {isSaving ? "Saving..." : "Save & Finish"}
+            </Button>
+            </div>
+      </div>
       </form>
     </FormProvider>
   );

@@ -329,7 +329,8 @@ export default function MyNewEcommerceShop() {
 
 
   const handleTransactionComplete = () => {
-    drawer.closeDrawer();
+    // This is now called after printing is done and the drawer is closed.
+    // Its only job is to clear the cart and prepare for the next transaction.
     clearCart();
     toast({
         title: "Transaction Complete!",
@@ -353,7 +354,7 @@ export default function MyNewEcommerceShop() {
       drawerClassName: "sm:max-w-4xl" 
     });
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
