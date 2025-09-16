@@ -146,10 +146,10 @@ export function TransactionDialogContent({
       // --- For Local Development with SQLite ---
       // Uncomment the following lines to save to your local SQLite database
       
-      // const dbResult = await saveTransactionToDb(dataToSave);
-      // if (!dbResult.success) {
-      //   throw new Error(dbResult.error || 'Failed to save to database.');
-      // }
+      const dbResult = await saveTransactionToDb(dataToSave);
+      if (!dbResult.success) {
+        throw new Error(dbResult.error || 'Failed to save to database.');
+      }
       
       
       toast({
@@ -180,10 +180,10 @@ export function TransactionDialogContent({
   if (step === 'print' && finalTransactionData) {
     return (
       <div className="flex flex-col h-full">
-        <div className="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-md">
+        <div className="flex-grow overflow-y-auto bg-gray-100 p-4 rounded-md printable-area">
           <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
         </div>
-        <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
+        <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between no-print">
             <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                     <Switch
@@ -215,7 +215,7 @@ export function TransactionDialogContent({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(processTransaction)} className="flex flex-col">
+      <form onSubmit={handleSubmit(processTransaction)} className="flex flex-col no-print">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4 flex-grow">
           <CustomerInfoPanel />
           <PaymentPanel finalTotal={discountResult.finalTotal} />
