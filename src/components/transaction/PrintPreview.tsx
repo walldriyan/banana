@@ -10,7 +10,7 @@ interface PrintPreviewProps {
 
 export function PrintPreview({ data, showFullPrice }: PrintPreviewProps) {
   return (
-    <div className="w-full h-full p-4 bg-white shadow-md rounded-md overflow-y-scroll">
+    <div className="w-full h-full p-4 bg-white shadow-md rounded-md overflow-y-scroll printable-area">
       {/* 
         Pass the live toggle state `showFullPrice` to the ThermalReceipt.
         This ensures the receipt preview updates in real-time when the toggle is clicked.
