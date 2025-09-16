@@ -46,6 +46,15 @@ const receiptStyles = `
   .mt-2 { margin-top: 8px; }
 `;
 
+interface TransactionDialogContentProps {
+  cart: SaleItem[];
+  discountResult: any; // Received as a plain object, not a class instance
+  transactionId: string;
+  activeCampaign: DiscountSet;
+  onTransactionComplete: () => void;
+}
+
+
 export function TransactionDialogContent({
   cart,
   discountResult,
@@ -114,37 +123,32 @@ export function TransactionDialogContent({
       customerData: data.customer,
       paymentData: data.payment,
       activeCampaign: activeCampaign,
-      isGiftReceipt: isGiftReceipt,
+      isGiftReceipt: isGiftReceipt, // Pass the current state of isGiftReceipt
     });
     setFinalTransactionData(preparedData);
     setStep('print');
   };
 
   const handlePrintAndFinish = async (dataToSave: DatabaseReadyTransaction) => {
-    // Dynamically render the receipt to string using react-dom/server
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
+      // Pass the final isGiftReceipt state to the receipt for printing
       <ThermalReceipt data={dataToSave} showAsGiftReceipt={isGiftReceipt} />
     );
 
-    // Create a hidden iframe
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
 
-    // Write the receipt HTML and styles into the iframe
     const iframeDoc = iframe.contentWindow?.document;
     if (iframeDoc) {
       iframeDoc.open();
       iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
       iframeDoc.close();
-
-      // Focus the iframe and print its content
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
     }
 
-    // Clean up by removing the iframe after a short delay
     setTimeout(() => {
       document.body.removeChild(iframe);
     }, 500);
@@ -155,14 +159,25 @@ export function TransactionDialogContent({
     if (!finalTransactionData) return;
     setIsSaving(true);
     try {
-        await saveTransaction(finalTransactionData);
+        const dataToSave = transformTransactionDataForDb({
+          ...finalTransactionData,
+          cart,
+          discountResult,
+          transactionId,
+          customerData: finalTransactionData.customerDetails,
+          paymentData: finalTransactionData.paymentDetails,
+          activeCampaign,
+          isGiftReceipt,
+        });
+
+        await saveTransaction(dataToSave);
         toast({
             title: "Transaction Saved",
-            description: `Transaction ${finalTransactionData.transactionHeader.transactionId} saved locally.`,
+            description: `Transaction ${dataToSave.transactionHeader.transactionId} saved locally.`,
         });
 
         if (shouldPrintBill) {
-            await handlePrintAndFinish(finalTransactionData);
+            await handlePrintAndFinish(dataToSave);
         }
         
         onTransactionComplete();
@@ -188,15 +203,7 @@ export function TransactionDialogContent({
               <CustomerInfoPanel />
               <PaymentPanel finalTotal={discountResult.finalTotal} />
             </div>
-            <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
-               <div className="flex items-center space-x-2">
-                    <Switch
-                        id="billing-mode"
-                        checked={isGiftReceipt}
-                        onCheckedChange={setIsGiftReceipt}
-                    />
-                    <Label htmlFor="billing-mode">Gift Receipt</Label>
-                </div>
+            <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-end">
                 <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
                     <Button type="submit" disabled={!isValid || isSubmitting}>
@@ -215,13 +222,23 @@ export function TransactionDialogContent({
               </div>
             </div>
             <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <Switch
-                        id="print-mode"
-                        checked={shouldPrintBill}
-                        onCheckedChange={handleShouldPrintChange}
-                    />
-                    <Label htmlFor="print-mode">Print Bill</Label>
+                <div className="flex items-center gap-4">
+                     <div className="flex items-center space-x-2">
+                        <Switch
+                            id="billing-mode"
+                            checked={isGiftReceipt}
+                            onCheckedChange={setIsGiftReceipt}
+                        />
+                        <Label htmlFor="billing-mode">Gift Receipt</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Switch
+                            id="print-mode"
+                            checked={shouldPrintBill}
+                            onCheckedChange={handleShouldPrintChange}
+                        />
+                        <Label htmlFor="print-mode">Print Bill</Label>
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={() => setStep('details')}>Back</Button>
