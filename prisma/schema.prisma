@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  // This is needed for the Firebase Studio environment
+  engineType    = "library"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id           String        @id @default(cuid())
+  name         String
+  phone        String?       @unique
+  address      String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+}
+
+model Transaction {
+  id                    String            @id
+  transactionDate       DateTime
+  subtotal              Float
+  totalDiscountAmount   Float
+  finalTotal            Float
+  totalItems            Int
+  totalQuantity         Float
+  status                String // "completed", "refund", "pending"
+  campaignId            String
+  isGiftReceipt         Boolean           @default(false)
+  originalTransactionId String?
+  
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  lines            TransactionLine[]
+  appliedDiscounts AppliedDiscount[]
+  payment          Payment?
+
+  originalTransaction Transaction? @relation("Refund", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refunds             Transaction[] @relation("Refund")
+
+  @@index([originalTransactionId])
+}
+
+model TransactionLine {
+  id                      String   @id @default(cuid())
+  productId               String
+  productName             String
+  batchId                 String?
+  batchNumber             String?
+  quantity                Float
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+  customDiscountValue     Float?
+  customDiscountType      String? // 'fixed' or 'percentage'
+  customApplyFixedOnce    Boolean?
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  @@index([transactionId])
+}
+
+model AppliedDiscount {
+  id                      String   @id @default(cuid())
+  discountCampaignName    String
+  sourceRuleName          String
+  totalCalculatedDiscount Float
+  ruleType                String
+  productIdAffected       String?
+  batchIdAffected         String?
+  appliedOnce             Boolean?
+  
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@index([transactionId])
+}
+
+model Payment {
+  id                String  @id @default(cuid())
+  paidAmount        Float
+  paymentMethod     String // 'cash', 'card', 'online'
+  outstandingAmount Float
+  isInstallment     Boolean
+
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
