@@ -20,6 +20,8 @@ import { saveTransaction } from '@/lib/db/local-db';
 // import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 
+const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
+
 interface TransactionDialogContentProps {
   cart: SaleItem[];
   discountResult: any; // Using any for plain object from server
@@ -39,8 +41,21 @@ export function TransactionDialogContent({
   const [showFullPrice, setShowFullPrice] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
+  const [shouldPrintBill, setShouldPrintBill] = useState(true);
   const drawer = useDrawer();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const savedPreference = localStorage.getItem(PRINT_TOGGLE_STORAGE_KEY);
+    if (savedPreference !== null) {
+      setShouldPrintBill(JSON.parse(savedPreference));
+    }
+  }, []);
+
+  const handleShouldPrintChange = (checked: boolean) => {
+    setShouldPrintBill(checked);
+    localStorage.setItem(PRINT_TOGGLE_STORAGE_KEY, JSON.stringify(checked));
+  }
 
   const methods = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionFormSchema),
@@ -141,7 +156,12 @@ export function TransactionDialogContent({
         description: `Transaction ${dataToSave.transactionHeader.transactionId} saved locally.`,
       });
       
-      console.log("Printing receipt...");
+      if (shouldPrintBill) {
+        console.log("Printing receipt...");
+        // In a real browser, this would open the print dialog
+        // window.print(); 
+        alert("Printing receipt...");
+      }
       onTransactionComplete();
 
     } catch (error) {
@@ -164,18 +184,28 @@ export function TransactionDialogContent({
           <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
         </div>
         <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-                <Switch
-                    id="billing-mode"
-                    checked={showFullPrice}
-                    onCheckedChange={setShowFullPrice}
-                />
-                <Label htmlFor="billing-mode">Show Full Price (Gift Discount)</Label>
+            <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        id="billing-mode"
+                        checked={showFullPrice}
+                        onCheckedChange={setShowFullPrice}
+                    />
+                    <Label htmlFor="billing-mode">Gift Receipt</Label>
+                </div>
+                 <div className="flex items-center space-x-2">
+                    <Switch
+                        id="print-mode"
+                        checked={shouldPrintBill}
+                        onCheckedChange={handleShouldPrintChange}
+                    />
+                    <Label htmlFor="print-mode">Print Bill</Label>
+                </div>
             </div>
             <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep('details')}>Back to Details</Button>
+                <Button variant="outline" onClick={() => setStep('details')}>Back</Button>
                 <Button onClick={handlePrintAndFinish} disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save, Finish & Print"}
+                  {isSaving ? "Saving..." : "Save & Finish"}
                 </Button>
             </div>
         </div>
