@@ -1,7 +1,10 @@
 // src/lib/actions/database.actions.ts
 'use server';
 
+<<<<<<< HEAD
 import { DatabaseReadyTransaction } from '../pos-data-transformer';
+=======
+>>>>>>> 7806ee1dcaf88f1b5832ae28178c0dbd456f2d75
 import { prisma } from '../prisma';
 
 import { Prisma } from '@prisma/client';
@@ -12,7 +15,7 @@ import { Prisma } from '@prisma/client';
  * confirms the transaction.
  *
  * It uses a Prisma transaction to ensure all related data (customer, payment, lines, etc.)
- * is saved atomically. If any part fails, the entire transaction is rolled back.
+ * is saved atomically. If any part of fails, the entire transaction is rolled back.
  *
  * @param data - The complete transaction data object.
  * @returns The newly created transaction object from the database.
@@ -29,13 +32,16 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 
   try {
     const newTransaction = await prisma.$transaction(async (tx) => {
+      
+      const phoneToUse = customerDetails.phone || null;
+
       // Step 1: Find or create the customer
       const customer = await tx.customer.upsert({
-        where: { phone: customerDetails.phone || `__no-phone-${transactionHeader.transactionId}` },
+        where: { phone: phoneToUse || `__no-phone-${transactionHeader.transactionId}` },
         update: { name: customerDetails.name, address: customerDetails.address },
         create: {
           name: customerDetails.name,
-          phone: customerDetails.phone,
+          phone: phoneToUse,
           address: customerDetails.address,
         },
       });
