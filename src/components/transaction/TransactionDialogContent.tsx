@@ -179,42 +179,16 @@ export function TransactionDialogContent({
 
   if (step === 'print' && finalTransactionData) {
     return (
-      <div className="flex flex-col h-full">
-        {/* 
-          This container is now just for showing the preview in the UI.
-          The `printable-area` class is inside the ThermalReceipt itself,
-          so this container's styles (like bg-gray-100) won't affect the print output.
-        */}
-        <div className="bg-gray-100 p-4 rounded-lg">
-          <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
-        </div>
-        <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between no-print">
-            <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                    <Switch
-                        id="billing-mode"
-                        checked={showFullPrice}
-                        onCheckedChange={setShowFullPrice}
-                    />
-                    <Label htmlFor="billing-mode">Gift Receipt</Label>
-                </div>
-                 <div className="flex items-center space-x-2">
-                    <Switch
-                        id="print-mode"
-                        checked={shouldPrintBill}
-                        onCheckedChange={handleShouldPrintChange}
-                    />
-                    <Label htmlFor="print-mode">Print Bill</Label>
-                </div>
-            </div>
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setStep('details')}>Back</Button>
-                <Button onClick={handlePrintAndFinish} disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save & Finish"}
-                </Button>
-            </div>
-        </div>
-      </div>
+      <PrintPreview
+        data={finalTransactionData}
+        showFullPrice={showFullPrice}
+        setShowFullPrice={setShowFullPrice}
+        shouldPrintBill={shouldPrintBill}
+        setShouldPrintBill={handleShouldPrintChange}
+        onBack={() => setStep('details')}
+        onSaveAndFinish={handlePrintAndFinish}
+        isSaving={isSaving}
+      />
     );
   }
 
