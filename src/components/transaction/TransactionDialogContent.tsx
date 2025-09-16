@@ -17,7 +17,7 @@ import { Switch } from '../ui/switch';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
 import { saveTransaction } from '@/lib/db/local-db';
-// import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
+import { saveTransactionToDb } from '@/lib/actions/database.actions'; // For local SQLite DB
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 import { saveTransactionToDb } from '@/lib/actions/database.actions';
 
@@ -160,8 +160,7 @@ export function TransactionDialogContent({
       if (shouldPrintBill) {
         console.log("Printing receipt...");
         // In a real browser, this would open the print dialog
-        // window.print(); 
-        alert("Printing receipt...");
+        window.print();
       }
       onTransactionComplete();
 
