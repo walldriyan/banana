@@ -9,17 +9,10 @@ interface PrintPreviewProps {
 }
 
 export function PrintPreview({ data, showFullPrice }: PrintPreviewProps) {
+  // The white background and shadow are for the UI preview only.
+  // By removing the wrapper div and directly returning ThermalReceipt,
+  // we ensure no container styles interfere with the print layout.
   return (
-    // The white background and shadow are for the UI preview only.
-    // The printable-area class is now applied directly inside ThermalReceipt
-    // to ensure only the receipt content is targeted by print styles.
-    <div className="w-full bg-gray-100 shadow-md rounded-md p-4">
-      {/* 
-        Pass the live toggle state `showFullPrice` to the ThermalReceipt.
-        This ensures the receipt preview updates in real-time when the toggle is clicked.
-        The ThermalReceipt component will prioritize this prop over the saved data.
-      */}
-      <ThermalReceipt data={data} showAsGiftReceipt={showFullPrice} />
-    </div>
+    <ThermalReceipt data={data} showAsGiftReceipt={showFullPrice} />
   );
 }

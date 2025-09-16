@@ -30,6 +30,8 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
   // This is the original amount the customer paid in the transaction that is being refunded.
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
 
+  // By adding 'printable-area' here, only this component will be visible during printing.
+  // The 'bg-white' and other styles ensure it looks like a receipt in the UI preview.
   return (
     <div className="bg-white text-black font-mono text-xs max-w-[300px] mx-auto p-2 printable-area">
       <header className="text-center space-y-1">

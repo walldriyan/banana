@@ -180,8 +180,12 @@ export function TransactionDialogContent({
   if (step === 'print' && finalTransactionData) {
     return (
       <div className="flex flex-col h-full">
-        {/* The container is now just for visual grouping in the UI, it no longer has print-related classes */}
-        <div className="flex-grow">
+        {/* 
+          This container is now just for showing the preview in the UI.
+          The `printable-area` class is inside the ThermalReceipt itself,
+          so this container's styles (like bg-gray-100) won't affect the print output.
+        */}
+        <div className="bg-gray-100 p-4 rounded-lg">
           <PrintPreview data={finalTransactionData} showFullPrice={showFullPrice} />
         </div>
         <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between no-print">
