@@ -1,10 +1,9 @@
 // src/lib/actions/database.actions.ts
 'use server';
 
-<<<<<<< HEAD
+
 import { DatabaseReadyTransaction } from '../pos-data-transformer';
-=======
->>>>>>> 7806ee1dcaf88f1b5832ae28178c0dbd456f2d75
+
 import { prisma } from '../prisma';
 
 import { Prisma } from '@prisma/client';
