@@ -64,7 +64,7 @@ export function TransactionDialogContent({
   const [step, setStep] = useState<'details' | 'print'>('details');
   const [isSaving, setIsSaving] = useState(false);
   const [shouldPrintBill, setShouldPrintBill] = useState(true);
-  const [showFullPrice, setShowFullPrice] = useState(false);
+  const [isGiftReceipt, setIsGiftReceipt] = useState(false);
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
@@ -122,39 +122,42 @@ export function TransactionDialogContent({
       customerData: data.customer,
       paymentData: data.payment,
       activeCampaign: activeCampaign,
-      isGiftReceipt: showFullPrice,
+      isGiftReceipt: isGiftReceipt,
     });
     setFinalTransactionData(preparedData);
     setStep('print');
   };
 
   const handlePrintAndFinish = async (dataToSave: DatabaseReadyTransaction) => {
-    if (shouldPrintBill) {
-        // Dynamically render the receipt to string
-        const ReactDOMServer = (await import('react-dom/server')).default;
-        const receiptHTML = ReactDOMServer.renderToString(
-            <ThermalReceipt data={dataToSave} showAsGiftReceipt={showFullPrice} />
-        );
-        
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
+    // Dynamically render the receipt to string using react-dom/server
+    const ReactDOMServer = (await import('react-dom/server')).default;
+    const receiptHTML = ReactDOMServer.renderToString(
+      <ThermalReceipt data={dataToSave} showAsGiftReceipt={isGiftReceipt} />
+    );
 
-        const iframeDoc = iframe.contentWindow?.document;
-        if (iframeDoc) {
-            iframeDoc.open();
-            iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
-            iframeDoc.close();
+    // Create a hidden iframe
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
 
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-        }
+    // Write the receipt HTML and styles into the iframe
+    const iframeDoc = iframe.contentWindow?.document;
+    if (iframeDoc) {
+      iframeDoc.open();
+      iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
+      iframeDoc.close();
 
-        setTimeout(() => {
-            document.body.removeChild(iframe);
-        }, 500);
+      // Focus the iframe and print its content
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
     }
+
+    // Clean up by removing the iframe after a short delay
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 500);
   };
+
 
   const processTransaction = async () => {
     if (!finalTransactionData) return;
@@ -166,9 +169,11 @@ export function TransactionDialogContent({
             description: `Transaction ${finalTransactionData.transactionHeader.transactionId} saved locally.`,
         });
 
-        await handlePrintAndFinish(finalTransactionData);
+        if (shouldPrintBill) {
+            await handlePrintAndFinish(finalTransactionData);
+        }
         
-        // After saving and printing, complete the flow.
+        // After everything is done, call onTransactionComplete which closes the drawer and resets the main page state.
         onTransactionComplete();
 
     } catch (error) {
@@ -196,8 +201,8 @@ export function TransactionDialogContent({
                <div className="flex items-center space-x-2">
                     <Switch
                         id="billing-mode"
-                        checked={showFullPrice}
-                        onCheckedChange={setShowFullPrice}
+                        checked={isGiftReceipt}
+                        onCheckedChange={setIsGiftReceipt}
                     />
                     <Label htmlFor="billing-mode">Gift Receipt</Label>
                 </div>
@@ -214,7 +219,7 @@ export function TransactionDialogContent({
         {step === 'print' && finalTransactionData && (
           <div className='py-4'>
             <div className="bg-gray-100 p-4 rounded-lg overflow-y-auto max-h-[60vh]">
-              <ThermalReceipt data={finalTransactionData} showAsGiftReceipt={showFullPrice} />
+              <ThermalReceipt data={finalTransactionData} showAsGiftReceipt={isGiftReceipt} />
             </div>
             <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
                 <div className="flex items-center space-x-2">
