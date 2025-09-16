@@ -22,6 +22,7 @@ import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { defaultDiscounts } from '@/lib/default-campaign';
 import { CustomDiscountForm } from '@/components/POSUI/CustomDiscountForm';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const oldBatch: ProductBatch = {
@@ -134,6 +135,7 @@ export default function MyNewEcommerceShop() {
   const productSearchRef = useRef<SearchableProductInputRef>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isCalculating, setIsCalculating] = useState(false);
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
@@ -142,6 +144,14 @@ export default function MyNewEcommerceShop() {
 
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
+
+  useEffect(() => {
+    // Simulate initial data loading
+    const timer = setTimeout(() => {
+        setIsLoading(false);
+    }, 500); // Adjust time as needed
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     setTransactionId(createNewTransactionId());
@@ -354,6 +364,58 @@ export default function MyNewEcommerceShop() {
     });
   };
   
+    if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-8">
+            {/* Header Skeleton */}
+            <div className="mb-6">
+              <div className="flex justify-between items-start">
+                  <div>
+                      <Skeleton className="h-10 w-64 mb-3" />
+                      <Skeleton className="h-5 w-48" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <Skeleton className="h-10 w-32" />
+                      <Skeleton className="h-10 w-24" />
+                  </div>
+              </div>
+              <Skeleton className="h-4 w-72 mt-4" />
+            </div>
+
+            {/* Campaign and Search Skeletons */}
+            <div className="space-y-6">
+              <div className="space-y-2">
+                  <Skeleton className="h-5 w-48" />
+                  <Skeleton className="h-12 w-full" />
+              </div>
+              <Skeleton className="h-12 w-full" />
+              <div className="flex gap-3">
+                  <Skeleton className="h-10 w-28" />
+                  <Skeleton className="h-10 w-48" />
+              </div>
+            </div>
+          </div>
+          
+          <aside className="lg:sticky lg:top-8 h-fit">
+            {/* Shopping Cart Skeleton */}
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg space-y-4">
+                <Skeleton className="h-8 w-1/2" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <hr className="my-2 border-gray-200" />
+                <Skeleton className="h-6 w-1/3" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-8 w-full mt-4" />
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
       <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -429,12 +491,14 @@ export default function MyNewEcommerceShop() {
         <aside className="lg:sticky lg:top-8 h-fit">
           <ShoppingCart
             cart={cart}
+            isCalculating={isCalculating}
             discountResult={discountResult}
             onUpdateQuantity={handleCartUpdate}
             onOverrideDiscount={openCustomDiscountDrawer}
           />
 
           <DiscountBehaviorPanel
+            isCalculating={isCalculating}
             discountResult={discountResult}
             activeCampaign={activeCampaign}
             transactionId={transactionId}

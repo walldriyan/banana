@@ -4,15 +4,17 @@ import type { SaleItem } from '@/types';
 // import { DiscountResult } from '@/discount-engine/core/result';
 import CartItemCard from './CartItemCard';
 import OrderSummary from './OrderSummary';
+import { Skeleton } from '../ui/skeleton';
 
 interface ShoppingCartProps {
   cart: SaleItem[];
+  isCalculating: boolean;
   discountResult: any; // Using any because it's a plain object from server, not a class instance
   onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
   onOverrideDiscount: (item: SaleItem) => void;
 }
 
-const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
+const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
   const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const finalTotal = discountResult?.finalTotal || originalTotal;
 
@@ -28,6 +30,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpd
               <CartItemCard
                 key={item.saleItemId}
                 item={item}
+                isCalculating={isCalculating}
                 // Pass the entire discount result down to the card
                 discountResult={discountResult} 
                 onUpdateQuantity={onUpdateQuantity}
@@ -40,11 +43,20 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, discountResult, onUpd
 
       <hr className="my-6 border-gray-200" />
       
-      <OrderSummary
-        originalTotal={originalTotal}
-        finalTotal={finalTotal}
-        discountResult={discountResult}
-      />
+      {isCalculating && cart.length > 0 ? (
+          <div className="space-y-4">
+              <Skeleton className="h-6 w-1/3 mb-2" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-8 w-full mt-4" />
+          </div>
+      ) : (
+          <OrderSummary
+            originalTotal={originalTotal}
+            finalTotal={finalTotal}
+            discountResult={discountResult}
+          />
+      )}
     </div>
   );
 };

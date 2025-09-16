@@ -5,15 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Tag, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '../ui/skeleton';
 
 interface CartItemCardProps {
   item: SaleItem;
+  isCalculating: boolean;
   discountResult: any; // Using any because it's a plain object from server, not a class instance
   onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
   onOverrideDiscount: (item: SaleItem) => void;
 }
 
-const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
+const CartItemCard: React.FC<CartItemCardProps> = ({ item, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
 
   const lineItemResult = (discountResult && discountResult.lineItems)
     ? discountResult.lineItems.find((li: any) => li.lineId === item.saleItemId)
@@ -53,9 +55,13 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
           </p>
           <p className="text-sm text-gray-600">Rs. {item.price.toFixed(2)} / {item.units.baseUnit}</p>
         </div>
-        <p className="text-right font-bold text-lg text-gray-800">
-          Rs. {finalLineTotal.toFixed(2)}
-        </p>
+        {isCalculating ? (
+            <Skeleton className="h-7 w-24" />
+        ) : (
+            <p className="text-right font-bold text-lg text-gray-800">
+                Rs. {finalLineTotal.toFixed(2)}
+            </p>
+        )}
       </div>
 
       {/* Middle section: Quantity and Unit Controls */}
@@ -118,7 +124,12 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
       
       {/* Bottom section: Discounts */}
       <div className="mt-3 border-t border-dashed pt-3">
-        {hasDiscounts && lineItemResult ? (
+        {isCalculating ? (
+            <div className='space-y-2'>
+                <Skeleton className="h-5 w-1/3" />
+                <Skeleton className="h-4 w-full" />
+            </div>
+        ) : hasDiscounts && lineItemResult ? (
           <div className="mb-2 space-y-1">
              <div className="font-bold text-sm text-green-900 mb-2 flex justify-between items-center">
                 <span>Applied Discounts:</span>
@@ -155,7 +166,9 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, discountResult, onUpd
            <span className="text-gray-500">
             Total Base Qty: {item.quantity.toFixed(2)} {item.units.baseUnit}
           </span>
-          {hasDiscounts && (
+          {isCalculating ? (
+             <Skeleton className="h-4 w-20" />
+          ) : hasDiscounts && (
              <span className="text-gray-500 line-through">
                 Original: Rs. {originalLineTotal.toFixed(2)}
             </span>

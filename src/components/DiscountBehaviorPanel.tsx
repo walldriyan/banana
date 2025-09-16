@@ -1,18 +1,43 @@
 import React from 'react';
 // import { DiscountResult } from '@/discount-engine/core/result';
 import type { DiscountSet } from '@/types';
+import { Skeleton } from './ui/skeleton';
 
 interface DiscountBehaviorPanelProps {
+  isCalculating: boolean;
   discountResult: any; // Using any because it's a plain object from server, not a class instance
   activeCampaign: DiscountSet;
   transactionId: string;
 }
 
 export default function DiscountBehaviorPanel({ 
+  isCalculating,
   discountResult, 
   activeCampaign, 
   transactionId 
 }: DiscountBehaviorPanelProps) {
+
+  if (isCalculating) {
+      return (
+          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg space-y-4">
+              <Skeleton className="h-6 w-3/4" />
+              <div className="p-3 bg-white rounded-md shadow-sm space-y-2">
+                  <Skeleton className="h-5 w-1/2" />
+                  <Skeleton className="h-4 w-full" />
+              </div>
+              <div className="space-y-2">
+                  <Skeleton className="h-5 w-1/3" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+              </div>
+              <div className="p-3 bg-gray-100 rounded-md">
+                   <Skeleton className="h-16 w-full" />
+              </div>
+          </div>
+      )
+  }
+
+
   const appliedRules = (discountResult && typeof discountResult.getAppliedRulesSummary === 'function') 
     ? discountResult.getAppliedRulesSummary() 
     : [];
