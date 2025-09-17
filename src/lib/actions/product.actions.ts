@@ -150,10 +150,10 @@ export async function getProductByIdAction(id: string) {
  * @returns The updated product or an error message.
  */
 export async function updateProductAction(id: string, data: ProductFormValues) {
-    console.log('[updateProductAction] Called with id:', id, 'and data:', data);
+    console.log('[updateProductAction] Called on server with id:', id, 'and data:', data);
     const validationResult = productSchema.safeParse(data);
     if (!validationResult.success) {
-        console.error('[updateProductAction] Validation failed:', validationResult.error.flatten());
+        console.error('[updateProductAction] Server-side validation failed:', validationResult.error.flatten());
         return {
             success: false,
             error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
@@ -181,13 +181,13 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
             },
         });
         
-        console.log('[updateProductAction] Product updated successfully:', updatedProduct.id);
+        console.log('[updateProductAction] Product updated successfully in DB:', updatedProduct.id);
         revalidatePath('/dashboard/products');
         revalidatePath(`/dashboard/products/edit/${id}`);
 
         return { success: true, data: updatedProduct };
     } catch (error) {
-        console.error(`[updateProductAction] Error updating product ${id}:`, error);
+        console.error(`[updateProductAction] Error updating product ${id} in DB:`, error);
          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             const target = (error.meta?.target as string[])?.join(', ');
             return { success: false, error: `A product with this ${target} already exists.` };
