@@ -548,7 +548,7 @@ export function AddProductForm({ product }: AddProductFormProps) {
 
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+          <Button type="button" variant="outline" onClick={() => router.push('/dashboard/products')}>
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>

@@ -30,7 +30,7 @@ export default async function ProductsPage() {
             <p className="text-muted-foreground">View, add, edit, and manage all your products.</p>
         </div>
         <AuthorizationGuard permissionKey="products.create">
-          <Link href="/products/add" passHref>
+          <Link href="/dashboard/products/add" passHref>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" />
               Add Product
