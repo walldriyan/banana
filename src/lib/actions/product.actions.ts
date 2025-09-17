@@ -12,10 +12,11 @@ import { revalidatePath } from "next/cache";
  * @returns An object with success status and either the new product or an error message.
  */
 export async function addProductAction(data: ProductFormValues) {
+  console.log('[addProductAction] Called with data:', data);
   // 1. Validate the data on the server
   const validationResult = productSchema.safeParse(data);
   if (!validationResult.success) {
-    console.log(validationResult.error.flatten());
+    console.error('[addProductAction] Validation failed:', validationResult.error.flatten());
     return {
       success: false,
       error: "Invalid data provided. " + JSON.stringify(validationResult.error.flatten().fieldErrors),
@@ -45,11 +46,12 @@ export async function addProductAction(data: ProductFormValues) {
       },
     });
     
+    console.log('[addProductAction] Product created successfully:', newProduct.id);
     revalidatePath('/dashboard/products');
 
     return { success: true, data: newProduct };
   } catch (error) {
-    console.error("Error creating product:", error);
+    console.error("[addProductAction] Error creating product:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         const target = (error.meta?.target as string[])?.join(', ');
@@ -148,8 +150,10 @@ export async function getProductByIdAction(id: string) {
  * @returns The updated product or an error message.
  */
 export async function updateProductAction(id: string, data: ProductFormValues) {
+    console.log('[updateProductAction] Called with id:', id, 'and data:', data);
     const validationResult = productSchema.safeParse(data);
     if (!validationResult.success) {
+        console.error('[updateProductAction] Validation failed:', validationResult.error.flatten());
         return {
             success: false,
             error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
@@ -177,12 +181,13 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
             },
         });
         
+        console.log('[updateProductAction] Product updated successfully:', updatedProduct.id);
         revalidatePath('/dashboard/products');
         revalidatePath(`/dashboard/products/edit/${id}`);
 
         return { success: true, data: updatedProduct };
     } catch (error) {
-        console.error(`Error updating product ${id}:`, error);
+        console.error(`[updateProductAction] Error updating product ${id}:`, error);
          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             const target = (error.meta?.target as string[])?.join(', ');
             return { success: false, error: `A product with this ${target} already exists.` };
