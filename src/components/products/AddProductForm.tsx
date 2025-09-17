@@ -84,9 +84,10 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   });
 
   useEffect(() => {
-    if (product) {
+    if (isEditMode && product) {
       console.log('[AddProductForm.tsx] useEffect triggered in Edit Mode. Product prop received:', product);
-      form.reset({
+       // Prepare data for reset, ensuring nulls become undefined
+      const formData = {
         ...product,
         costPrice: product.costPrice ?? undefined,
         barcode: product.barcode ?? undefined,
@@ -101,17 +102,21 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
         defaultDiscount: product.defaultDiscount ?? undefined,
         defaultDiscountType: product.defaultDiscountType ?? 'PERCENTAGE',
         notes: product.notes ?? undefined,
+        // Ensure dates are in 'YYYY-MM-DD' format for the input[type=date]
         manufactureDate: product.manufactureDate ? new Date(product.manufactureDate).toISOString().split('T')[0] : undefined,
         expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : undefined,
-      });
-      console.log('[AddProductForm.tsx] Form has been reset with product data.');
+      };
+      form.reset(formData);
+      console.log('[AddProductForm.tsx] Form has been reset with product data:', formData);
     }
-  }, [product, form]);
+  }, [product, form, isEditMode]);
+
 
   async function onSubmit(data: ProductFormValues) {
     console.log("[AddProductForm.tsx] onSubmit called. isEditMode:", isEditMode, "Data:", data);
     setIsSubmitting(true);
     
+    // Use the product prop directly for the ID to ensure it's correct
     const action = isEditMode && product
       ? updateProductAction(product.id, data)
       : addProductAction(data);
@@ -200,7 +205,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                         <FormItem>
                         <FormLabel>Selling Price</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                            <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -213,7 +218,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                         <FormItem>
                         <FormLabel>Cost Price</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                            <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -228,7 +233,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                         <FormItem>
                         <FormLabel>Stock Quantity</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+                            <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -344,7 +349,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                         <FormItem>
                         <FormLabel>Min Stock Level</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)} />
+                            <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -357,7 +362,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                         <FormItem>
                         <FormLabel>Max Stock Level</FormLabel>
                         <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value) || 0)}/>
+                            <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -405,7 +410,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                                 name={`units.derivedUnits.${index}.conversionFactor`}
                                 render={({ field }) => (
                                     <FormItem className="flex-1">
-                                        <Input type="number" {...field} placeholder="Factor (e.g., 12)" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                        <Input type="number" {...field} placeholder="Factor (e.g., 12)" />
                                     </FormItem>
                                 )}
                             />
@@ -438,7 +443,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                     <FormItem>
                         <FormLabel>Tax</FormLabel>
                         <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                        <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
@@ -475,7 +480,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                     <FormItem>
                         <FormLabel>Default Discount</FormLabel>
                         <FormControl>
-                        <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                        <Input type="number" {...field} />
                         </FormControl>
                         <FormMessage />
                     </FormItem>
