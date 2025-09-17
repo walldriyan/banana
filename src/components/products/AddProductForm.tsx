@@ -119,7 +119,7 @@ export function AddProductForm({ product }: AddProductFormProps) {
         title: `Product ${isEditMode ? 'Updated' : 'Added'}!`,
         description: `Product "${data.name}" has been successfully ${isEditMode ? 'updated' : 'added'}.`,
       });
-      router.push("/products");
+      router.push("/dashboard/products");
     } else {
       toast({
         variant: "destructive",

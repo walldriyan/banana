@@ -3,13 +3,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart } from 'lucide-react';
+import { Home, Package, Users, LineChart, LayoutDashboard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 
 const navItems = [
-  { href: '/', icon: Home, label: 'POS' },
-  { href: '/products', icon: Package, label: 'Products', permission: 'products.view' },
+  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/dashboard/products', icon: Package, label: 'Products', permission: 'products.view' },
   // Add more dashboard items here
 ];
 
@@ -19,14 +19,17 @@ export function DashboardSidebar() {
   return (
     <aside className="w-64 bg-white dark:bg-gray-800 shadow-md hidden md:block">
       <div className="p-4">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Dashboard</h2>
+        <Link href="/">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white cursor-pointer">My Store</h2>
+        </Link>
       </div>
       <nav className="mt-8">
         <ul>
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
+            
             const linkContent = (
-              <a
+              <div
                 className={cn(
                   'flex items-center px-4 py-3 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200',
                   isActive && 'bg-blue-500 text-white dark:bg-blue-600'
@@ -34,7 +37,7 @@ export function DashboardSidebar() {
               >
                 <item.icon className="h-5 w-5" />
                 <span className="ml-4 font-medium">{item.label}</span>
-              </a>
+              </div>
             );
 
             const link = <Link href={item.href} passHref>{linkContent}</Link>;

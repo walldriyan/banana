@@ -355,7 +355,7 @@ export default function MyNewEcommerceShop() {
                   </Link>
                 </AuthorizationGuard>
                  <AuthorizationGuard permissionKey='products.view'>
-                  <Link href="/products" passHref>
+                  <Link href="/dashboard/products" passHref>
                     <Button variant="outline">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
