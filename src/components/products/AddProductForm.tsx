@@ -107,6 +107,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   }, [product, form]);
 
   async function onSubmit(data: ProductFormValues) {
+    console.log("[Client] AddProductForm onSubmit called. isEditMode:", isEditMode, "Data:", data);
     setIsSubmitting(true);
     
     const action = isEditMode && product
