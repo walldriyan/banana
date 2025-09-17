@@ -8,24 +8,15 @@ import { useEffect } from 'react';
 
 // --- DEVELOPMENT WORKAROUND ---
 // This dummy session is used to bypass the login flow during development.
-// It automatically logs in the user as 'manager_user'.
-// For production, the `session` prop should be removed from SessionProvider.
-const dummyManagerSession: Session = {
+// It automatically logs in the user as an 'admin' user with all permissions.
+const dummyAdminSession: Session = {
   expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   user: {
-    id: 'manager_user',
-    name: 'Manager User',
-    role: 'manager',
-    // Permissions are hardcoded here to match the expected permissions for a manager.
-    // This ensures the AuthorizationGuard works correctly without a real login.
-    permissions: [
-        'pos.view',
-        'pos.create.transaction',
-        'history.view',
-        'bills.update',
-        'bills.delete',
-        'refund.process'
-    ],
+    id: 'admin',
+    name: 'Admin User',
+    role: 'admin',
+    // 'access_all' permission grants access to everything.
+    permissions: ['access_all'],
   },
 };
 // --- END DEVELOPMENT WORKAROUND ---
@@ -39,11 +30,11 @@ function ZustandSessionInitializer() {
     const { setSession } = useSessionStore();
     
     useEffect(() => {
-        console.log("AuthProvider: Initializing Zustand store with dummy session:", dummyManagerSession);
-        if (dummyManagerSession.user) {
+        console.log("AuthProvider: Initializing Zustand store with dummy admin session:", dummyAdminSession);
+        if (dummyAdminSession.user) {
             setSession({
-                user: dummyManagerSession.user,
-                permissions: dummyManagerSession.user.permissions || [],
+                user: dummyAdminSession.user,
+                permissions: dummyAdminSession.user.permissions || [],
                 status: 'authenticated',
             });
         }
@@ -64,7 +55,7 @@ export default function AuthProvider({
     // The `session` prop here forces a static session, bypassing the fetch request.
     // However, the useSession hook within components still attempts to fetch.
     // The key is to NOT call useSession and instead rely on our Zustand store.
-    <SessionProvider session={dummyManagerSession} refetchOnWindowFocus={false}>
+    <SessionProvider session={dummyAdminSession} refetchOnWindowFocus={false}>
       <ZustandSessionInitializer />
       {children}
     </SessionProvider>
