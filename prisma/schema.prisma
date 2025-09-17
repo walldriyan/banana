@@ -1,13 +1,9 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["driverAdapters"]
-  binaryTargets   = ["native", "linux-musl-openssl-3.0.x"]
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -15,125 +11,109 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// Models for Retail POS System
-
-// Product Model
-// Stores information about each product, including different batches.
 model Product {
-  id                String    @id @default(cuid()) // Unique ID for each product entry (often representing a batch)
-  productId         String // General product identifier (e.g., 't-shirt-01')
-  name              String
-  batchNumber       String?
-  sellingPrice      Float
-  costPrice         Float?
-  quantity          Int       @default(0) // Quantity available for this specific batch/entry
-  stock             Int       @default(0) // Could be used interchangeably with quantity
-  barcode           String?   @unique
-  category          String?
-  brand             String?
-  supplierId        String?
-  location          String? // e.g., Warehouse A, Shelf B-3
-  units             Json // JSON string to store unit definitions: { "baseUnit": "pcs", "derivedUnits": [{"name": "box", "conversion": 12}] }
-  isService         Boolean   @default(false)
-  isActive          Boolean   @default(true)
-  defaultQuantity   Int       @default(1)
-  tax               Float?
-  taxtype           String? // e.g., PERCENTAGE, FIXED
-  defaultDiscount   Float?
-  defaultDiscountType String? // e.g., PERCENTAGE, FIXED
-  manufactureDate   DateTime?
-  expiryDate        DateTime?
-  minStockLevel     Int?
-  maxStockLevel     Int?
-  notes             String?
-  status            String?
-  addeDate          DateTime  @default(now())
-  userId            String?
-  companyId         String?
+  id                    String    @id @default(cuid())
+  productId             String // General ID for the product type, e.g., 't-shirt-01'
+  name                  String
+  batchNumber           String?
+  sellingPrice          Float
+  costPrice             Float?
+  quantity              Int
+  stock                 Int       @default(0) // Redundant, but can be useful for reports
+  barcode               String?   @unique
+  category              String?
+  brand                 String?
+  supplierId            String?
+  location              String? // e.g., Warehouse A, Shelf B-3
+  units                 String // JSON string to store unit definitions: { "baseUnit": "pcs", "derivedUnits": [{"name": "box", "conversion": 12}] }
+  isService             Boolean   @default(false)
+  isActive              Boolean   @default(true)
+  defaultQuantity       Int       @default(1)
+  tax                   Float?
+  taxtype               String? // "FIXED" or "PERCENTAGE"
+  defaultDiscount       Float?
+  defaultDiscountType   String? // "FIXED" or "PERCENTAGE"
+  manufactureDate       DateTime?
+  expiryDate            DateTime?
+  minStockLevel         Int?
+  maxStockLevel         Int?
+  notes                 String?
+  status                String?
+  addeDate              DateTime  @default(now())
+  userId                String?
+  companyId             String?
 
-  @@index([productId])
-  @@index([name])
+  @@unique([productId, batchNumber])
 }
 
-// Customer Model
-// Stores information about customers.
 model Customer {
-  id           Int           @id @default(autoincrement())
+  id           String        @id @default(cuid())
   name         String
   phone        String?       @unique
   address      String?
-  email        String?       @unique
   transactions Transaction[]
 }
 
-// Transaction Model
-// Stores header information for each sale or refund.
 model Transaction {
-  id                    String                @id
-  transactionDate       DateTime
+  id                    String        @id
+  transactionDate       DateTime      @default(now())
   subtotal              Float
   totalDiscountAmount   Float
   finalTotal            Float
   totalItems            Int
   totalQuantity         Float
-  status                String // e.g., 'completed', 'refund', 'pending'
-  campaignId            String? // ID of the discount campaign applied
-  originalTransactionId String? // For refunds, links back to the original transaction
-  isGiftReceipt         Boolean               @default(false)
-  
-  customerId            Int
-  customer              Customer              @relation(fields: [customerId], references: [id])
-  payment               Payment?
-  lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscountLog[]
+  status                String // "completed", "refund", "pending"
+  campaignId            String
+  originalTransactionId String?
+  isGiftReceipt         Boolean       @default(false)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  lines            TransactionLine[]
+  payment          Payment?
+  appliedDiscounts AppliedDiscount[]
+
+  originalTransaction Refund?  @relation("OriginalTransaction")
+  refundTransaction Refund[] @relation("OriginalTransaction")
 
   @@index([transactionDate])
-  @@index([customerId])
 }
 
-// Payment Model
-// Stores payment details related to a transaction.
+model TransactionLine {
+  id                      String      @id @default(cuid())
+  productId               String
+  productName             String
+  batchId                 String?
+  batchNumber             String?
+  quantity                Float
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+  customDiscountValue     Float?
+  customDiscountType      String? // "fixed" or "percentage"
+  customApplyFixedOnce    Boolean?
+
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+}
+
 model Payment {
-  id                Int     @id @default(autoincrement())
-  transactionId     String  @unique
+  id                String      @id @default(cuid())
   paidAmount        Float
-  paymentMethod     String // e.g., 'cash', 'card', 'online'
+  paymentMethod     String
   outstandingAmount Float
   isInstallment     Boolean
-  transaction       Transaction @relation(fields: [transactionId], references: [id])
+
+  transactionId String      @unique
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
 }
 
-// TransactionLine Model
-// Stores individual item details for each transaction.
-model TransactionLine {
-  id                       Int     @id @default(autoincrement())
-  transactionId            String
-  productId                String // General product ID
-  productName              String
-  batchId                  String? // Unique product entry ID
-  batchNumber              String?
-  quantity                 Float
-  displayUnit              String?
-  displayQuantity          Float?
-  unitPrice                Float
-  lineTotalBeforeDiscount  Float
-  lineDiscount             Float
-  lineTotalAfterDiscount   Float
-  customDiscountValue      Float?
-  customDiscountType       String?
-  customApplyFixedOnce     Boolean?
-  transaction              Transaction @relation(fields: [transactionId], references: [id])
-
-  @@index([transactionId])
-  @@index([productId])
-  @@index([batchId])
-}
-
-// AppliedDiscountLog Model
-// Logs every single discount that was applied in a transaction for auditing.
-model AppliedDiscountLog {
-  id                      Int     @id @default(autoincrement())
-  transactionId           String
+model AppliedDiscount {
+  id                      String   @id @default(cuid())
   discountCampaignName    String
   sourceRuleName          String
   totalCalculatedDiscount Float
@@ -141,7 +121,17 @@ model AppliedDiscountLog {
   productIdAffected       String?
   batchIdAffected         String?
   appliedOnce             Boolean?
-  transaction             Transaction @relation(fields: [transactionId], references: [id])
 
-  @@index([transactionId])
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references  : [id])
+}
+
+model Refund {
+  id              String      @id @default(cuid())
+  refundDate      DateTime    @default(now())
+  reason          String?
+  originalAmount  Float
+  refundAmount    Float
+  transactionId   String      @unique
+  original        Transaction @relation(name: "OriginalTransaction", fields: [transactionId], references: [id])
 }
