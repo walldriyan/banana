@@ -1,12 +1,14 @@
 // src/lib/validation/product.schema.ts
 import { z } from 'zod';
 
+const derivedUnitSchema = z.object({
+  name: z.string().min(1, "Derived unit name is required."),
+  conversionFactor: z.union([z.string(), z.number()]).pipe(z.coerce.number().positive("Conversion factor must be positive.")),
+});
+
 const unitDefinitionSchema = z.object({
   baseUnit: z.string().min(1, "Base unit is required."),
-  derivedUnits: z.array(z.object({
-    name: z.string().min(1, "Derived unit name is required."),
-    conversionFactor: z.number().positive("Conversion factor must be positive."),
-  })).optional(),
+  derivedUnits: z.array(derivedUnitSchema).optional(),
 });
 
 export const productSchema = z.object({
@@ -16,14 +18,14 @@ export const productSchema = z.object({
   batchNumber: z.string().optional(),
   
   sellingPrice: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0, "Selling price must be a positive number.")),
-  costPrice: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0, "Cost price must be a positive number.")),
+  costPrice: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0, "Cost price must be a positive number.")).optional().nullable(),
   quantity: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(0, "Quantity must be a positive integer.")),
   
-  barcode: z.string().optional(),
-  category: z.string().optional(),
-  brand: z.string().optional(),
-  supplierId: z.string().optional(),
-  location: z.string().optional(),
+  barcode: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  brand: z.string().optional().nullable(),
+  supplierId: z.string().optional().nullable(),
+  location: z.string().optional().nullable(),
   
   units: unitDefinitionSchema,
   
@@ -31,25 +33,23 @@ export const productSchema = z.object({
   isActive: z.boolean().default(true),
   defaultQuantity: z.number().int().positive().default(1),
 
-  tax: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).optional()),
-  taxtype: z.enum(["FIXED", "PERCENTAGE"]).optional(),
+  tax: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).optional()).nullable(),
+  taxtype: z.enum(["FIXED", "PERCENTAGE"]).optional().nullable(),
   
-  defaultDiscount: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).optional()),
-  defaultDiscountType: z.string().optional(),
+  defaultDiscount: z.union([z.string(), z.number()]).pipe(z.coerce.number().min(0).optional()).nullable(),
+  defaultDiscountType: z.string().optional().nullable(),
   
-  manufactureDate: z.string().optional(),
-  expiryDate: z.string().optional(),
+  manufactureDate: z.string().optional().nullable(),
+  expiryDate: z.string().optional().nullable(),
 
-  minStockLevel: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(0).optional()),
-  maxStockLevel: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(0).optional()),
+  minStockLevel: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(0).optional()).nullable(),
+  maxStockLevel: z.union([z.string(), z.number()]).pipe(z.coerce.number().int().min(0).optional()).nullable(),
   
-  notes: z.string().optional(),
-
-  // These fields are usually set by the system, not the user form
-  // status: z.enum(["ACTIVE", "INACTIVE", "EXPIRED"]).optional(),
-  // addeDate: z.date().optional(),
-  // userId: z.string().optional(),
-  // companyId: z.string().optional(),
+  notes: z.string().optional().nullable(),
+  status: z.string().optional().nullable(),
+  addeDate: z.date().optional(),
+  userId: z.string().optional().nullable(),
+  companyId: z.string().optional().nullable(),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;

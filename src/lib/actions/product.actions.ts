@@ -14,9 +14,10 @@ export async function addProductAction(data: ProductFormValues) {
   // 1. Validate the data on the server
   const validationResult = productSchema.safeParse(data);
   if (!validationResult.success) {
+    console.log(validationResult.error.flatten());
     return {
       success: false,
-      error: "Invalid data provided. " + validationResult.error.flatten().fieldErrors,
+      error: "Invalid data provided. " + JSON.stringify(validationResult.error.flatten().fieldErrors),
     };
   }
   
@@ -38,8 +39,8 @@ export async function addProductAction(data: ProductFormValues) {
         manufactureDate: validatedData.manufactureDate ? new Date(validatedData.manufactureDate) : null,
         expiryDate: validatedData.expiryDate ? new Date(validatedData.expiryDate) : null,
         addeDate: new Date(),
-        // Prisma expects the JSON field to be an object
-        units: validatedData.units as Prisma.JsonObject,
+        // Prisma expects the JSON field to be a string
+        units: JSON.stringify(validatedData.units),
       },
     });
 
@@ -48,7 +49,9 @@ export async function addProductAction(data: ProductFormValues) {
     console.error("Error creating product:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        return { success: false, error: "A product with this Unique ID already exists." };
+        // The 'target' field in the error meta can tell us which field caused the unique constraint violation
+        const target = (error.meta?.target as string[])?.join(', ');
+        return { success: false, error: `A product with this ${target} already exists.` };
       }
     }
     return {
@@ -70,13 +73,26 @@ export async function getProductsAction() {
                 name: 'asc'
             }
         });
-        // Convert Date objects to strings for client compatibility
-        const productsForClient = products.map(p => ({
+        
+        // Convert Date objects to strings and parse the 'units' JSON string for client compatibility
+        const productsForClient = products.map(p => {
+          let parsedUnits;
+          try {
+            parsedUnits = JSON.parse(p.units);
+          } catch(e) {
+            console.error(`Failed to parse units JSON for product ${p.id}:`, p.units);
+            // Provide a fallback structure if parsing fails
+            parsedUnits = { baseUnit: 'unit', derivedUnits: [] };
+          }
+
+          return {
             ...p,
             manufactureDate: p.manufactureDate?.toISOString() ?? null,
             expiryDate: p.expiryDate?.toISOString() ?? null,
             addeDate: p.addeDate.toISOString(),
-        }));
+            units: parsedUnits,
+          }
+        });
 
         return { success: true, data: productsForClient };
     } catch (error) {
