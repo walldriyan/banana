@@ -71,7 +71,7 @@ export function HistoryClientPage() {
       }
     });
 
-    return { originalTransactions: originalTxs, refundMap };
+    return { originalTransactions: originalTxs.sort((a, b) => new Date(b.transactionHeader.transactionDate).getTime() - new Date(a.transactionHeader.transactionDate).getTime()), refundMap };
   }, [filteredTransactions]);
 
   // Pagination logic

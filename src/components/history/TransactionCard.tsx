@@ -32,7 +32,7 @@ export function TransactionCard({
     onDeleteRefund,
 }: TransactionCardProps) {
   const { transactionHeader, customerDetails } = transaction;
-  const isRefunded = !!refundTransaction;
+  const isRefunded = transaction.isRefunded;
 
   return (
     <Card className={cn("hover:shadow-lg transition-shadow", isRefunded && "bg-orange-50 border-orange-200")}>
@@ -114,7 +114,7 @@ export function TransactionCard({
                     View Details
                 </Button>
                 <AuthorizationGuard permissionKey='refund.process'>
-                    <Button variant="destructive" onClick={() => onRefund(transaction)}>
+                    <Button variant="destructive" onClick={() => onRefund(transaction)} disabled={isRefunded}>
                         <RefreshCw className="mr-2 h-4 w-4"/>
                         Refund
                     </Button>

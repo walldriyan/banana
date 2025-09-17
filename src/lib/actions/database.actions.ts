@@ -138,7 +138,7 @@ export async function getTransactionsFromDb() {
         originalTransaction: { // To see if it IS a refund
             select: { id: true }
         },
-        refundTransaction: { // To see if it HAS a refund
+        refundTransactions: { // To see if it HAS a refund
             select: { id: true }
         }
       },
@@ -189,7 +189,7 @@ export async function getTransactionsFromDb() {
         companyDetails: { companyId: 'comp-001', companyName: 'My Company' },
         userDetails: { userId: 'user-001', userName: 'Default User' },
         // Add refund status based on included relations
-        isRefunded: !!tx.refundTransaction,
+        isRefunded: !!tx.refundTransactions.length,
       };
       return dbReadyTx;
     });
