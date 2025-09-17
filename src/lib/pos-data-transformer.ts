@@ -68,6 +68,7 @@ export interface DatabaseReadyTransaction {
   paymentDetails: PaymentData;
   companyDetails: CompanyDetails;
   userDetails: UserDetails;
+  isRefunded?: boolean; // Optional property to indicate status on client
 }
 
 interface TransformerInput {
@@ -176,10 +177,11 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
         // Find the matching product-batch combination from the current sample products
         const product = products.find(p => p.id === line.batchId);
         
+        const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
         if (!product) {
             // Fallback for products that might not exist in the current product list
             console.warn(`Product with ID (batchId) ${line.batchId} not found in sampleProducts. Creating fallback SaleItem.`);
-            const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             return {
                 id: line.batchId,
                 productId: line.productId,
@@ -187,17 +189,19 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 batchNumber: line.batchNumber || 'N/A',
                 sellingPrice: line.unitPrice,
                 costPrice: 0,
-                quantity: line.quantity,
                 stock: 0, // Cannot determine stock
-                units: { baseUnit: line.displayUnit || 'unit' },
+                units: { baseUnit: line.displayUnit || 'unit', derivedUnits: [] },
                 isService: false,
                 isActive: false,
                 defaultQuantity: 1,
+                // --- Core SaleItem Fields ---
                 saleItemId,
                 price: line.unitPrice,
+                quantity: line.quantity,
                 originalQuantity: line.quantity,
                 displayUnit: line.displayUnit,
                 displayQuantity: line.displayQuantity,
+                // --- Custom Discount Fields ---
                 customDiscountValue: line.customDiscountValue,
                 customDiscountType: line.customDiscountType,
                 customApplyFixedOnce: line.customApplyFixedOnce,
@@ -206,12 +210,13 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 
         return {
             ...product,
-            saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            saleItemId,
             quantity: line.quantity, // Base unit quantity
             displayUnit: line.displayUnit,
             displayQuantity: line.displayQuantity,
             price: line.unitPrice,
             originalQuantity: line.quantity, // Set original quantity for refund logic
+             // --- Custom Discount Fields ---
             customDiscountValue: line.customDiscountValue,
             customDiscountType: line.customDiscountType,
             customApplyFixedOnce: line.customApplyFixedOnce,
