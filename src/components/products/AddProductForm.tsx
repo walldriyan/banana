@@ -56,7 +56,9 @@ export function AddProductForm() {
       minStockLevel: 0,
       maxStockLevel: 0,
       tax: 0,
+      taxtype: "PERCENTAGE",
       defaultDiscount: 0,
+      defaultDiscountType: "PERCENTAGE",
       defaultQuantity: 1,
       isActive: true,
       isService: false,
@@ -251,6 +253,34 @@ export function AddProductForm() {
                 )}
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Warehouse A" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="supplierId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Supplier ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., SUP001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
              <div className="grid grid-cols-2 gap-4">
                 <FormField
                 control={form.control}
@@ -307,7 +337,78 @@ export function AddProductForm() {
                     )}
                  />
             </div>
-
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="tax"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Tax</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="taxtype"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tax Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                        <SelectItem value="FIXED">Fixed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="defaultDiscount"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Default Discount</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="defaultDiscountType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Discount Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                        <SelectItem value="FIXED">Fixed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <FormField
               control={form.control}
               name="notes"
