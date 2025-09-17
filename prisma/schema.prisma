@@ -1,99 +1,142 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
-  provider      = "prisma-client-js"
-  // This is needed for the Firebase Studio environment
-  engineType    = "library"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
 }
+
+
+model Product {
+  id                   String    @id
+  name                 String
+  productId            String
+  batchNumber          String?
+  sellingPrice         Float
+  costPrice            Float
+  quantity             Int
+  stock                Int
+  barcode              String?   @unique
+  category             String?
+  brand                String?
+  units                Json      // { "baseUnit": "pcs", "derivedUnits": [{ "name": "box", "conversionFactor": 12 }] }
+  isService            Boolean   @default(false)
+  isActive             Boolean   @default(true)
+  defaultQuantity      Int       @default(1)
+  
+  tax                  Float?
+  taxtype              String?   // "FIXED" or "PERCENTAGE"
+  defaultDiscount      Float?
+  defaultDiscountType  String?
+
+  manufactureDate      DateTime?
+  expiryDate           DateTime?
+  supplierId           String?
+  location             String?
+  minStockLevel        Int?
+  maxStockLevel        Int?
+  notes                String?
+  status               String?   // "ACTIVE", "INACTIVE", "EXPIRED"
+
+  addeDate             DateTime  @default(now())
+  userId               String?
+  companyId            String?
+
+  @@index([productId])
+  @@index([name])
+}
+
 
 model Customer {
   id           String        @id @default(cuid())
   name         String
   phone        String?       @unique
   address      String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
   transactions Transaction[]
 }
 
 model Transaction {
-  id                    String            @id
-  transactionDate       DateTime
+  id                    String                @id
+  transactionDate       DateTime              @default(now())
   subtotal              Float
   totalDiscountAmount   Float
   finalTotal            Float
   totalItems            Int
   totalQuantity         Float
-  status                String // "completed", "refund", "pending"
+  status                String                // e.g., 'completed', 'refund'
   campaignId            String
-  isGiftReceipt         Boolean           @default(false)
+  isGiftReceipt         Boolean               @default(false)
+
+  // For refunds
   originalTransactionId String?
-  
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
+  originalTransaction   Transaction?          @relation("Refunds", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refunds               Transaction[]         @relation("Refunds")
 
-  lines            TransactionLine[]
-  appliedDiscounts AppliedDiscount[]
-  payment          Payment?
+  // Relations
+  customerId            String
+  customer              Customer              @relation(fields: [customerId], references: [id])
+  payment               Payment?
+  lines                 TransactionLine[]
+  appliedDiscounts      AppliedDiscountLog[]
 
-  originalTransaction Transaction? @relation("Refund", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  refunds             Transaction[] @relation("Refund")
-
-  @@index([originalTransactionId])
+  @@index([transactionDate])
+  @@index([customerId])
 }
 
 model TransactionLine {
-  id                      String   @id @default(cuid())
-  productId               String
-  productName             String
-  batchId                 String?
-  batchNumber             String?
-  quantity                Float
-  displayUnit             String
-  displayQuantity         Float
-  unitPrice               Float
-  lineTotalBeforeDiscount Float
-  lineDiscount            Float
-  lineTotalAfterDiscount  Float
-  customDiscountValue     Float?
-  customDiscountType      String? // 'fixed' or 'percentage'
-  customApplyFixedOnce    Boolean?
+  id                       Int      @id @default(autoincrement())
+  transactionId            String
+  transaction              Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
+  productId                String
+  productName              String
+  batchId                  String?
+  batchNumber              String?
+  quantity                 Float
+  displayUnit              String?
+  displayQuantity          Float?
+  unitPrice                Float
+  lineTotalBeforeDiscount  Float
+  lineDiscount             Float
+  lineTotalAfterDiscount   Float
 
-  transactionId String
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  customDiscountValue      Float?
+  customDiscountType       String? // 'fixed' or 'percentage'
+  customApplyFixedOnce     Boolean?
   
   @@index([transactionId])
-}
-
-model AppliedDiscount {
-  id                      String   @id @default(cuid())
-  discountCampaignName    String
-  sourceRuleName          String
-  totalCalculatedDiscount Float
-  ruleType                String
-  productIdAffected       String?
-  batchIdAffected         String?
-  appliedOnce             Boolean?
-  
-  transactionId String
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
-  @@index([transactionId])
+  @@index([productId])
 }
 
 model Payment {
-  id                String  @id @default(cuid())
+  id                Int      @id @default(autoincrement())
+  transactionId     String   @unique
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   paidAmount        Float
-  paymentMethod     String // 'cash', 'card', 'online'
+  paymentMethod     String
   outstandingAmount Float
-  isInstallment     Boolean
+  isInstallment     Boolean  @default(false)
+}
 
-  transactionId String      @unique
-  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+model AppliedDiscountLog {
+  id                       Int      @id @default(autoincrement())
+  transactionId            String
+  transaction              Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  discountCampaignName     String
+  sourceRuleName           String
+  totalCalculatedDiscount  Float
+  ruleType                 String
+  productIdAffected        String?
+  batchIdAffected          String?
+  appliedOnce              Boolean?
+
+  @@index([transactionId])
 }

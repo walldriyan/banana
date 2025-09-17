@@ -1,39 +1,10 @@
 // src/types.ts
+import { Prisma } from '@prisma/client';
 
-// ඔබගේ project එකේ භාණ්ඩයක් නිරූපණය කරන ආකාරය
-export interface Product {
-  id: string; // Unique identifier for this specific product-batch combination
-  name: string;
-  productId: string; // Identifier for the general product (e.g., 't-shirt')
-  batchNumber: string;
-  sellingPrice: number;
-  costPrice: number;
-  quantity: number; // Stock quantity for this batch
-  stock: number; // alias for quantity
-  category?: string;
+// Base Product type derived from Prisma's generated type for consistency
+export type Product = Omit<Prisma.ProductGetPayload<{}>, 'units'> & {
   units: UnitDefinition;
-  isService: boolean;
-  isActive: boolean;
-  defaultQuantity: number;
-  tax?: number;
-  taxtype?: "FIXED" | "PERCENTAGE";
-  defaultDiscount?: number;
-  defaultDiscountType?: string;
-  brand?: string;
-  manufactureDate?: Date;
-  expiryDate?: Date;
-  supplierId?: string;
-  location?: string;
-  barcode?: string;
-  minStockLevel?: number;
-  maxStockLevel?: number;
-  notes?: string;
-  status?: "ACTIVE" | "INACTIVE" | "EXPIRED";
-  addeDate?: Date;
-  userId?: string;
-  companyId?: string;
-}
-
+};
 
 // Cart එකේ ඇති භාණ්ඩයක්
 export interface SaleItem extends Product {

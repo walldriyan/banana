@@ -1,10 +1,9 @@
 // src/app/(pos)/page.tsx
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { Product, SaleItem, DiscountSet } from '@/types';
-// import { DiscountResult } from '@/discount-engine/core/result';
-import { allCampaigns, megaDealFest } from '@/lib/my-campaigns';
+import { allCampaigns } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
 import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
@@ -16,77 +15,14 @@ import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { History } from 'lucide-react';
+import { History, PlusCircle } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { defaultDiscounts } from '@/lib/default-campaign';
 import { CustomDiscountForm } from '@/components/POSUI/CustomDiscountForm';
 import { Skeleton } from '@/components/ui/skeleton';
-
-
-const sampleProducts: Product[] = [
-    { 
-        id: 't-shirt-old-batch', 
-        productId: 't-shirt-01', 
-        name: 'T-Shirt', 
-        batchNumber: 'OLD-2023',
-        sellingPrice: 2000,
-        costPrice: 1500,
-        quantity: 100, 
-        stock: 100,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-    { 
-        id: 't-shirt-new-batch', 
-        productId: 't-shirt-01', 
-        name: 'T-Shirt', 
-        batchNumber: 'NEW-2024',
-        sellingPrice: 2500,
-        costPrice: 1800,
-        quantity: 100, 
-        stock: 100,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-    { 
-        id: 'jeans-old-batch', 
-        productId: 'jeans-01', 
-        name: 'Jeans', 
-        batchNumber: 'JEANS-OLD-2023',
-        sellingPrice: 7000,
-        costPrice: 4000,
-        quantity: 50, 
-        stock: 50,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-    { 
-        id: 'jeans-new-batch', 
-        productId: 'jeans-01', 
-        name: 'Jeans', 
-        batchNumber: 'JEANS-NEW-2024',
-        sellingPrice: 8000,
-        costPrice: 5000,
-        quantity: 30, 
-        stock: 30,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-];
+import { getProductsAction } from '@/lib/actions/product.actions';
 
 
 const initialDiscountResult = {
@@ -103,7 +39,7 @@ const initialDiscountResult = {
 
 
 export default function MyNewEcommerceShop() {
-
+  const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(defaultDiscounts);
   const [transactionId, setTransactionId] = useState<string>('');
@@ -121,12 +57,23 @@ export default function MyNewEcommerceShop() {
   const createNewTransactionId = () => `txn-${Date.now()}`;
 
   useEffect(() => {
-    // Simulate initial data loading
-    const timer = setTimeout(() => {
+    async function fetchProducts() {
+      setIsLoading(true);
+      const result = await getProductsAction();
+      if (result.success && result.data) {
+        setProducts(result.data);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error fetching products',
+          description: result.error,
+        });
+      }
       setIsLoading(false);
-    }, 500); // Adjust time as needed
-    return () => clearTimeout(timer);
-  }, []);
+    }
+    fetchProducts();
+  }, [toast]);
+
 
   useEffect(() => {
     setTransactionId(createNewTransactionId());
@@ -407,6 +354,12 @@ export default function MyNewEcommerceShop() {
                     </Button>
                   </Link>
                 </AuthorizationGuard>
+                 <Link href="/products/add" passHref>
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Product
+                  </Button>
+                </Link>
                 <LogoutButton />
               </div>
             </div>
@@ -430,7 +383,7 @@ export default function MyNewEcommerceShop() {
 
               <SearchableProductInput
                 ref={productSearchRef}
-                products={sampleProducts}
+                products={products}
                 onProductSelect={addToCart}
               />
 

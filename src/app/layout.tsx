@@ -5,6 +5,7 @@ import { GlobalDrawerProvider } from '@/context/GlobalDrawerContext';
 import { GlobalDrawer } from '@/components/GlobalDrawer';
 import AuthProvider from '@/components/auth/AuthProvider';
 
+
 // This forces the entire app to be dynamically rendered, which can help
 // with strange caching and fetch errors in certain environments.
 export const dynamic = 'force-dynamic';
@@ -20,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -28,11 +29,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <AuthProvider>
-          <GlobalDrawerProvider>
-            {children}
-            <GlobalDrawer />
-            <Toaster />
-          </GlobalDrawerProvider>
+            <GlobalDrawerProvider>
+                {children}
+                <GlobalDrawer />
+                <Toaster />
+            </GlobalDrawerProvider>
         </AuthProvider>
       </body>
     </html>
