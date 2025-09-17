@@ -3,7 +3,6 @@
 
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import {
   productSchema,
   type ProductFormValues,
@@ -34,14 +33,18 @@ import { useState, useEffect } from "react";
 import type { Product } from "@/types";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { useDrawer } from "@/hooks/use-drawer";
+import { useRouter } from "next/navigation";
+
 
 interface AddProductFormProps {
   product?: Product;
+  onSuccess: () => void; // Callback to close drawer and refresh data
 }
 
-export function AddProductForm({ product }: AddProductFormProps) {
-  const router = useRouter();
+export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   const { toast } = useToast();
+  const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!product;
 
@@ -118,7 +121,7 @@ export function AddProductForm({ product }: AddProductFormProps) {
         title: `Product ${isEditMode ? 'Updated' : 'Added'}!`,
         description: `Product "${data.name}" has been successfully ${isEditMode ? 'updated' : 'added'}.`,
       });
-      router.push("/dashboard/products");
+      onSuccess(); // Close drawer and refresh
     } else {
       toast({
         variant: "destructive",
@@ -547,7 +550,7 @@ export function AddProductForm({ product }: AddProductFormProps) {
 
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => router.push('/dashboard/products')}>
+          <Button type="button" variant="outline" onClick={drawer.closeDrawer}>
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
