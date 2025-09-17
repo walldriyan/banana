@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Product } from '@/types';
-import { getProductsAction, deleteProductAction, getProductByIdAction } from '@/lib/actions/product.actions';
+import { getProductsAction, deleteProductAction } from '@/lib/actions/product.actions';
 import { ProductsDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -63,7 +63,8 @@ export function ProductsClientPage() {
     });
   };
 
-  const openEditProductDrawer = useCallback(async (product: Product) => {
+  const openEditProductDrawer = useCallback((product: Product) => {
+    // No need for async/await here, we already have the product object
     drawer.openDrawer({
         title: 'Edit Product',
         description: `Editing details for ${product.name}`,
