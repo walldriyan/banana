@@ -2,35 +2,44 @@
 
 // ඔබගේ project එකේ භාණ්ඩයක් නිරූපණය කරන ආකාරය
 export interface Product {
-  id: string;
+  id: string; // Unique identifier for this specific product-batch combination
   name: string;
+  productId: string; // Identifier for the general product (e.g., 't-shirt')
+  batchNumber: string;
   sellingPrice: number;
+  costPrice: number;
+  quantity: number; // Stock quantity for this batch
+  stock: number; // alias for quantity
   category?: string;
-  batches?: ProductBatch[];
-  stock: number;
   units: UnitDefinition;
   isService: boolean;
   isActive: boolean;
   defaultQuantity: number;
+  tax?: number;
+  taxtype?: "FIXED" | "PERCENTAGE";
+  defaultDiscount?: number;
+  defaultDiscountType?: string;
+  brand?: string;
+  manufactureDate?: Date;
+  expiryDate?: Date;
+  supplierId?: string;
+  location?: string;
+  barcode?: string;
+  minStockLevel?: number;
+  maxStockLevel?: number;
+  notes?: string;
+  status?: "ACTIVE" | "INACTIVE" | "EXPIRED";
+  addeDate?: Date;
+  userId?: string;
+  companyId?: string;
 }
 
-// ඔබගේ අලුත් project එකේ "කාණ්ඩයක්" (batch) නිරූපණය කරන ආකාරය
-export interface ProductBatch {
-  id: string;
-  batchNumber: string;
-  sellingPrice: number; // Batch එකට විශේෂිත වූ මිල
-  costPrice: number;
-  quantity: number;
-  productId: string;
-}
 
 // Cart එකේ ඇති භාණ්ඩයක්
 export interface SaleItem extends Product {
   saleItemId: string; // Cart එකේදී වෙන් කර ගැනීමට
   quantity: number; // The TOTAL converted base unit quantity (e.g., 600 tablets)
-  selectedBatchId?: string;
-  selectedBatch?: ProductBatch | null; // කුමන batch එකෙන්ද ආවේ කියා දැනගැනීමට
-  price: number; // The actual price used for the sale (could be from batch or product)
+  price: number; // The actual price used for the sale (from the product itself)
   customDiscountValue?: number;
   customDiscountType?: 'fixed' | 'percentage';
   customApplyFixedOnce?: boolean; // New field to control custom fixed discount behavior
@@ -68,7 +77,7 @@ export interface UnitDefinition {
 // Enhanced Product Discount Configuration
 export interface ProductDiscountConfiguration {
   id: string;
-  productId: string;
+  productId: string; // This now refers to the general productId, not the unique id
   productNameAtConfiguration: string;
   discountSetId: string;
   discountSet?: DiscountSet;
@@ -80,14 +89,14 @@ export interface ProductDiscountConfiguration {
   specificUnitPriceThresholdRuleJson: SpecificDiscountRuleConfig | null;
 }
 
-// Enhanced Batch Discount Configuration
+// Batch configurations are now deprecated with the new model
 export interface BatchDiscountConfiguration {
   id: string;
-  productBatchId: string;
+  productBatchId: string; // This would now match the unique Product 'id'
   discountSetId: string;
   discountSet?: DiscountSet;
   isActiveForBatchInCampaign: boolean;
-  priority?: number; // For ordering multiple configs for same batch
+  priority?: number;
   lineItemValueRuleJson: SpecificDiscountRuleConfig | null;
   lineItemQuantityRuleJson: SpecificDiscountRuleConfig | null;
 }
@@ -96,9 +105,9 @@ export interface BatchDiscountConfiguration {
 export interface BuyGetRule {
   id: string;
   name: string;
-  buyProductId: string;
+  buyProductId: string; // General productId
   buyQuantity: number;
-  getProductId: string;
+  getProductId: string; // General productId
   getQuantity: number;
   discountType: 'percentage' | 'fixed' | 'free';
   discountValue: number;
@@ -120,7 +129,7 @@ export interface DiscountSet {
   validTo?: Date;
   maxUsagePerCustomer?: number;
   productConfigurations?: ProductDiscountConfiguration[];
-  batchConfigurations?: BatchDiscountConfiguration[];
+  batchConfigurations?: BatchDiscountConfiguration[]; // Kept for type safety, but will be empty
   buyGetRulesJson?: BuyGetRule[];
   globalCartPriceRuleJson?: SpecificDiscountRuleConfig | null;
   globalCartQuantityRuleJson?: SpecificDiscountRuleConfig | null;
@@ -136,8 +145,8 @@ export interface AppliedRuleInfo {
   sourceRuleName: string;
   totalCalculatedDiscount: number;
   ruleType: string;
-  productIdAffected?: string;
-  batchIdAffected?: string;
+  productIdAffected?: string; // General productId
+  batchIdAffected?: string; // unique Product 'id'
   appliedOnce?: boolean;
   applicationCount?: number; // Track how many times applied
   timestamp?: Date; // When the rule was applied

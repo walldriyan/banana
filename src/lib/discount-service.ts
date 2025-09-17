@@ -8,9 +8,9 @@ export function getMyDiscounts(cartItems: SaleItem[], activeCampaign: DiscountSe
   const context = {
     items: cartItems.map(item => ({
       ...item,
-      productId: item.id,
+      productId: item.productId, // Pass the general product ID
       lineId: item.saleItemId,
-      batchId: item.selectedBatch?.id
+      batchId: item.id // The unique product ID is the batch ID
     })),
   };
 

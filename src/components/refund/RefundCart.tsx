@@ -30,7 +30,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
         ) : (
           <div className="space-y-4">
             {cart.map(item => {
-              const originalLine = originalTransactionLines.find(l => l.productId === item.id && (l.batchId || null) === (item.selectedBatchId || null));
+              const originalLine = originalTransactionLines.find(l => l.productId === item.productId && l.batchNumber === item.batchNumber);
               const originalQty = originalLine?.quantity || 0;
               const lineItemResult = discountResult?.lineItems?.find((li: any) => li.lineId === item.saleItemId);
               
@@ -42,7 +42,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                 <div key={item.saleItemId} className="p-3 bg-gray-50 rounded-lg border">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold">{item.name} {item.selectedBatch?.batchNumber && `(${item.selectedBatch.batchNumber})`}</p>
+                      <p className="font-semibold">{item.name} {item.batchNumber && `(${item.batchNumber})`}</p>
                       <p className="text-sm text-gray-500">Rs. {item.price.toFixed(2)} / unit</p>
                     </div>
                     <div className="flex items-center gap-2">

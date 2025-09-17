@@ -29,7 +29,7 @@ export class LineItemResult {
   constructor(lineItem: LineItemData) {
     this.lineId = lineItem.lineId;
     this.productId = lineItem.productId;
-    this.batchId = lineItem.batchId;
+    this.batchId = lineItem.id; // The unique product ID is the batch ID
     this.originalPrice = lineItem.price;
     this.quantity = lineItem.quantity;
   }

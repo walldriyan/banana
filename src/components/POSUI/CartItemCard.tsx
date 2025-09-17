@@ -47,9 +47,9 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, isCalculating, discou
         <div className="flex-grow">
           <p className="font-semibold text-gray-900">
             {item.name}{' '}
-            {item.selectedBatch && (
+            {item.batchNumber && (
               <span className="text-sm font-normal text-gray-500">
-                (Batch: {item.selectedBatch.batchNumber})
+                (Batch: {item.batchNumber})
               </span>
             )}
           </p>

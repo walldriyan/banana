@@ -15,21 +15,20 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import { type Product, type ProductBatch } from "@/types"
+import { type Product } from "@/types"
 
 // Flatten products and batches into a single list for the dropdown
 type SearchableItem = {
   value: string;
   label: string;
   product: Product;
-  batch?: ProductBatch;
   stock: number;
   price: number;
 };
 
 interface SearchableProductInputProps {
   products: Product[];
-  onProductSelect: (product: Product, batch?: ProductBatch) => void;
+  onProductSelect: (product: Product) => void;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
@@ -42,7 +41,7 @@ export interface SearchableProductInputRef {
 const SearchableProductInput = React.forwardRef<SearchableProductInputRef, SearchableProductInputProps>(({
   products,
   onProductSelect,
-  placeholder = "Select product or batch...",
+  placeholder = "Select product...",
   searchPlaceholder = "Search by name or barcode...",
   emptyText = "No product found."
 }, ref) => {
@@ -52,43 +51,25 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
   // Expose a function to focus the input to the parent component
   useImperativeHandle(ref, () => ({
     focusSearchInput: () => {
-      // console.log('// 8. Focus කිරීමට Command ලැබුනා, Input එක:', inputRef.current);
       inputRef.current?.focus();
     }
   }));
 
   const searchableItems = React.useMemo(() => {
-    const items: SearchableItem[] = [];
-    products.forEach(p => {
-      if (p.batches && p.batches.length > 0) {
-        p.batches.forEach(b => {
-          items.push({
-            value: b.id.toLowerCase(), // Use batch ID as unique value
-            label: `${p.name} (Batch: ${b.batchNumber})`,
-            product: p,
-            batch: b,
-            stock: b.quantity,
-            price: b.sellingPrice,
-          });
-        });
-      } else {
-        items.push({
-          value: p.id.toLowerCase(), // Use product ID as unique value
-          label: p.name,
-          product: p,
-          stock: p.stock,
-          price: p.sellingPrice,
-        });
-      }
-    });
-    return items;
+    return products.map(p => ({
+        value: p.id.toLowerCase(), // Use the unique product-batch ID
+        label: `${p.name} (${p.batchNumber})`,
+        product: p,
+        stock: p.quantity,
+        price: p.sellingPrice,
+    }));
   }, [products]);
 
 
   const handleSelect = (currentValue: string) => {
     const selectedItem = searchableItems.find(item => item.value === currentValue);
     if (selectedItem) {
-        onProductSelect(selectedItem.product, selectedItem.batch);
+        onProductSelect(selectedItem.product);
     }
     setInputValue(""); // Reset input after selection
     inputRef.current?.blur(); // Unfocus after selection
@@ -114,7 +95,10 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                     <CommandEmpty>{emptyText}</CommandEmpty>
                     <CommandGroup>
                         {searchableItems
-                         .filter(item => item.label.toLowerCase().includes(inputValue.toLowerCase()))
+                         .filter(item => 
+                            item.label.toLowerCase().includes(inputValue.toLowerCase()) ||
+                            item.product.barcode?.toLowerCase().includes(inputValue.toLowerCase())
+                          )
                          .map((item) => (
                             <CommandItem
                                 key={item.value}

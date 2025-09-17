@@ -26,9 +26,9 @@ export class BatchSpecificRule implements IDiscountRule {
       return;
     }
 
-    // Find the line item that corresponds to this specific batch
+    // Find the line item that corresponds to this specific batch ID (which is the unique product ID now)
     const targetLineItem = context.items.find(
-      (item) => item.batchId === this.config.productBatchId
+      (item) => item.id === this.config.productBatchId
     );
 
     if (!targetLineItem) {
@@ -96,7 +96,7 @@ export class BatchSpecificRule implements IDiscountRule {
 
 
       if (discountAmount > 0) {
-        const ruleId = generateRuleId('batch', this.config.id, ruleEntry.type, targetLineItem.productId, targetLineItem.batchId);
+        const ruleId = generateRuleId('batch', this.config.id, ruleEntry.type, targetLineItem.productId, targetLineItem.id);
         const isOneTime = isOneTimeRule(ruleEntry.config, this.config.discountSet?.isOneTimePerTransaction);
 
         console.log(`[BatchRule] SUCCESS: Applying batch discount: ruleId=${ruleId}, amount=${discountAmount}, isOneTime=${isOneTime}`);
@@ -112,7 +112,7 @@ export class BatchSpecificRule implements IDiscountRule {
                 totalCalculatedDiscount: discountAmount,
                 ruleType: ruleEntry.type,
                 productIdAffected: targetLineItem.productId,
-                batchIdAffected: targetLineItem.batchId,
+                batchIdAffected: targetLineItem.id, // The unique product ID is the batch ID
                 appliedOnce: isOneTime
             }
         });

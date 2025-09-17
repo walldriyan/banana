@@ -41,9 +41,9 @@ export interface TransactionHeader {
 
 export interface TransactionLine {
     saleItemId: string; 
-    productId: string;
+    productId: string; // The general product ID (e.g., 't-shirt-01')
     productName: string;
-    batchId?: string;
+    batchId: string; // The unique product ID (e.g., 't-shirt-old-batch')
     batchNumber?: string;
     quantity: number; // Base unit quantity
     displayUnit: string; // The unit shown to the user (e.g., 'box')
@@ -127,10 +127,10 @@ export function transformTransactionDataForDb(
     
     return {
       saleItemId: item.saleItemId,
-      productId: item.id,
+      productId: item.productId, // General product ID
       productName: item.name,
-      batchId: item.selectedBatchId,
-      batchNumber: item.selectedBatch?.batchNumber,
+      batchId: item.id, // Unique product ID (acting as batch ID)
+      batchNumber: item.batchNumber,
       quantity: item.quantity,
       displayUnit: item.displayUnit,
       displayQuantity: item.displayQuantity,
@@ -173,23 +173,27 @@ export function transformTransactionDataForDb(
 // Helper to convert DB transaction lines back to SaleItems for the refund cart
 export function transactionLinesToSaleItems(lines: TransactionLine[], products: Product[]): SaleItem[] {
     return lines.map(line => {
-        const product = products.find(p => p.id === line.productId);
+        // Find the matching product-batch combination from the current sample products
+        const product = products.find(p => p.id === line.batchId);
         
         if (!product) {
             // Fallback for products that might not exist in the current product list
-            // This is a rare case but good to handle
+            console.warn(`Product with ID (batchId) ${line.batchId} not found in sampleProducts. Creating fallback SaleItem.`);
             const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             return {
-                id: line.productId,
+                id: line.batchId,
+                productId: line.productId,
                 name: line.productName,
+                batchNumber: line.batchNumber || 'N/A',
                 sellingPrice: line.unitPrice,
+                costPrice: 0,
+                quantity: line.quantity,
                 stock: 0, // Cannot determine stock
                 units: { baseUnit: line.displayUnit || 'unit' },
                 isService: false,
                 isActive: false,
                 defaultQuantity: 1,
                 saleItemId,
-                quantity: line.quantity,
                 price: line.unitPrice,
                 originalQuantity: line.quantity,
                 displayUnit: line.displayUnit,
@@ -199,17 +203,13 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 customApplyFixedOnce: line.customApplyFixedOnce,
             };
         }
-        
-        const batch = product?.batches?.find(b => b.id === line.batchId);
-        
+                
         return {
             ...product,
             saleItemId: `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             quantity: line.quantity, // Base unit quantity
             displayUnit: line.displayUnit,
             displayQuantity: line.displayQuantity,
-            selectedBatchId: batch?.id,
-            selectedBatch: batch,
             price: line.unitPrice,
             originalQuantity: line.quantity, // Set original quantity for refund logic
             customDiscountValue: line.customDiscountValue,

@@ -13,7 +13,7 @@ export const buyMoreSaveMore: DiscountSet = {
     batchConfigurations: [
         {
           id: 'buymore-old-tshirt-batch-config',
-          productBatchId: 't-shirt-batch-old',
+          productBatchId: 't-shirt-old-batch', // Matches the unique product ID
           discountSetId: 'promo-buy-more',
           isActiveForBatchInCampaign: true,
           priority: 1,
@@ -30,7 +30,7 @@ export const buyMoreSaveMore: DiscountSet = {
         },
         {
           id: 'buymore-old-jeans-batch-config',
-          productBatchId: 'jeans-batch-old',
+          productBatchId: 'jeans-old-batch', // Matches the unique product ID
           discountSetId: 'promo-buy-more',
           isActiveForBatchInCampaign: true,
           priority: 1,
@@ -47,7 +47,7 @@ export const buyMoreSaveMore: DiscountSet = {
         },
         {
           id: 'buymore-new-tshirt-batch-config',
-          productBatchId: 't-shirt-batch-new',
+          productBatchId: 't-shirt-new-batch', // Matches the unique product ID
           discountSetId: 'promo-buy-more',
           isActiveForBatchInCampaign: true,
           priority: 1,
@@ -65,7 +65,7 @@ export const buyMoreSaveMore: DiscountSet = {
         },
         {
           id: 'buymore-new-jeans-batch-config',
-          productBatchId: 'jeans-batch-new',
+          productBatchId: 'jeans-new-batch', // Matches the unique product ID
           discountSetId: 'promo-buy-more',
           isActiveForBatchInCampaign: true,
           priority: 1,

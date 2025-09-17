@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
-import type { SaleItem, Product, ProductBatch, DiscountSet } from '@/types';
+import type { SaleItem, Product, DiscountSet } from '@/types';
 import { transactionLinesToSaleItems } from '@/lib/pos-data-transformer';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -18,25 +18,67 @@ import { saveTransaction } from '@/lib/db/local-db';
 
 // Mock product data for mapping transaction lines back to products.
 // In a real app, this would come from a database or a shared context.
-const oldBatch: ProductBatch = {
-    id: 't-shirt-batch-old', batchNumber: 'OLD-2023', sellingPrice: 2000,
-    costPrice: 1500, quantity: 100, productId: 't-shirt-01'
-};
-const newBatch: ProductBatch = {
-    id: 't-shirt-batch-new', batchNumber: 'NEW-2024', sellingPrice: 2500,
-    costPrice: 1800, quantity: 100, productId: 't-shirt-01'
-};
-const jeansOldBatch: ProductBatch = {
-    id: 'jeans-batch-old', batchNumber: 'JEANS-OLD-2023', sellingPrice: 7000,
-    costPrice: 4000, quantity: 50, productId: 'jeans-01'
-};
-const jeansNewBatch: ProductBatch = {
-    id: 'jeans-batch-new', batchNumber: 'JEANS-NEW-2024', sellingPrice: 8000,
-    costPrice: 5000, quantity: 30, productId: 'jeans-01'
-};
 const sampleProducts: Product[] = [
-    { id: 't-shirt-01', name: 'T-Shirt', sellingPrice: 2500, batches: [oldBatch, newBatch], category: 'Apparel', units: { baseUnit: 'pcs' }, stock: 200, defaultQuantity: 1, isActive: true, isService: false },
-    { id: 'jeans-01', name: 'Jeans', sellingPrice: 8000, batches: [jeansOldBatch, jeansNewBatch], category: 'Apparel', units: { baseUnit: 'pcs' }, stock: 80, defaultQuantity: 1, isActive: true, isService: false },
+    { 
+        id: 't-shirt-old-batch', 
+        productId: 't-shirt-01', 
+        name: 'T-Shirt', 
+        batchNumber: 'OLD-2023',
+        sellingPrice: 2000,
+        costPrice: 1500,
+        quantity: 100, 
+        stock: 100,
+        category: 'Apparel', 
+        units: { baseUnit: 'pcs' }, 
+        isActive: true, 
+        isService: false,
+        defaultQuantity: 1,
+    },
+    { 
+        id: 't-shirt-new-batch', 
+        productId: 't-shirt-01', 
+        name: 'T-Shirt', 
+        batchNumber: 'NEW-2024',
+        sellingPrice: 2500,
+        costPrice: 1800,
+        quantity: 100, 
+        stock: 100,
+        category: 'Apparel', 
+        units: { baseUnit: 'pcs' }, 
+        isActive: true, 
+        isService: false,
+        defaultQuantity: 1,
+    },
+    { 
+        id: 'jeans-old-batch', 
+        productId: 'jeans-01', 
+        name: 'Jeans', 
+        batchNumber: 'JEANS-OLD-2023',
+        sellingPrice: 7000,
+        costPrice: 4000,
+        quantity: 50, 
+        stock: 50,
+        category: 'Apparel', 
+        units: { baseUnit: 'pcs' }, 
+        isActive: true, 
+        isService: false,
+        defaultQuantity: 1,
+    },
+    { 
+        id: 'jeans-new-batch', 
+        productId: 'jeans-01', 
+        name: 'Jeans', 
+        batchNumber: 'JEANS-NEW-2024',
+        sellingPrice: 8000,
+        costPrice: 5000,
+        quantity: 30, 
+        stock: 30,
+        category: 'Apparel', 
+        units: { baseUnit: 'pcs' }, 
+        isActive: true, 
+        isService: false,
+        defaultQuantity: 1,
+    },
 ];
 
 
@@ -121,7 +163,7 @@ export function RefundDialogContent({
       const updatedCart = [...currentCart];
       const currentItem = updatedCart[itemIndex];
 
-      const originalLine = originalTransaction.transactionLines.find(line => line.productId === currentItem.id && (line.batchId || null) === (currentItem.selectedBatchId || null));
+      const originalLine = originalTransaction.transactionLines.find(line => line.productId === currentItem.productId && line.batchNumber === currentItem.batchNumber);
       const maxQty = originalLine?.quantity || 0;
 
       let newQuantity = Number(currentItem.quantity) + Number(change);
@@ -137,7 +179,7 @@ export function RefundDialogContent({
       if (newQuantity === 0) {
         return updatedCart.filter(item => item.saleItemId !== saleItemId);
       } else {
-        updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity };
+        updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity, displayQuantity: newQuantity }; // Assuming base unit for simplicity in refunds
         return updatedCart;
       }
     });

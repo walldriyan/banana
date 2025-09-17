@@ -15,7 +15,7 @@ export const megaDealFest: DiscountSet = {
   productConfigurations: [
     { 
       id: 'mega-jeans-config-1',
-      productId: 'jeans-01',
+      productId: 'jeans-01', // General Product ID
       productNameAtConfiguration: 'Jeans',
       discountSetId: 'promo-mega-deal',
       isActiveForProductInCampaign: true,
@@ -35,7 +35,7 @@ export const megaDealFest: DiscountSet = {
     },
     { 
       id: 'mega-tshirt-config-1',
-      productId: 't-shirt-01',
+      productId: 't-shirt-01', // General Product ID
       productNameAtConfiguration: 'T-Shirt',
       discountSetId: 'promo-mega-deal',
       isActiveForProductInCampaign: true,
@@ -58,7 +58,7 @@ export const megaDealFest: DiscountSet = {
   batchConfigurations: [
     { 
       id: 'mega-old-tshirt-batch-config',
-      productBatchId: 't-shirt-batch-old',
+      productBatchId: 't-shirt-old-batch', // Unique Product ID
       discountSetId: 'promo-mega-deal',
       isActiveForBatchInCampaign: true,
       priority: 1,
@@ -78,9 +78,9 @@ export const megaDealFest: DiscountSet = {
     {
       id: 'mega-bogo-tshirt',
       name: 'Buy 2 T-Shirts Get 1 Free',
-      buyProductId: 't-shirt-01',
+      buyProductId: 't-shirt-01', // General Product ID
       buyQuantity: 2,
-      getProductId: 't-shirt-01',
+      getProductId: 't-shirt-01', // General Product ID
       getQuantity: 1,
       discountType: 'free',
       discountValue: 100, 
@@ -129,7 +129,7 @@ export const clearanceSale: DiscountSet = {
   batchConfigurations: [
     { 
       id: 'clearance-old-tshirt-batch-config',
-      productBatchId: 't-shirt-batch-old',
+      productBatchId: 't-shirt-old-batch', // Unique Product ID
       discountSetId: 'promo-clearance',
       isActiveForBatchInCampaign: true,
       priority: 1,
@@ -149,9 +149,9 @@ export const clearanceSale: DiscountSet = {
       {
           id: 'clearance-bogo-jeans',
           name: 'Buy T-Shirt Get 50% Off Jeans',
-          buyProductId: 't-shirt-01', 
+          buyProductId: 't-shirt-01', // General Product ID
           buyQuantity: 1,
-          getProductId: 'jeans-01', 
+          getProductId: 'jeans-01', // General Product ID
           getQuantity: 1,
           discountType: 'percentage', 
           discountValue: 50, 
@@ -179,7 +179,7 @@ export const vipExclusive: DiscountSet = {
   productConfigurations: [
     {
       id: 'vip-tshirt-special',
-      productId: 't-shirt-01',
+      productId: 't-shirt-01', // General Product ID
       productNameAtConfiguration: 'T-Shirt',
       discountSetId: 'promo-vip-exclusive',
       isActiveForProductInCampaign: true,
