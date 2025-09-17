@@ -1,4 +1,3 @@
-
 // src/lib/actions/database.actions.ts
 'use server';
 
@@ -117,11 +116,36 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
         },
       });
 
+      // *** NEW LOGIC: Update product stock levels ***
+      if (transactionHeader.status === 'completed') {
+        for (const line of transactionLines) {
+            await tx.product.update({
+                where: { id: line.batchId }, // line.batchId is the unique Product ID
+                data: {
+                    quantity: {
+                        decrement: line.quantity // Decrement by the base unit quantity
+                    },
+                    stock: {
+                       decrement: line.quantity
+                    }
+                }
+            });
+        }
+      } else if (transactionHeader.status === 'refund') {
+         // For refunds, we need to add the quantity of the RETURNED items back to stock.
+         // This is complex, as refundCart has items being KEPT.
+         // We need to compare original transaction lines with refund transaction lines.
+         // This logic will be added in a future step to ensure accuracy.
+         // For now, we only handle stock deduction for 'completed' sales.
+      }
+
+
       return newTransaction;
     });
 
     console.log(`[DB] Transaction ${newTransaction.id} saved successfully to database.`);
     revalidatePath('/history');
+    revalidatePath('/dashboard/products');
     return { success: true, data: newTransaction };
 
   } catch (error) {
