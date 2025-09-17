@@ -132,9 +132,18 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
     }
   }
 
+  const onError = (errors: any) => {
+    console.error("[Client] Form validation errors:", errors);
+    toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please check the form for errors.",
+    });
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
