@@ -25,6 +25,11 @@ interface CellActionsProps {
 }
 
 const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
+    const handleEditClick = () => {
+        console.log('[columns.tsx] "Edit" button clicked for product:', product);
+        onEdit(product);
+    }
+    
     return (
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -39,7 +44,7 @@ const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
                     Copy product ID
                 </DropdownMenuItem>
                  <AuthorizationGuard permissionKey="products.update">
-                    <DropdownMenuItem onClick={() => onEdit(product)}>
+                    <DropdownMenuItem onClick={handleEditClick}>
                       Edit
                     </DropdownMenuItem>
                 </AuthorizationGuard>

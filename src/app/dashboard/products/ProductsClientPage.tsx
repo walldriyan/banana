@@ -64,7 +64,7 @@ export function ProductsClientPage() {
   };
 
   const openEditProductDrawer = useCallback((product: Product) => {
-    // No need for async/await here, we already have the product object
+    console.log('[ProductsClientPage.tsx] openEditProductDrawer called with product:', product);
     drawer.openDrawer({
         title: 'Edit Product',
         description: `Editing details for ${product.name}`,

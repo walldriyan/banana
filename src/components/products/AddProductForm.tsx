@@ -85,6 +85,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
   useEffect(() => {
     if (product) {
+      console.log('[AddProductForm.tsx] useEffect triggered in Edit Mode. Product prop received:', product);
       form.reset({
         ...product,
         costPrice: product.costPrice ?? undefined,
@@ -103,11 +104,12 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
         manufactureDate: product.manufactureDate ? new Date(product.manufactureDate).toISOString().split('T')[0] : undefined,
         expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : undefined,
       });
+      console.log('[AddProductForm.tsx] Form has been reset with product data.');
     }
   }, [product, form]);
 
   async function onSubmit(data: ProductFormValues) {
-    console.log("[Client] AddProductForm onSubmit called. isEditMode:", isEditMode, "Data:", data);
+    console.log("[AddProductForm.tsx] onSubmit called. isEditMode:", isEditMode, "Data:", data);
     setIsSubmitting(true);
     
     const action = isEditMode && product
@@ -133,11 +135,11 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   }
 
   const onError = (errors: any) => {
-    console.error("[Client] Form validation errors:", errors);
+    console.error("[AddProductForm.tsx] Form validation errors:", errors);
     toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please check the form for errors.",
+        description: "Please check the form for errors. See console for details.",
     });
   };
 
