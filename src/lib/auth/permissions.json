@@ -14,7 +14,11 @@
         "history.view",
         "bills.update",
         "bills.delete",
-        "refund.process"
+        "refund.process",
+        "products.view",
+        "products.create",
+        "products.update",
+        "products.delete"
       ]
     },
     "cashier": {

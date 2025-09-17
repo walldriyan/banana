@@ -15,7 +15,7 @@ import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { History, PlusCircle } from 'lucide-react';
+import { History, PlusCircle, LayoutDashboard } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
@@ -354,12 +354,14 @@ export default function MyNewEcommerceShop() {
                     </Button>
                   </Link>
                 </AuthorizationGuard>
-                 <Link href="/products/add" passHref>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Product
-                  </Button>
-                </Link>
+                 <AuthorizationGuard permissionKey='products.view'>
+                  <Link href="/products" passHref>
+                    <Button variant="outline">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                </AuthorizationGuard>
                 <LogoutButton />
               </div>
             </div>

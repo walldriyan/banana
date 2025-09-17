@@ -1,7 +1,7 @@
 // src/components/products/AddProductForm.tsx
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
@@ -29,13 +29,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { addProductAction } from "@/lib/actions/product.actions";
-import { useState } from "react";
+import { addProductAction, updateProductAction } from "@/lib/actions/product.actions";
+import { useState, useEffect } from "react";
+import type { Product } from "@/types";
+import { PlusCircle, Trash2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
-export function AddProductForm() {
+interface AddProductFormProps {
+  product?: Product;
+}
+
+export function AddProductForm({ product }: AddProductFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditMode = !!product;
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -63,26 +71,59 @@ export function AddProductForm() {
       isActive: true,
       isService: false,
       units: {
-        baseUnit: 'pcs'
+        baseUnit: 'pcs',
+        derivedUnits: []
       }
     },
   });
 
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "units.derivedUnits",
+  });
+
+  useEffect(() => {
+    if (product) {
+      form.reset({
+        ...product,
+        costPrice: product.costPrice ?? undefined,
+        barcode: product.barcode ?? undefined,
+        brand: product.brand ?? undefined,
+        category: product.category ?? undefined,
+        location: product.location ?? undefined,
+        supplierId: product.supplierId ?? undefined,
+        minStockLevel: product.minStockLevel ?? undefined,
+        maxStockLevel: product.maxStockLevel ?? undefined,
+        tax: product.tax ?? undefined,
+        taxtype: product.taxtype ?? 'PERCENTAGE',
+        defaultDiscount: product.defaultDiscount ?? undefined,
+        defaultDiscountType: product.defaultDiscountType ?? 'PERCENTAGE',
+        notes: product.notes ?? undefined,
+        manufactureDate: product.manufactureDate ? new Date(product.manufactureDate).toISOString().split('T')[0] : undefined,
+        expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : undefined,
+      });
+    }
+  }, [product, form]);
+
   async function onSubmit(data: ProductFormValues) {
     setIsSubmitting(true);
-    const result = await addProductAction(data);
+    const action = isEditMode
+      ? updateProductAction(product.id, data)
+      : addProductAction(data);
+
+    const result = await action;
     setIsSubmitting(false);
 
     if (result.success) {
       toast({
-        title: "Product Added!",
-        description: `Product "${data.name}" has been successfully added.`,
+        title: `Product ${isEditMode ? 'Updated' : 'Added'}!`,
+        description: `Product "${data.name}" has been successfully ${isEditMode ? 'updated' : 'added'}.`,
       });
-      router.push("/"); // Redirect to home page after success
+      router.push("/products");
     } else {
       toast({
         variant: "destructive",
-        title: "Error adding product",
+        title: `Error ${isEditMode ? 'updating' : 'adding'} product`,
         description: result.error,
       });
     }
@@ -117,40 +158,26 @@ export function AddProductForm() {
                     <FormControl>
                       <Input placeholder="e.g., P001" {...field} />
                     </FormControl>
+                     <FormDescription>General ID for the product type.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
+               <FormField
                 control={form.control}
-                name="id"
+                name="batchNumber"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unique Product/Batch ID</FormLabel>
+                    <FormItem>
+                    <FormLabel>Batch Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., B001" {...field} />
+                        <Input placeholder="e.g., CRACKER-0925-A" {...field} />
                     </FormControl>
-                    <FormDescription>
-                      This is the unique ID for this specific batch.
-                    </FormDescription>
+                    <FormDescription>Leave blank if not applicable.</FormDescription>
                     <FormMessage />
-                  </FormItem>
+                    </FormItem>
                 )}
-              />
+                />
             </div>
-            <FormField
-              control={form.control}
-              name="batchNumber"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Batch Number</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., CRACKER-0925-A" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <div className="grid grid-cols-2 gap-4">
                  <FormField
                     control={form.control}
@@ -195,32 +222,18 @@ export function AddProductForm() {
                     />
                 <FormField
                     control={form.control}
-                    name="units.baseUnit"
+                    name="barcode"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Base Unit</FormLabel>
+                        <FormLabel>Barcode (SKU)</FormLabel>
                         <FormControl>
-                            <Input placeholder="e.g., pcs, kg, ltr" {...field} />
+                            <Input placeholder="e.g., 1234567890123" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
-                 />
+                    />
             </div>
-
-            <FormField
-              control={form.control}
-              name="barcode"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Barcode (SKU)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g., 1234567890123" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
 
           {/* Right Column */}
@@ -337,139 +350,209 @@ export function AddProductForm() {
                     )}
                  />
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="tax"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Tax</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="taxtype"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="PERCENTAGE">Percentage</SelectItem>
-                        <SelectItem value="FIXED">Fixed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <FormField
-                control={form.control}
-                name="defaultDiscount"
-                render={({ field }) => (
-                  <FormItem className="col-span-2">
-                    <FormLabel>Default Discount</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="defaultDiscountType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Discount Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="PERCENTAGE">Percentage</SelectItem>
-                        <SelectItem value="FIXED">Fixed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Any additional notes about the product..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <div className="flex items-center space-x-4">
-                <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1">
-                    <div className="space-y-0.5">
-                        <FormLabel>Product Active</FormLabel>
-                    </div>
-                    <FormControl>
-                        <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        />
-                    </FormControl>
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="isService"
-                render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1">
-                    <div className="space-y-0.5">
-                        <FormLabel>Is a Service</FormLabel>
-                    </div>
-                    <FormControl>
-                        <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        />
-                    </FormControl>
-                    </FormItem>
-                )}
-                />
-            </div>
           </div>
         </div>
+
+        {/* Units Section */}
+        <Card>
+            <CardHeader>
+                <CardTitle>Units of Measurement</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="units.baseUnit"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Base Unit</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., pcs, kg, ltr" {...field} />
+                        </FormControl>
+                        <FormDescription>The smallest unit the product is sold in.</FormDescription>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                 />
+                <div className="space-y-2">
+                    <FormLabel>Derived Units</FormLabel>
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
+                            <FormField
+                                control={form.control}
+                                name={`units.derivedUnits.${index}.name`}
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <Input {...field} placeholder="Unit Name (e.g., box)" />
+                                    </FormItem>
+                                )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name={`units.derivedUnits.${index}.conversionFactor`}
+                                render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <Input type="number" {...field} placeholder="Factor (e.g., 12)" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                        </div>
+                    ))}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => append({ name: '', conversionFactor: 0 })}
+                    >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add Derived Unit
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+
+        {/* Other Details Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="tax"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Tax</FormLabel>
+                        <FormControl>
+                        <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="taxtype"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Tax Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                            <SelectItem value="FIXED">Fixed</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="defaultDiscount"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Default Discount</FormLabel>
+                        <FormControl>
+                        <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="defaultDiscountType"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Discount Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value ?? undefined}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                            <SelectItem value="FIXED">Fixed</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                </div>
+                 <div className="flex items-center space-x-4">
+                    <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1">
+                        <div className="space-y-0.5">
+                            <FormLabel>Product Active</FormLabel>
+                        </div>
+                        <FormControl>
+                            <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="isService"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1">
+                        <div className="space-y-0.5">
+                            <FormLabel>Is a Service</FormLabel>
+                        </div>
+                        <FormControl>
+                            <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                </div>
+            </div>
+            <div className="space-y-6">
+                <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                    <FormItem>
+                    <FormLabel>Notes</FormLabel>
+                    <FormControl>
+                        <Textarea
+                        placeholder="Any additional notes about the product..."
+                        {...field}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
+            </div>
+        </div>
+
 
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Product"}
+            {isSubmitting ? "Saving..." : (isEditMode ? "Update Product" : "Save Product")}
           </Button>
         </div>
       </form>
