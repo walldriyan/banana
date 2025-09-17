@@ -15,7 +15,7 @@ import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { History, PlusCircle, LayoutDashboard } from 'lucide-react';
+import { History, LayoutDashboard } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
@@ -355,7 +355,7 @@ export default function MyNewEcommerceShop() {
                   </Link>
                 </AuthorizationGuard>
                  <AuthorizationGuard permissionKey='products.view'>
-                  <Link href="/dashboard" passHref>
+                  <Link href="/dashboard/products" passHref>
                     <Button variant="outline">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
                       Dashboard
