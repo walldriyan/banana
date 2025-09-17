@@ -3,13 +3,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard } from 'lucide-react';
+import { Home, Package, Users, LineChart, LayoutDashboard, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/dashboard/products', icon: Package, label: 'Products', permission: 'products.view' },
+  { href: '/dashboard/customers', icon: Users, label: 'Customers', permission: 'customers.view' },
+  { href: '/dashboard/suppliers', icon: Building, label: 'Suppliers', permission: 'suppliers.view' },
   // Add more dashboard items here
 ];
 

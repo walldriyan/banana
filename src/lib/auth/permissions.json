@@ -18,7 +18,15 @@
         "products.view",
         "products.create",
         "products.update",
-        "products.delete"
+        "products.delete",
+        "customers.view",
+        "customers.create",
+        "customers.update",
+        "customers.delete",
+        "suppliers.view",
+        "suppliers.create",
+        "suppliers.update",
+        "suppliers.delete"
       ]
     },
     "cashier": {
