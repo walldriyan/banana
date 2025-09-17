@@ -13,31 +13,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
-import Link from "next/link"
 import { deleteProductAction } from "@/lib/actions/product.actions"
 import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 
-const CellActions = ({ product }: { product: Product }) => {
-    const { toast } = useToast();
-    const router = useRouter();
+// Define a new interface for the component props
+interface CellActionsProps {
+  product: Product;
+  onEdit: (product: Product) => void; // Callback to open the edit drawer
+  onDelete: (productId: string) => void; // Callback to handle deletion
+}
 
-    const handleDelete = async () => {
-        if (!confirm(`Are you sure you want to delete "${product.name} (${product.batchNumber})"?`)) {
-            return;
-        }
-
-        const result = await deleteProductAction(product.id);
-
-        if (result.success) {
-            toast({ title: "Product Deleted", description: `Product "${product.name}" has been deleted.` });
-            router.refresh(); // Refresh the page to show the updated list
-        } else {
-            toast({ variant: "destructive", title: "Error", description: result.error });
-        }
-    }
-
+const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
     return (
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -52,12 +39,12 @@ const CellActions = ({ product }: { product: Product }) => {
                     Copy product ID
                 </DropdownMenuItem>
                  <AuthorizationGuard permissionKey="products.update">
-                    <Link href={`/dashboard/products/edit/${product.id}`} passHref>
-                        <DropdownMenuItem>Edit</DropdownMenuItem>
-                    </Link>
+                    <DropdownMenuItem onClick={() => onEdit(product)}>
+                      Edit
+                    </DropdownMenuItem>
                 </AuthorizationGuard>
                  <AuthorizationGuard permissionKey="products.delete">
-                    <DropdownMenuItem onClick={handleDelete} className="text-red-500">
+                    <DropdownMenuItem onClick={() => onDelete(product.id)} className="text-red-500">
                         Delete
                     </DropdownMenuItem>
                 </AuthorizationGuard>
@@ -66,7 +53,11 @@ const CellActions = ({ product }: { product: Product }) => {
     )
 }
 
-export const columns: ColumnDef<Product>[] = [
+// Update the type definition for the columns factory
+export const getColumns = (
+  onEdit: (product: Product) => void,
+  onDelete: (productId: string) => void
+): ColumnDef<Product>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -146,6 +137,6 @@ export const columns: ColumnDef<Product>[] = [
     },
     {
         id: "actions",
-        cell: ({ row }) => <CellActions product={row.original} />,
+        cell: ({ row }) => <CellActions product={row.original} onEdit={onEdit} onDelete={onDelete} />,
     },
 ]

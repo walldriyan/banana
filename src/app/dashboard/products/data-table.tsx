@@ -24,18 +24,19 @@ import {
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
-import Link from "next/link"
 import { PlusCircle } from "lucide-react"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  data: TData[],
+  onAddProduct: () => void; // Callback to open the add product drawer
 }
 
 export function ProductsDataTable<TData, TValue>({
   columns,
   data,
+  onAddProduct
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -71,12 +72,10 @@ export function ProductsDataTable<TData, TValue>({
                 className="max-w-sm"
             />
             <AuthorizationGuard permissionKey="products.create">
-                <Link href="/dashboard/products/add" passHref>
-                    <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Product
-                    </Button>
-                </Link>
+                <Button onClick={onAddProduct}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Product
+                </Button>
             </AuthorizationGuard>
         </div>
         <div className="rounded-md border">
