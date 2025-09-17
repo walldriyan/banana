@@ -24,6 +24,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
+import { PlusCircle } from "lucide-react"
+import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -58,7 +61,7 @@ export function ProductsDataTable<TData, TValue>({
 
   return (
     <div>
-        <div className="flex items-center py-4">
+        <div className="flex items-center justify-between py-4">
             <Input
                 placeholder="Filter products by name..."
                 value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -67,6 +70,14 @@ export function ProductsDataTable<TData, TValue>({
                 }
                 className="max-w-sm"
             />
+            <AuthorizationGuard permissionKey="products.create">
+                <Link href="/dashboard/products/add" passHref>
+                    <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Product
+                    </Button>
+                </Link>
+            </AuthorizationGuard>
         </div>
         <div className="rounded-md border">
             <Table>

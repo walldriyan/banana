@@ -2,10 +2,6 @@
 import { getProductsAction } from "@/lib/actions/product.actions";
 import { ProductsDataTable } from "./data-table";
 import { columns } from "./columns";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import Link from "next/link";
-import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
 
 
 async function getProducts() {
@@ -29,14 +25,6 @@ export default async function ProductsPage() {
             <h1 className="text-3xl font-bold">Product Management</h1>
             <p className="text-muted-foreground">View, add, edit, and manage all your products.</p>
         </div>
-        <AuthorizationGuard permissionKey="products.create">
-          <Link href="/dashboard/products/add" passHref>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add Product
-            </Button>
-          </Link>
-        </AuthorizationGuard>
       </div>
       <ProductsDataTable columns={columns} data={products} />
     </div>
