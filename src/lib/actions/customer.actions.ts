@@ -90,16 +90,29 @@ export async function updateCustomerAction(id: string, data: CustomerFormValues)
  */
 export async function deleteCustomerAction(id: string) {
   try {
-    // Note: You might want to check if the customer has associated transactions
-    // before allowing deletion to maintain data integrity.
+    // Check if the customer has any associated transactions
+    const transactionCount = await prisma.transaction.count({
+      where: { customerId: id },
+    });
+
+    if (transactionCount > 0) {
+      return { 
+        success: false, 
+        error: `Cannot delete customer. They have ${transactionCount} existing transaction(s).` 
+      };
+    }
+
     await prisma.customer.delete({
       where: { id },
     });
     revalidatePath('/dashboard/customers');
     return { success: true };
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        return { success: false, error: "Cannot delete customer. They may have existing transactions." };
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2025') {
+        // This case is now less likely due to the check above, but good to keep as a fallback
+        return { success: false, error: "Customer not found." };
+      }
     }
     return { success: false, error: "Failed to delete customer." };
   }

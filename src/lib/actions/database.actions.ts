@@ -30,18 +30,34 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
   try {
     const newTransaction = await prisma.$transaction(async (tx) => {
       
+      let customer;
       const phoneToUse = customerDetails.phone || null;
+      const isWalkIn = customerDetails.name === 'Walk-in Customer' && !phoneToUse;
 
-      // Step 1: Find or create the customer
-      const customer = await tx.customer.upsert({
-        where: { phone: phoneToUse || `__no-phone-${transactionHeader.transactionId}` },
-        update: { name: customerDetails.name, address: customerDetails.address },
-        create: {
-          name: customerDetails.name,
-          phone: phoneToUse,
-          address: customerDetails.address,
-        },
-      });
+      if (isWalkIn) {
+        // Try to find an existing Walk-in customer with no phone number
+        customer = await tx.customer.findFirst({
+          where: { name: 'Walk-in Customer', phone: null }
+        });
+        // If not found, create one.
+        if (!customer) {
+          customer = await tx.customer.create({
+            data: { name: 'Walk-in Customer', phone: null, address: null }
+          });
+        }
+      } else {
+         // Find or create the customer based on phone number if provided
+        customer = await tx.customer.upsert({
+          where: { phone: phoneToUse || `__no-phone-${transactionHeader.transactionId}` },
+          update: { name: customerDetails.name, address: customerDetails.address },
+          create: {
+            name: customerDetails.name,
+            phone: phoneToUse,
+            address: customerDetails.address,
+          },
+        });
+      }
+
 
       // Step 2: Create the main transaction record
       const newTransaction = await tx.transaction.create({
@@ -111,7 +127,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
   } catch (error) {
     console.error('[DB_SAVE_ERROR]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if(error.code === 'P2002' && error.meta?.target === 'Transaction_originalTransactionId_key') {
+      if(error.code === 'P2002' && (error.meta?.target as string[])?.includes('originalTransactionId')) {
            return { success: false, error: `The original transaction has already been refunded.` };
       }
       return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
