@@ -2,7 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider      = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // The `binaryTargets` setting is needed to run Prisma Client in an environment
+  // that is different from the one in which it was generated (e.g. Docker).
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -11,24 +13,29 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+// Full-text search is not supported by SQLite.
+// We are using a workaround with a separate model for now.
+
+// MODELS
+
 model Product {
-  id                    String    @id @default(cuid())
-  productId             String // General ID for the product type, e.g., 't-shirt-01'
-  name                  String
-  batchNumber           String?
+  id                    String      @id @default(cuid())
+  name                  String // e.g., "Dell Inspiron 15"
+  productId             String // General ID for the product type, e.g. "P001"
+  batchNumber           String? // e.g., "B001"
   sellingPrice          Float
   costPrice             Float?
-  quantity              Int
-  stock                 Int       @default(0) // Redundant, but can be useful for reports
-  barcode               String?   @unique
-  category              String?
-  brand                 String?
+  quantity              Int // Current stock level
+  stock                 Int
+  barcode               String?     @unique // SKU
+  category              String? // e.g., "Laptops"
+  brand                 String? // e.g., "Dell"
   supplierId            String?
-  location              String? // e.g., Warehouse A, Shelf B-3
-  units                 String // JSON string to store unit definitions: { "baseUnit": "pcs", "derivedUnits": [{"name": "box", "conversion": 12}] }
-  isService             Boolean   @default(false)
-  isActive              Boolean   @default(true)
-  defaultQuantity       Int       @default(1)
+  location              String? // e.g., "Warehouse A, Shelf B-3"
+  units                 String // JSON string to store unit definitions
+  isService             Boolean     @default(false)
+  isActive              Boolean     @default(true)
+  defaultQuantity       Int         @default(1)
   tax                   Float?
   taxtype               String? // "FIXED" or "PERCENTAGE"
   defaultDiscount       Float?
@@ -39,24 +46,18 @@ model Product {
   maxStockLevel         Int?
   notes                 String?
   status                String?
-  addeDate              DateTime  @default(now())
+  addeDate              DateTime    @default(now())
   userId                String?
   companyId             String?
+
+  transactionLines      TransactionLine[]
 
   @@unique([productId, batchNumber])
 }
 
-model Customer {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String?       @unique
-  address      String?
-  transactions Transaction[]
-}
-
 model Transaction {
-  id                    String        @id
-  transactionDate       DateTime      @default(now())
+  id                    String                @id
+  transactionDate       DateTime
   subtotal              Float
   totalDiscountAmount   Float
   finalTotal            Float
@@ -64,74 +65,78 @@ model Transaction {
   totalQuantity         Float
   status                String // "completed", "refund", "pending"
   campaignId            String
+  isGiftReceipt         Boolean               @default(false)
+  
+  customerId            Int
+  customer              Customer              @relation(fields: [customerId], references: [id])
+  
+  payment               Payment?
+  lines                 TransactionLine[]
+  appliedDiscounts      AppliedDiscountLog[]
+
+  // Self-relation for refunds
   originalTransactionId String?
-  isGiftReceipt         Boolean       @default(false)
-
-  customerId String
-  customer   Customer @relation(fields: [customerId], references: [id])
-
-  lines            TransactionLine[]
-  payment          Payment?
-  appliedDiscounts AppliedDiscount[]
-
-  originalTransaction Refund?  @relation("OriginalTransaction")
-  refundTransaction Refund[] @relation("OriginalTransaction")
-
-  @@index([transactionDate])
+  originalTransaction   Transaction?          @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions    Transaction[]         @relation("OriginalToRefunds")
 }
 
-model TransactionLine {
-  id                      String      @id @default(cuid())
-  productId               String
-  productName             String
-  batchId                 String?
-  batchNumber             String?
-  quantity                Float
-  displayUnit             String
-  displayQuantity         Float
-  unitPrice               Float
-  lineTotalBeforeDiscount Float
-  lineDiscount            Float
-  lineTotalAfterDiscount  Float
-  customDiscountValue     Float?
-  customDiscountType      String? // "fixed" or "percentage"
-  customApplyFixedOnce    Boolean?
-
-  transactionId String
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
+model Customer {
+  id          Int      @id @default(autoincrement())
+  name        String
+  phone       String?  @unique
+  address     String?
+  
+  transactions Transaction[]
 }
 
 model Payment {
-  id                String      @id @default(cuid())
-  paidAmount        Float
-  paymentMethod     String
-  outstandingAmount Float
-  isInstallment     Boolean
-
-  transactionId String      @unique
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  id                  Int      @id @default(autoincrement())
+  paidAmount          Float
+  paymentMethod       String // "cash", "card", "online"
+  outstandingAmount   Float
+  isInstallment       Boolean
+  
+  transactionId       String   @unique
+  transaction         Transaction @relation(fields: [transactionId], references: [id])
 }
 
-model AppliedDiscount {
-  id                      String   @id @default(cuid())
-  discountCampaignName    String
-  sourceRuleName          String
-  totalCalculatedDiscount Float
-  ruleType                String
-  productIdAffected       String?
-  batchIdAffected         String?
-  appliedOnce             Boolean?
+model TransactionLine {
+  id                        Int       @id @default(autoincrement())
+  productId                 String // General Product ID from Product model
+  productName               String
+  batchId                   String? // Specific unique ID from Product model
+  batchNumber               String?
+  quantity                  Float
+  displayUnit               String
+  displayQuantity           Float
+  unitPrice                 Float
+  lineTotalBeforeDiscount   Float
+  lineDiscount              Float
+  lineTotalAfterDiscount    Float
+  customDiscountValue       Float?
+  customDiscountType        String?
+  customApplyFixedOnce      Boolean?
+  
+  transactionId             String
+  transaction               Transaction @relation(fields: [transactionId], references: [id])
 
-  transactionId String
-  transaction   Transaction @relation(fields: [transactionId], references  : [id])
+  product                   Product @relation(fields: [batchId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([transactionId])
 }
 
-model Refund {
-  id              String      @id @default(cuid())
-  refundDate      DateTime    @default(now())
-  reason          String?
-  originalAmount  Float
-  refundAmount    Float
-  transactionId   String      @unique
-  original        Transaction @relation(name: "OriginalTransaction", fields: [transactionId], references: [id])
+model AppliedDiscountLog {
+  id                        Int    @id @default(autoincrement())
+  discountCampaignName      String
+  sourceRuleName            String
+  totalCalculatedDiscount   Float
+  ruleType                  String
+  productIdAffected         String?
+  batchIdAffected           String?
+  appliedOnce               Boolean?
+  
+  transactionId             String
+  transaction               Transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([transactionId])
 }
