@@ -22,7 +22,8 @@ export async function addProductAction(data: ProductFormValues) {
     };
   }
   
-  const validatedData = validationResult.data;
+  const { id, ...validatedData } = validationResult.data;
+
 
   try {
     // 2. Use Prisma to create the product
@@ -44,7 +45,7 @@ export async function addProductAction(data: ProductFormValues) {
       },
     });
     
-    revalidatePath('/products');
+    revalidatePath('/dashboard/products');
 
     return { success: true, data: newProduct };
   } catch (error) {
@@ -155,7 +156,7 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
         };
     }
 
-    const validatedData = validationResult.data;
+    const { id: validatedId, ...validatedData } = validationResult.data;
 
     try {
         const updatedProduct = await prisma.product.update({
@@ -176,8 +177,8 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
             },
         });
         
-        revalidatePath('/products');
-        revalidatePath(`/products/edit/${id}`);
+        revalidatePath('/dashboard/products');
+        revalidatePath(`/dashboard/products/edit/${id}`);
 
         return { success: true, data: updatedProduct };
     } catch (error) {
@@ -201,7 +202,7 @@ export async function deleteProductAction(id: string) {
             where: { id },
         });
         
-        revalidatePath('/products');
+        revalidatePath('/dashboard/products');
 
         return { success: true };
     } catch (error) {

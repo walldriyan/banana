@@ -12,7 +12,7 @@ const unitDefinitionSchema = z.object({
 });
 
 export const productSchema = z.object({
-  id: z.string().min(1, "Unique Product/Batch ID is required."),
+  id: z.string().optional(), // Make ID optional, Prisma will generate it
   name: z.string().min(2, "Product name must be at least 2 characters."),
   productId: z.string().min(1, "Product ID is required."),
   batchNumber: z.string().optional(),
