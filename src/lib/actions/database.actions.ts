@@ -56,11 +56,9 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           status: transactionHeader.status,
           campaignId: transactionHeader.campaignId,
           isGiftReceipt: transactionHeader.isGiftReceipt,
-          // Conditionally add originalTransactionId only if it exists
+          // Correct way to link a refund to its original transaction
           ...(transactionHeader.originalTransactionId && {
-            originalTransaction: {
-                connect: { id: transactionHeader.originalTransactionId }
-            }
+            originalTransactionId: transactionHeader.originalTransactionId
           }),
           customerId: customer.id,
           payment: {
