@@ -59,7 +59,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 
 
       // Step 2: Create the main transaction record
-      const newTransaction = await tx.transaction.create({
+      const createdTransaction = await tx.transaction.create({
         data: {
           id: transactionHeader.transactionId,
           transactionDate: transactionHeader.transactionDate,
@@ -116,7 +116,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
         },
       });
 
-      // *** NEW LOGIC: Update product stock levels ***
+      // *** STOCK MANAGEMENT LOGIC ***
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
             await tx.product.update({
@@ -131,16 +131,41 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                 }
             });
         }
-      } else if (transactionHeader.status === 'refund') {
+      } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
          // For refunds, we need to add the quantity of the RETURNED items back to stock.
-         // This is complex, as refundCart has items being KEPT.
-         // We need to compare original transaction lines with refund transaction lines.
-         // This logic will be added in a future step to ensure accuracy.
-         // For now, we only handle stock deduction for 'completed' sales.
+         const originalTx = await tx.transaction.findUnique({
+             where: { id: transactionHeader.originalTransactionId },
+             include: { lines: true }
+         });
+
+         if (!originalTx) {
+             throw new Error(`Original transaction ${transactionHeader.originalTransactionId} not found for refund stock update.`);
+         }
+
+         for (const originalLine of originalTx.lines) {
+             const keptLine = transactionLines.find(line => line.batchId === originalLine.batchId);
+             const originalQty = originalLine.quantity;
+             const keptQty = keptLine ? keptLine.quantity : 0;
+             const returnedQty = originalQty - keptQty;
+
+             if (returnedQty > 0) {
+                 await tx.product.update({
+                     where: { id: originalLine.batchId },
+                     data: {
+                         quantity: {
+                             increment: returnedQty
+                         },
+                         stock: {
+                             increment: returnedQty
+                         }
+                     }
+                 });
+             }
+         }
       }
 
 
-      return newTransaction;
+      return createdTransaction;
     });
 
     console.log(`[DB] Transaction ${newTransaction.id} saved successfully to database.`);
