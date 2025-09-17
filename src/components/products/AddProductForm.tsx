@@ -34,7 +34,6 @@ import type { Product } from "@/types";
 import { PlusCircle, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { useDrawer } from "@/hooks/use-drawer";
-import { useRouter } from "next/navigation";
 
 
 interface AddProductFormProps {
@@ -109,7 +108,8 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
   async function onSubmit(data: ProductFormValues) {
     setIsSubmitting(true);
-    const action = isEditMode
+    
+    const action = isEditMode && product
       ? updateProductAction(product.id, data)
       : addProductAction(data);
 
