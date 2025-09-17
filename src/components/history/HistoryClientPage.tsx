@@ -2,7 +2,6 @@
 'use client';
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { getPendingTransactions } from '@/lib/db/local-db';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { TransactionList } from './TransactionList';
 import { Skeleton } from '../ui/skeleton';
@@ -10,6 +9,7 @@ import { TransactionSearchBar } from './TransactionSearchBar';
 import { Button } from '../ui/button';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
+import { getTransactionsFromDb } from '@/lib/actions/database.actions';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -23,23 +23,14 @@ export function HistoryClientPage() {
   const fetchTransactions = useCallback(async () => {
     try {
       setIsLoading(true);
-      const allTxs = await getPendingTransactions();
+      const result = await getTransactionsFromDb();
       
-      const uniqueTransactionsMap = allTxs.reduce((acc, current) => {
-        const existingTx = acc.get(current.transactionHeader.transactionId);
-        if (!existingTx || new Date(current.transactionHeader.transactionDate) > new Date(existingTx.transactionHeader.transactionDate)) {
-             acc.set(current.transactionHeader.transactionId, current);
-        }
-        return acc;
-      }, new Map<string, DatabaseReadyTransaction>());
-      
-      const uniqueTransactions = Array.from(uniqueTransactionsMap.values());
+      if (result.success && result.data) {
+        setAllTransactions(result.data);
+      } else {
+        throw new Error(result.error || 'Failed to fetch transactions from database.');
+      }
 
-      uniqueTransactions.sort((a, b) => 
-        new Date(b.transactionHeader.transactionDate).getTime() - 
-        new Date(a.transactionHeader.transactionDate).getTime()
-      );
-      setAllTransactions(uniqueTransactions);
       setError(null);
     } catch (err) {
       console.error("Failed to fetch transactions:", err);

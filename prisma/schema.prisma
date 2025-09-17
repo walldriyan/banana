@@ -10,68 +10,62 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-// Product Model
+// Product model to store product information
 model Product {
-  id              String    @id @default(cuid())
-  name            String
-  productId       String // General ID for the product type, not unique
-  batchNumber     String?
-  sellingPrice    Float
-  costPrice       Float?
-  quantity        Int
-  stock           Int
-  barcode         String?   @unique
-  category        String?
-  brand           String?
-  supplierId      String?
-  location        String?
-  units           String // JSON string to store unit definitions: { "baseUnit": "pcs", "derivedUnits": [{"name": "box", "conversion": 12}] }
-  isService       Boolean   @default(false)
-  isActive        Boolean   @default(true)
-  defaultQuantity Int       @default(1)
-  tax             Float?
-  taxtype         String? // "FIXED" or "PERCENTAGE"
-  defaultDiscount Float?
-  defaultDiscountType String? // "FIXED" or "PERCENTAGE"
-  manufactureDate DateTime?
-  expiryDate      DateTime?
-  minStockLevel   Int?
-  maxStockLevel   Int?
-  notes           String?
-  addeDate        DateTime  @default(now())
+  id                  String    @id @default(cuid())
+  name                String
+  productId           String // General product ID, e.g., 'P001'. For grouping different batches of the same product.
+  batchNumber         String? // Batch or lot number, e.g., 'B001-EXP2025'.
+  sellingPrice        Float
+  costPrice           Float?
+  quantity            Float
+  stock               Float
+  barcode             String?   @unique
+  category            String?
+  brand               String?
+  supplierId          String?
+  location            String?   // e.g., Warehouse A, Shelf B-3
+  units               String // JSON string to store unit definitions: { "baseUnit": "pcs", "derivedUnits": [{"name": "box", "conversion": 12}] }
+  isService           Boolean   @default(false)
+  isActive            Boolean   @default(true)
+  defaultQuantity     Int       @default(1)
+  tax                 Float?
+  taxtype             String?
+  defaultDiscount     Float?
+  defaultDiscountType String?
+  manufactureDate     DateTime?
+  expiryDate          DateTime?
+  addeDate            DateTime  @default(now())
+  notes               String?
 
-  @@unique([productId, batchNumber]) // Ensures that a batch number is unique per product ID
+  @@unique([productId, batchNumber]) // Ensure each batch of a product is unique
 }
 
-// Transaction Model
 model Transaction {
-  id                      String    @id
-  transactionDate         DateTime
+  id                      String   @id
+  transactionDate         DateTime @default(now())
   subtotal                Float
   totalDiscountAmount     Float
   finalTotal              Float
   totalItems              Int
   totalQuantity           Float
-  status                  String // "completed", "refund", "pending"
+  status                  String // e.g., 'completed', 'refunded', 'pending'
   campaignId              String
-  isGiftReceipt           Boolean   @default(false)
-  originalTransactionId   String?
+  originalTransactionId   String?  @unique
+  isGiftReceipt           Boolean?
   customerId              String
-  customer                Customer  @relation(fields: [customerId], references: [id])
+  customer                Customer @relation(fields: [customerId], references: [id])
   payment                 Payment?
   lines                   TransactionLine[]
   appliedDiscounts        AppliedDiscountLog[]
-
-  // Self-referencing relationship for refunds
-  originalTransaction   Transaction?  @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  refundTransactions    Transaction[] @relation("RefundToOriginal")
+  originalTransaction     Transaction? @relation("RefundToOriginal", fields: [originalTransactionId], references: [id])
+  refundTransactions      Transaction[] @relation("RefundToOriginal")
 }
 
-// TransactionLine Model
 model TransactionLine {
-  id                        String      @id @default(cuid())
+  id                        Int      @id @default(autoincrement())
   transactionId             String
-  transaction               Transaction @relation(fields: [transactionId], references: [id])
+  transaction               Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   productId                 String
   productName               String
   batchId                   String?
@@ -88,22 +82,20 @@ model TransactionLine {
   customApplyFixedOnce      Boolean?
 }
 
-// Payment Model
 model Payment {
-  id                String      @id @default(cuid())
-  transactionId     String      @unique
-  transaction       Transaction @relation(fields: [transactionId], references: [id])
+  id                Int      @id @default(autoin-crement())
+  transactionId     String   @unique
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   paidAmount        Float
   paymentMethod     String
   outstandingAmount Float
   isInstallment     Boolean
 }
 
-// AppliedDiscountLog Model
 model AppliedDiscountLog {
-  id                      String      @id @default(cuid())
+  id                      Int      @id @default(autoincrement())
   transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id])
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   discountCampaignName    String
   sourceRuleName          String
   totalCalculatedDiscount Float
@@ -113,7 +105,6 @@ model AppliedDiscountLog {
   appliedOnce             Boolean?
 }
 
-// Customer Model
 model Customer {
   id          String        @id @default(cuid())
   name        String
@@ -125,15 +116,14 @@ model Customer {
   transactions Transaction[]
 }
 
-// Supplier Model
 model Supplier {
-  id            String    @id @default(cuid())
-  name          String    @unique
-  contactPerson String?
-  phone         String?
-  email         String?   @unique
-  address       String?
-  notes         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+    id            String    @id @default(cuid())
+    name          String    @unique
+    contactPerson String?
+    phone         String?   @unique
+    email         String?   @unique
+    address       String?
+    notes         String?
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
 }

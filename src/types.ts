@@ -158,3 +158,59 @@ export interface DiscountAuditLog {
   productId?: string;
   batchId?: string;
 }
+
+export interface DatabaseReadyTransaction {
+  transactionHeader: {
+    transactionId: string;
+    transactionDate: string;
+    subtotal: number;
+    totalDiscountAmount: number;
+    finalTotal: number;
+    totalItems: number;
+    totalQuantity: number;
+    status: 'completed' | 'refund' | 'pending';
+    campaignId: string;
+    originalTransactionId?: string;
+    isGiftReceipt?: boolean;
+  };
+  transactionLines: Array<{
+    saleItemId: string;
+    productId: string;
+    productName: string;
+    batchId: string;
+    batchNumber?: string;
+    quantity: number;
+    displayUnit: string;
+    displayQuantity: number;
+    unitPrice: number;
+    lineTotalBeforeDiscount: number;
+    lineDiscount: number;
+    lineTotalAfterDiscount: number;
+    customDiscountValue?: number;
+    customDiscountType?: 'fixed' | 'percentage';
+    customApplyFixedOnce?: boolean;
+  }>;
+  appliedDiscountsLog: AppliedRuleInfo[];
+  customerDetails: {
+    id?: string;
+    name: string;
+    phone: string;
+    address: string;
+  };
+  paymentDetails: {
+    paidAmount: number;
+    paymentMethod: 'cash' | 'card' | 'online';
+    outstandingAmount: number;
+    isInstallment: boolean;
+  };
+  companyDetails: {
+    companyId: string;
+    companyName: string;
+  };
+  userDetails: {
+    userId: string;
+    userName: string;
+  };
+  isRefunded?: boolean;
+}
+

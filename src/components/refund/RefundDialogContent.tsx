@@ -14,72 +14,7 @@ import { RefundCart } from './RefundCart';
 import { RefundSummary } from './RefundSummary';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Terminal } from 'lucide-react';
-import { saveTransaction } from '@/lib/db/local-db';
-
-// Mock product data for mapping transaction lines back to products.
-// In a real app, this would come from a database or a shared context.
-const sampleProducts: Product[] = [
-    { 
-        id: 't-shirt-old-batch', 
-        productId: 't-shirt-01', 
-        name: 'T-Shirt', 
-        batchNumber: 'OLD-2023',
-        sellingPrice: 2000,
-        costPrice: 1500,
-        quantity: 100, 
-        stock: 100,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-    { 
-        id: 't-shirt-new-batch', 
-        productId: 't-shirt-01', 
-        name: 'T-Shirt', 
-        batchNumber: 'NEW-2024',
-        sellingPrice: 2500,
-        costPrice: 1800,
-        quantity: 100, 
-        stock: 100,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-    { 
-        id: 'jeans-old-batch', 
-        productId: 'jeans-01', 
-        name: 'Jeans', 
-        batchNumber: 'JEANS-OLD-2023',
-        sellingPrice: 7000,
-        costPrice: 4000,
-        quantity: 50, 
-        stock: 50,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-    { 
-        id: 'jeans-new-batch', 
-        productId: 'jeans-01', 
-        name: 'Jeans', 
-        batchNumber: 'JEANS-NEW-2024',
-        sellingPrice: 8000,
-        costPrice: 5000,
-        quantity: 30, 
-        stock: 30,
-        category: 'Apparel', 
-        units: { baseUnit: 'pcs' }, 
-        isActive: true, 
-        isService: false,
-        defaultQuantity: 1,
-    },
-];
+import { saveTransactionToDb } from '@/lib/actions/database.actions';
 
 
 interface RefundDialogContentProps {
@@ -115,7 +50,7 @@ export function RefundDialogContent({
       }
     }
     // Use the updated transactionLinesToSaleItems which now restores custom discounts
-    const items = transactionLinesToSaleItems(originalTransaction.transactionLines, sampleProducts);
+    const items = transactionLinesToSaleItems(originalTransaction.transactionLines, []);
     setRefundCart(items);
   }, [originalTransaction]);
 
@@ -201,11 +136,15 @@ export function RefundDialogContent({
         const result = await processRefundAction(payload);
 
         if (result.success && result.data) {
-            await saveTransaction(result.data);
+            // Now save the returned transaction object to the database
+            const saveResult = await saveTransactionToDb(result.data);
+            if (!saveResult.success) {
+                throw new Error(saveResult.error);
+            }
             
             toast({
                 title: "Refund Processed Successfully",
-                description: `New transaction ${result.data.transactionHeader.transactionId} created and saved locally.`,
+                description: `New transaction ${saveResult.data.id} created and saved to the database.`,
             });
             onRefundComplete();
         } else {

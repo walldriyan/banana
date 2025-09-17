@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from '@/hooks/use-toast';
-import { deleteTransaction } from '@/lib/db/local-db';
+import { deleteTransactionFromDb } from '@/lib/actions/database.actions';
 
 interface TransactionListProps {
   originalTransactions: DatabaseReadyTransaction[];
@@ -76,7 +76,10 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
   const confirmDeleteRefund = async () => {
     if (!transactionToDelete) return;
     try {
-        await deleteTransaction(transactionToDelete);
+        const result = await deleteTransactionFromDb(transactionToDelete);
+        if (!result.success) {
+            throw new Error(result.error);
+        }
         toast({
             title: "Refund Deleted",
             description: `The refund transaction has been successfully removed.`,
@@ -86,7 +89,7 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
         toast({
             variant: "destructive",
             title: "Delete Failed",
-            description: "Could not delete the refund transaction.",
+            description: error instanceof Error ? error.message : "Could not delete the refund transaction.",
         });
     } finally {
         setIsDeleteDialogOpen(false);
@@ -99,7 +102,7 @@ export function TransactionList({ originalTransactions, refundMap, onRefresh }: 
       <div className="text-center py-10 px-4">
         <h3 className="text-xl font-semibold text-gray-700">No Transactions Found</h3>
         <p className="text-gray-500 mt-2">
-          It looks like there are no transactions saved in the local database yet.
+          It looks like there are no transactions saved in the database yet.
         </p>
       </div>
     );

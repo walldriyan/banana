@@ -13,7 +13,7 @@ import { transformTransactionDataForDb } from '@/lib/pos-data-transformer';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
-import { saveTransaction } from '@/lib/db/local-db';
+import { saveTransactionToDb } from '@/lib/actions/database.actions';
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
@@ -170,10 +170,16 @@ export function TransactionDialogContent({
           isGiftReceipt,
         });
 
-        await saveTransaction(dataToSave);
+        // Use the new server action to save to the database
+        const result = await saveTransactionToDb(dataToSave);
+        
+        if (!result.success) {
+            throw new Error(result.error);
+        }
+
         toast({
             title: "Transaction Saved",
-            description: `Transaction ${dataToSave.transactionHeader.transactionId} saved locally.`,
+            description: `Transaction ${result.data.id} saved to the database.`,
         });
 
         if (shouldPrintBill) {

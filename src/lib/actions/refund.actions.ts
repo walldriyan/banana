@@ -5,7 +5,7 @@ import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import type { SaleItem, DiscountSet } from '@/types';
 import { processRefund } from '../services/refund.service';
 import { calculateDiscounts } from '../services/discount.service';
-import { saveTransaction } from '../db/local-db';
+
 
 interface ProcessRefundPayload {
     originalTransaction: DatabaseReadyTransaction;
@@ -19,8 +19,7 @@ interface ProcessRefundPayload {
  * 1. Recalculates discounts for the items being kept.
  * 2. Creates the new refund transaction object.
  * 3. IT DOES NOT SAVE. It returns the final object to the client.
- * The client will then handle saving the data to its local storage.
- * This fixes the "Client Reference" error by not calling client-code from the server.
+ * The client will then handle saving the data to the database via another server action.
  * 
  * @param payload - The data required for the refund, containing only plain objects.
  * @returns A result object with success status and either the new transaction or an error message.
@@ -40,7 +39,7 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
             activeCampaign,
         });
         
-        // 3. DO NOT SAVE HERE. Return the prepared data to the client.
+        // 3. Return the prepared data to the client to be saved.
         return { success: true, data: refundTransaction };
 
     } catch (error) {
