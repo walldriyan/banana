@@ -27,10 +27,10 @@ export class DefaultItemRule implements IDiscountRule {
       }
       
       // *** THE FIX ***
-      // If a custom discount has been MANUALLY SET (even to 0), 
+      // If a custom discount has been MANUALLY SET (it's not null or undefined), 
       // we should NOT apply any default discounts.
       // A custom value being present signifies user intent to override all campaign rules.
-      if (item.customDiscountValue !== undefined) {
+      if (item.customDiscountValue != null && item.customDiscountValue > 0) {
         console.log(`Custom discount value is set for ${item.lineId}, skipping default rule.`);
         return;
       }
