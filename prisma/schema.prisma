@@ -14,8 +14,8 @@ datasource db {
 model Product {
   id              String    @id @default(cuid())
   name            String
-  productId       String // General product identifier, not unique (e.g., 't-shirt-01')
-  batchNumber     String? // Batch or lot number
+  productId       String // General ID for the product type, not unique
+  batchNumber     String?
   sellingPrice    Float
   costPrice       Float?
   quantity        Int
@@ -25,7 +25,6 @@ model Product {
   brand           String?
   supplierId      String?
   location        String?
-  notes           String?
   units           String // JSON string to store unit definitions: { "baseUnit": "pcs", "derivedUnits": [{"name": "box", "conversion": 12}] }
   isService       Boolean   @default(false)
   isActive        Boolean   @default(true)
@@ -36,100 +35,105 @@ model Product {
   defaultDiscountType String? // "FIXED" or "PERCENTAGE"
   manufactureDate DateTime?
   expiryDate      DateTime?
+  minStockLevel   Int?
+  maxStockLevel   Int?
+  notes           String?
   addeDate        DateTime  @default(now())
 
-  @@unique([productId, batchNumber])
+  @@unique([productId, batchNumber]) // Ensures that a batch number is unique per product ID
 }
 
 // Transaction Model
 model Transaction {
-  id                    String                @id
-  transactionDate       DateTime
-  subtotal              Float
-  totalDiscountAmount   Float
-  finalTotal            Float
-  totalItems            Int
-  totalQuantity         Float
-  status                String // "completed", "refund", "pending"
-  campaignId            String
-  isGiftReceipt         Boolean               @default(false)
-  originalTransactionId String?               @unique
-  customerId            String
-  customer              Customer              @relation(fields: [customerId], references: [id])
-  payment               Payment?
-  lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscountLog[]
-  originalTransaction   Transaction?          @relation("RefundToOriginal", fields: [originalTransactionId], references: [id])
-  refundTransaction     Transaction?          @relation("OriginalToRefunds")
+  id                      String    @id
+  transactionDate         DateTime
+  subtotal                Float
+  totalDiscountAmount     Float
+  finalTotal              Float
+  totalItems              Int
+  totalQuantity           Float
+  status                  String // "completed", "refund", "pending"
+  campaignId              String
+  isGiftReceipt           Boolean   @default(false)
+  originalTransactionId   String?
+  customerId              String
+  customer                Customer  @relation(fields: [customerId], references: [id])
+  payment                 Payment?
+  lines                   TransactionLine[]
+  appliedDiscounts        AppliedDiscountLog[]
+
+  // Self-referencing relationship for refunds
+  originalTransaction   Transaction?  @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions    Transaction[] @relation("RefundToOriginal")
 }
 
 // TransactionLine Model
 model TransactionLine {
-  id                      Int      @id @default(autoincrement())
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id])
-  productId               String
-  productName             String
-  batchId                 String?
-  batchNumber             String?
-  quantity                Float
-  displayUnit             String
-  displayQuantity         Float
-  unitPrice               Float
-  lineTotalBeforeDiscount Float
-  lineDiscount            Float
-  lineTotalAfterDiscount  Float
-  customDiscountValue     Float?
-  customDiscountType      String?
-  customApplyFixedOnce    Boolean?
-}
-
-// AppliedDiscountLog Model
-model AppliedDiscountLog {
-  id                       Int      @id @default(autoincrement())
-  transactionId            String
-  transaction              Transaction @relation(fields: [transactionId], references: [id])
-  discountCampaignName     String
-  sourceRuleName           String
-  totalCalculatedDiscount  Float
-  ruleType                 String
-  productIdAffected        String?
-  batchIdAffected          String?
-  appliedOnce              Boolean?
+  id                        String      @id @default(cuid())
+  transactionId             String
+  transaction               Transaction @relation(fields: [transactionId], references: [id])
+  productId                 String
+  productName               String
+  batchId                   String?
+  batchNumber               String?
+  quantity                  Float
+  displayUnit               String
+  displayQuantity           Float
+  unitPrice                 Float
+  lineTotalBeforeDiscount   Float
+  lineDiscount              Float
+  lineTotalAfterDiscount    Float
+  customDiscountValue       Float?
+  customDiscountType        String?
+  customApplyFixedOnce      Boolean?
 }
 
 // Payment Model
 model Payment {
-  id                Int      @id @default(autoincrement())
-  transactionId     String   @unique
+  id                String      @id @default(cuid())
+  transactionId     String      @unique
   transaction       Transaction @relation(fields: [transactionId], references: [id])
   paidAmount        Float
-  paymentMethod     String // "cash", "card", "online"
+  paymentMethod     String
   outstandingAmount Float
   isInstallment     Boolean
 }
 
+// AppliedDiscountLog Model
+model AppliedDiscountLog {
+  id                      String      @id @default(cuid())
+  transactionId           String
+  transaction             Transaction @relation(fields: [transactionId], references: [id])
+  discountCampaignName    String
+  sourceRuleName          String
+  totalCalculatedDiscount Float
+  ruleType                String
+  productIdAffected       String?
+  batchIdAffected         String?
+  appliedOnce             Boolean?
+}
+
 // Customer Model
 model Customer {
-  id          String         @id @default(cuid())
+  id          String        @id @default(cuid())
   name        String
-  phone       String?        @unique
+  phone       String?       @unique
+  email       String?       @unique
   address     String?
-  email       String?        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   transactions Transaction[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
 }
 
 // Supplier Model
 model Supplier {
-    id          String    @id @default(cuid())
-    name        String
-    contactPerson String?
-    phone       String?
-    email       String?   @unique
-    address     String?
-    notes       String?
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  name          String    @unique
+  contactPerson String?
+  phone         String?
+  email         String?   @unique
+  address       String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
