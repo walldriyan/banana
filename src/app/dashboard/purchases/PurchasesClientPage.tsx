@@ -22,7 +22,9 @@ import {
 } from "@/components/ui/alert-dialog"
 
 // Define a type for GRN with its relations for the client-side
-export type GrnWithRelations = GoodsReceivedNote & { supplier: Supplier };
+export type GrnWithRelations = GoodsReceivedNote & { supplier: Supplier, items: GoodsReceivedNoteItem[] };
+type GoodsReceivedNoteItem = import('@prisma/client').GoodsReceivedNoteItem;
+
 
 export function PurchasesClientPage() {
   const [grns, setGrns] = useState<GrnWithRelations[]>([]);

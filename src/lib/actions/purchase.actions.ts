@@ -15,6 +15,7 @@ export async function getGrnsAction() {
       orderBy: { grnDate: 'desc' },
       include: {
         supplier: true, // Include supplier details
+        items: true, // Include the line items
       }
     });
     return { success: true, data: grns };
@@ -29,6 +30,7 @@ export async function getGrnsAction() {
  * This is a transactional operation: it saves the GRN and updates product stock.
  */
 export async function addGrnAction(data: GrnFormValues) {
+    console.log('[addGrnAction] Received data on server:', data);
     const validationResult = grnSchema.safeParse(data);
     if (!validationResult.success) {
         return {

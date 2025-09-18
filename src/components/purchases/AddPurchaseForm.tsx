@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { addGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect } from "react";
-import type { GoodsReceivedNote, Supplier } from "@prisma/client";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
@@ -33,9 +32,11 @@ import { getSuppliersAction } from "@/lib/actions/supplier.actions";
 import { getProductsAction } from "@/lib/actions/product.actions";
 import type { Product } from "@/types";
 import SearchableProductInput from "../POSUI/SearchableProductInput";
+import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClientPage";
+import type { Supplier } from "@prisma/client";
 
 interface AddPurchaseFormProps {
-  grn?: GoodsReceivedNote; // For edit mode in the future
+  grn?: GrnWithRelations;
   onSuccess: () => void;
 }
 
@@ -72,7 +73,15 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const form = useForm<GrnFormValues>({
     resolver: zodResolver(grnSchema),
-    defaultValues: {
+    defaultValues: isEditMode && grn ? {
+      ...grn,
+      grnDate: new Date(grn.grnDate),
+      items: grn.items.map(item => ({
+        ...item,
+        // The product details are needed for the form, but not part of the schema
+        productName: products.find(p => p.id === item.productId)?.name || 'Unknown Product'
+      }))
+    } : {
       grnNumber: `GRN-${Date.now()}`,
       grnDate: new Date(),
       supplierId: '',
@@ -85,6 +94,20 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       paymentStatus: 'pending',
     },
   });
+
+  // If in edit mode, reset the form once products and suppliers have loaded
+  useEffect(() => {
+      if (isEditMode && grn && products.length > 0 && suppliers.length > 0) {
+          form.reset({
+              ...grn,
+              grnDate: new Date(grn.grnDate),
+              items: grn.items.map(item => ({
+                  ...item,
+                  productName: products.find(p => p.id === item.productId)?.name || 'Unknown'
+              }))
+          });
+      }
+  }, [isEditMode, grn, products, suppliers, form]);
 
   const { fields, append, remove, update } = useFieldArray({
     control: form.control,
@@ -146,6 +169,15 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   async function onSubmit(data: GrnFormValues) {
     setIsSubmitting(true);
     
+    // In the future, this will call updateGrnAction if isEditMode is true
+    const action = isEditMode ? null : addGrnAction(data);
+    
+    if (isEditMode) {
+      toast({ title: "Info", description: "Update functionality is not yet implemented."});
+      setIsSubmitting(false);
+      return;
+    }
+
     const result = await addGrnAction(data);
     
     setIsSubmitting(false);
@@ -181,7 +213,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <FormItem>
                     <FormLabel>GRN Number</FormLabel>
                     <FormControl>
-                        <Input {...field} readOnly />
+                        <Input {...field} readOnly={isEditMode} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
@@ -228,7 +260,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Supplier</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a supplier" />
@@ -294,16 +326,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <TableCell className="font-medium">{item.productName}</TableCell>
                                 <TableCell className="text-muted-foreground">{item.batchNumber}</TableCell>
                                 <TableCell>
-                                    <Input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-20" />
+                                    <Input type="number" defaultValue={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-20" />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" value={item.costPrice} onChange={e => handleItemChange(index, 'costPrice', Number(e.target.value))} className="w-24" />
+                                    <Input type="number" defaultValue={item.costPrice} onChange={e => handleItemChange(index, 'costPrice', Number(e.target.value))} className="w-24" />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" value={item.discount} onChange={e => handleItemChange(index, 'discount', Number(e.target.value))} className="w-24" />
+                                    <Input type="number" defaultValue={item.discount} onChange={e => handleItemChange(index, 'discount', Number(e.target.value))} className="w-24" />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" value={item.tax} onChange={e => handleItemChange(index, 'tax', Number(e.target.value))} className="w-20" />
+                                    <Input type="number" defaultValue={item.tax} onChange={e => handleItemChange(index, 'tax', Number(e.target.value))} className="w-20" />
                                 </TableCell>
                                 <TableCell className="text-right font-semibold">
                                     {item.total.toFixed(2)}
@@ -351,7 +383,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>Payment Method</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="cash">Cash</SelectItem>
