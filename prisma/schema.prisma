@@ -12,19 +12,19 @@ datasource db {
 
 model Product {
   id                    String    @id @default(cuid())
-  name                  String
   productId             String
+  name                  String
   batchNumber           String?
   sellingPrice          Float
   costPrice             Float?
   quantity              Int
-  stock                 Int
-  barcode               String?
+  stock                 Int       @default(0) // New field for stock tracking
+  barcode               String?   @unique
   category              String?
   brand                 String?
-  supplierId            String?
   location              String?
-  units                 String // JSON string for units
+  supplierId            String?
+  units                 String    // JSON string for unit definitions
   isService             Boolean   @default(false)
   isActive              Boolean   @default(true)
   defaultQuantity       Int       @default(1)
@@ -34,44 +34,50 @@ model Product {
   defaultDiscountType   String?
   manufactureDate       DateTime?
   expiryDate            DateTime?
+  addeDate              DateTime
+  notes                 String?
   minStockLevel         Int?
   maxStockLevel         Int?
-  notes                 String?
-  addeDate              DateTime  @default(now())
+  grnItems              GoodsReceivedNoteItem[]
 
   @@unique([productId, batchNumber])
 }
 
 model Transaction {
-  id                    String    @id @default(cuid())
-  transactionDate       DateTime  @default(now())
+  id                    String    @id
+  transactionDate       DateTime
   subtotal              Float
   totalDiscountAmount   Float
   finalTotal            Float
   totalItems            Int
   totalQuantity         Float
-  status                String // e.g., 'completed', 'refund', 'pending'
+  status                String    // "completed", "refund", "pending"
   campaignId            String
   isGiftReceipt         Boolean?
-
+  
   customerId            String
   customer              Customer  @relation(fields: [customerId], references: [id])
-  payment               Payment?
+  
+  paymentId             Int?      @unique
+  payment               Payment?  @relation(fields: [paymentId], references: [id])
+  
   lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscountLog[]
+  appliedDiscounts      AppliedDiscount[]
 
-  originalTransactionId String?                      @unique
-  originalTransaction   Transaction?                 @relation("RefundToOriginal", fields: [originalTransactionId], references: [id])
-  refundTransactions    Transaction[]                @relation("RefundToOriginal")
+  // For refunds
+  originalTransactionId String?          @unique
+  originalTransaction   Transaction?     @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions    Transaction[]    @relation("RefundToOriginal")
 }
 
 model TransactionLine {
   id                        Int       @id @default(autoincrement())
   transactionId             String
   transaction               Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
   productId                 String
   productName               String
-  batchId                   String?
+  batchId                   String
   batchNumber               String?
   quantity                  Float
   displayUnit               String
@@ -80,15 +86,27 @@ model TransactionLine {
   lineTotalBeforeDiscount   Float
   lineDiscount              Float
   lineTotalAfterDiscount    Float
+
+  // For custom discount persistence
   customDiscountValue       Float?
-  customDiscountType        String?
+  customDiscountType        String? // 'fixed' | 'percentage'
   customApplyFixedOnce      Boolean?
 }
 
-model AppliedDiscountLog {
-  id                      Int       @id @default(autoincrement())
+model Payment {
+  id                Int      @id @default(autoincrement())
+  paidAmount        Float
+  paymentMethod     String
+  outstandingAmount Float
+  isInstallment     Boolean
+  transaction       Transaction?
+}
+
+model AppliedDiscount {
+  id                      Int      @id @default(autoincrement())
   transactionId           String
   transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  
   discountCampaignName    String
   sourceRuleName          String
   totalCalculatedDiscount Float
@@ -98,16 +116,6 @@ model AppliedDiscountLog {
   appliedOnce             Boolean?
 }
 
-model Payment {
-  id                Int      @id @default(autoincrement())
-  transactionId     String   @unique
-  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  paidAmount        Float
-  paymentMethod     String
-  outstandingAmount Float
-  isInstallment     Boolean
-}
-
 model Customer {
   id          String        @id @default(cuid())
   name        String
@@ -115,16 +123,55 @@ model Customer {
   email       String?       @unique
   address     String?
   transactions Transaction[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model Supplier {
-  id             String   @id @default(cuid())
-  name           String   @unique
-  contactPerson  String?
-  phone          String?
-  email          String?
-  address        String?
-  notes          String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String    @id @default(cuid())
+  name          String    @unique
+  contactPerson String?
+  phone         String?   @unique
+  email         String?   @unique
+  address       String?
+  notes         String?
+  grns          GoodsReceivedNote[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model GoodsReceivedNote {
+  id              String    @id @default(cuid())
+  grnNumber       String    @unique
+  grnDate         DateTime
+  invoiceNumber   String?
+  
+  supplierId      String
+  supplier        Supplier  @relation(fields: [supplierId], references: [id])
+  
+  totalAmount     Float
+  paidAmount      Float
+  paymentMethod   String    // "cash", "cheque", "credit", "card"
+  paymentStatus   String    // "pending", "partial", "paid"
+  notes           String?
+  
+  items           GoodsReceivedNoteItem[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model GoodsReceivedNoteItem {
+  id    Int     @id @default(autoincrement())
+  grnId String
+  grn   GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  
+  quantity  Int
+  costPrice Float
+  discount  Float   @default(0)
+  tax       Float   @default(0)
+  total     Float   // (quantity * costPrice) - discount + tax
 }
