@@ -26,7 +26,11 @@
         "suppliers.view",
         "suppliers.create",
         "suppliers.update",
-        "suppliers.delete"
+        "suppliers.delete",
+        "purchases.view",
+        "purchases.create",
+        "purchases.update",
+        "purchases.delete"
       ]
     },
     "cashier": {
