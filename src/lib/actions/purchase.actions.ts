@@ -48,6 +48,7 @@ export async function addGrnAction(data: GrnFormValues) {
                     items: {
                         create: items.map(item => ({
                             productId: item.productId,
+                            batchNumber: item.batchNumber,
                             quantity: item.quantity,
                             costPrice: item.costPrice,
                             discount: item.discount,

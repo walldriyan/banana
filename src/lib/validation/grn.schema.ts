@@ -4,6 +4,7 @@ import { z } from 'zod';
 export const grnItemSchema = z.object({
   productId: z.string().min(1, "Product is required."),
   productName: z.string(), // For display purposes, not submitted
+  batchNumber: z.string().optional(),
   quantity: z.coerce.number().int().min(1, "Quantity must be at least 1."),
   costPrice: z.coerce.number().min(0, "Cost price must be non-negative."),
   discount: z.coerce.number().min(0).default(0),

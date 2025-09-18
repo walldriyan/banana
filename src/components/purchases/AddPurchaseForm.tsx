@@ -119,6 +119,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         append({
             productId: product.id,
             productName: product.name,
+            batchNumber: product.batchNumber,
             quantity: 1,
             costPrice: product.costPrice ?? 0,
             discount: 0,
@@ -278,6 +279,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[300px]">Product</TableHead>
+                            <TableHead>Batch No.</TableHead>
                             <TableHead>Qty</TableHead>
                             <TableHead>Cost Price</TableHead>
                             <TableHead>Discount</TableHead>
@@ -290,6 +292,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         {fields.length > 0 ? fields.map((item, index) => (
                              <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.productName}</TableCell>
+                                <TableCell className="text-muted-foreground">{item.batchNumber}</TableCell>
                                 <TableCell>
                                     <Input type="number" value={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-20" />
                                 </TableCell>
@@ -313,7 +316,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">No products added yet.</TableCell>
+                                <TableCell colSpan={8} className="text-center h-24">No products added yet.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
