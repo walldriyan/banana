@@ -1,96 +1,94 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-generator client {
-  provider = "prisma-client-js"
-}
-
+// prisma/schema.prisma
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
 }
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 model Product {
-  id                    String    @id @default(cuid())
-  name                  String
-  productId             String
-  batchNumber           String?
-  sellingPrice          Float
-  costPrice             Float?
-  quantity              Int
-  stock                 Int       @default(0) // New field for total stock
-  barcode               String?   @unique
-  category              String?
-  brand                 String?
-  supplierId            String?
-  location              String?
-  units                 String
-  isService             Boolean   @default(false)
-  isActive              Boolean   @default(true)
-  defaultQuantity       Int       @default(1)
-  tax                   Float?
-  taxtype               String?
-  defaultDiscount       Float?
-  defaultDiscountType   String?
-  manufactureDate       DateTime?
-  expiryDate            DateTime?
-  minStockLevel         Int?
-  maxStockLevel         Int?
-  addeDate              DateTime
-  lastUpdate            DateTime?
+  id              String    @id @default(cuid())
+  name            String
+  sellingPrice    Float
+  costPrice       Float?
+  quantity        Int
+  barcode         String?
+  productId       String
+  batchNumber     String?
+  brand           String?
+  category        String?
+  location        String?
+  notes           String?
+  supplierId      String?
+  minStockLevel   Int?
+  maxStockLevel   Int?
+  tax             Float?
+  taxtype         String?   @default("PERCENTAGE")
+  defaultDiscount Float?
+  defaultDiscountType String? @default("PERCENTAGE")
+  defaultQuantity Int       @default(1)
+  isActive        Boolean   @default(true)
+  isService       Boolean   @default(false)
+  manufactureDate DateTime?
+  expiryDate      DateTime?
+  addeDate        DateTime  @default(now())
+  units           String
+  stock           Int       @default(0)
+
+  // A product can be in multiple GRN items
+  grnItems GoodsReceivedNoteItem[]
+
+  // A product can be in multiple transaction lines
+  transactionLines TransactionLine[]
 
   @@unique([productId, batchNumber])
 }
 
 model Customer {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String?       @unique
-  email        String?       @unique
-  address      String?
+  id    String @id @default(cuid())
+  name  String
+  phone String? @unique
+  email String?
+  address String?
+
   transactions Transaction[]
 }
 
-model Supplier {
-  id            String              @id @default(cuid())
-  name          String              @unique
-  contactPerson String?
-  phone         String?             @unique
-  email         String?             @unique
-  address       String?
-  notes         String?
-  grns          GoodsReceivedNote[]
-}
-
 model Transaction {
-  id                    String    @id
-  transactionDate       DateTime
-  subtotal              Float
-  totalDiscountAmount   Float
-  finalTotal            Float
-  totalItems            Int
-  totalQuantity         Float
-  status                String // "completed", "refund", "pending"
-  campaignId            String
-  isGiftReceipt         Boolean?
-  customerId            String
-  customer              Customer  @relation(fields: [customerId], references: [id])
-  payment               Payment?
-  lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscount[]
+  id                      String    @id @default(cuid())
+  transactionDate         DateTime  @default(now())
+  subtotal                Float
+  totalDiscountAmount     Float
+  finalTotal              Float
+  totalItems              Int
+  totalQuantity           Float
+  status                  String    @default("completed") // "completed", "pending", "refund"
+  campaignId              String
+  isGiftReceipt           Boolean?  @default(false)
+  
+  customerId              String
+  customer                Customer  @relation(fields: [customerId], references: [id])
+  
+  payment                 Payment?
+  
+  lines                   TransactionLine[]
+  appliedDiscounts        AppliedDiscount[]
 
   // For refunds
-  originalTransactionId String?             @unique
-  originalTransaction   Transaction?        @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  refundTransactions    Transaction[]       @relation("RefundToOriginal")
+  originalTransactionId   String?          @unique
+  originalTransaction     Transaction?     @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions      Transaction[]    @relation("RefundToOriginal")
 }
 
 model Payment {
   id                String      @id @default(cuid())
   paidAmount        Float
-  paymentMethod     String // "cash", "card", "online"
+  paymentMethod     String      // "cash", "card", "online"
   outstandingAmount Float
-  isInstallment     Boolean
+  isInstallment     Boolean     @default(false)
+  
   transactionId     String      @unique
   transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
@@ -111,12 +109,16 @@ model TransactionLine {
   customDiscountValue     Float?
   customDiscountType      String?
   customApplyFixedOnce    Boolean?
+
   transactionId           String
   transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  // Relation to the specific product batch
+  product                 Product     @relation(fields: [batchId], references: [id])
 }
 
 model AppliedDiscount {
-  id                      String      @id @default(cuid())
+  id                      String   @id @default(cuid())
   discountCampaignName    String
   sourceRuleName          String
   totalCalculatedDiscount Float
@@ -124,36 +126,51 @@ model AppliedDiscount {
   productIdAffected       String?
   batchIdAffected         String?
   appliedOnce             Boolean?
+
   transactionId           String
   transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
-model GoodsReceivedNote {
-  id            String                  @id @default(cuid())
-  grnNumber     String                  @unique
-  grnDate       DateTime
-  supplierId    String
-  invoiceNumber String?
+model Supplier {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  contactPerson String?
+  phone         String?  @unique
+  email         String?
+  address       String?
   notes         String?
+  grns          GoodsReceivedNote[]
+}
+
+model GoodsReceivedNote {
+  id            String   @id @default(cuid())
+  grnNumber     String   @unique
+  grnDate       DateTime
+  invoiceNumber String?
   totalAmount   Float
   paidAmount    Float
-  paymentMethod String // "cash", "card", "cheque", "credit"
+  paymentMethod String
   paymentStatus String // "pending", "partial", "paid"
-  createdAt     DateTime                @default(now())
-  updatedAt     DateTime                @updatedAt
-  supplier      Supplier                @relation(fields: [supplierId], references: [id])
+  notes         String?
+
+  supplierId    String
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+
   items         GoodsReceivedNoteItem[]
 }
 
 model GoodsReceivedNoteItem {
-  id                  String            @id @default(cuid())
-  goodsReceivedNoteId String
-  productId           String
-  batchNumber         String?
-  quantity            Int
-  costPrice           Float
-  discount            Float
-  tax                 Float
-  total               Float
-  grn                 GoodsReceivedNote @relation(fields: [goodsReceivedNoteId], references: [id], onDelete: Cascade)
+  id          String  @id @default(cuid())
+  quantity    Int
+  costPrice   Float
+  discount    Float
+  tax         Float
+  total       Float
+
+  grnId       String
+  grn         GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  batchNumber String?
 }
