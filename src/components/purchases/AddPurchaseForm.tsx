@@ -107,7 +107,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
               }))
           });
       }
-  }, [isEditMode, grn, products, suppliers, form]);
+  }, [isEditMode, grn, products, suppliers, form.reset]);
 
   const { fields, append, remove, update } = useFieldArray({
     control: form.control,
