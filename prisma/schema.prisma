@@ -1,29 +1,30 @@
-// prisma/schema.prisma
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model Product {
-  id                    String      @id @default(cuid())
+  id                    String    @id @default(cuid())
   name                  String
-  productId             String      @unique // General product ID, not batch-specific
+  productId             String
   batchNumber           String?
   sellingPrice          Float
   costPrice             Float?
   quantity              Int
-  stock                 Int
-  barcode               String?     @unique
+  stock                 Int       @default(0) // New field for total stock
+  barcode               String?   @unique
   category              String?
   brand                 String?
   supplierId            String?
   location              String?
-  units                 String // Changed from Json to String for SQLite compatibility
+  units                 String
   isService             Boolean   @default(false)
   isActive              Boolean   @default(true)
   defaultQuantity       Int       @default(1)
@@ -35,77 +36,87 @@ model Product {
   expiryDate            DateTime?
   minStockLevel         Int?
   maxStockLevel         Int?
-  notes                 String?
-  addeDate              DateTime  @default(now())
+  addeDate              DateTime
+  lastUpdate            DateTime?
 
-  @@index([category])
-  @@index([brand])
+  @@unique([productId, batchNumber])
+}
+
+model Customer {
+  id           String        @id @default(cuid())
+  name         String
+  phone        String?       @unique
+  email        String?       @unique
+  address      String?
+  transactions Transaction[]
+}
+
+model Supplier {
+  id            String              @id @default(cuid())
+  name          String              @unique
+  contactPerson String?
+  phone         String?             @unique
+  email         String?             @unique
+  address       String?
+  notes         String?
+  grns          GoodsReceivedNote[]
 }
 
 model Transaction {
-  id                    String        @id @default(cuid())
-  transactionDate       DateTime      @default(now())
+  id                    String    @id
+  transactionDate       DateTime
   subtotal              Float
   totalDiscountAmount   Float
   finalTotal            Float
   totalItems            Int
   totalQuantity         Float
   status                String // "completed", "refund", "pending"
+  campaignId            String
   isGiftReceipt         Boolean?
-  campaignId            String?
-
   customerId            String
-  customer              Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  customer              Customer  @relation(fields: [customerId], references: [id])
   payment               Payment?
   lines                 TransactionLine[]
   appliedDiscounts      AppliedDiscount[]
 
   // For refunds
-  originalTransactionId String?       @unique
-  originalTransaction   Transaction?  @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onUpdate: NoAction, onDelete: NoAction)
-  refundTransactions    Transaction[] @relation("RefundToOriginal")
-
-  @@index([transactionDate])
-}
-
-model TransactionLine {
-  id                        String      @id @default(cuid())
-  transactionId             String
-  transaction               Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  
-  productId                 String
-  productName               String
-  batchId                   String
-  batchNumber               String?
-  quantity                  Float
-  displayUnit               String
-  displayQuantity           Float
-  unitPrice                 Float
-  lineTotalBeforeDiscount   Float
-  lineDiscount              Float
-  lineTotalAfterDiscount    Float
-
-  // To store custom discount state
-  customDiscountValue       Float?
-  customDiscountType        String? // 'fixed' or 'percentage'
-  customApplyFixedOnce      Boolean?
+  originalTransactionId String?             @unique
+  originalTransaction   Transaction?        @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions    Transaction[]       @relation("RefundToOriginal")
 }
 
 model Payment {
-  id                  String      @id @default(cuid())
-  transactionId       String      @unique
-  transaction         Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  paidAmount          Float
-  paymentMethod       String // "cash", "card", "online"
-  outstandingAmount   Float
-  isInstallment       Boolean     @default(false)
+  id                String      @id @default(cuid())
+  paidAmount        Float
+  paymentMethod     String // "cash", "card", "online"
+  outstandingAmount Float
+  isInstallment     Boolean
+  transactionId     String      @unique
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model TransactionLine {
+  id                      String      @id @default(cuid())
+  productId               String
+  productName             String
+  batchId                 String
+  batchNumber             String?
+  quantity                Float
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+  customDiscountValue     Float?
+  customDiscountType      String?
+  customApplyFixedOnce    Boolean?
+  transactionId           String
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 model AppliedDiscount {
   id                      String      @id @default(cuid())
-  transactionId           String
-  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
   discountCampaignName    String
   sourceRuleName          String
   totalCalculatedDiscount Float
@@ -113,61 +124,36 @@ model AppliedDiscount {
   productIdAffected       String?
   batchIdAffected         String?
   appliedOnce             Boolean?
-}
-
-model Customer {
-  id        String        @id @default(cuid())
-  name      String
-  phone     String?       @unique
-  email     String?       @unique
-  address   String?
-  
-  transactions Transaction[]
-
-  @@index([name])
-}
-
-model Supplier {
-  id            String    @id @default(cuid())
-  name          String    @unique
-  contactPerson String?
-  phone         String?   @unique
-  email         String?   @unique
-  address       String?
-  notes         String?
-
-  grns GoodsReceivedNote[]
+  transactionId           String
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
 
 model GoodsReceivedNote {
-  id            String    @id @default(cuid())
-  grnNumber     String    @unique
-  grnDate       DateTime  @default(now())
+  id            String                  @id @default(cuid())
+  grnNumber     String                  @unique
+  grnDate       DateTime
+  supplierId    String
   invoiceNumber String?
+  notes         String?
   totalAmount   Float
   paidAmount    Float
   paymentMethod String // "cash", "card", "cheque", "credit"
   paymentStatus String // "pending", "partial", "paid"
-  notes         String?
-  
-  supplierId    String
-  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+  supplier      Supplier                @relation(fields: [supplierId], references: [id])
   items         GoodsReceivedNoteItem[]
-
-  @@index([grnDate])
 }
 
 model GoodsReceivedNoteItem {
-  id      String    @id @default(cuid())
-  grnId   String
-  grn     GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
-
-  productId   String
-  batchNumber String?
-  quantity    Float
-  costPrice   Float
-  discount    Float
-  tax         Float
-  total       Float
+  id                  String            @id @default(cuid())
+  goodsReceivedNoteId String
+  productId           String
+  batchNumber         String?
+  quantity            Int
+  costPrice           Float
+  discount            Float
+  tax                 Float
+  total               Float
+  grn                 GoodsReceivedNote @relation(fields: [goodsReceivedNoteId], references: [id], onDelete: Cascade)
 }
