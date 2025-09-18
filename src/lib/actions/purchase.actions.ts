@@ -95,3 +95,98 @@ export async function addGrnAction(data: GrnFormValues) {
         return { success: false, error: "Failed to create GRN and update stock." };
     }
 }
+
+
+/**
+ * Server action to update an existing GRN.
+ * This is a transactional operation: it calculates stock adjustments and updates the GRN.
+ */
+export async function updateGrnAction(grnId: string, data: GrnFormValues) {
+    console.log('[updateGrnAction] Received data for GRN ID:', grnId, data);
+    const validationResult = grnSchema.safeParse(data);
+    if (!validationResult.success) {
+        return {
+            success: false,
+            error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
+        };
+    }
+
+    const { items: newItems, ...headerData } = validationResult.data;
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Get the current state of the GRN from the DB
+            const oldGrn = await tx.goodsReceivedNote.findUnique({
+                where: { id: grnId },
+                include: { items: true },
+            });
+
+            if (!oldGrn) {
+                throw new Error(`GRN with ID ${grnId} not found.`);
+            }
+
+            // 2. Calculate stock adjustments
+            const stockAdjustments = new Map<string, number>();
+
+            // Decrement stock based on old items
+            for (const oldItem of oldGrn.items) {
+                const currentAdjustment = stockAdjustments.get(oldItem.productId) || 0;
+                stockAdjustments.set(oldItem.productId, currentAdjustment - oldItem.quantity);
+            }
+
+            // Increment stock based on new items
+            for (const newItem of newItems) {
+                const currentAdjustment = stockAdjustments.get(newItem.productId) || 0;
+                stockAdjustments.set(newItem.productId, currentAdjustment + newItem.quantity);
+            }
+
+            // 3. Apply stock adjustments to products
+            for (const [productId, adjustment] of stockAdjustments.entries()) {
+                if (adjustment !== 0) {
+                     await tx.product.update({
+                        where: { id: productId },
+                        data: {
+                            quantity: { increment: adjustment },
+                            stock: { increment: adjustment },
+                        },
+                    });
+                }
+            }
+            
+            // 4. Update the GRN itself
+            const updatedGrn = await tx.goodsReceivedNote.update({
+                where: { id: grnId },
+                data: {
+                    ...headerData,
+                    items: {
+                        // Delete old items and create new ones
+                        deleteMany: {},
+                        create: newItems.map(item => ({
+                            productId: item.productId,
+                            batchNumber: item.batchNumber,
+                            quantity: item.quantity,
+                            costPrice: item.costPrice,
+                            discount: item.discount,
+                            tax: item.tax,
+                            total: item.total,
+                        })),
+                    },
+                },
+            });
+
+            return updatedGrn;
+        });
+        
+        revalidatePath('/dashboard/purchases');
+        revalidatePath('/dashboard/products');
+        
+        return { success: true, data: result };
+
+    } catch (error) {
+        console.error(`[updateGrnAction] Error updating GRN ${grnId}:`, error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            return { success: false, error: `Database error: ${error.message}` };
+        }
+        return { success: false, error: "Failed to update GRN and adjust stock." };
+    }
+}

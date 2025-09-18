@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { addGrnAction } from "@/lib/actions/purchase.actions";
+import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
@@ -169,29 +169,24 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   async function onSubmit(data: GrnFormValues) {
     setIsSubmitting(true);
     
-    // In the future, this will call updateGrnAction if isEditMode is true
-    const action = isEditMode ? null : addGrnAction(data);
+    const action = isEditMode && grn
+      ? updateGrnAction(grn.id, data)
+      : addGrnAction(data);
     
-    if (isEditMode) {
-      toast({ title: "Info", description: "Update functionality is not yet implemented."});
-      setIsSubmitting(false);
-      return;
-    }
-
-    const result = await addGrnAction(data);
+    const result = await action;
     
     setIsSubmitting(false);
 
     if (result.success) {
       toast({
-        title: "GRN Added!",
+        title: `GRN ${isEditMode ? 'Updated' : 'Added'}!`,
         description: `The purchase record has been successfully saved and stock updated.`,
       });
       onSuccess();
     } else {
       toast({
         variant: "destructive",
-        title: "Error adding GRN",
+        title: `Error ${isEditMode ? 'updating' : 'adding'} GRN`,
         description: result.error,
       });
     }
@@ -213,7 +208,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <FormItem>
                     <FormLabel>GRN Number</FormLabel>
                     <FormControl>
-                        <Input {...field} readOnly={isEditMode} />
+                        <Input {...field} readOnly />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
