@@ -20,7 +20,7 @@ import { addGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect } from "react";
 import type { GoodsReceivedNote, Supplier } from "@prisma/client";
 import { useDrawer } from "@/hooks/use-drawer";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
