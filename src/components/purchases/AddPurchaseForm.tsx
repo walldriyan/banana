@@ -21,7 +21,7 @@ import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../ui/card";
-import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote, ArrowLeft, ArrowRight, Package, Archive, Tag } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote, ArrowLeft, ArrowRight, Package, Archive, Tag, Coins } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -55,18 +55,6 @@ const initialItemState: Partial<GrnItemFormValues> = {
     tax: 0,
     total: 0,
 };
-
-const FormRow = ({ title, description, children }: { title: string, description: string, children: React.ReactNode }) => (
-    <div className="flex flex-col md:flex-row items-start justify-between gap-4 py-4 border-b last:border-b-0">
-        <div className="md:w-2/5">
-            <h4 className="font-semibold text-sm">{title}</h4>
-            <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-        <div className="w-full md:w-3/5">
-            {children}
-        </div>
-    </div>
-);
 
 
 const steps = [
@@ -441,107 +429,106 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                       <GrnProductSearch
                           products={products}
                           onProductSelect={handleProductSelect}
-                          placeholder="Search by name or barcode..."
+                          placeholder="Search for a master product..."
                       />
                   </CardContent>
                   {currentItem.productId && selectedProduct && (
-                    <CardContent className="border-t pt-6 space-y-6">
-                        <div className="flex justify-between items-center">
+                    <CardContent className="border-t pt-6">
+                        <div className="flex justify-between items-center mb-4">
                             <h3 className="text-lg font-semibold">Details for: <span className="text-primary">{selectedProduct.name}</span></h3>
                             <Button type="button" variant="outline" size="sm" onClick={handleClearCurrentItem}>Clear</Button>
                         </div>
                         
-                         <div className='p-4 rounded-lg bg-muted/50 border'>
-                            <h4 className='text-sm font-semibold mb-3'>Product Summary</h4>
-                            <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
-                                <div className='flex items-center gap-2'>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Left Column: Product Summary */}
+                            <div className="md:col-span-1 p-4 rounded-lg bg-muted/50 border space-y-4">
+                                <h4 className='text-sm font-semibold text-foreground'>Product Summary</h4>
+                                <div className='flex items-center gap-3'>
                                     <Package className='h-5 w-5 text-muted-foreground' />
                                     <div>
                                         <p className='text-xs text-muted-foreground'>Category</p>
                                         <p className='font-medium'>{selectedProduct.category}</p>
                                     </div>
                                 </div>
-                                 <div className='flex items-center gap-2'>
+                                <div className='flex items-center gap-3'>
                                     <Tag className='h-5 w-5 text-muted-foreground' />
                                     <div>
                                         <p className='text-xs text-muted-foreground'>Brand</p>
                                         <p className='font-medium'>{selectedProduct.brand}</p>
                                     </div>
                                 </div>
-                                <div className='flex items-center gap-2'>
+                                <div className='flex items-center gap-3'>
                                     <Archive className='h-5 w-5 text-muted-foreground' />
                                     <div>
                                         <p className='text-xs text-muted-foreground'>Total Current Stock</p>
-                                        <p className='font-bold text-base'>{selectedProductTotalStock.toLocaleString()} {selectedProduct.units.baseUnit}</p>
+                                        <p className='font-bold text-lg'>{selectedProductTotalStock.toLocaleString()} {selectedProduct.units.baseUnit}</p>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <FormRow title="Batch & Quantity" description="Unique batch number and the quantity being received.">
-                           <div className="grid grid-cols-2 gap-4">
-                                <FormItem>
-                                    <FormLabel>Batch No.</FormLabel>
-                                    <div className="flex items-center gap-1">
+                            
+                            {/* Right Column: Input Fields */}
+                            <div className="md:col-span-2 space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormItem>
+                                        <FormLabel>Batch No.</FormLabel>
+                                        <div className="flex items-center gap-1">
+                                            <FormControl>
+                                            <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                            </FormControl>
+                                            <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                                        </div>
+                                    </FormItem>
+                                    <FormItem>
+                                        <FormLabel>Quantity</FormLabel>
                                         <FormControl>
-                                        <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                        <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
                                         </FormControl>
-                                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
-                                    </div>
-                                </FormItem>
-                                <FormItem>
-                                    <FormLabel>Quantity</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
-                                    </FormControl>
-                                </FormItem>
-                           </div>
-                        </FormRow>
-                        <FormRow title="Pricing" description="Cost price from supplier and the price you will sell at.">
-                           <div className="grid grid-cols-2 gap-4">
-                               <FormItem>
-                                    <FormLabel>Cost Price (per unit)</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
-                                    </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                    <FormLabel>Selling Price (per unit)</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
-                                    </FormControl>
-                                </FormItem>
-                           </div>
-                        </FormRow>
-                        <FormRow title="Adjustments" description="Optional discount received from supplier or taxes applied.">
-                             <div className="grid grid-cols-2 gap-4">
-                               <FormItem>
-                                    <FormLabel>Discount (Fixed Total)</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
-                                    </FormControl>
-                                </FormItem>
-                                <FormItem>
-                                    <FormLabel>Tax (%)</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
-                                    </FormControl>
-                                </FormItem>
-                           </div>
-                        </FormRow>
-                        
-                        {itemError && (
-                            <Alert variant="destructive" className="mt-4">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Validation Error</AlertTitle>
-                                <AlertDescription>{itemError}</AlertDescription>
-                            </Alert>
-                        )}
-                        <div className='flex justify-end pt-4'>
-                             <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
-                                <PackagePlus className="mr-2 h-4 w-4"/>
-                                Add Item to GRN
-                            </Button>
+                                    </FormItem>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormItem>
+                                        <FormLabel>Cost Price (per unit)</FormLabel>
+                                        <FormControl>
+                                        <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
+                                        </FormControl>
+                                    </FormItem>
+                                    <FormItem>
+                                        <FormLabel>Selling Price (per unit)</FormLabel>
+                                        <FormControl>
+                                        <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
+                                        </FormControl>
+                                    </FormItem>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormItem>
+                                        <FormLabel>Discount (Fixed Total)</FormLabel>
+                                        <FormControl>
+                                        <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                        </FormControl>
+                                    </FormItem>
+                                    <FormItem>
+                                        <FormLabel>Tax (%)</FormLabel>
+                                        <FormControl>
+                                        <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                        </FormControl>
+                                    </FormItem>
+                                </div>
+
+                                {itemError && (
+                                    <Alert variant="destructive">
+                                        <AlertTriangle className="h-4 w-4" />
+                                        <AlertTitle>Validation Error</AlertTitle>
+                                        <AlertDescription>{itemError}</AlertDescription>
+                                    </Alert>
+                                )}
+
+                                <div className='flex justify-end pt-2'>
+                                    <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                                        <PackagePlus className="mr-2 h-4 w-4"/>
+                                        Add Item to GRN
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                   )}
