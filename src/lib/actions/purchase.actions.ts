@@ -29,7 +29,7 @@ export async function getGrnsAction() {
  * Server action to add a new GRN.
  * This is a transactional operation: it saves the GRN and updates product stock.
  */
-export async function addGrnAction(data: GrnFormValues) {
+export async function addGrnAction(data: GrnFormValues & { totalAmount: number }) {
     console.log('[addGrnAction] Received data on server:', data);
     const validationResult = grnSchema.safeParse(data);
     if (!validationResult.success) {
@@ -39,23 +39,24 @@ export async function addGrnAction(data: GrnFormValues) {
         };
     }
 
-    const { items, ...headerData } = validationResult.data;
+    const { items, totalAmount, ...headerData } = validationResult.data;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            const calculatedTotalAmount = items.reduce((sum, item) => sum + item.total, 0);
+            const paidAmount = headerData.paidAmount ?? 0;
             
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-            if (headerData.paidAmount >= calculatedTotalAmount) {
+            if (paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
-            } else if (headerData.paidAmount > 0) {
+            } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
             }
 
             const newGrn = await tx.goodsReceivedNote.create({
                 data: {
                     ...headerData,
-                    totalAmount: calculatedTotalAmount,
+                    paidAmount: paidAmount, // Use the sanitized paid amount
+                    totalAmount: totalAmount,
                     paymentStatus: paymentStatus,
                     items: {
                         create: items.map(item => ({
@@ -73,33 +74,29 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
-                 // The `item.productId` from the GRN form IS the unique `id` of the product batch.
                  const productToUpdate = await tx.product.findUnique({
                     where: { id: item.productId }
                  });
 
                  if (!productToUpdate) {
-                     throw new Error(`Critical error: Product with unique ID ${item.productId} was selected in the form but not found in the database.`);
+                     throw new Error(`Critical error: Product with unique ID ${item.productId} was selected in the form but not found in the database. Stock was not updated.`);
                  }
 
-                // Regardless of whether it's a new batch number or an existing one,
-                // we are adding stock to an existing product record.
                 await tx.product.update({
                     where: { id: item.productId },
                     data: {
                         quantity: { increment: item.quantity },
                         stock: { increment: item.quantity },
-                        // Optionally update the cost price of the batch from this new purchase
                         costPrice: item.costPrice, 
                     }
                 });
             }
             
-            if (newGrn.paidAmount > 0) {
+            if (paidAmount > 0) {
               await tx.purchasePayment.create({
                 data: {
                   goodsReceivedNoteId: newGrn.id,
-                  amount: newGrn.paidAmount,
+                  amount: paidAmount,
                   paymentDate: newGrn.grnDate,
                   paymentMethod: newGrn.paymentMethod,
                   notes: 'Initial payment with GRN creation.',
@@ -131,7 +128,7 @@ export async function addGrnAction(data: GrnFormValues) {
  * Server action to update an existing GRN.
  * This is a transactional operation: it calculates stock adjustments and updates the GRN.
  */
-export async function updateGrnAction(grnId: string, data: GrnFormValues) {
+export async function updateGrnAction(grnId: string, data: GrnFormValues & { totalAmount: number }) {
     console.log('[updateGrnAction] Received data for GRN ID:', grnId, data);
     const validationResult = grnSchema.safeParse(data);
     if (!validationResult.success) {
@@ -141,7 +138,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
         };
     }
 
-    const { items: newItems, ...headerData } = validationResult.data;
+    const { items: newItems, totalAmount, ...headerData } = validationResult.data;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
@@ -178,12 +175,11 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                 }
             }
             
-            const calculatedTotalAmount = newItems.reduce((sum, item) => sum + item.total, 0);
-
+            const paidAmount = headerData.paidAmount ?? 0;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-             if (headerData.paidAmount >= calculatedTotalAmount) {
+             if (paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
-            } else if (headerData.paidAmount > 0) {
+            } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
             }
 
@@ -191,7 +187,8 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                 where: { id: grnId },
                 data: {
                     ...headerData,
-                    totalAmount: calculatedTotalAmount,
+                    paidAmount: paidAmount,
+                    totalAmount: totalAmount,
                     paymentStatus: paymentStatus,
                     items: {
                         deleteMany: {},

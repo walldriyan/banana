@@ -1,7 +1,7 @@
 // src/components/purchases/AddPurchaseForm.tsx
 "use client";
 
-import { useForm, useFieldArray, useWatch } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { grnSchema, type GrnFormValues } from "@/lib/validation/grn.schema";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
@@ -36,6 +36,8 @@ import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClient
 import type { Supplier } from "@prisma/client";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { AddProductForm } from "../products/AddProductForm";
+
 
 interface AddPurchaseFormProps {
   grn?: GrnWithRelations;
@@ -51,8 +53,29 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const isEditMode = !!grn;
 
-  useEffect(() => {
-    async function fetchData() {
+  // Local state for totals to avoid re-rendering the whole form on each keystroke
+  const [totalAmount, setTotalAmount] = useState(0);
+
+  const form = useForm<GrnFormValues>({
+    resolver: zodResolver(grnSchema),
+    defaultValues: {
+      grnNumber: `GRN-${Date.now()}`,
+      grnDate: new Date(),
+      supplierId: '',
+      invoiceNumber: '',
+      items: [],
+      notes: '',
+      paidAmount: 0,
+      paymentMethod: 'credit',
+    },
+  });
+
+  const { fields, append, remove, update } = useFieldArray({
+    control: form.control,
+    name: "items",
+  });
+
+  const fetchProductsAndSuppliers = useCallback(async () => {
         const [suppliersResult, productsResult] = await Promise.all([
             getSuppliersAction(),
             getProductsAction()
@@ -69,64 +92,51 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         } else {
             toast({ variant: "destructive", title: "Error", description: "Could not load products." });
         }
-    }
-    fetchData();
   }, [toast]);
 
+  useEffect(() => {
+    fetchProductsAndSuppliers();
+  }, [fetchProductsAndSuppliers]);
 
-  const form = useForm<GrnFormValues>({
-    resolver: zodResolver(grnSchema),
-    defaultValues: isEditMode && grn ? {
-      ...grn,
-      grnDate: new Date(grn.grnDate),
-      items: grn.items.map(item => ({
-        ...item,
-        productName: products.find(p => p.id === item.productId)?.name || 'Unknown Product'
-      }))
-    } : {
-      grnNumber: `GRN-${Date.now()}`,
-      grnDate: new Date(),
-      supplierId: '',
-      invoiceNumber: '',
-      items: [],
-      notes: '',
-      paidAmount: 0,
-      paymentMethod: 'cash',
-    },
-  });
 
   // If in edit mode, reset the form once products and suppliers have loaded
   useEffect(() => {
       if (isEditMode && grn && products.length > 0 && suppliers.length > 0) {
+          const loadedItems = grn.items.map(item => {
+             const product = products.find(p => p.id === item.productId);
+             return {
+                 ...item,
+                 productName: product?.name || 'Unknown Product'
+             };
+          });
+          
           form.reset({
               ...grn,
               grnDate: new Date(grn.grnDate),
-              items: grn.items.map(item => ({
-                  ...item,
-                  productName: products.find(p => p.id === item.productId)?.name || 'Unknown'
-              }))
+              items: loadedItems,
           });
+          // Also initialize the total amount state
+          setTotalAmount(grn.totalAmount);
       }
-  }, [isEditMode, grn, products, suppliers, form.reset]);
+  }, [isEditMode, grn, products, suppliers, form]);
 
-  const { fields, append, remove, update } = useFieldArray({
-    control: form.control,
-    name: "items",
-  });
+  
+  const calculateTotal = useCallback(() => {
+    const items = form.getValues('items');
+    const currentTotal = items.reduce((sum, item) => {
+        const itemTotal = (item.quantity * item.costPrice) - item.discount + ( ( (item.quantity * item.costPrice) - item.discount ) * (item.tax / 100) );
+        return sum + itemTotal;
+    }, 0);
+    setTotalAmount(currentTotal);
+  }, [form]);
 
-  const watchedItems = useWatch({ control: form.control, name: 'items' });
-  const watchedPaidAmount = useWatch({ control: form.control, name: 'paidAmount' });
-
-
-  const currentTotalAmount = Array.isArray(watchedItems) ? watchedItems.reduce((sum, item) => sum + (item.total || 0), 0) : 0;
-  const balance = currentTotalAmount - Number(watchedPaidAmount || 0);
 
   const handleProductSelect = (product: Product) => {
     const existingItemIndex = fields.findIndex(field => field.productId === product.id);
     if(existingItemIndex !== -1) {
         const existingItem = fields[existingItemIndex];
         const newQty = existingItem.quantity + 1;
-        const newTotal = (newQty * existingItem.costPrice) - existingItem.discount; // Recalculate total
+        const newTotal = (newQty * existingItem.costPrice) - existingItem.discount;
         update(existingItemIndex, { ...existingItem, quantity: newQty, total: newTotal });
         toast({ title: "Quantity Updated", description: `${product.name} quantity increased to ${newQty}.`});
     } else {
@@ -141,29 +151,53 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             total: product.costPrice ?? 0
         });
     }
+    calculateTotal();
   };
+  
+  const handleRemoveItem = (index: number) => {
+      remove(index);
+      calculateTotal();
+  }
 
   const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax' | 'batchNumber', value: number | string) => {
       const item = form.getValues(`items.${index}`);
       if(!item) return;
 
-      const updatedItem = { ...item, [field]: value };
+      const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+      const updatedItem = { ...item, [field]: numericValue };
+
       const { quantity, costPrice, discount, tax } = updatedItem;
-      const subTotal = quantity * costPrice;
-      const totalDiscount = discount;
-      const totalTax = (subTotal - totalDiscount) * (tax / 100);
+      const subTotal = (quantity || 0) * (costPrice || 0);
+      const totalDiscount = (discount || 0);
+      const totalTax = (subTotal - totalDiscount) * ((tax || 0) / 100);
       const newTotal = subTotal - totalDiscount + totalTax;
 
       update(index, { ...updatedItem, total: newTotal });
+      calculateTotal();
+  }
+
+  const openAddProductDrawer = () => {
+    drawer.openDrawer({
+      title: 'Add New Product Batch',
+      description: 'Fill in the details below to add a new product batch to the system.',
+      content: <AddProductForm onSuccess={() => {
+        fetchProductsAndSuppliers(); // Refresh product list after adding
+        drawer.closeDrawer();
+        toast({ title: 'Success', description: 'New product added. You can now search for it.'});
+      }} />,
+      drawerClassName: 'sm:max-w-4xl'
+    });
   }
 
   async function onSubmit(data: GrnFormValues) {
     setSubmissionError(null);
     setIsSubmitting(true);
     
+    const finalData = { ...data, totalAmount };
+    
     const action = isEditMode && grn
-      ? updateGrnAction(grn.id, data)
-      : addGrnAction(data);
+      ? updateGrnAction(grn.id, finalData)
+      : addGrnAction(finalData);
     
     const result = await action;
     
@@ -195,6 +229,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         description: "Please check all required fields are filled correctly."
     });
   };
+
+  const paidAmount = form.watch('paidAmount') || 0;
+  const balance = totalAmount - paidAmount;
+
 
   return (
     <Form {...form}>
@@ -291,8 +329,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
         <Card>
             <CardHeader>
-                <CardTitle>Add Products</CardTitle>
-                <CardDescription>Search for products to add them to this GRN.</CardDescription>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>Add Products</CardTitle>
+                        <CardDescription>Search for existing products or add a new product batch.</CardDescription>
+                    </div>
+                    <Button type="button" variant="outline" onClick={openAddProductDrawer}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add New Product
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <SearchableProductInput
@@ -310,7 +356,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[300px]">Product</TableHead>
-                            <TableHead>Batch No.</TableHead>
                             <TableHead>Qty</TableHead>
                             <TableHead>Cost Price</TableHead>
                             <TableHead>Discount</TableHead>
@@ -322,34 +367,31 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <TableBody>
                         {fields.length > 0 ? fields.map((item, index) => (
                              <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.productName}</TableCell>
+                                <TableCell className="font-medium">{item.productName} <span className="text-muted-foreground">({item.batchNumber})</span></TableCell>
                                 <TableCell>
-                                    <Input defaultValue={item.batchNumber} onChange={e => handleItemChange(index, 'batchNumber', e.target.value)} className="w-32" />
+                                    <Input type="number" defaultValue={item.quantity} onBlur={e => handleItemChange(index, 'quantity', e.target.value)} className="w-20" />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-20" />
+                                    <Input type="number" defaultValue={item.costPrice} onBlur={e => handleItemChange(index, 'costPrice', e.target.value)} className="w-24" />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.costPrice} onChange={e => handleItemChange(index, 'costPrice', Number(e.target.value))} className="w-24" />
+                                    <Input type="number" defaultValue={item.discount} onBlur={e => handleItemChange(index, 'discount', e.target.value)} className="w-24" />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.discount} onChange={e => handleItemChange(index, 'discount', Number(e.target.value))} className="w-24" />
-                                </TableCell>
-                                <TableCell>
-                                    <Input type="number" defaultValue={item.tax} onChange={e => handleItemChange(index, 'tax', Number(e.target.value))} className="w-20" />
+                                    <Input type="number" defaultValue={item.tax} onBlur={e => handleItemChange(index, 'tax', e.target.value)} className="w-20" />
                                 </TableCell>
                                 <TableCell className="text-right font-semibold">
                                     {item.total.toFixed(2)}
                                 </TableCell>
                                 <TableCell>
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
                                         <Trash2 className="h-4 w-4 text-red-500"/>
                                     </Button>
                                 </TableCell>
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center h-24">No products added yet.</TableCell>
+                                <TableCell colSpan={7} className="text-center h-24">No products added yet.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
@@ -384,7 +426,12 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         render={({ field }) => (
                             <FormItem>
                             <FormLabel>Payment Method</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select onValueChange={(value) => {
+                                field.onChange(value);
+                                if (value === 'credit') {
+                                    form.setValue('paidAmount', 0);
+                                }
+                            }} value={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="cash">Cash</SelectItem>
@@ -405,13 +452,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <FormLabel>Amount Paid</FormLabel>
                                 <FormControl>
                                     <Input 
-                                        type="number" 
-                                        {...field} 
-                                        value={field.value ?? ''}
-                                        onChange={e => {
-                                            const value = parseFloat(e.target.value);
-                                            field.onChange(isNaN(value) ? null : value);
-                                        }}
+                                        type="number"
+                                        {...field}
+                                        disabled={form.getValues('paymentMethod') === 'credit'}
+                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -419,8 +463,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         )}
                     />
                     <div className="space-y-2 text-right font-semibold">
-                        <div className="flex justify-between"><span>Total:</span> <span>Rs. {currentTotalAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-green-600"><span>Paid:</span> <span>Rs. {Number(watchedPaidAmount || 0).toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Total:</span> <span>Rs. {totalAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-green-600"><span>Paid:</span> <span>Rs. {paidAmount.toFixed(2)}</span></div>
                         <div className="flex justify-between border-t pt-2 text-red-600 text-lg"><span>Balance:</span> <span>Rs. {balance.toFixed(2)}</span></div>
                     </div>
                 </CardContent>

@@ -19,17 +19,11 @@ export const grnSchema = z.object({
   invoiceNumber: z.string().optional(),
   items: z.array(grnItemSchema).min(1, "At least one item must be added to the GRN."),
   notes: z.string().optional(),
-  paidAmount: z.coerce.number().min(0).nullable(),
+  // Paid amount is now optional, defaulting to 0 if not provided.
+  paidAmount: z.coerce.number().min(0).nullable().default(0),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
-}).refine(data => {
-    if (data.paymentMethod === 'credit') {
-        // If credit, paid amount must be 0 or not present at all.
-        return !data.paidAmount; 
-    }
-    return true;
-}, {
-    message: "For credit purchases, the paid amount must be zero.",
-    path: ["paidAmount"],
+  // This is a calculated value and should not be part of the form validation schema
+  // totalAmount: z.number().optional(), 
 });
 
 
