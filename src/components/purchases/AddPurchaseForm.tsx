@@ -402,11 +402,19 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         name="paidAmount"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Amount Paid</FormLabel>
-                            <FormControl>
-                                <Input type="number" {...field} />
-                            </FormControl>
-                            <FormMessage />
+                                <FormLabel>Amount Paid</FormLabel>
+                                <FormControl>
+                                    <Input 
+                                        type="number" 
+                                        {...field} 
+                                        value={field.value ?? ''}
+                                        onChange={e => {
+                                            const value = parseFloat(e.target.value);
+                                            field.onChange(isNaN(value) ? null : value);
+                                        }}
+                                    />
+                                </FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />

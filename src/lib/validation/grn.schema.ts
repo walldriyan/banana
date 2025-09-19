@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const grnItemSchema = z.object({
   productId: z.string().min(1, "Product is required."),
-  productName: z.string().optional(), // For display purposes, not required for validation
+  productName: z.string().optional(),
   batchNumber: z.string().optional(),
   quantity: z.coerce.number().int().min(1, "Quantity must be at least 1."),
   costPrice: z.coerce.number().min(0, "Cost price must be non-negative."),
@@ -19,8 +19,18 @@ export const grnSchema = z.object({
   invoiceNumber: z.string().optional(),
   items: z.array(grnItemSchema).min(1, "At least one item must be added to the GRN."),
   notes: z.string().optional(),
-  paidAmount: z.coerce.number().min(0).default(0),
+  paidAmount: z.coerce.number().min(0).nullable(),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
+}).refine(data => {
+    if (data.paymentMethod === 'credit') {
+        // If credit, paid amount must be 0 or not present at all.
+        return !data.paidAmount; 
+    }
+    return true;
+}, {
+    message: "For credit purchases, the paid amount must be zero.",
+    path: ["paidAmount"],
 });
+
 
 export type GrnFormValues = z.infer<typeof grnSchema>;
