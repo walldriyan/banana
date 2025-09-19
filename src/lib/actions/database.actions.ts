@@ -92,7 +92,6 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             create: transactionLines.map(line => ({
               productId: line.batchId,
               productName: line.productName,
-              batchId: line.batchId,
               batchNumber: line.batchNumber,
               quantity: line.quantity,
               displayUnit: line.displayUnit,
@@ -162,14 +161,14 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
          }
 
          for (const originalLine of originalTx.lines) {
-             const keptLine = transactionLines.find(line => line.batchId === originalLine.batchId);
+             const keptLine = transactionLines.find(line => line.productId === originalLine.productId);
              const originalQty = originalLine.quantity;
              const keptQty = keptLine ? keptLine.quantity : 0;
              const returnedQty = originalQty - keptQty;
 
              if (returnedQty > 0) {
                  await tx.product.update({
-                     where: { id: originalLine.batchId },
+                     where: { id: originalLine.productId },
                      data: {
                          quantity: {
                              increment: returnedQty
@@ -248,6 +247,7 @@ export async function getTransactionsFromDb() {
         },
         transactionLines: tx.lines.map(line => ({
           ...line,
+          batchId: line.productId, // Re-map for client-side consistency
           customDiscountType: line.customDiscountType as 'fixed' | 'percentage' | undefined,
         })),
         appliedDiscountsLog: tx.appliedDiscounts.map(log => ({

@@ -135,6 +135,7 @@ export function transformTransactionDataForDb(
       quantity: item.quantity,
       displayUnit: item.displayUnit,
       displayQuantity: item.displayQuantity,
+      price: item.price,
       unitPrice: item.price,
       lineTotalBeforeDiscount: lineTotalBeforeDiscount,
       lineDiscount: lineDiscount,
@@ -172,12 +173,14 @@ export function transformTransactionDataForDb(
 }
 
 // Helper to convert DB transaction lines back to SaleItems for the refund cart
-export function transactionLinesToSaleItems(lines: TransactionLine[], products: Product[]): SaleItem[] {
+export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: number })[], products: Product[]): SaleItem[] {
     return lines.map(line => {
         // Find the matching product-batch combination from the current sample products
         const product = products.find(p => p.id === line.batchId);
         
         const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const unitPrice = line.unitPrice || line.price || 0;
 
         if (!product) {
             // Fallback for products that might not exist in the current product list
@@ -187,7 +190,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 productId: line.productId,
                 name: line.productName,
                 batchNumber: line.batchNumber || 'N/A',
-                sellingPrice: line.unitPrice,
+                sellingPrice: unitPrice,
                 costPrice: 0,
                 stock: 0, // Cannot determine stock
                 units: { baseUnit: line.displayUnit || 'unit', derivedUnits: [] },
@@ -196,7 +199,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
                 defaultQuantity: 1,
                 // --- Core SaleItem Fields ---
                 saleItemId,
-                price: line.unitPrice,
+                price: unitPrice,
                 quantity: line.quantity,
                 originalQuantity: line.quantity,
                 displayUnit: line.displayUnit,
@@ -214,7 +217,7 @@ export function transactionLinesToSaleItems(lines: TransactionLine[], products: 
             quantity: line.quantity, // Base unit quantity
             displayUnit: line.displayUnit,
             displayQuantity: line.displayQuantity,
-            price: line.unitPrice,
+            price: unitPrice,
             originalQuantity: line.quantity, // Set original quantity for refund logic
              // --- Custom Discount Fields ---
             customDiscountValue: line.customDiscountValue,

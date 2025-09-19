@@ -1,4 +1,4 @@
-// src/lib/services/discount.service.ts
+// src/discount-engine/services/discount.service.ts
 
 /**
  * @file This file contains the core, server-only service for calculating discounts.

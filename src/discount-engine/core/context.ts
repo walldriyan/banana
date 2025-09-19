@@ -7,7 +7,7 @@ import type { SaleItem, User } from '@/types';
 export interface LineItemData extends SaleItem {
   lineId: string; // A unique identifier for this line item in this specific sale (e.g., saleItemId)
   productId: string; // The general product identifier (e.g., 't-shirt-01')
-  batchId?: string | null; // The unique product-batch identifier (e.g., 't-shirt-old-batch')
+  batchId: string; // The unique product-batch identifier (e.g., 't-shirt-old-batch')
 }
 
 /**
