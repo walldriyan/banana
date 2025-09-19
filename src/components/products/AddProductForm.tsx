@@ -440,8 +440,54 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                     <CardTitle>{steps[2].title}</CardTitle>
                     <CardDescription>{steps[2].description}</CardDescription>
                 </CardHeader>
-                <CardContent>
-                    <p className='text-muted-foreground'>This step is not yet implemented.</p>
+                <CardContent className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="tax"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Tax Rate (%)</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="e.g., 15" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="defaultDiscount"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Default Discount Value</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="e.g., 10 or 100" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="defaultDiscountType"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Default Discount Type</FormLabel>
+                             <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select discount type" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                <SelectItem value="PERCENTAGE">Percentage (%)</SelectItem>
+                                <SelectItem value="FIXED">Fixed Amount</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
                 </CardContent>
              </Card>
           )}
