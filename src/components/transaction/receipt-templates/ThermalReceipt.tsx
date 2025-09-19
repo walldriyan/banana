@@ -23,6 +23,14 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
   const finalCashChange = paymentDetails.paidAmount - finalTotalToShow;
 
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
+  
+  // Determine if payment details should be shown.
+  // Show if:
+  // 1. It's NOT a gift receipt.
+  // OR
+  // 2. It IS a gift receipt AND it's an installment payment.
+  const shouldShowPaymentDetails = !showAsGiftReceipt || (showAsGiftReceipt && paymentDetails.isInstallment);
+
 
   return (
     <div id="thermal-receipt-container" className="thermal-receipt-container">
@@ -131,7 +139,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
         </>
       )}
 
-      {!showAsGiftReceipt && (
+      {shouldShowPaymentDetails && (
         <>
           <Line />
           <section className="my-1 space-y-1">
