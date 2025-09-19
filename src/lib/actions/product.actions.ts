@@ -49,11 +49,14 @@ export async function addProductAction(data: ProductFormValues) {
 
   } catch (error) {
     console.error('[addProductAction Error]', error);
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
       const target = (error.meta?.target as string[])?.join(', ') || 'fields';
-      return { success: false, error: `A product with the same ${target} already exists.` };
+      if (error.code === 'P2002') {
+        return { success: false, error: `A product with the same ${target} already exists.` };
+      }
+      return { success: false, error: `Prisma Error (${error.code}): ${error.message}. Metadata: ${JSON.stringify(error.meta)}` };
     }
-    return { success: false, error: "Failed to create product and initial batch." };
+    return { success: false, error: `Failed to create product and initial batch. Reason: ${error instanceof Error ? error.message : 'Unknown error'}` };
   }
 }
 
@@ -66,7 +69,7 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
             error: "Invalid data for batch update: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
         };
     }
-    const { units, quantity, batchNumber, sellingPrice, costPrice, name, description, category, brand, isService, isActive, supplierId, ...otherData } = validationResult.data;
+    const { units, quantity, batchNumber, sellingPrice, costPrice, name, description, category, brand, isService, isActive, supplierId, tax, taxtype, defaultDiscount, defaultDiscountType, ...otherData } = validationResult.data;
 
     try {
         const oldBatch = await prisma.productBatch.findUnique({ where: { id }});
@@ -97,6 +100,10 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 units: units as any,
                 isService,
                 isActive,
+                tax,
+                taxtype,
+                defaultDiscount,
+                defaultDiscountType
             }
         });
 
