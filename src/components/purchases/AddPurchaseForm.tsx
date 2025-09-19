@@ -56,32 +56,18 @@ const initialItemState: Partial<GrnItemFormValues> = {
     total: 0,
 };
 
-// Helper component for the two-column form layout
 const FormRow = ({ title, description, children }: { title: string, description: string, children: React.ReactNode }) => (
-    <div className="flex flex-col md:flex-row items-start justify-between gap-4 py-4 border-b">
-        <div className="md:w-1/3">
+    <div className="flex flex-col md:flex-row items-start justify-between gap-4 py-4 border-b last:border-b-0">
+        <div className="md:w-2/5">
             <h4 className="font-semibold text-sm">{title}</h4>
             <p className="text-xs text-muted-foreground">{description}</p>
         </div>
-        <div className="w-full md:w-2/3">
+        <div className="w-full md:w-3/5">
             {children}
         </div>
     </div>
 );
 
-
-const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
-    <div className="flex items-start gap-4 py-3">
-        <div className="bg-muted p-2 rounded-lg">
-            <Icon className="h-5 w-5 text-foreground/80" />
-        </div>
-        <div className="flex-1">
-            <p className="font-medium text-foreground">{label}</p>
-            {description && <p className="text-xs text-muted-foreground">{description}</p>}
-        </div>
-        <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
-    </div>
-);
 
 const steps = [
     { title: "GRN & Items", description: "Add items to the Goods Received Note." },
@@ -99,7 +85,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const isEditMode = !!grn;
 
-  // State for the temporary item entry form
   const [currentItem, setCurrentItem] = useState<Partial<GrnItemFormValues>>(initialItemState);
   const [itemError, setItemError] = useState<string | null>(null);
 
@@ -232,7 +217,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     }
     
     append(validationResult.data);
-    setCurrentItem(initialItemState); // Reset the form
+    setCurrentItem(initialItemState);
   };
   
   const handleRemoveItem = (index: number) => {
@@ -415,7 +400,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 />
             </CardContent>
             </Card>
-
+            
            {supplierId && (
             <>
               <Card>
@@ -439,54 +424,63 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                       />
                   </CardContent>
                   {currentItem.productId && (
-                    <CardContent className="border-t pt-6 space-y-6">
-                        <div className="flex justify-between items-center mb-2">
-                            <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
+                    <>
+                    <CardContent className="border-t pt-2">
+                         <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-semibold">Details for: <span className="text-primary">{currentItem.name}</span></h3>
                             <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                             <FormItem className="lg:col-span-2">
-                                <FormLabel>Batch No.</FormLabel>
-                                <div className="flex items-center gap-1">
+                        <FormRow title="Batch & Quantity" description="Unique batch number and the quantity being received.">
+                           <div className="grid grid-cols-2 gap-4">
+                                <FormItem>
+                                    <FormLabel>Batch No.</FormLabel>
+                                    <div className="flex items-center gap-1">
+                                        <FormControl>
+                                        <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                        </FormControl>
+                                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                                    </div>
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Quantity</FormLabel>
                                     <FormControl>
-                                      <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                    <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
                                     </FormControl>
-                                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
-                                </div>
-                            </FormItem>
-                            <FormItem>
-                                <FormLabel>Quantity</FormLabel>
-                                <FormControl>
-                                  <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
-                                </FormControl>
-                            </FormItem>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                            <FormItem>
-                                <FormLabel>Cost Price</FormLabel>
-                                 <FormControl>
-                                   <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
-                                </FormControl>
-                            </FormItem>
-                            <FormItem>
-                                <FormLabel>Selling Price</FormLabel>
-                                <FormControl>
-                                  <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
-                                </FormControl>
-                            </FormItem>
-                             <FormItem>
-                                <FormLabel>Discount (Fixed)</FormLabel>
-                                <FormControl>
-                                  <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
-                                </FormControl>
-                            </FormItem>
-                            <FormItem>
-                                <FormLabel>Tax (%)</FormLabel>
-                                 <FormControl>
-                                  <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
-                                </FormControl>
-                            </FormItem>
-                        </div>
+                                </FormItem>
+                           </div>
+                        </FormRow>
+                        <FormRow title="Pricing" description="Cost price from supplier and the price you will sell at.">
+                           <div className="grid grid-cols-2 gap-4">
+                               <FormItem>
+                                    <FormLabel>Cost Price (per unit)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
+                                    </FormControl>
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Selling Price (per unit)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
+                                    </FormControl>
+                                </FormItem>
+                           </div>
+                        </FormRow>
+                        <FormRow title="Adjustments" description="Optional discount received from supplier or taxes applied.">
+                             <div className="grid grid-cols-2 gap-4">
+                               <FormItem>
+                                    <FormLabel>Discount (Fixed Total)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                    </FormControl>
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Tax (%)</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                    </FormControl>
+                                </FormItem>
+                           </div>
+                        </FormRow>
                         
                         {itemError && (
                             <Alert variant="destructive" className="mt-4">
@@ -495,14 +489,14 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <AlertDescription>{itemError}</AlertDescription>
                             </Alert>
                         )}
-                        {isEditMode && <p className="text-sm text-destructive text-right mt-2">Cannot add new items in Edit Mode.</p>}
-                         <div className="flex justify-end pt-4">
-                            <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
-                              <PackagePlus className="mr-2 h-4 w-4"/>
-                              Add Item to GRN
-                            </Button>
-                        </div>
                     </CardContent>
+                    <CardFooter className="flex justify-end pt-6">
+                        <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                            <PackagePlus className="mr-2 h-4 w-4"/>
+                            Add Item to GRN
+                        </Button>
+                    </CardFooter>
+                    </>
                   )}
               </Card>
 
@@ -570,6 +564,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                     field.onChange(value);
                                     if (value === 'credit') {
                                         setValue('paidAmount', 0);
+                                    } else {
+                                        setValue('paidAmount', totalAmount);
                                     }
                                 }} value={field.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger></FormControl>
@@ -605,23 +601,27 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         />
                         <Separator className="my-4"/>
                         <div className="divide-y">
-                            <SummaryRow 
-                                icon={Landmark} 
-                                label="Total GRN Value" 
-                                value={`Rs. ${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            />
-                            <SummaryRow 
-                                icon={Wallet} 
-                                label="Paid Amount" 
-                                value={`Rs. ${paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                                valueClassName="text-green-600"
-                            />
-                            <SummaryRow 
-                                icon={Banknote} 
-                                label="Balance Due (Credit)" 
-                                value={`Rs. ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                                valueClassName="text-red-600"
-                            />
+                            <div className="flex justify-between items-center py-2">
+                                <div className="flex items-center gap-3">
+                                    <Landmark className="h-5 w-5 text-muted-foreground" />
+                                    <span className="font-medium">Total GRN Value</span>
+                                </div>
+                                <span className="text-lg font-bold">Rs. {totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-2">
+                                <div className="flex items-center gap-3">
+                                    <Wallet className="h-5 w-5 text-muted-foreground" />
+                                    <span className="font-medium">Paid Amount</span>
+                                </div>
+                                <span className="text-lg font-bold text-green-600">Rs. {paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex justify-between items-center py-2">
+                                <div className="flex items-center gap-3">
+                                    <Banknote className="h-5 w-5 text-muted-foreground" />
+                                    <span className="font-medium">Balance Due (Credit)</span>
+                                </div>
+                                <span className="text-lg font-bold text-red-600">Rs. {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
