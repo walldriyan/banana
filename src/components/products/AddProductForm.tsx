@@ -290,11 +290,11 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                                     checked={field.value}
                                     onCheckedChange={(checked) => {
                                         field.onChange(checked)
-                                        if(checked) {
+                                        if(checked && product) {
                                             // When checked, suggest a new batch number but allow user to change it
                                             form.setValue('batchNumber', `B-${Date.now()}`);
                                             form.setValue('quantity', 0); // Reset quantity for new batch
-                                        } else {
+                                        } else if (product) {
                                             // When unchecked, revert to original batch number
                                             form.setValue('batchNumber', product.batchNumber ?? '');
                                             form.setValue('quantity', product.quantity);
