@@ -20,10 +20,13 @@ export async function addProductAction(data: ProductFormValues) {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
+        // Exclude productId from the data passed to product.create
+        const { productId, ...productDataForCreation } = validatedProductData;
+        
         // 1. Create the master product
         const newProduct = await tx.product.create({
             data: {
-                ...validatedProductData,
+                ...productDataForCreation,
                 units: units as any, // Prisma expects JSON
             },
         });
@@ -49,6 +52,7 @@ export async function addProductAction(data: ProductFormValues) {
 
   } catch (error) {
     console.error('[addProductAction Error]', error);
+    const errorMessage = error instanceof Error ? `Reason: ${error.message}` : "Unknown error";
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       const target = (error.meta?.target as string[])?.join(', ') || 'fields';
       if (error.code === 'P2002') {
@@ -56,7 +60,7 @@ export async function addProductAction(data: ProductFormValues) {
       }
       return { success: false, error: `Prisma Error (${error.code}): ${error.message}. Metadata: ${JSON.stringify(error.meta)}` };
     }
-    return { success: false, error: `Failed to create product and initial batch. Reason: ${error instanceof Error ? error.message : 'Unknown error'}` };
+    return { success: false, error: `Failed to create product and initial batch. ${errorMessage}` };
   }
 }
 
