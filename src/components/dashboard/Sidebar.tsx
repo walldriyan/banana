@@ -10,29 +10,39 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarHeader,
-  SidebarFooter
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 import { LogoutButton } from '../auth/LogoutButton';
 import { Button } from '../ui/button';
 
-const navItems = [
+const generalItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: null },
+];
+
+const inventoryItems = [
   { href: '/dashboard/products', icon: Package, label: 'Products', permission: 'products.view' },
-  { href: '/dashboard/customers', icon: Users, label: 'Customers', permission: 'customers.view' },
-  { href: '/dashboard/suppliers', icon: Building, label: 'Suppliers', permission: 'suppliers.view' },
   { href: '/dashboard/purchases', icon: ShoppingCart, label: 'Purchases (GRN)', permission: 'purchases.view' },
+  { href: '/dashboard/suppliers', icon: Building, label: 'Suppliers', permission: 'suppliers.view' },
+];
+
+const peopleItems = [
+    { href: '/dashboard/customers', icon: Users, label: 'Customers', permission: 'customers.view' },
+]
+
+const financeItems = [
   { href: '/dashboard/credit', icon: CreditCard, label: 'Creditors', permission: 'credit.view' },
   { href: '/dashboard/debtors', icon: HandCoins, label: 'Debtors', permission: 'debtors.view' },
-  // Add more dashboard items here
 ];
 
 export function DashboardSidebar() {
   const pathname = usePathname();
 
-  const renderLink = (item: typeof navItems[0]) => {
+  const renderLink = (item: typeof generalItems[0]) => {
       const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
-      return (
+      const linkContent = (
         <SidebarMenuItem key={item.href}>
             <Link href={item.href} passHref>
                 <SidebarMenuButton
@@ -45,7 +55,16 @@ export function DashboardSidebar() {
                 </SidebarMenuButton>
             </Link>
         </SidebarMenuItem>
-      )
+      );
+
+      if (item.permission) {
+        return (
+            <AuthorizationGuard key={item.href} permissionKey={item.permission}>
+                {linkContent}
+            </AuthorizationGuard>
+        )
+      }
+      return linkContent;
   }
 
   return (
@@ -57,18 +76,25 @@ export function DashboardSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarMenu>
-          {navItems.map((item) => {
-            if (item.permission) {
-              return (
-                <AuthorizationGuard key={item.href} permissionKey={item.permission}>
-                    {renderLink(item)}
-                </AuthorizationGuard>
-              )
-            }
-            return renderLink(item);
-          })}
-        </SidebarMenu>
+        <SidebarGroup>
+            <SidebarGroupLabel>GENERAL</SidebarGroupLabel>
+            <SidebarMenu>{generalItems.map(renderLink)}</SidebarMenu>
+        </SidebarGroup>
+        
+        <SidebarGroup>
+            <SidebarGroupLabel>INVENTORY</SidebarGroupLabel>
+            <SidebarMenu>{inventoryItems.map(renderLink)}</SidebarMenu>
+        </SidebarGroup>
+        
+        <SidebarGroup>
+            <SidebarGroupLabel>PEOPLE</SidebarGroupLabel>
+            <SidebarMenu>{peopleItems.map(renderLink)}</SidebarMenu>
+        </SidebarGroup>
+        
+        <SidebarGroup>
+            <SidebarGroupLabel>FINANCE</SidebarGroupLabel>
+            <SidebarMenu>{financeItems.map(renderLink)}</SidebarMenu>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="flex-col">
