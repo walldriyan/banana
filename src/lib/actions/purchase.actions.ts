@@ -73,12 +73,15 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
+                // Find if this exact batch already exists. The item.productId from the form is the unique ID of the product batch.
                 const existingBatchToUpdate = await tx.product.findFirst({
                     where: { 
                         id: item.productId,
                     }
                 });
 
+                // Case 1: The exact batch was found. We just update its stock.
+                // This happens when the user selects a product and does NOT change the batch number.
                 if (existingBatchToUpdate && existingBatchToUpdate.batchNumber === item.batchNumber) {
                      await tx.product.update({
                         where: { id: existingBatchToUpdate.id },
@@ -89,26 +92,29 @@ export async function addGrnAction(data: GrnFormValues) {
                         }
                     });
                 } else {
+                    // Case 2: The batch was not found OR the batch number was changed. Create a NEW batch.
+                    // First, get the master data from an existing batch of the same product.
                     const productMaster = await tx.product.findFirst({
-                        where: { id: item.productId },
+                        where: { id: item.productId }, // Find master data from the originally selected product batch
                     });
 
                      if (!productMaster) {
                        throw new Error(`Cannot create new batch. No master product found for ID: ${item.productId}. This should not happen.`);
                     }
                     
+                    // Clone master data, but exclude unique fields that need to be regenerated.
                     const { id, quantity, stock, batchNumber, barcode, ...masterDataToClone } = productMaster;
 
                     await tx.product.create({
                        data: {
-                           ...masterDataToClone,
+                           ...masterDataToClone, // Clones name, category, brand, units etc.
                            batchNumber: item.batchNumber || `B-${Date.now()}`,
                            barcode: `SKU-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // Generate a new unique barcode
                            quantity: item.quantity,
                            stock: item.quantity,
                            costPrice: item.costPrice,
                            addeDate: new Date(),
-                           units: productMaster.units,
+                           // productId is already in masterDataToClone, so it will be reused correctly.
                        }
                     });
                 }
