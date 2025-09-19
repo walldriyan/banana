@@ -54,7 +54,8 @@ export async function addProductAction(data: ProductFormValues) {
                 batchNumber: batchNumber || `B-${Date.now()}`,
                 sellingPrice: sellingPrice || 0,
                 costPrice: costPrice || 0,
-                stock: quantity || 0,
+                quantity: quantity || 0, // This was the missing argument
+                stock: quantity || 0, // Initial stock is the same as quantity
                 barcode: barcode,
                 addedDate: new Date(),
                 supplierId: supplierId || null,
