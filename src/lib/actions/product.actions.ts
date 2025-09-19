@@ -22,7 +22,6 @@ export async function addProductAction(data: ProductFormValues) {
       batchNumber, 
       sellingPrice, 
       costPrice, 
-      // Destructure all fields that do NOT belong to the master Product model
       productId, 
       barcode, 
       supplierId, 
@@ -33,7 +32,7 @@ export async function addProductAction(data: ProductFormValues) {
       minStockLevel,
       maxStockLevel,
       defaultQuantity,
-      // Tax and discount fields are now correctly destructured to be saved
+      // Destructure and ignore tax/discount fields that are not in the Product model
       tax,
       taxtype,
       defaultDiscount,
@@ -43,16 +42,11 @@ export async function addProductAction(data: ProductFormValues) {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-        // 1. Create the master product with only its own fields
+        // 1. Create the master product with only its own fields from the schema
         const newProduct = await tx.product.create({
             data: {
                 ...productDataForCreation,
-                units: units as any, // Prisma expects JSON
-                // Save the tax and default discount values to the master product
-                tax: tax ?? 0,
-                taxtype: taxtype ?? 'PERCENTAGE',
-                defaultDiscount: defaultDiscount ?? 0,
-                defaultDiscountType: defaultDiscountType ?? 'PERCENTAGE',
+                units: units as any,
             },
         });
 
@@ -67,7 +61,6 @@ export async function addProductAction(data: ProductFormValues) {
                 stock: quantity || 0, 
                 barcode: barcode,
                 addedDate: new Date(),
-                // Correctly connect the supplier relation if supplierId exists
                 ...(supplierId && { supplier: { connect: { id: supplierId } } }),
                 location: location,
                 notes: notes,
@@ -97,7 +90,6 @@ export async function addProductAction(data: ProductFormValues) {
 }
 
 export async function updateProductBatchAction(id: string, data: ProductFormValues) {
-    // This action now specifically updates a BATCH, not a master product.
     const validationResult = productSchema.safeParse(data);
     if (!validationResult.success) {
         return {
@@ -105,7 +97,26 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
             error: "Invalid data for batch update: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
         };
     }
-    const { units, quantity, batchNumber, sellingPrice, costPrice, name, description, category, brand, isService, isActive, supplierId, tax, taxtype, defaultDiscount, defaultDiscountType, ...otherData } = validationResult.data;
+    const { 
+        units, 
+        quantity, 
+        batchNumber, 
+        sellingPrice, 
+        costPrice, 
+        name, 
+        description, 
+        category, 
+        brand, 
+        isService, 
+        isActive, 
+        supplierId, 
+        // Destructure and ignore tax/discount fields
+        tax, 
+        taxtype, 
+        defaultDiscount, 
+        defaultDiscountType, 
+        ...otherData 
+    } = validationResult.data;
 
     try {
         const oldBatch = await prisma.productBatch.findUnique({ where: { id }});
@@ -113,7 +124,6 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
             return { success: false, error: "Batch not found."};
         }
 
-        // Only update the batch-specific fields
         const updatedBatch = await prisma.productBatch.update({
             where: { id },
             data: {
@@ -125,7 +135,6 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
             },
         });
 
-        // Update the master product fields separately
         await prisma.product.update({
             where: { id: oldBatch.productId },
             data: {
@@ -136,10 +145,6 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 units: units as any,
                 isService,
                 isActive,
-                tax: tax ?? 0,
-                taxtype: taxtype ?? 'PERCENTAGE',
-                defaultDiscount: defaultDiscount ?? 0,
-                defaultDiscountType: defaultDiscountType ?? 'PERCENTAGE',
             }
         });
 
