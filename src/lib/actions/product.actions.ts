@@ -20,18 +20,30 @@ export async function addProductAction(data: ProductFormValues) {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-        // Exclude productId from the data passed to product.create
-        const { productId, ...productDataForCreation } = validatedProductData;
+        // Exclude fields not belonging to the Product model from productDataForCreation
+        const { 
+            productId, 
+            barcode, 
+            supplierId, 
+            manufactureDate,
+            expiryDate,
+            location,
+            notes,
+            minStockLevel,
+            maxStockLevel,
+            defaultQuantity,
+            ...productDataForCreation 
+        } = validatedProductData;
         
-        // 1. Create the master product
+        // 1. Create the master product with only its own fields
         const newProduct = await tx.product.create({
             data: {
-                ...productDataForCreation,
+                ...productDataForCreation, // This now only contains fields like name, category, brand, etc.
                 units: units as any, // Prisma expects JSON
             },
         });
 
-        // 2. Create the initial batch for this product
+        // 2. Create the initial batch for this product, using fields from the form
         await tx.productBatch.create({
             data: {
                 product: { connect: { id: newProduct.id } },
@@ -39,8 +51,13 @@ export async function addProductAction(data: ProductFormValues) {
                 sellingPrice: sellingPrice || 0,
                 costPrice: costPrice || 0,
                 stock: quantity || 0,
+                barcode: barcode,
                 addedDate: new Date(),
-                supplierId: validatedProductData.supplierId || null,
+                supplierId: supplierId || null,
+                location: location,
+                notes: notes,
+                manufactureDate: manufactureDate ? new Date(manufactureDate) : null,
+                expiryDate: expiryDate ? new Date(expiryDate) : null
             }
         });
 
