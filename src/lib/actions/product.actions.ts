@@ -72,7 +72,7 @@ export async function addProductAction(data: ProductFormValues) {
     }
     return {
       success: false,
-      error: "Failed to create product in the database.",
+      error: error instanceof Error ? error.message : "Failed to create product in the database.",
     };
   }
 }
@@ -207,7 +207,7 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
             const target = (error.meta?.target as string[])?.join(', ');
             return { success: false, error: `A product with this ${target} already exists.` };
         }
-        return { success: false, error: "Failed to update product." };
+        return { success: false, error: error instanceof Error ? error.message : "Failed to update product." };
     }
 }
 
