@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins } from 'lucide-react';
+import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut } from 'lucide-react';
 import {
   SidebarContent,
   SidebarMenu,
@@ -17,6 +17,7 @@ import {
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 import { LogoutButton } from '../auth/LogoutButton';
 import { Button } from '../ui/button';
+import { signOut } from 'next-auth/react';
 
 const generalItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: null },
@@ -49,6 +50,7 @@ export function DashboardSidebar() {
                     isActive={isActive}
                     tooltip={item.label}
                     className="justify-start"
+                    variant="ghost"
                 >
                     <item.icon />
                     <span>{item.label}</span>
@@ -97,18 +99,25 @@ export function DashboardSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="flex-col">
-        <div className="flex flex-col gap-2 p-2">
-            <AuthorizationGuard permissionKey='pos.view'>
+      <SidebarFooter>
+        <SidebarMenu>
+          <AuthorizationGuard permissionKey='pos.view'>
+             <SidebarMenuItem>
                 <Link href="/" passHref>
-                    <Button variant="outline" className="w-full justify-start">
-                        <Home className="mr-2 h-4 w-4" />
-                        <span>POS View</span>
-                    </Button>
+                  <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Point of Sale">
+                    <Home />
+                    <span>POS View</span>
+                  </SidebarMenuButton>
                 </Link>
-            </AuthorizationGuard>
-            <LogoutButton />
-        </div>
+             </SidebarMenuItem>
+          </AuthorizationGuard>
+           <SidebarMenuItem>
+              <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Logout" onClick={() => signOut({ callbackUrl: '/login' })}>
+                <LogOut />
+                <span>Logout</span>
+              </SidebarMenuButton>
+           </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </>
   );
