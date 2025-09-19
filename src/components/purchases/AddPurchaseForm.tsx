@@ -195,7 +195,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     }
     
     append(validationResult.data);
-    setCurrentItem(initialItem-state); // Reset the form
+    setCurrentItem(initialItemState); // Reset the form
   };
   
   const handleRemoveItem = (index: number) => {
