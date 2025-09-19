@@ -89,7 +89,7 @@ export async function getProductsAction() {
     try {
         const products = await prisma.product.findMany({
             orderBy: [
-                { productId: 'asc' },
+                { name: 'asc' },
                 { batchNumber: 'asc' }
             ]
         });

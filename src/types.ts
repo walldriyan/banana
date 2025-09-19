@@ -213,4 +213,3 @@ export interface DatabaseReadyTransaction {
   };
   isRefunded?: boolean;
 }
-
