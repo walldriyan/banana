@@ -100,24 +100,26 @@ export function DashboardSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <AuthorizationGuard permissionKey='pos.view'>
-             <SidebarMenuItem>
-                <Link href="/" passHref>
-                  <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Point of Sale">
-                    <Home />
-                    <span>POS View</span>
-                  </SidebarMenuButton>
-                </Link>
-             </SidebarMenuItem>
-          </AuthorizationGuard>
-           <SidebarMenuItem>
-              <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Logout" onClick={() => signOut({ callbackUrl: '/login' })}>
-                <LogOut />
-                <span>Logout</span>
-              </SidebarMenuButton>
-           </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarGroup>
+          <SidebarMenu>
+            <AuthorizationGuard permissionKey='pos.view'>
+              <SidebarMenuItem>
+                  <Link href="/" passHref>
+                    <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Point of Sale">
+                      <Home />
+                      <span>POS View</span>
+                    </SidebarMenuButton>
+                  </Link>
+              </SidebarMenuItem>
+            </AuthorizationGuard>
+            <SidebarMenuItem>
+                <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Logout" onClick={() => signOut({ callbackUrl: '/login' })}>
+                  <LogOut />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
       </SidebarFooter>
     </>
   );
