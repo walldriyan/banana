@@ -147,44 +147,46 @@ export default function MyNewEcommerceShop() {
 
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
-    const itemIndex = cart.findIndex(item => item.saleItemId === saleItemId);
-    if (itemIndex === -1) return;
-
-    const currentItem = cart[itemIndex];
-    
-    if (newDisplayQuantity <= 0) {
-      setCart(currentCart => currentCart.filter(item => item.saleItemId !== saleItemId));
-      return;
-    }
-
-    const unitToUse = newDisplayUnit || currentItem.displayUnit;
-    const unitsData = typeof currentItem.product.units === 'string' 
-      ? JSON.parse(currentItem.product.units) 
-      : currentItem.product.units;
-    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-    const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
-    const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-
-    const newBaseQuantity = newDisplayQuantity * conversionFactor;
-
-    if (newBaseQuantity > currentItem.stock) {
-      toast({
-        variant: "destructive",
-        title: "Stock Limit Exceeded",
-        description: `Cannot set quantity to ${newDisplayQuantity} ${unitToUse}. Only ${currentItem.stock / conversionFactor} ${unitToUse} available.`,
-      });
-      return;
-    }
-
     setCart(currentCart => {
-      const updatedCart = [...currentCart];
-      updatedCart[itemIndex] = {
-        ...currentItem,
-        displayUnit: unitToUse,
-        displayQuantity: newDisplayQuantity,
-        quantity: newBaseQuantity,
-      };
-      return updatedCart;
+        const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
+        if (itemIndex === -1) return currentCart;
+
+        const currentItem = currentCart[itemIndex];
+
+        if (newDisplayQuantity <= 0) {
+            return currentCart.filter(item => item.saleItemId !== saleItemId);
+        }
+
+        const unitsData = typeof currentItem.product.units === 'string' 
+          ? JSON.parse(currentItem.product.units) 
+          : currentItem.product.units;
+          
+        const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+        
+        // Determine the unit to use. If a new one is provided, use it, otherwise stick with the current one.
+        const unitToUse = newDisplayUnit || currentItem.displayUnit;
+        const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+        const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+
+        const newBaseQuantity = newDisplayQuantity * conversionFactor;
+
+        if (newBaseQuantity > currentItem.stock) {
+            toast({
+                variant: "destructive",
+                title: "Stock Limit Exceeded",
+                description: `Cannot set quantity to ${newDisplayQuantity} ${unitToUse}. Only ${currentItem.stock / conversionFactor} ${unitToUse} available.`,
+            });
+            return currentCart; // Return original cart without changes
+        }
+
+        const updatedCart = [...currentCart];
+        updatedCart[itemIndex] = {
+            ...currentItem,
+            displayUnit: unitToUse,
+            displayQuantity: newDisplayQuantity,
+            quantity: newBaseQuantity,
+        };
+        return updatedCart;
     });
   };
 
@@ -216,11 +218,12 @@ export default function MyNewEcommerceShop() {
                     return item; // Return original item if stock is exceeded
                 }
 
+                // Return the updated item, ensuring displayUnit is preserved
                 return {
                     ...item,
                     quantity: newBaseQuantity,
                     displayQuantity: newDisplayQuantity,
-                    // displayUnit is already correct, so no need to set it again
+                    displayUnit: item.displayUnit, // Explicitly carry over the display unit
                 };
             }
             return item;
@@ -236,12 +239,16 @@ export default function MyNewEcommerceShop() {
             return;
         }
         
+        const unitsData = typeof productBatch.product.units === 'string' 
+          ? JSON.parse(productBatch.product.units) 
+          : productBatch.product.units;
+
         const newSaleItem: SaleItem = {
             ...productBatch,
             saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             quantity: 1, 
             displayQuantity: 1, 
-            displayUnit: productBatch.product.units.baseUnit, // Set the display unit explicitly
+            displayUnit: unitsData.baseUnit, // Set the display unit explicitly from parsed units
             price: productBatch.sellingPrice,
         };
         
