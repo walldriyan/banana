@@ -90,7 +90,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       notes: '',
       paidAmount: 0,
       paymentMethod: 'cash',
-      paymentStatus: 'pending',
     },
   });
 
@@ -118,18 +117,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
 
   const currentTotalAmount = Array.isArray(watchedItems) ? watchedItems.reduce((sum, item) => sum + (item.total || 0), 0) : 0;
-
-  useEffect(() => {
-    // Determine payment status based on total and paid amount
-    const paid = Number(watchedPaidAmount || 0);
-    if (currentTotalAmount > 0 && paid >= currentTotalAmount) {
-        form.setValue('paymentStatus', 'paid');
-    } else if (paid > 0 && paid < currentTotalAmount) {
-        form.setValue('paymentStatus', 'partial');
-    } else {
-        form.setValue('paymentStatus', 'pending');
-    }
-  }, [watchedItems, watchedPaidAmount, form, currentTotalAmount]);
 
   const handleProductSelect = (product: Product) => {
     const existingItemIndex = fields.findIndex(field => field.productId === product.id);
@@ -170,15 +157,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   async function onSubmit(data: GrnFormValues) {
     setIsSubmitting(true);
     
-    // Manually set the totalAmount before sending to the server action
-    const finalData = {
-        ...data,
-        totalAmount: currentTotalAmount
-    };
-
     const action = isEditMode && grn
-      ? updateGrnAction(grn.id, finalData)
-      : addGrnAction(finalData);
+      ? updateGrnAction(grn.id, data)
+      : addGrnAction(data);
     
     const result = await action;
     

@@ -39,18 +39,24 @@ export async function addGrnAction(data: GrnFormValues) {
         };
     }
 
-    const { items, totalAmount, ...headerData } = validationResult.data;
+    const { items, ...headerData } = validationResult.data;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            // Recalculate total amount on the server for security
             const calculatedTotalAmount = items.reduce((sum, item) => sum + item.total, 0);
+            
+            let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
+            if (headerData.paidAmount >= calculatedTotalAmount) {
+                paymentStatus = 'paid';
+            } else if (headerData.paidAmount > 0) {
+                paymentStatus = 'partial';
+            }
 
-            // 1. Create the GRN Header
             const newGrn = await tx.goodsReceivedNote.create({
                 data: {
                     ...headerData,
-                    totalAmount: calculatedTotalAmount, // Use server-calculated total
+                    totalAmount: calculatedTotalAmount,
+                    paymentStatus: paymentStatus,
                     items: {
                         create: items.map(item => ({
                             productId: item.productId,
@@ -63,27 +69,39 @@ export async function addGrnAction(data: GrnFormValues) {
                         })),
                     },
                 },
-                include: {
-                    items: true,
-                }
+                include: { items: true }
             });
 
-            // 2. Update stock for each product in the GRN
             for (const item of newGrn.items) {
-                await tx.product.update({
-                    where: { id: item.productId },
-                    data: {
-                        quantity: {
-                            increment: item.quantity,
-                        },
-                        stock: {
-                            increment: item.quantity,
-                        },
-                    },
+                const productMaster = await tx.product.findFirst({
+                    where: { productId: item.productId },
+                    orderBy: { addeDate: 'desc' }
+                });
+
+                if (!productMaster) {
+                    throw new Error(`Product master not found for productId: ${item.productId}. Cannot create new batch.`);
+                }
+                
+                // Use upsert to either create a new batch or update an existing one's stock
+                await tx.product.upsert({
+                   where: { id: item.productId }, // Unique product batch ID
+                   update: {
+                       quantity: { increment: item.quantity },
+                       stock: { increment: item.quantity },
+                   },
+                   create: {
+                       ...productMaster, // Inherit details from the latest batch
+                       id: item.productId, // This is the unique ID for the new batch
+                       batchNumber: item.batchNumber || `B-${Date.now()}`,
+                       quantity: item.quantity,
+                       stock: item.quantity,
+                       costPrice: item.costPrice,
+                       sellingPrice: productMaster.sellingPrice, // Or adjust as needed
+                       addeDate: new Date(),
+                   }
                 });
             }
             
-            // 3. If an initial payment was made, record it
             if (newGrn.paidAmount > 0) {
               await tx.purchasePayment.create({
                 data: {
@@ -95,7 +113,6 @@ export async function addGrnAction(data: GrnFormValues) {
                 },
               });
             }
-
 
             return newGrn;
         });
@@ -130,11 +147,10 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
         };
     }
 
-    const { items: newItems, totalAmount, ...headerData } = validationResult.data;
+    const { items: newItems, ...headerData } = validationResult.data;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Get the current state of the GRN from the DB
             const oldGrn = await tx.goodsReceivedNote.findUnique({
                 where: { id: grnId },
                 include: { items: true },
@@ -144,22 +160,18 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                 throw new Error(`GRN with ID ${grnId} not found.`);
             }
 
-            // 2. Calculate stock adjustments
             const stockAdjustments = new Map<string, number>();
 
-            // Decrement stock based on old items
             for (const oldItem of oldGrn.items) {
                 const currentAdjustment = stockAdjustments.get(oldItem.productId) || 0;
                 stockAdjustments.set(oldItem.productId, currentAdjustment - oldItem.quantity);
             }
 
-            // Increment stock based on new items
             for (const newItem of newItems) {
                 const currentAdjustment = stockAdjustments.get(newItem.productId) || 0;
                 stockAdjustments.set(newItem.productId, currentAdjustment + newItem.quantity);
             }
 
-            // 3. Apply stock adjustments to products
             for (const [productId, adjustment] of stockAdjustments.entries()) {
                 if (adjustment !== 0) {
                      await tx.product.update({
@@ -172,19 +184,22 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                 }
             }
             
-            // Recalculate total amount on the server for security
             const calculatedTotalAmount = newItems.reduce((sum, item) => sum + item.total, 0);
 
-            // 4. Update the GRN itself
-            // For simplicity, we are assuming that initial payments are not editable via this form.
-            // Payment management will be handled separately.
+            let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
+             if (headerData.paidAmount >= calculatedTotalAmount) {
+                paymentStatus = 'paid';
+            } else if (headerData.paidAmount > 0) {
+                paymentStatus = 'partial';
+            }
+
             const updatedGrn = await tx.goodsReceivedNote.update({
                 where: { id: grnId },
                 data: {
                     ...headerData,
-                    totalAmount: calculatedTotalAmount, // Use server-calculated total
+                    totalAmount: calculatedTotalAmount,
+                    paymentStatus: paymentStatus,
                     items: {
-                        // Delete old items and create new ones
                         deleteMany: {},
                         create: newItems.map(item => ({
                             productId: item.productId,
