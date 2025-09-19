@@ -64,7 +64,7 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
 
             // Process each item to update stock and create GRN line items
             for (const item of items) {
-                // Find if the exact batch exists based on the original product's general productId and the new batchNumber
+                 // Find if the exact batch exists based on the original product's general productId and the new batchNumber
                  const productInfoFromExistingBatch = await tx.product.findUnique({ where: { id: item.productId } });
                  if (!productInfoFromExistingBatch) {
                      throw new Error(`The base product for item '${item.productName}' (ID: ${item.productId}) does not exist.`);
