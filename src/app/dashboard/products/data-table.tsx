@@ -77,9 +77,9 @@ export function ProductsDataTable<TData, TValue>({
         <div className="flex items-center justify-between py-4">
             <Input
                 placeholder="Filter by product name..."
-                value={(table.getColumn("product.name")?.getFilterValue() as string) ?? ""}
+                value={(table.getColumn(grouping[0])?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
-                    table.getColumn("product.name")?.setFilterValue(event.target.value)
+                    table.getColumn(grouping[0])?.setFilterValue(event.target.value)
                 }
                 className="max-w-sm"
             />
