@@ -22,19 +22,20 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ProductDetailsView } from '@/components/products/ProductDetailsView';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Warehouse, Archive, DollarSign, Landmark, TrendingUp, Wallet, Coins } from 'lucide-react';
+import { Package, Archive, DollarSign, Landmark, TrendingUp, Coins, AlertTriangle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 
-const SummaryCard = ({ title, value, icon: Icon, description }: { title: string, value: string | number, icon: React.ElementType, description?: string }) => (
-    <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
-        <div className="bg-muted p-3 rounded-full">
-            <Icon className="h-6 w-6 text-foreground/80" />
+const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
+    <div className="flex items-start gap-4 py-3">
+        <div className="bg-muted p-2 rounded-lg">
+            <Icon className="h-5 w-5 text-foreground/80" />
         </div>
-        <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold text-foreground">{value}</p>
-            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+        <div className="flex-1">
+            <p className="font-medium text-foreground">{label}</p>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
         </div>
+        <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
     </div>
 );
 
@@ -196,38 +197,65 @@ export function ProductsClientPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <Card className="mt-8 bg-muted/20">
+       <Card className="mt-8 bg-muted/20">
             <CardHeader>
                 <CardTitle>Inventory Summary</CardTitle>
                 <CardDescription>An advanced overview of your current inventory for decision management.</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                <SummaryCard title="Master Products" value={summary.totalMasterProducts} icon={Package} description={`${summary.totalBatches} total batches`} />
-                <SummaryCard title="Total Stock Units" value={summary.totalStockQuantity.toLocaleString()} icon={Archive} />
-                <SummaryCard 
-                    title="Total Stock Value (Cost)" 
-                    value={`Rs. ${summary.totalStockCostValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                    icon={Wallet} 
-                    description="Total investment in current stock"
-                />
-                <SummaryCard 
-                    title="Total Stock Value (Sell)" 
-                    value={`Rs. ${summary.totalStockSellingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                    icon={Landmark}
-                    description="Total revenue if all stock is sold"
-                />
-                 <SummaryCard 
-                    title="Potential Profit" 
-                    value={`Rs. ${summary.potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                    icon={TrendingUp}
-                    description="Estimated gross profit from current stock"
-                />
-                 <SummaryCard 
-                    title="Overall Margin" 
-                    value={`${summary.overallMargin.toFixed(2)}%`} 
-                    icon={Coins}
-                    description="Estimated return on investment"
-                />
+            <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* General Stats */}
+                <Card className="lg:col-span-1">
+                    <CardHeader>
+                        <CardTitle className="text-lg">General</CardTitle>
+                    </CardHeader>
+                    <CardContent className="divide-y">
+                        <SummaryRow icon={Package} label="Master Products" value={summary.totalMasterProducts} />
+                        <SummaryRow icon={Boxes} label="Total Batches" value={summary.totalBatches} />
+                        <SummaryRow icon={Archive} label="Total Stock Units" value={summary.totalStockQuantity.toLocaleString()} />
+                    </CardContent>
+                </Card>
+
+                {/* Financial Stats */}
+                <Card className="lg:col-span-2">
+                     <CardHeader>
+                        <CardTitle className="text-lg">Financials</CardTitle>
+                    </CardHeader>
+                    <CardContent className="divide-y">
+                         <div>
+                            <p className="text-sm font-semibold text-muted-foreground pt-2 pb-1">ESTIMATED REVENUE</p>
+                            <SummaryRow 
+                                icon={Landmark} 
+                                label="Total Stock Value (Sell)" 
+                                value={`Rs. ${summary.totalStockSellingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                                description="Total revenue if all stock is sold"
+                            />
+                        </div>
+                        <div>
+                             <p className="text-sm font-semibold text-muted-foreground pt-4 pb-1">COST & PROFITABILITY</p>
+                            <SummaryRow 
+                                icon={Wallet} 
+                                label="Total Stock Value (Cost)" 
+                                value={`Rs. ${summary.totalStockCostValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                                description="Total investment in current stock"
+                            />
+                             <SummaryRow 
+                                icon={TrendingUp} 
+                                label="Potential Profit" 
+                                value={`Rs. ${summary.potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                                description="Estimated gross profit from current stock"
+                                valueClassName={summary.potentialProfit >= 0 ? "text-green-600" : "text-red-600"}
+                            />
+                             <SummaryRow 
+                                icon={Coins} 
+                                label="Overall Margin" 
+                                value={`${summary.overallMargin.toFixed(2)}%`}
+                                description="Estimated return on investment"
+                                valueClassName={summary.overallMargin >= 0 ? "text-green-600" : "text-red-600"}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
             </CardContent>
         </Card>
     </>
