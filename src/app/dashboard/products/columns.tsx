@@ -81,7 +81,8 @@ export const getColumns = (
         enableHiding: false,
     },
     {
-        accessorKey: "product.name",
+        id: "product.name", // Give a stable ID
+        accessorFn: (row) => row.product.name, // Use accessor function
         header: "Name",
         cell: ({ row, getValue }) => {
             const isGrouped = row.getIsGrouped();
@@ -106,9 +107,6 @@ export const getColumns = (
                 </div>
                 );
             }
-
-            // For non-grouped rows, we are now showing the master product name.
-            // The grouping cell handles the display for sub-rows implicitly.
             return <div className="font-bold">{value}</div>;
         },
     },
@@ -144,10 +142,12 @@ export const getColumns = (
      {
         accessorKey: "product.category",
         header: "Category",
+         cell: info => info.row.original.product.category,
     },
      {
         accessorKey: "product.brand",
         header: "Brand",
+         cell: info => info.row.original.product.brand,
     },
     {
         accessorKey: "product.isActive",
