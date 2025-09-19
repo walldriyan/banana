@@ -189,3 +189,79 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
         return { success: false, error: `Failed to update GRN: ${errorMessage}` };
     }
 }
+
+
+/**
+ * Deletes a GRN and its associated items and batches, but only if it's safe to do so.
+ */
+export async function deleteGrnAction(grnId: string) {
+    try {
+        // --- Validation Step 1: Check for payments ---
+        const paymentCount = await prisma.purchasePayment.count({
+            where: { goodsReceivedNoteId: grnId },
+        });
+        if (paymentCount > 0) {
+            return {
+                success: false,
+                error: `Cannot delete. This GRN has ${paymentCount} payment(s) recorded. Please delete the payments first from the Credit Management page.`,
+            };
+        }
+
+        // --- Validation Step 2: Check if products from this GRN have been sold ---
+        // Find all batch IDs created by this GRN
+        const grnItems = await prisma.goodsReceivedNoteItem.findMany({
+            where: { goodsReceivedNoteId: grnId },
+            select: { productBatchId: true },
+        });
+        const batchIds = grnItems.map(item => item.productBatchId);
+
+        if (batchIds.length > 0) {
+            const transactionLineCount = await prisma.transactionLine.count({
+                where: {
+                    productBatchId: { in: batchIds },
+                },
+            });
+            if (transactionLineCount > 0) {
+                return {
+                    success: false,
+                    error: `Cannot delete. Products from this GRN have been sold in ${transactionLineCount} transaction line(s).`,
+                };
+            }
+        }
+        
+        // --- Deletion Step ---
+        const result = await prisma.$transaction(async (tx) => {
+            // Delete GRN items first (cascading deletes are not relied upon here for clarity)
+            await tx.goodsReceivedNoteItem.deleteMany({
+                where: { goodsReceivedNoteId: grnId },
+            });
+
+            // Delete the product batches that were created by this GRN
+            if (batchIds.length > 0) {
+                await tx.productBatch.deleteMany({
+                    where: { id: { in: batchIds } },
+                });
+            }
+
+            // Finally, delete the GRN header
+            const deletedGrn = await tx.goodsReceivedNote.delete({
+                where: { id: grnId },
+            });
+            
+            return deletedGrn;
+        });
+
+        revalidatePath('/dashboard/purchases');
+        revalidatePath('/dashboard/products');
+
+        return { success: true, data: result };
+
+    } catch (error) {
+        console.error(`[deleteGrnAction] Error deleting GRN ${grnId}:`, error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            return { success: false, error: 'GRN not found for deletion.' };
+        }
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        return { success: false, error: `Failed to delete GRN: ${errorMessage}` };
+    }
+}

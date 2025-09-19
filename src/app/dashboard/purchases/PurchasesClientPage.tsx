@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { GoodsReceivedNote, Supplier } from '@prisma/client';
-import { getGrnsAction } from '@/lib/actions/purchase.actions';
+import { getGrnsAction, deleteGrnAction } from '@/lib/actions/purchase.actions';
 import { PurchasesDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -85,16 +85,19 @@ export function PurchasesClientPage() {
   const confirmDeleteGrn = async () => {
     if (!grnToDelete) return;
     
-    // const result = await deleteGrnAction(grnToDelete); // This action needs to be created
+    const result = await deleteGrnAction(grnToDelete);
 
-    // if (result.success) {
-    //     toast({ title: "GRN Deleted", description: `The purchase record has been deleted.` });
-    //     fetchGrns();
-    // } else {
-    //     toast({ variant: "destructive", title: "Error", description: result.error });
-    // }
-
-    toast({ title: "Info", description: `Delete functionality is not yet implemented.` });
+    if (result.success) {
+        toast({ title: "GRN Deleted", description: `The purchase record has been successfully deleted.` });
+        fetchGrns();
+    } else {
+        toast({ 
+            variant: "destructive", 
+            title: "Deletion Failed", 
+            description: result.error, // Display the specific error message from the server
+            duration: 9000,
+        });
+    }
 
     setIsDeleteDialogOpen(false);
     setGrnToDelete(null);
@@ -126,7 +129,7 @@ export function PurchasesClientPage() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This action cannot be undone. Deleting a GRN will affect product stock levels.
+                        This action cannot be undone. Deleting a GRN will remove the record and its associated product batches, affecting stock levels. This will fail if the GRN has associated payments or if its products have been sold.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
