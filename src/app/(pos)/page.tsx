@@ -225,6 +225,8 @@ export default function MyNewEcommerceShop() {
                 ...existingItem,
                 quantity: newBaseQuantity,
                 displayQuantity: newDisplayQuantity,
+                // Ensure displayUnit is carried over
+                displayUnit: existingItem.displayUnit, 
             };
 
             return updatedCart;
