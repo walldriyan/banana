@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import type { Product } from "@/types"
+import type { ProductBatch } from "@/types"
 import { MoreHorizontal, ArrowUpDown, ChevronsRight, ChevronsDownUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,19 +14,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
-import { Badge } from "../ui/badge"
+import { Badge } from "@/components/ui/badge"
 
 // Define a new interface for the component props
 interface CellActionsProps {
-  product: Product;
-  onEdit: (product: Product) => void; // Callback to open the edit drawer
-  onDelete: (productId: string) => void; // Callback to handle deletion
+  batch: ProductBatch;
+  onEdit: (batch: ProductBatch) => void; // Callback to open the edit drawer
+  onDelete: (batchId: string) => void; // Callback to handle deletion
 }
 
-const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
+const CellActions = ({ batch, onEdit, onDelete }: CellActionsProps) => {
     const handleEditClick = () => {
-        console.log('[columns.tsx] "Edit" button clicked for product:', product);
-        onEdit(product);
+        onEdit(batch);
     }
     
     return (
@@ -39,8 +38,8 @@ const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(product.id)}>
-                    Copy product ID
+                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(batch.id)}>
+                    Copy Batch ID
                 </DropdownMenuItem>
                  <AuthorizationGuard permissionKey="products.update">
                     <DropdownMenuItem onClick={handleEditClick}>
@@ -48,8 +47,8 @@ const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
                     </DropdownMenuItem>
                 </AuthorizationGuard>
                  <AuthorizationGuard permissionKey="products.delete">
-                    <DropdownMenuItem onClick={() => onDelete(product.id)} className="text-red-500">
-                        Delete Batch
+                    <DropdownMenuItem onClick={() => onDelete(batch.id)} className="text-red-500">
+                        Delete
                     </DropdownMenuItem>
                 </AuthorizationGuard>
             </DropdownMenuContent>
@@ -59,9 +58,9 @@ const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
 
 // Update the type definition for the columns factory
 export const getColumns = (
-  onEdit: (product: Product) => void,
-  onDelete: (productId: string) => void
-): ColumnDef<Product>[] => [
+  onEdit: (batch: ProductBatch) => void,
+  onDelete: (batchId: string) => void
+): ColumnDef<ProductBatch>[] => [
     {
         id: "select",
         header: ({ table }) => (
@@ -82,7 +81,8 @@ export const getColumns = (
         enableHiding: false,
     },
     {
-        accessorKey: "name",
+        id: "product.name", // Give a stable ID
+        accessorFn: (row) => row.product.name, // Use accessor function
         header: "Name",
         cell: ({ row, getValue }) => {
             const isGrouped = row.getIsGrouped();
@@ -107,8 +107,7 @@ export const getColumns = (
                 </div>
                 );
             }
-
-            return <div className="pl-8">{value}</div>;
+            return <div className="font-bold">{value}</div>;
         },
     },
      {
@@ -131,26 +130,30 @@ export const getColumns = (
         },
     },
     {
-        accessorKey: "quantity",
-        header: "Stock",
+        accessorKey: "stock",
+        header: () => <div className="text-right">Stock</div>,
         cell: ({ row }) => {
-            const product = row.original;
-            return <div>{product.quantity} {product.units.baseUnit}</div>
+            const batch = row.original;
+            const stock = row.getValue("stock") as number;
+            const units = typeof batch.product.units === 'string' ? JSON.parse(batch.product.units) : batch.product.units;
+            return <div className="text-right">{stock} {units.baseUnit}</div>
         }
     },
      {
-        accessorKey: "category",
+        accessorKey: "product.category",
         header: "Category",
+         cell: info => info.row.original.product.category,
     },
      {
-        accessorKey: "brand",
+        accessorKey: "product.brand",
         header: "Brand",
+         cell: info => info.row.original.product.brand,
     },
     {
-        accessorKey: "isActive",
+        accessorKey: "product.isActive",
         header: "Status",
         cell: ({ row }) => {
-            return row.getValue("isActive") ? "Active" : "Inactive";
+            return row.original.product.isActive ? "Active" : "Inactive";
         }
     },
     {
@@ -159,7 +162,7 @@ export const getColumns = (
             if (row.getIsGrouped()) {
                 return null; // No actions on grouped rows
             }
-            return <CellActions product={row.original} onEdit={onEdit} onDelete={onDelete} />
+            return <CellActions batch={row.original} onEdit={onEdit} onDelete={onDelete} />
         },
     },
 ]

@@ -64,20 +64,13 @@ export function ProductsClientPage() {
   };
 
   const openEditBatchDrawer = useCallback((batch: ProductBatch) => {
-    // This is complex because AddProductForm is for master products.
-    // For now, we will just log it. A dedicated BatchEditForm would be needed.
-    console.log('[ProductsClientPage.tsx] Edit Batch clicked:', batch);
-     toast({
-        title: 'Edit Not Implemented',
-        description: `Editing batches directly from this screen is not yet supported. Please manage batches via Purchases (GRN).`,
+    drawer.openDrawer({
+        title: 'Edit Product Batch',
+        description: `Editing details for ${batch.product.name} - Batch ${batch.batchNumber}`,
+        content: <AddProductForm productBatch={batch} onSuccess={handleFormSuccess} />,
+        drawerClassName: 'sm:max-w-4xl'
     });
-    // drawer.openDrawer({
-    //     title: 'Edit Product Batch',
-    //     description: `Editing details for ${batch.product.name} - Batch ${batch.batchNumber}`,
-    //     content: <div />, // Placeholder for a future BatchEditForm
-    //     drawerClassName: 'sm:max-w-4xl'
-    // });
-  }, [toast]);
+  }, [drawer, handleFormSuccess]);
 
   const handleDeleteRequest = (batchId: string) => {
     setBatchToDelete(batchId);
@@ -93,7 +86,11 @@ export function ProductsClientPage() {
         toast({ title: "Product Batch Deleted", description: `The batch has been deleted.` });
         fetchBatches(); // Refresh list
     } else {
-        toast({ variant: "destructive", title: "Error", description: result.error });
+        toast({ 
+            variant: "destructive", 
+            title: "Deletion Failed", 
+            description: result.error // Display the specific error message from the server
+        });
     }
 
     setIsDeleteDialogOpen(false);
