@@ -480,7 +480,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 </div>
                             </div>
                             
-                            <div className="md:col-span-2 space-y-4">
+                            <div className="md:col-span-2 space-y-2">
                                 <Card>
                                     <CardHeader><CardTitle className='text-base'>Batch & Quantity</CardTitle></CardHeader>
                                     <CardContent className="grid grid-cols-2 gap-4 p-4">
