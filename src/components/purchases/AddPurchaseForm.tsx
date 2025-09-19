@@ -421,8 +421,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     />
                 </CardContent>
                 {currentItem.productId && (
-                    <CardContent className="border-t pt-6 space-y-6">
-                        <div className="flex justify-between items-start">
+                    <CardContent className="border-t pt-6">
+                        <div className="flex justify-between items-start mb-4">
                             <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
                             <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
                         </div>
@@ -447,7 +447,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
                             </FormItem>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end mt-4">
                             <FormItem>
                                 <FormLabel>Discount (Fixed)</FormLabel>
                                 <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
@@ -470,7 +470,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <AlertDescription>{itemError}</AlertDescription>
                             </Alert>
                         )}
-                        {isEditMode && <p className="text-sm text-destructive text-right">Cannot add new items in Edit Mode.</p>}
+                        {isEditMode && <p className="text-sm text-destructive text-right mt-2">Cannot add new items in Edit Mode.</p>}
                     </CardContent>
                 )}
             </Card>
