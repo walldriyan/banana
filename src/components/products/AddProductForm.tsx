@@ -79,6 +79,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [suppliers, setSuppliers] = useState<ComboboxOption[]>([]);
   const [categories, setCategories] = useState<ComboboxOption[]>(
@@ -171,9 +172,9 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
   async function onSubmit(data: ProductFormValues) {
     console.log("[AddProductForm.tsx] onSubmit called. isEditMode:", isEditMode, "Data:", data);
+    setSubmissionError(null);
     setIsSubmitting(true);
     
-    // If it's edit mode AND "add as new batch" is checked, force it to be an add action.
     const action = (isEditMode && !data.addAsNewBatch && product)
       ? updateProductAction(product.id, data)
       : addProductAction(data);
@@ -188,16 +189,19 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
       });
       onSuccess(); 
     } else {
-      toast({
+       setSubmissionError(result.error);
+       toast({
         variant: "destructive",
         title: `Error ${isEditMode && !data.addAsNewBatch ? 'updating' : 'adding'} product`,
-        description: result.error,
+        description: "Submission failed. Please see the error message on the form.",
       });
     }
   }
 
   const onError = (errors: any) => {
     console.error("[AddProductForm.tsx] Form validation errors:", errors);
+    const errorString = JSON.stringify(errors, null, 2);
+    setSubmissionError(`Client-side validation failed. Please check the form for errors. Details: ${errorString}`);
     toast({
         variant: "destructive",
         title: "Validation Error",
@@ -233,8 +237,6 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
   const productName = form.watch('name');
   useEffect(() => {
-    // Only auto-generate the general productId for new products
-    // And only if the 'addAsNewBatch' flag is not set (which means it's a truly new product line)
     if (!isEditMode && !form.getValues('addAsNewBatch')) {
         form.setValue('productId', generateProductIdFromName(productName));
     }
@@ -509,6 +511,16 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
             </Card>
           )}
         </div>
+
+        {submissionError && (
+            <Alert variant="destructive" className="mt-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Submission Error</AlertTitle>
+                <AlertDescription className="break-all font-mono text-xs">
+                    {submissionError}
+                </AlertDescription>
+            </Alert>
+        )}
 
         <div className="flex justify-between items-center pt-4 mt-6 border-t">
           <div>

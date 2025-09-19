@@ -52,7 +52,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const isEditMode = !!grn;
 
-  // Local state for totals to avoid re-rendering the whole form on each keystroke
   const [totalAmount, setTotalAmount] = useState(0);
 
   const form = useForm<GrnFormValues>({
@@ -104,6 +103,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
              const product = products.find(p => p.id === item.productId);
              return {
                  ...item,
+                 productId: item.productId,
                  productName: product?.name || 'Unknown Product'
              };
           });
@@ -137,9 +137,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         toast({ title: "Quantity Updated", description: `${product.name} quantity increased to ${newQty}.`});
     } else {
         append({
-            productId: product.id, // This is the unique batch ID
+            productId: product.id,
             productName: product.name,
-            batchNumber: product.batchNumber, // Pre-fill with existing batch number
+            batchNumber: product.batchNumber,
             quantity: 1,
             costPrice: product.costPrice ?? 0,
             discount: 0,
@@ -147,7 +147,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             total: product.costPrice ?? 0
         });
     }
-    // Defer total calculation to avoid re-rendering during state update
     setTimeout(calculateTotal, 0);
   };
   
@@ -181,7 +180,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       title: 'Add New Product Batch',
       description: 'Fill in the details below to add a new product batch to the system.',
       content: <AddProductForm onSuccess={() => {
-        fetchProductsAndSuppliers(); // Refresh product list after adding
+        fetchProductsAndSuppliers(); 
         drawer.closeDrawer();
         toast({ title: 'Success', description: 'New product added. You can now search for it.'});
       }} />,
@@ -477,10 +476,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         </div>
         
         {submissionError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="mt-4">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Submission Error</AlertTitle>
-                <AlertDescription className="break-all font-mono">
+                <AlertDescription className="break-all font-mono text-xs">
                     {submissionError}
                 </AlertDescription>
             </Alert>
