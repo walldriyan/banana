@@ -17,7 +17,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
     ? showAsGiftReceiptProp
     : (transactionHeader.isGiftReceipt ?? false);
 
-  const finalTotalToShow = showAsGiftReceipt ? transactionHeader.subtotal : transactionHeader.finalTotal;
+  const finalTotalToShow = transactionHeader.finalTotal;
   const isRefund = transactionHeader.status === 'refund';
 
   const finalCashChange = paymentDetails.paidAmount - finalTotalToShow;
@@ -70,16 +70,15 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
               <tr>
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
                 <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
-              
-                {!showAsGiftReceipt && <td className="text-right">{item.unitPrice.toFixed(2)}</td>}
-                {!showAsGiftReceipt && <td className="text-right">
+                <td className="text-right">{item.unitPrice.toFixed(2)}</td>
+                <td className="text-right">
                   {item.lineTotalBeforeDiscount.toFixed(2)}
-                </td>}
-                {!showAsGiftReceipt && <td className="text-right">
+                </td>
+                <td className="text-right">
                   {item.lineTotalAfterDiscount.toFixed(2)}
-                </td>}
+                </td>
               </tr>
-              {item.lineDiscount > 0 && !showAsGiftReceipt && (
+              {item.lineDiscount > 0 && (
                 <tr>
                   <td colSpan={3} className="text-right italic text-gray-600">
                     (Discount)
@@ -102,7 +101,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           <span>{transactionHeader.subtotal.toFixed(2)}</span>
         </div>
 
-        {transactionHeader.totalDiscountAmount > 0 && !showAsGiftReceipt && (
+        {transactionHeader.totalDiscountAmount > 0 && (
           <div className="flex justify-between font-bold text-green-700">
             <span>Total Discounts:</span>
             <span>({transactionHeader.totalDiscountAmount.toFixed(2)})</span>
