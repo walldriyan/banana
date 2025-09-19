@@ -51,43 +51,77 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
             } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
             }
-
+            
+            // Create GRN Header first without items
             const newGrn = await tx.goodsReceivedNote.create({
-                data: {
+                 data: {
                     ...headerData,
-                    paidAmount: paidAmount, // Use the sanitized paid amount
+                    paidAmount: paidAmount,
                     totalAmount: totalAmount,
                     paymentStatus: paymentStatus,
-                    items: {
-                        create: items.map(item => ({
-                            productId: item.productId, 
-                            batchNumber: item.batchNumber,
-                            quantity: item.quantity,
-                            costPrice: item.costPrice,
-                            discount: item.discount,
-                            tax: item.tax,
-                            total: item.total,
-                        })),
-                    },
-                },
-                include: { items: true }
+                }
             });
 
-            for (const item of newGrn.items) {
-                 const productToUpdate = await tx.product.findUnique({
-                    where: { id: item.productId }
-                 });
+            // Process each item to update stock and create GRN line items
+            for (const item of items) {
+                // Find if the exact batch exists
+                 const existingBatch = await tx.product.findFirst({
+                    where: { 
+                        productId: {
+                            // Find the product based on the general ID, not unique batch ID
+                            equals: (await tx.product.findUnique({where: {id: item.productId}}))?.productId
+                        },
+                        batchNumber: item.batchNumber 
+                    }
+                });
 
-                 if (!productToUpdate) {
-                     throw new Error(`Critical error: Product with unique ID ${item.productId} was selected in the form but not found in the database. Stock was not updated.`);
-                 }
+                let productBatchRecord;
+                if (existingBatch) {
+                    // Batch exists, update it
+                    productBatchRecord = await tx.product.update({
+                        where: { id: existingBatch.id },
+                        data: {
+                            quantity: { increment: item.quantity },
+                            stock: { increment: item.quantity },
+                            costPrice: item.costPrice,
+                        }
+                    });
+                } else {
+                    // New batch, need to create it
+                    const productMaster = await tx.product.findFirst({
+                       where: { productId: (await tx.product.findUnique({where: {id: item.productId}}))?.productId },
+                    });
 
-                await tx.product.update({
-                    where: { id: item.productId },
+                    if (!productMaster) {
+                        throw new Error(`Cannot create new batch. No master product found for ID: ${item.productId}. This should not happen.`);
+                    }
+                    const { id, quantity, stock, batchNumber, ...masterDataToClone } = productMaster;
+
+                    productBatchRecord = await tx.product.create({
+                        data: {
+                            ...masterDataToClone,
+                            batchNumber: item.batchNumber || `B-${Date.now()}`,
+                            barcode: `${masterDataToClone.barcode}-${item.batchNumber || Date.now()}`,
+                            quantity: item.quantity,
+                            stock: item.quantity,
+                            costPrice: item.costPrice,
+                            addeDate: new Date(),
+                            units: masterDataToClone.units as string,
+                        }
+                    });
+                }
+                
+                // Create the GRN line item linked to the correct product batch record
+                await tx.goodsReceivedNoteItem.create({
                     data: {
-                        quantity: { increment: item.quantity },
-                        stock: { increment: item.quantity },
-                        costPrice: item.costPrice, 
+                        goodsReceivedNoteId: newGrn.id,
+                        productId: productBatchRecord.id, // Link to the specific batch record
+                        batchNumber: productBatchRecord.batchNumber,
+                        quantity: item.quantity,
+                        costPrice: item.costPrice,
+                        discount: item.discount,
+                        tax: item.tax,
+                        total: item.total,
                     }
                 });
             }

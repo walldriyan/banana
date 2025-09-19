@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const grnItemSchema = z.object({
   productId: z.string().min(1, "Product is required."),
   productName: z.string().optional(),
-  batchNumber: z.string().optional(),
+  batchNumber: z.string().min(1, "Batch number is required."),
   quantity: z.coerce.number().int().min(1, "Quantity must be at least 1."),
   costPrice: z.coerce.number().min(0, "Cost price must be non-negative."),
   discount: z.coerce.number().min(0).default(0),
@@ -19,11 +19,8 @@ export const grnSchema = z.object({
   invoiceNumber: z.string().optional(),
   items: z.array(grnItemSchema).min(1, "At least one item must be added to the GRN."),
   notes: z.string().optional(),
-  // Paid amount is now optional, defaulting to 0 if not provided.
-  paidAmount: z.coerce.number().min(0).nullable().default(0),
+  paidAmount: z.coerce.number().min(0).nullable(),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
-  // This is a calculated value and should not be part of the form validation schema
-  // totalAmount: z.number().optional(), 
 });
 
 

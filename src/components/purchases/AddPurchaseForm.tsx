@@ -20,7 +20,7 @@ import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect, useCallback } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, AlertTriangle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -35,7 +35,6 @@ import SearchableProductInput from "../POSUI/SearchableProductInput";
 import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClientPage";
 import type { Supplier } from "@prisma/client";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
-import { AlertTriangle } from "lucide-react";
 import { AddProductForm } from "../products/AddProductForm";
 
 
@@ -143,7 +142,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         append({
             productId: product.id,
             productName: product.name,
-            batchNumber: product.batchNumber,
+            batchNumber: product.batchNumber, // Pre-fill with existing batch number
             quantity: 1,
             costPrice: product.costPrice ?? 0,
             discount: 0,
@@ -163,17 +162,21 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       const item = form.getValues(`items.${index}`);
       if(!item) return;
 
-      const numericValue = typeof value === 'string' ? parseFloat(value) : value;
+      const numericValue = typeof value === 'string' && field !== 'batchNumber' ? parseFloat(value) : value;
       const updatedItem = { ...item, [field]: numericValue };
 
-      const { quantity, costPrice, discount, tax } = updatedItem;
-      const subTotal = (quantity || 0) * (costPrice || 0);
-      const totalDiscount = (discount || 0);
-      const totalTax = (subTotal - totalDiscount) * ((tax || 0) / 100);
-      const newTotal = subTotal - totalDiscount + totalTax;
+      if(field !== 'batchNumber') {
+          const { quantity, costPrice, discount, tax } = updatedItem;
+          const subTotal = (quantity || 0) * (costPrice || 0);
+          const totalDiscount = (discount || 0);
+          const totalTax = (subTotal - totalDiscount) * ((tax || 0) / 100);
+          const newTotal = subTotal - totalDiscount + totalTax;
 
-      update(index, { ...updatedItem, total: newTotal });
-      calculateTotal();
+          update(index, { ...updatedItem, total: newTotal });
+          calculateTotal();
+      } else {
+          update(index, updatedItem);
+      }
   }
 
   const openAddProductDrawer = () => {
@@ -356,6 +359,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <TableHeader>
                         <TableRow>
                             <TableHead className="w-[300px]">Product</TableHead>
+                            <TableHead>Batch No.</TableHead>
                             <TableHead>Qty</TableHead>
                             <TableHead>Cost Price</TableHead>
                             <TableHead>Discount</TableHead>
@@ -367,7 +371,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <TableBody>
                         {fields.length > 0 ? fields.map((item, index) => (
                              <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.productName} <span className="text-muted-foreground">({item.batchNumber})</span></TableCell>
+                                <TableCell className="font-medium">{item.productName}</TableCell>
+                                 <TableCell>
+                                    <Input defaultValue={item.batchNumber} onBlur={e => handleItemChange(index, 'batchNumber', e.target.value)} className="w-32" />
+                                </TableCell>
                                 <TableCell>
                                     <Input type="number" defaultValue={item.quantity} onBlur={e => handleItemChange(index, 'quantity', e.target.value)} className="w-20" />
                                 </TableCell>
@@ -391,7 +398,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center h-24">No products added yet.</TableCell>
+                                <TableCell colSpan={8} className="text-center h-24">No products added yet.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>
@@ -454,8 +461,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                     <Input 
                                         type="number"
                                         {...field}
+                                        value={field.value ?? ''}
                                         disabled={form.getValues('paymentMethod') === 'credit'}
-                                        onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
+                                        onChange={e => field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
                                     />
                                 </FormControl>
                                 <FormMessage />
