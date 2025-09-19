@@ -16,29 +16,32 @@ export async function addProductAction(data: ProductFormValues) {
       error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
     };
   }
-  const { units, quantity, batchNumber, sellingPrice, costPrice, ...validatedProductData } = validationResult.data;
+  const { 
+      units, 
+      quantity, 
+      batchNumber, 
+      sellingPrice, 
+      costPrice, 
+      // Destructure all fields that do NOT belong to the master Product model
+      productId, 
+      barcode, 
+      supplierId, 
+      manufactureDate,
+      expiryDate,
+      location,
+      notes,
+      minStockLevel,
+      maxStockLevel,
+      defaultQuantity,
+      tax,
+      taxtype,
+      defaultDiscount,
+      defaultDiscountType,
+      ...productDataForCreation 
+  } = validationResult.data;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-        // Exclude ALL fields not belonging to the Product model from productDataForCreation
-        const { 
-            productId, 
-            barcode, 
-            supplierId, 
-            manufactureDate,
-            expiryDate,
-            location,
-            notes,
-            minStockLevel,
-            maxStockLevel,
-            defaultQuantity,
-            tax,
-            taxtype,
-            defaultDiscount,
-            defaultDiscountType,
-            ...productDataForCreation 
-        } = validatedProductData;
-        
         // 1. Create the master product with only its own fields
         const newProduct = await tx.product.create({
             data: {
