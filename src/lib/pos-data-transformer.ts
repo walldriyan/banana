@@ -128,7 +128,7 @@ export function transformTransactionDataForDb(
     
     return {
       saleItemId: item.saleItemId,
-      productId: item.product.id, // General product ID from nested product
+      productId: item.productId, // General product ID from nested product
       productName: item.product.name,
       batchId: item.id, // Unique product ID (acting as batch ID)
       batchNumber: item.batchNumber,
