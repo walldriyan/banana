@@ -70,8 +70,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     mode: 'onBlur',
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
+  const { fields, append, remove, control, getValues, setValue, watch } = form;
+
+  useFieldArray({
+    control: control,
     name: "items",
   });
 
@@ -100,14 +102,17 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
 
   const calculateTotal = useCallback(() => {
-    const items = form.getValues('items');
+    const items = getValues('items');
     const currentTotal = items.reduce((sum, item) => {
         const itemTotal = (item.quantity * item.costPrice) - item.discount + ( ( (item.quantity * item.costPrice) - item.discount ) * (item.tax / 100) );
+        // Update the individual item total in the form state without re-triggering validation
+        setValue(`items.${items.indexOf(item)}.total`, itemTotal, { shouldValidate: false, shouldDirty: false });
         return sum + itemTotal;
     }, 0);
     setTotalAmount(currentTotal);
-    form.setValue('totalAmount', currentTotal, { shouldValidate: true });
-  }, [form]);
+    // Also update the main total amount in the form
+    setValue('totalAmount', currentTotal, { shouldValidate: true });
+  }, [getValues, setValue]);
 
 
   useEffect(() => {
@@ -132,14 +137,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
               items: loadedItems as any,
           });
           setTotalAmount(grn.totalAmount);
-          form.setValue('totalAmount', grn.totalAmount);
+          setValue('totalAmount', grn.totalAmount);
       }
-  }, [isEditMode, grn, products, suppliers, form]);
+  }, [isEditMode, grn, products, suppliers, form, setValue]);
 
+  // Watch for changes in the 'items' array and recalculate the total.
+  // This is the fix for the infinite loop.
+  const watchedItems = watch('items');
   useEffect(() => {
-      const subscription = form.watch(() => calculateTotal());
-      return () => subscription.unsubscribe();
-  }, [form, calculateTotal]);
+      calculateTotal();
+  }, [watchedItems, calculateTotal]);
 
 
   const handleProductSelect = (product: Product) => {
@@ -209,7 +216,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     setSubmissionError(`Client-side validation failed. Please check the form for errors. Details: ${errorString}`);
   };
 
-  const paidAmount = form.watch('paidAmount') || 0;
+  const paidAmount = watch('paidAmount') || 0;
   const balance = totalAmount - paidAmount;
 
 
@@ -223,7 +230,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
              <FormField
-                control={form.control}
+                control={control}
                 name="grnNumber"
                 render={({ field }) => (
                     <FormItem>
@@ -236,7 +243,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 )}
                 />
             <FormField
-              control={form.control}
+              control={control}
               name="grnDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
@@ -271,7 +278,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
               )}
             />
             <FormField
-              control={form.control}
+              control={control}
               name="supplierId"
               render={({ field }) => (
                 <FormItem>
@@ -291,7 +298,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
               )}
             />
              <FormField
-                control={form.control}
+                control={control}
                 name="invoiceNumber"
                 render={({ field }) => (
                     <FormItem>
@@ -354,7 +361,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <TableCell className="font-medium">{item.name}</TableCell>
                                 <TableCell>
                                     <FormField
-                                        control={form.control}
+                                        control={control}
                                         name={`items.${index}.batchNumber`}
                                         render={({ field }) => (
                                             <div className="flex items-center gap-1">
@@ -365,22 +372,22 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                     />
                                 </TableCell>
                                 <TableCell>
-                                     <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
+                                     <FormField control={control} name={`items.${index}.quantity`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <FormField control={form.control} name={`items.${index}.costPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
+                                    <FormField control={control} name={`items.${index}.costPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
+                                    <FormField control={control} name={`items.${index}.sellingPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <FormField control={form.control} name={`items.${index}.discount`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
+                                    <FormField control={control} name={`items.${index}.discount`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <FormField control={form.control} name={`items.${index}.tax`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
+                                    <FormField control={control} name={`items.${index}.tax`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell className="text-right font-semibold">
-                                    {form.watch(`items.${index}.total`).toFixed(2)}
+                                    {watch(`items.${index}.total`)?.toFixed(2) ?? '0.00'}
                                 </TableCell>
                                 <TableCell>
                                     <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
@@ -403,7 +410,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
                 <CardContent>
                      <FormField
-                        control={form.control}
+                        control={control}
                         name="notes"
                         render={({ field }) => (
                             <FormItem>
@@ -420,7 +427,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 <CardHeader><CardTitle>Payment</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
                      <FormField
-                        control={form.control}
+                        control={control}
                         name="paymentMethod"
                         render={({ field }) => (
                             <FormItem>
@@ -428,7 +435,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             <Select onValueChange={(value) => {
                                 field.onChange(value);
                                 if (value === 'credit') {
-                                    form.setValue('paidAmount', 0);
+                                    setValue('paidAmount', 0);
                                 }
                             }} value={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger></FormControl>
@@ -444,7 +451,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         )}
                         />
                      <FormField
-                        control={form.control}
+                        control={control}
                         name="paidAmount"
                         render={({ field }) => (
                             <FormItem>
@@ -454,7 +461,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                         type="number"
                                         {...field}
                                         value={field.value ?? ''}
-                                        disabled={form.getValues('paymentMethod') === 'credit'}
+                                        disabled={getValues('paymentMethod') === 'credit'}
                                         onChange={e => field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
                                     />
                                 </FormControl>
