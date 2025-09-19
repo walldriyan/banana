@@ -20,6 +20,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users } from 'lucide-react';
+
+
+const SummaryCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string | number }) => (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{label}</CardTitle>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{value}</div>
+      </CardContent>
+    </Card>
+);
 
 export function CustomersClientPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -109,6 +124,14 @@ export function CustomersClientPage() {
 
   return (
     <>
+      <div className="mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+         <SummaryCard 
+            icon={Users}
+            label="Total Customers"
+            value={customers.length}
+        />
+      </div>
+
       <CustomersDataTable
         columns={columns}
         data={customers}
