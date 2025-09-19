@@ -265,302 +265,307 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>GRN Header</CardTitle>
-            <CardDescription>Details about the supplier and invoice.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-             <FormField
-                control={control}
-                name="grnNumber"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>GRN Number</FormLabel>
-                    <FormControl>
-                        <Input {...field} readOnly />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-            <FormField
-              control={control}
-              name="grnDate"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>GRN Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={control}
-              name="supplierId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Supplier</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a supplier" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-                control={control}
-                name="invoiceNumber"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Invoice Number</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Supplier's invoice no." {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-             />
-          </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle>Add New Batch</CardTitle>
-                        <CardDescription>Search for a master product, then fill the details below to add a new batch.</CardDescription>
-                    </div>
-                    <Button type="button" variant="outline" onClick={openAddProductDrawer}>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add New Master Product
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <GrnProductSearch
-                    products={products}
-                    onProductSelect={handleProductSelect}
-                    placeholder="Search for a master product..."
-                />
-            </CardContent>
-            {currentItem.productId && (
-                 <CardContent className="border-t pt-6 space-y-6">
-                     <div className="flex justify-between items-start">
-                         <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
-                         <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
-                     </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                          <FormItem>
-                             <FormLabel>Batch No.</FormLabel>
-                             <div className="flex items-center gap-1">
-                                <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
-                                <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
-                            </div>
-                          </FormItem>
-                          <FormItem>
-                             <FormLabel>Quantity</FormLabel>
-                             <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
-                          </FormItem>
-                           <FormItem>
-                             <FormLabel>Cost Price</FormLabel>
-                             <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
-                          </FormItem>
-                           <FormItem>
-                             <FormLabel>Selling Price</FormLabel>
-                             <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
-                          </FormItem>
-                      </div>
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                           <FormItem>
-                             <FormLabel>Discount (Fixed)</FormLabel>
-                             <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
-                          </FormItem>
-                          <FormItem>
-                             <FormLabel>Tax (%)</FormLabel>
-                             <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
-                          </FormItem>
-                          <div className="lg:col-start-4 flex justify-end">
-                            <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
-                               <PackagePlus className="mr-2 h-4 w-4"/>
-                               Add Item to GRN
-                            </Button>
-                          </div>
-                       </div>
-                       {itemError && (
-                          <Alert variant="destructive" className="mt-4">
-                              <AlertTriangle className="h-4 w-4" />
-                              <AlertTitle>Validation Error</AlertTitle>
-                              <AlertDescription>{itemError}</AlertDescription>
-                          </Alert>
-                       )}
-                       {isEditMode && <p className="text-sm text-destructive text-right">Cannot add new items in Edit Mode.</p>}
-                 </CardContent>
-            )}
-        </Card>
-
-        <Card>
-            <CardHeader><CardTitle>GRN Items</CardTitle></CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[250px]">Product</TableHead>
-                            <TableHead>Batch No.</TableHead>
-                            <TableHead>Qty</TableHead>
-                            <TableHead>Cost Price</TableHead>
-                            <TableHead>Discount</TableHead>
-                            <TableHead>Tax (%)</TableHead>
-                            <TableHead className="text-right">Total</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {fields.length > 0 ? fields.map((item, index) => (
-                            <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell>{item.batchNumber}</TableCell>
-                                <TableCell>{item.quantity}</TableCell>
-                                <TableCell>{item.costPrice.toFixed(2)}</TableCell>
-                                <TableCell>{item.discount.toFixed(2)}</TableCell>
-                                <TableCell>{item.tax.toFixed(2)}</TableCell>
-                                <TableCell className="text-right font-semibold">
-                                    {item.total.toFixed(2)}
-                                </TableCell>
-                                <TableCell>
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isEditMode}>
-                                        <Trash2 className="h-4 w-4 text-red-500"/>
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        )) : (
-                            <TableRow>
-                                <TableCell colSpan={9} className="text-center h-24">No products added yet.</TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-                 {isEditMode && <p className="text-sm text-destructive text-center mt-4">Cannot modify items in Edit Mode. Please delete and recreate the GRN to change items.</p>}
-            </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-                <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
-                <CardContent>
-                     <FormField
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            <div className="lg:col-span-2 space-y-6">
+                <Card>
+                <CardHeader>
+                    <CardTitle>GRN Header</CardTitle>
+                    <CardDescription>Details about the supplier and invoice.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <FormField
                         control={control}
-                        name="notes"
+                        name="grnNumber"
                         render={({ field }) => (
                             <FormItem>
+                            <FormLabel>GRN Number</FormLabel>
                             <FormControl>
-                                <Textarea placeholder="Any notes about this purchase..." {...field} />
+                                <Input {...field} readOnly />
+                            </FormControl>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                    <FormField
+                    control={control}
+                    name="grnDate"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                        <FormLabel>GRN Date</FormLabel>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <FormControl>
+                                <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                )}
+                                >
+                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                                initialFocus
+                            />
+                            </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={control}
+                    name="supplierId"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Supplier</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a supplier" />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                        control={control}
+                        name="invoiceNumber"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Invoice Number</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Supplier's invoice no." {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
                     />
                 </CardContent>
-            </Card>
-             <Card>
-                <CardHeader><CardTitle>Payment</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                     <FormField
-                        control={control}
-                        name="paymentMethod"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Payment Method</FormLabel>
-                            <Select onValueChange={(value) => {
-                                field.onChange(value);
-                                if (value === 'credit') {
-                                    setValue('paidAmount', 0);
-                                }
-                            }} value={field.value}>
-                                <FormControl><SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="cash">Cash</SelectItem>
-                                    <SelectItem value="card">Card</SelectItem>
-                                    <SelectItem value="cheque">Cheque</SelectItem>
-                                    <SelectItem value="credit">Credit</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <div className="flex justify-between items-center">
+                            <div>
+                                <CardTitle>Add New Batch</CardTitle>
+                                <CardDescription>Search for a master product, then fill the details below to add a new batch.</CardDescription>
+                            </div>
+                            <Button type="button" variant="outline" onClick={openAddProductDrawer}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Add New Master Product
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <GrnProductSearch
+                            products={products}
+                            onProductSelect={handleProductSelect}
+                            placeholder="Search for a master product..."
                         />
-                     <FormField
-                        control={control}
-                        name="paidAmount"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Amount Paid Now</FormLabel>
+                    </CardContent>
+                    {currentItem.productId && (
+                        <CardContent className="border-t pt-6 space-y-6">
+                            <div className="flex justify-between items-start">
+                                <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
+                                <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                                <FormItem>
+                                    <FormLabel>Batch No.</FormLabel>
+                                    <div className="flex items-center gap-1">
+                                        <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                                    </div>
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Quantity</FormLabel>
+                                    <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Cost Price</FormLabel>
+                                    <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Selling Price</FormLabel>
+                                    <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
+                                </FormItem>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                                <FormItem>
+                                    <FormLabel>Discount (Fixed)</FormLabel>
+                                    <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                </FormItem>
+                                <FormItem>
+                                    <FormLabel>Tax (%)</FormLabel>
+                                    <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                </FormItem>
+                                <div className="lg:col-span-2 flex justify-end">
+                                    <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                                    <PackagePlus className="mr-2 h-4 w-4"/>
+                                    Add Item to GRN
+                                    </Button>
+                                </div>
+                            </div>
+                            {itemError && (
+                                <Alert variant="destructive" className="mt-4">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>Validation Error</AlertTitle>
+                                    <AlertDescription>{itemError}</AlertDescription>
+                                </Alert>
+                            )}
+                            {isEditMode && <p className="text-sm text-destructive text-right">Cannot add new items in Edit Mode.</p>}
+                        </CardContent>
+                    )}
+                </Card>
+
+                 <Card>
+                    <CardHeader><CardTitle>GRN Items</CardTitle></CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[250px]">Product</TableHead>
+                                    <TableHead>Batch No.</TableHead>
+                                    <TableHead>Qty</TableHead>
+                                    <TableHead>Cost Price</TableHead>
+                                    <TableHead>Discount</TableHead>
+                                    <TableHead>Tax (%)</TableHead>
+                                    <TableHead className="text-right">Total</TableHead>
+                                    <TableHead>Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {fields.length > 0 ? fields.map((item, index) => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell>{item.batchNumber}</TableCell>
+                                        <TableCell>{item.quantity}</TableCell>
+                                        <TableCell>{item.costPrice.toFixed(2)}</TableCell>
+                                        <TableCell>{item.discount.toFixed(2)}</TableCell>
+                                        <TableCell>{item.tax.toFixed(2)}</TableCell>
+                                        <TableCell className="text-right font-semibold">
+                                            {item.total.toFixed(2)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isEditMode}>
+                                                <Trash2 className="h-4 w-4 text-red-500"/>
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={9} className="text-center h-24">No products added yet.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                        {isEditMode && <p className="text-sm text-destructive text-center mt-4">Cannot modify items in Edit Mode. Please delete and recreate the GRN to change items.</p>}
+                    </CardContent>
+                </Card>
+
+            </div>
+
+            <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6">
+                <Card>
+                    <CardHeader><CardTitle>Payment & Summary</CardTitle></CardHeader>
+                    <CardContent className="space-y-4">
+                        <FormField
+                            control={control}
+                            name="paymentMethod"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Payment Method</FormLabel>
+                                <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    if (value === 'credit') {
+                                        setValue('paidAmount', 0);
+                                    }
+                                }} value={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select method"/></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="cash">Cash</SelectItem>
+                                        <SelectItem value="card">Card</SelectItem>
+                                        <SelectItem value="cheque">Cheque</SelectItem>
+                                        <SelectItem value="credit">Credit</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                        <FormField
+                            control={control}
+                            name="paidAmount"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Amount Paid Now</FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            type="number"
+                                            {...field}
+                                            value={field.value ?? ''}
+                                            disabled={getValues('paymentMethod') === 'credit'}
+                                            onChange={e => field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <Separator className="my-4"/>
+                        <div className="divide-y">
+                            <SummaryRow 
+                                icon={Landmark} 
+                                label="Total GRN Value" 
+                                value={`Rs. ${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            />
+                            <SummaryRow 
+                                icon={Wallet} 
+                                label="Paid Amount" 
+                                value={`Rs. ${paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                                valueClassName="text-green-600"
+                            />
+                            <SummaryRow 
+                                icon={Banknote} 
+                                label="Balance Due (Credit)" 
+                                value={`Rs. ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                                valueClassName="text-red-600"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
+                    <CardContent>
+                        <FormField
+                            control={control}
+                            name="notes"
+                            render={({ field }) => (
+                                <FormItem>
                                 <FormControl>
-                                    <Input 
-                                        type="number"
-                                        {...field}
-                                        value={field.value ?? ''}
-                                        disabled={getValues('paymentMethod') === 'credit'}
-                                        onChange={e => field.onChange(e.target.value === '' ? null : parseFloat(e.target.value))}
-                                    />
+                                    <Textarea placeholder="Any notes about this purchase..." {...field} rows={4} />
                                 </FormControl>
                                 <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <Separator />
-                     <div className="divide-y">
-                        <SummaryRow 
-                            icon={Landmark} 
-                            label="Total GRN Value" 
-                            value={`Rs. ${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                                </FormItem>
+                            )}
                         />
-                         <SummaryRow 
-                            icon={Wallet} 
-                            label="Paid Amount" 
-                            value={`Rs. ${paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            valueClassName="text-green-600"
-                        />
-                         <SummaryRow 
-                            icon={Banknote} 
-                            label="Balance Due (Credit)" 
-                            value={`Rs. ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            valueClassName="text-red-600"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
         
         {submissionError && (
