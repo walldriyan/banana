@@ -25,6 +25,7 @@ export async function getGrnsAction() {
   }
 }
 
+// Type for the data expected by the action, including totalAmount
 type GrnActionData = GrnFormValues & { totalAmount: number };
 
 /**
@@ -33,6 +34,7 @@ type GrnActionData = GrnFormValues & { totalAmount: number };
  */
 export async function addGrnAction(data: GrnActionData) {
     console.log('[addGrnAction] Received data on server:', data);
+    // The incoming data already includes totalAmount, so we can validate it directly.
     const validationResult = grnSchema.safeParse(data);
     if (!validationResult.success) {
         return {
@@ -41,11 +43,13 @@ export async function addGrnAction(data: GrnActionData) {
         };
     }
 
-    const { items, totalAmount, ...headerData } = validationResult.data;
+    // THE FIX: Destructure `items` out, and keep the rest (including totalAmount) in headerData.
+    const { items, ...headerData } = validationResult.data;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
             const paidAmount = headerData.paidAmount ?? 0;
+            const totalAmount = headerData.totalAmount; // totalAmount is now correctly in headerData
             
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
             if (totalAmount > 0 && paidAmount >= totalAmount) {
@@ -54,63 +58,41 @@ export async function addGrnAction(data: GrnActionData) {
                 paymentStatus = 'partial';
             }
             
+            // Create the GRN using the headerData which now correctly includes totalAmount
             const newGrn = await tx.goodsReceivedNote.create({
                  data: {
                     ...headerData,
-                    totalAmount: totalAmount,
-                    paidAmount: paidAmount, // paidAmount is now directly on the GRN
                     paymentStatus: paymentStatus,
                 }
             });
 
             for (const item of items) {
-                // Find an existing batch with the same productId and batchNumber
-                const existingBatch = await tx.product.findFirst({
-                    where: { 
+                const productMaster = await tx.product.findFirst({ where: { productId: item.productId } });
+                if (!productMaster) {
+                    throw new Error(`Cannot create new batch. No existing product found for Product ID: ${item.productId}. Add the product manually first.`);
+                }
+                
+                const { id, quantity, stock, batchNumber, barcode, ...masterDataToClone } = productMaster;
+
+                const newBatch = await tx.product.create({
+                    data: {
+                        ...masterDataToClone,
                         productId: item.productId,
-                        batchNumber: item.batchNumber
+                        batchNumber: item.batchNumber,
+                        barcode: `${item.productId}-${item.batchNumber}`,
+                        quantity: item.quantity,
+                        stock: item.quantity,
+                        costPrice: item.costPrice,
+                        addeDate: new Date(),
+                        units: masterDataToClone.units as string,
                     }
                 });
-
-                let productBatchRecord;
-                if (existingBatch) {
-                    productBatchRecord = await tx.product.update({
-                        where: { id: existingBatch.id },
-                        data: {
-                            quantity: { increment: item.quantity },
-                            stock: { increment: item.quantity },
-                            costPrice: item.costPrice,
-                        }
-                    });
-                } else {
-                    // Batch doesn't exist, so create it.
-                    // First, find a "master" product to clone base data from.
-                    const productMaster = await tx.product.findFirst({ where: { productId: item.productId } });
-                    if (!productMaster) {
-                        throw new Error(`Cannot create new batch. No existing product found for Product ID: ${item.productId}. Add the product manually first.`);
-                    }
-                    const { id, quantity, stock, batchNumber, barcode, ...masterDataToClone } = productMaster;
-
-                    productBatchRecord = await tx.product.create({
-                        data: {
-                            ...masterDataToClone,
-                            productId: item.productId, // Use the general product ID from the master
-                            batchNumber: item.batchNumber, // Use the new batch number from the form
-                            barcode: `${item.productId}-${item.batchNumber}`, // Create a new unique barcode
-                            quantity: item.quantity,
-                            stock: item.quantity,
-                            costPrice: item.costPrice,
-                            addeDate: new Date(),
-                            units: masterDataToClone.units as string,
-                        }
-                    });
-                }
                 
                 await tx.goodsReceivedNoteItem.create({
                     data: {
                         goodsReceivedNoteId: newGrn.id,
-                        productId: productBatchRecord.id, // Link to the specific batch record
-                        batchNumber: productBatchRecord.batchNumber,
+                        productId: newBatch.id,
+                        batchNumber: newBatch.batchNumber,
                         quantity: item.quantity,
                         costPrice: item.costPrice,
                         discount: item.discount,
@@ -166,7 +148,8 @@ export async function updateGrnAction(grnId: string, data: GrnActionData) {
         };
     }
 
-    const { items: newItems, totalAmount, ...headerData } = validationResult.data;
+    const { items: newItems, ...headerData } = validationResult.data;
+    const totalAmount = headerData.totalAmount;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
@@ -215,8 +198,6 @@ export async function updateGrnAction(grnId: string, data: GrnActionData) {
                 where: { id: grnId },
                 data: {
                     ...headerData,
-                    totalAmount: totalAmount,
-                    paidAmount: paidAmount,
                     paymentStatus: paymentStatus,
                     items: {
                         deleteMany: {},
