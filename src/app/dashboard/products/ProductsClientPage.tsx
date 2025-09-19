@@ -196,7 +196,7 @@ export function ProductsClientPage() {
             </AlertDialogContent>
         </AlertDialog>
 
-        <Card className="mt-8">
+        <Card className="mt-8 bg-muted/20">
             <CardHeader>
                 <CardTitle>Inventory Summary</CardTitle>
                 <CardDescription>An advanced overview of your current inventory for decision management.</CardDescription>
