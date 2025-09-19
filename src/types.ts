@@ -1,23 +1,27 @@
 // src/types.ts
 import { Prisma } from '@prisma/client';
 
-// Base Product type derived from Prisma's generated type for consistency
-export type Product = Omit<Prisma.ProductGetPayload<{}>, 'units'> & {
-  units: UnitDefinition;
-};
+// The "master" product, containing general, non-inventory information.
+export type Product = Prisma.ProductGetPayload<{}>;
 
-// Cart එකේ ඇති භාණ්ඩයක්
-export interface SaleItem extends Product {
-  saleItemId: string; // Cart එකේදී වෙන් කර ගැනීමට
-  quantity: number; // The TOTAL converted base unit quantity (e.g., 600 tablets)
-  price: number; // The actual price used for the sale (from the product itself)
+// Represents a specific batch of a product, with its own stock, price, etc.
+export type ProductBatch = Prisma.ProductBatchGetPayload<{
+  include: {
+    product: true;
+  }
+}>;
+
+// Represents what is in the shopping cart. It's a ProductBatch with sale-specific info.
+export interface SaleItem extends ProductBatch {
+  saleItemId: string; // A unique identifier for this line item in this specific sale
+  quantity: number; // The TOTAL converted base unit quantity for the sale (e.g., 600 tablets)
+  price: number; // The actual price used for the sale (from the product batch's sellingPrice)
   customDiscountValue?: number;
   customDiscountType?: 'fixed' | 'percentage';
-  customApplyFixedOnce?: boolean; // New field to control custom fixed discount behavior
-  originalQuantity?: number; // For refund context: the quantity in the original transaction
-  // New properties for unit conversion UI
-  displayUnit: string;      // What unit is currently shown in the dropdown (e.g., 'box')
-  displayQuantity: number;  // The quantity relevant to the displayUnit (e.g., 2)
+  customApplyFixedOnce?: boolean;
+  originalQuantity?: number; // For refund context
+  displayUnit: string;
+  displayQuantity: number;
 }
 
 
@@ -136,29 +140,6 @@ export interface User {
   isActive: boolean;
 }
 
-// Enhanced discount engine configuration
-export interface DiscountEngineConfig {
-  enableLogging?: boolean;
-  enableValidation?: boolean;
-  maxDiscountPercentage?: number; // Global safety limit
-  allowStackingDiscounts?: boolean;
-  oneTimeRuleStrategy?: 'per_transaction' | 'per_session' | 'per_customer';
-}
-
-// For future audit and reporting
-export interface DiscountAuditLog {
-  id: string;
-  transactionId: string;
-  customerId?: string;
-  campaignId: string;
-  ruleId: string;
-  discountAmount: number;
-  appliedAt: Date;
-  ruleType: string;
-  productId?: string;
-  batchId?: string;
-}
-
 export interface DatabaseReadyTransaction {
   transactionHeader: {
     transactionId: string;
@@ -175,9 +156,8 @@ export interface DatabaseReadyTransaction {
   };
   transactionLines: Array<{
     saleItemId: string;
-    productId: string;
+    productBatchId: string; // The ID of the ProductBatch record
     productName: string;
-    batchId: string;
     batchNumber?: string;
     quantity: number;
     displayUnit: string;
