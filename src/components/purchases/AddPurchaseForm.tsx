@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect, useCallback } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../ui/card";
 import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote, ArrowLeft, ArrowRight } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
@@ -55,6 +55,20 @@ const initialItemState: Partial<GrnItemFormValues> = {
     tax: 0,
     total: 0,
 };
+
+// Helper component for the two-column form layout
+const FormRow = ({ title, description, children }: { title: string, description: string, children: React.ReactNode }) => (
+    <div className="flex flex-col md:flex-row items-start justify-between gap-4 py-4 border-b">
+        <div className="md:w-1/3">
+            <h4 className="font-semibold text-sm">{title}</h4>
+            <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+        <div className="w-full md:w-2/3">
+            {children}
+        </div>
+    </div>
+);
+
 
 const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
     <div className="flex items-start gap-4 py-3">
@@ -421,57 +435,81 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     />
                 </CardContent>
                 {currentItem.productId && (
-                    <CardContent className="border-t pt-6">
-                        <div className="flex justify-between items-start mb-4">
-                            <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
-                            <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
-                            <FormItem>
-                                <FormLabel>Batch No.</FormLabel>
-                                <div className="flex items-center gap-1">
-                                    <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
-                                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
-                                </div>
-                            </FormItem>
-                            <FormItem>
-                                <FormLabel>Quantity</FormLabel>
-                                <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
-                            </FormItem>
-                            <FormItem>
-                                <FormLabel>Cost Price</FormLabel>
-                                <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
-                            </FormItem>
-                            <FormItem>
-                                <FormLabel>Selling Price</FormLabel>
-                                <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
-                            </FormItem>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end mt-4">
-                            <FormItem>
-                                <FormLabel>Discount (Fixed)</FormLabel>
-                                <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
-                            </FormItem>
-                            <FormItem>
-                                <FormLabel>Tax (%)</FormLabel>
-                                <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
-                            </FormItem>
-                            <div className="lg:col-span-2 flex justify-end">
-                                <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
-                                <PackagePlus className="mr-2 h-4 w-4"/>
-                                Add Item to GRN
-                                </Button>
-                            </div>
-                        </div>
-                        {itemError && (
-                            <Alert variant="destructive" className="mt-4">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Validation Error</AlertTitle>
-                                <AlertDescription>{itemError}</AlertDescription>
-                            </Alert>
-                        )}
-                        {isEditMode && <p className="text-sm text-destructive text-right mt-2">Cannot add new items in Edit Mode.</p>}
-                    </CardContent>
+                  <CardContent className="border-t pt-2">
+                      <div className="flex justify-between items-center mb-2">
+                          <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
+                          <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
+                      </div>
+
+                      <FormRow title="Batch & Quantity" description="Enter the unique batch number and the quantity received.">
+                          <div className="flex gap-4">
+                              <FormItem className="flex-1">
+                                  <FormLabel>Batch No.</FormLabel>
+                                  <div className="flex items-center gap-1">
+                                      <FormControl>
+                                        <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                      </FormControl>
+                                      <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                                  </div>
+                              </FormItem>
+                              <FormItem className="flex-1">
+                                  <FormLabel>Quantity</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
+                                  </FormControl>
+                              </FormItem>
+                          </div>
+                      </FormRow>
+                      
+                       <FormRow title="Pricing" description="Set the cost for this batch and the intended selling price.">
+                          <div className="flex gap-4">
+                              <FormItem className="flex-1">
+                                  <FormLabel>Cost Price (per unit)</FormLabel>
+                                   <FormControl>
+                                     <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
+                                  </FormControl>
+                              </FormItem>
+                              <FormItem className="flex-1">
+                                  <FormLabel>Selling Price (per unit)</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
+                                  </FormControl>
+                              </FormItem>
+                          </div>
+                      </FormRow>
+
+                      <FormRow title="Adjustments" description="Apply any discounts or taxes specific to this batch from the supplier.">
+                           <div className="flex gap-4">
+                              <FormItem className="flex-1">
+                                  <FormLabel>Discount (Fixed Total)</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                  </FormControl>
+                              </FormItem>
+                              <FormItem className="flex-1">
+                                  <FormLabel>Tax (%)</FormLabel>
+                                   <FormControl>
+                                    <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                  </FormControl>
+                              </FormItem>
+                          </div>
+                      </FormRow>
+                      
+                      {itemError && (
+                          <Alert variant="destructive" className="mt-4">
+                              <AlertTriangle className="h-4 w-4" />
+                              <AlertTitle>Validation Error</AlertTitle>
+                              <AlertDescription>{itemError}</AlertDescription>
+                          </Alert>
+                      )}
+                      {isEditMode && <p className="text-sm text-destructive text-right mt-2">Cannot add new items in Edit Mode.</p>}
+                       <div className="flex justify-end pt-4">
+                          <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                            <PackagePlus className="mr-2 h-4 w-4"/>
+                            Add Item to GRN
+                          </Button>
+                      </div>
+                  </CardContent>
                 )}
             </Card>
 
