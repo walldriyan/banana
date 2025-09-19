@@ -68,20 +68,6 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
     }
 ];
 
-const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
-    <div className="flex items-start gap-4 py-3">
-        <div className="bg-muted p-2 rounded-lg">
-            <Icon className="h-5 w-5 text-foreground/80" />
-        </div>
-        <div className="flex-1">
-            <p className="font-medium text-foreground">{label}</p>
-            {description && <p className="text-xs text-muted-foreground">{description}</p>}
-        </div>
-        <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
-    </div>
-);
-
-
 export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -250,17 +236,11 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
     }
   }, [productName, form, isEditMode]);
   
-  const sellingPrice = useWatch({ control: form.control, name: 'sellingPrice' }) || 0;
-  const costPrice = useWatch({ control: form.control, name: 'costPrice' }) || 0;
-  const potentialProfit = sellingPrice - costPrice;
-  const profitMargin = costPrice > 0 ? (potentialProfit / costPrice) * 100 : 0;
-
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid grid-cols-1 items-start">
+          <div className="space-y-6">
             <div className="flex justify-between items-center mb-8">
                 {steps.map((step, index) => (
                     <React.Fragment key={index}>
@@ -523,41 +503,6 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                 </Card>
               )}
             </div>
-          </div>
-          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Financial Summary</CardTitle>
-                         <CardDescription>A quick look at the profitability of this product.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="divide-y">
-                            <SummaryRow 
-                                icon={Tag} 
-                                label="Selling Price" 
-                                value={`Rs. ${sellingPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            />
-                            <SummaryRow 
-                                icon={Wallet} 
-                                label="Cost Price" 
-                                value={`Rs. ${costPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            />
-                             <Separator className="my-2"/>
-                            <SummaryRow 
-                                icon={TrendingUp} 
-                                label="Potential Profit" 
-                                value={`Rs. ${potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                                valueClassName={potentialProfit >= 0 ? "text-green-600" : "text-red-600"}
-                            />
-                             <SummaryRow 
-                                icon={Coins} 
-                                label="Profit Margin" 
-                                value={`${profitMargin.toFixed(2)}%`}
-                                valueClassName={profitMargin >= 0 ? "text-green-600" : "text-red-600"}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
           </div>
         </div>
 
