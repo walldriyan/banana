@@ -45,3 +45,28 @@ export const defaultDiscounts: DiscountSet = {
   defaultSpecificQtyThresholdRuleJson: null,
   defaultSpecificUnitPriceThresholdRuleJson: null,
 };
+
+
+/**
+ * A special campaign set that applies no discounts.
+ * This can be selected by the user to explicitly disable all automatic discounts.
+ */
+export const noDiscounts: DiscountSet = {
+  id: 'promo-none',
+  name: 'No Discount',
+  description: 'Disables all automatic discounts. Only manual discounts will apply.',
+  isActive: true,
+  isDefault: false,
+  isOneTimePerTransaction: false,
+
+  // All rule configurations are empty or null
+  productConfigurations: [],
+  batchConfigurations: [],
+  buyGetRulesJson: [],
+  globalCartPriceRuleJson: null,
+  globalCartQuantityRuleJson: null,
+  defaultLineItemValueRuleJson: null,
+  defaultLineItemQuantityRuleJson: null,
+  defaultSpecificQtyThresholdRuleJson: null,
+  defaultSpecificUnitPriceThresholdRuleJson: null,
+};
