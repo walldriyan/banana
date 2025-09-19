@@ -73,30 +73,14 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
-                // Find an existing product that represents the *master* product line.
-                // We use the item.productId (which is the unique ID of the batch selected in the form)
-                // to find its master product ID.
-                const productInfoFromAnyBatch = await tx.product.findUnique({
-                    where: { id: item.productId }
-                });
-
-                if (!productInfoFromAnyBatch) {
-                     throw new Error(`Critical error: Could not find any existing product batch with ID ${item.productId} to derive master data from.`);
-                }
-                
-                const generalProductId = productInfoFromAnyBatch.productId;
-
-                // Now, check if a batch with the *new* batch number already exists for this product line.
                 const existingBatchToUpdate = await tx.product.findFirst({
                     where: { 
-                        productId: generalProductId,
-                        batchNumber: item.batchNumber
+                        id: item.productId,
                     }
                 });
 
-                if (existingBatchToUpdate) {
-                     // The batch exists, so just update its stock and cost price
-                    await tx.product.update({
+                if (existingBatchToUpdate && existingBatchToUpdate.batchNumber === item.batchNumber) {
+                     await tx.product.update({
                         where: { id: existingBatchToUpdate.id },
                         data: {
                             quantity: { increment: item.quantity },
@@ -105,27 +89,24 @@ export async function addGrnAction(data: GrnFormValues) {
                         }
                     });
                 } else {
-                    // The batch does not exist, so we need to create it.
-                    // We clone data from the master record.
                     const productMaster = await tx.product.findFirst({
-                        where: { productId: generalProductId },
-                        orderBy: { addeDate: 'desc' }
+                        where: { id: item.productId },
                     });
 
                      if (!productMaster) {
-                       throw new Error(`Cannot create new batch. No master product found for general productId: ${generalProductId}. Add the product manually first.`);
+                       throw new Error(`Cannot create new batch. No master product found for ID: ${item.productId}. This should not happen.`);
                     }
                     
-                    const { id, quantity, stock, batchNumber, ...masterDataToClone } = productMaster;
+                    const { id, quantity, stock, batchNumber, barcode, ...masterDataToClone } = productMaster;
 
                     await tx.product.create({
                        data: {
                            ...masterDataToClone,
                            batchNumber: item.batchNumber || `B-${Date.now()}`,
+                           barcode: `SKU-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`, // Generate a new unique barcode
                            quantity: item.quantity,
                            stock: item.quantity,
                            costPrice: item.costPrice,
-                           sellingPrice: productMaster.sellingPrice,
                            addeDate: new Date(),
                            units: productMaster.units,
                        }
