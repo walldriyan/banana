@@ -20,7 +20,7 @@ import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect, useCallback } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import { CalendarIcon, PlusCircle, Trash2, AlertTriangle } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -106,7 +106,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         return sum + itemTotal;
     }, 0);
     setTotalAmount(currentTotal);
-    // THE FIX: Register the calculated totalAmount with react-hook-form's state
     form.setValue('totalAmount', currentTotal, { shouldValidate: true });
   }, [form]);
 
@@ -117,15 +116,19 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
              const product = products.find(p => p.id === item.productId);
              return {
                  ...item,
-                 productId: item.productId,
-                 productName: product?.name || 'Unknown Product'
+                 // These fields might not exist on old GRN items, so we provide fallbacks.
+                 name: product?.name || 'Unknown Product',
+                 category: product?.category || 'unknown',
+                 brand: product?.brand || 'unknown',
+                 units: product?.units || { baseUnit: 'pcs', derivedUnits: [] },
+                 sellingPrice: product?.sellingPrice || 0,
              };
           });
           
           form.reset({
               ...grn,
               grnDate: new Date(grn.grnDate),
-              items: loadedItems,
+              items: loadedItems as any, // Cast as any to bypass strict type checking for this one-time load
           });
           setTotalAmount(grn.totalAmount);
           form.setValue('totalAmount', grn.totalAmount);
@@ -138,24 +141,23 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
 
   const handleProductSelect = (product: Product) => {
-    const existingItemIndex = fields.findIndex(field => field.productId === product.id);
-    if(existingItemIndex !== -1) {
-        const existingItem = fields[existingItemIndex];
-        const newQty = existingItem.quantity + 1;
-        update(existingItemIndex, { ...existingItem, quantity: newQty });
-        toast({ title: "Quantity Updated", description: `${product.name} quantity increased to ${newQty}.`});
-    } else {
-        append({
-            productId: product.id,
-            productName: product.name,
-            batchNumber: product.batchNumber,
-            quantity: 1,
-            costPrice: product.costPrice ?? 0,
-            discount: 0,
-            tax: 0,
-            total: product.costPrice ?? 0
-        });
-    }
+    append({
+        // Key product info for creating a new batch
+        productId: product.productId, // The common product ID
+        name: product.name,
+        category: product.category,
+        brand: product.brand,
+        units: product.units,
+        sellingPrice: product.sellingPrice,
+        
+        // GRN specific fields with defaults
+        batchNumber: `B-${Date.now()}`, // Suggest a new batch number
+        quantity: 1,
+        costPrice: product.costPrice ?? 0,
+        discount: 0,
+        tax: 0,
+        total: product.costPrice ?? 0
+    });
   };
   
   const handleRemoveItem = (index: number) => {
@@ -197,7 +199,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     setSubmissionError(null);
     setIsSubmitting(true);
     
-    // Data now correctly contains totalAmount from the form state via setValue
     const action = isEditMode && grn
       ? updateGrnAction(grn.id, data)
       : addGrnAction(data);
@@ -325,11 +326,11 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 <div className="flex justify-between items-center">
                     <div>
                         <CardTitle>Add Products</CardTitle>
-                        <CardDescription>Search for existing products or add a new product batch.</CardDescription>
+                        <CardDescription>Search for an existing product to use as a template for the new batch.</CardDescription>
                     </div>
                     <Button type="button" variant="outline" onClick={openAddProductDrawer}>
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        Add New Product
+                        Add New Master Product
                     </Button>
                 </div>
             </CardHeader>
@@ -337,8 +338,11 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 <SearchableProductInput
                     products={products}
                     onProductSelect={handleProductSelect}
-                    placeholder="Search by product name or barcode to add..."
+                    placeholder="Search by product to add a new batch..."
                 />
+                 <p className="text-xs text-muted-foreground mt-2">
+                    Selecting a product here will pre-fill its details. You can then enter the new batch number and quantity. Each line item will create a new batch in the system.
+                </p>
             </CardContent>
         </Card>
 
@@ -361,9 +365,14 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     <TableBody>
                         {fields.length > 0 ? fields.map((item, index) => (
                              <TableRow key={item.id}>
-                                <TableCell className="font-medium">{item.productName}</TableCell>
+                                <TableCell className="font-medium">{item.name}</TableCell>
                                  <TableCell>
-                                    <Input defaultValue={item.batchNumber} onBlur={e => handleItemChange(index, 'batchNumber', e.target.value)} className="w-32" />
+                                    <div className="flex items-center gap-1">
+                                        <Input defaultValue={item.batchNumber} onBlur={e => handleItemChange(index, 'batchNumber', e.target.value)} className="w-32" />
+                                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => form.setValue(`items.${index}.batchNumber`, `B-${Date.now()}`)}>
+                                            <Sparkles className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <Input type="number" defaultValue={item.quantity} onBlur={e => handleItemChange(index, 'quantity', e.target.value)} className="w-20" />

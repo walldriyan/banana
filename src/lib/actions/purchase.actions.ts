@@ -27,9 +27,10 @@ export async function getGrnsAction() {
 
 /**
  * Server action to add a new GRN.
- * This is a transactional operation. It now uses `upsert` logic for its items:
- * - If a product with the same `productId` and `batchNumber` exists, it updates its stock.
- * - If it doesn't exist, it creates a new product batch record.
+ * This is a transactional operation. It now uses a "No Template" model.
+ * It assumes the frontend provides all necessary information for each line item
+ * to create a new product batch from scratch. It does not rely on finding an
+ * existing product to clone data.
  */
 export async function addGrnAction(data: GrnFormValues) {
     console.log('[addGrnAction] Received data on server:', data);
@@ -63,51 +64,38 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of items) {
-                const productTemplate = await tx.product.findFirst({ where: { productId: item.productId } });
-                
-                if (!productTemplate) {
-                     throw new Error(`Cannot create batch. No existing product found for Product ID: ${item.productId}. Add the product manually first.`);
-                }
-                
-                const { id, quantity, stock, batchNumber, barcode, costPrice, addeDate, ...masterDataToClone } = productTemplate;
-                
-                const upsertedBatch = await tx.product.upsert({
-                    where: {
-                        productId_batchNumber: {
-                            productId: item.productId,
-                            batchNumber: item.batchNumber,
-                        },
-                    },
-                    update: {
-                        quantity: {
-                            increment: item.quantity,
-                        },
-                        stock: {
-                            increment: item.quantity,
-                        },
-                        // Optionally update cost price if it has changed
+                // ALWAYS create a new product batch record for each GRN line item.
+                const newProductBatch = await tx.product.create({
+                    data: {
+                        name: item.name, // From frontend
+                        productId: item.productId, // From frontend
+                        batchNumber: item.batchNumber, // From frontend
+                        sellingPrice: item.sellingPrice, // From frontend
+                        category: item.category, // From frontend
+                        brand: item.brand, // From frontend
+                        units: JSON.stringify(item.units), // From frontend
+                        
                         costPrice: item.costPrice,
-                    },
-                    create: {
-                        ...masterDataToClone,
-                        productId: item.productId,
-                        batchNumber: item.batchNumber,
-                        barcode: `${item.productId}-${item.batchNumber}`,
                         quantity: item.quantity,
-                        stock: item.quantity,
-                        costPrice: item.costPrice,
-                        sellingPrice: productTemplate.sellingPrice, // Carry over selling price
-                        addeDate: new Date(),
-                        units: typeof masterDataToClone.units === 'string' ? masterDataToClone.units : JSON.stringify(masterDataToClone.units),
+                        stock: item.quantity, // Initial stock is the GRN quantity
+                        
                         supplierId: headerData.supplierId,
+                        addeDate: new Date(),
+                        isActive: true,
+                        isService: false,
+                        
+                        // Defaulting other nullable fields
+                        barcode: `${item.productId}-${item.batchNumber}`,
+                        tax: 0,
+                        defaultDiscount: 0,
                     }
                 });
                 
                 await tx.goodsReceivedNoteItem.create({
                     data: {
                         goodsReceivedNoteId: newGrn.id,
-                        productId: upsertedBatch.id,
-                        batchNumber: upsertedBatch.batchNumber,
+                        productId: newProductBatch.id, // Link to the newly created batch
+                        batchNumber: newProductBatch.batchNumber,
                         quantity: item.quantity,
                         costPrice: item.costPrice,
                         discount: item.discount,

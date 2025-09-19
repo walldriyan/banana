@@ -1,9 +1,27 @@
 // src/lib/validation/grn.schema.ts
 import { z } from 'zod';
 
+const derivedUnitSchema = z.object({
+  name: z.string().min(1, "Derived unit name is required."),
+  conversionFactor: z.coerce.number().positive("Conversion factor must be positive."),
+});
+
+const unitDefinitionSchema = z.object({
+  baseUnit: z.string().min(1, "Base unit is required."),
+  derivedUnits: z.array(derivedUnitSchema).optional(),
+});
+
+
 export const grnItemSchema = z.object({
-  productId: z.string().min(1, "Product is required."),
-  productName: z.string().optional(),
+  // Base product info needed to create a new batch
+  productId: z.string().min(1, "Product ID from template is required."),
+  name: z.string().min(1, "Product Name is required."),
+  category: z.string().optional().nullable(),
+  brand: z.string().optional().nullable(),
+  units: unitDefinitionSchema,
+  sellingPrice: z.coerce.number().min(0),
+
+  // GRN-specific details
   batchNumber: z.string().min(1, "Batch number is required."),
   quantity: z.coerce.number().int().min(1, "Quantity must be at least 1."),
   costPrice: z.coerce.number().min(0, "Cost price must be non-negative."),
@@ -21,7 +39,6 @@ export const grnSchema = z.object({
   notes: z.string().optional(),
   paidAmount: z.coerce.number().min(0).nullable().default(0),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
-  // THE FIX: Add totalAmount to the schema to ensure it's validated and passed to the action.
   totalAmount: z.coerce.number().min(0, "Total amount must be non-negative."),
 });
 
