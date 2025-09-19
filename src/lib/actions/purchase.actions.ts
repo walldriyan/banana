@@ -70,7 +70,6 @@ export async function addGrnAction(data: GrnFormValues) {
                         stock: item.quantity, // Initial stock is the quantity
                         supplierId: headerData.supplierId,
                         addedDate: new Date(),
-                        isActive: true,
                     }
                 });
                 return {
