@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ProductDetailsView } from '@/components/products/ProductDetailsView';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Archive, DollarSign, Landmark, TrendingUp, Coins, AlertTriangle } from 'lucide-react';
+import { Package, Archive, DollarSign, Landmark, TrendingUp, Coins, AlertTriangle, Boxes, Wallet } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 
