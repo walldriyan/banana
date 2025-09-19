@@ -67,12 +67,8 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
                 <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
                 
-                {!showAsGiftReceipt && (
-                  <>
-                    <td className="text-right">{item.unitPrice.toFixed(2)}</td>
-                    <td className="text-right">{item.lineTotalBeforeDiscount.toFixed(2)}</td>
-                  </>
-                )}
+                <td className="text-right">{item.unitPrice.toFixed(2)}</td>
+                <td className="text-right">{item.lineTotalBeforeDiscount.toFixed(2)}</td>
 
                 <td className="text-right">{item.lineTotalAfterDiscount.toFixed(2)}</td>
               </tr>
