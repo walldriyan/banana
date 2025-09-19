@@ -62,19 +62,6 @@ const steps = [
     { title: "Payment & Finish", description: "Finalize payment details and save." }
 ];
 
-const FormRow = ({ title, description, children }: { title: string; description: string; children: React.ReactNode }) => (
-    <div className="flex flex-col md:flex-row items-start justify-between py-4 border-b last:border-b-0">
-        <div className="md:w-1/3 mb-2 md:mb-0">
-            <h4 className="font-semibold text-sm">{title}</h4>
-            <p className="text-xs text-muted-foreground">{description}</p>
-        </div>
-        <div className="w-full md:w-2/3">
-            {children}
-        </div>
-    </div>
-);
-
-
 export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -608,6 +595,23 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         {currentStep === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <Card>
+                    <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
+                    <CardContent>
+                        <FormField
+                            control={control}
+                            name="notes"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormControl>
+                                    <Textarea placeholder="Any notes about this purchase..." {...field} rows={4} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+                <Card>
                     <CardHeader><CardTitle>Payment & Summary</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <FormField
@@ -679,23 +683,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <span className="text-lg font-bold text-red-600">Rs. {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle>Notes</CardTitle></CardHeader>
-                    <CardContent>
-                        <FormField
-                            control={control}
-                            name="notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormControl>
-                                    <Textarea placeholder="Any notes about this purchase..." {...field} rows={4} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                     </CardContent>
                 </Card>
             </div>
