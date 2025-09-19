@@ -41,7 +41,6 @@ const initialDiscountResult = {
 export default function MyNewEcommerceShop() {
   const [products, setProducts] = useState<ProductBatch[]>([]);
   const [cart, setCart] = useState<SaleItem[]>([]);
-  const prevCartRef = useRef<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(defaultDiscounts);
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
@@ -287,36 +286,16 @@ export default function MyNewEcommerceShop() {
       }
       return item;
     }));
-    drawer.closeDrawer();
-  };
-  
-  // This effect will run after the cart state has been updated and the component has re-rendered.
-  useEffect(() => {
-    if (cart.length > 0 && prevCartRef.current.length > 0) {
-      // Find an item that has just had a custom discount applied or changed
-      const changedItem = cart.find(currentItem => {
-        const prevItem = prevCartRef.current.find(pi => pi.saleItemId === currentItem.saleItemId);
-        if (!prevItem) return false; // New item, not a discount change
-        
-        // A discount was just applied or changed if the values are now different
-        const wasChanged = prevItem.customDiscountValue !== currentItem.customDiscountValue || prevItem.customDiscountType !== currentItem.customDiscountType;
-        // And there is an actual discount value
-        const hasValue = currentItem.customDiscountValue !== undefined && currentItem.customDiscountValue > 0;
-        
-        return wasChanged && hasValue;
+    
+    if (value > 0) {
+      toast({
+        title: "Custom Discount Applied!",
+        description: `A custom ${type} discount of ${value} was applied.`,
       });
-
-      if (changedItem) {
-        toast({
-          title: "Custom Discount Applied!",
-          description: `A custom ${changedItem.customDiscountType} discount of ${changedItem.customDiscountValue} was applied.`,
-        });
-      }
     }
 
-    // Update the ref to the current cart for the next render cycle.
-    prevCartRef.current = cart;
-  }, [cart, toast]);
+    drawer.closeDrawer();
+  };
 
 
   const openCustomDiscountDrawer = (item: SaleItem) => {
