@@ -25,11 +25,6 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
 
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
   
-  // Determine if payment details should be shown.
-  // Show if:
-  // 1. It's NOT a gift receipt.
-  // OR
-  // 2. It IS a gift receipt AND it's an installment payment.
   const shouldShowPaymentDetails = !showAsGiftReceipt || (showAsGiftReceipt && paymentDetails.isInstallment);
 
 
@@ -60,13 +55,9 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           <tr className="font-bold">
             <th className="text-left">Item</th>
             <th className="text-center">Qty</th>
-            {!showAsGiftReceipt && (
-              <>
-                <th className="text-right">Price</th>
-                <th className="text-right">Total</th>
-                <th className="text-right">Our Price</th>
-              </>
-            )}
+            <th className="text-right">Price</th>
+            <th className="text-right">Total</th>
+            <th className="text-right">Our Price</th>
           </tr>
         </thead>
         <tbody>
@@ -76,16 +67,12 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
                 <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
                 {!showAsGiftReceipt && (
-                    <>
-                        <td className="text-right">{item.unitPrice.toFixed(2)}</td>
-                        <td className="text-right">
-                        {item.lineTotalBeforeDiscount.toFixed(2)}
-                        </td>
-                        <td className="text-right">
-                        {item.lineTotalAfterDiscount.toFixed(2)}
-                        </td>
-                    </>
+                  <>
+                    <td className="text-right">{item.unitPrice.toFixed(2)}</td>
+                    <td className="text-right">{item.lineTotalBeforeDiscount.toFixed(2)}</td>
+                  </>
                 )}
+                <td className="text-right">{item.lineTotalAfterDiscount.toFixed(2)}</td>
               </tr>
               {!showAsGiftReceipt && item.lineDiscount > 0 && (
                 <tr>
