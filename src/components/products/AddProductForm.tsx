@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   productSchema,
@@ -21,18 +21,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { addProductAction, updateProductBatchAction } from "@/lib/actions/product.actions";
 import { useState, useEffect } from "react";
 import type { ProductBatch } from "@/types";
-import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, DollarSign, Tag, Boxes, AlertTriangle } from "lucide-react";
+import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, DollarSign, Tag, Boxes, AlertTriangle, Wallet, TrendingUp, Coins } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
@@ -42,6 +35,7 @@ import categoriesData from '@/lib/data/categories.json';
 import brandsData from '@/lib/data/brands.json';
 import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Separator } from '../ui/separator';
 
 
 interface AddProductFormProps {
@@ -73,6 +67,19 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
         fields: ["maxStockLevel", "minStockLevel", "manufactureDate", "expiryDate", "location", "isActive", "isService", "notes"]
     }
 ];
+
+const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
+    <div className="flex items-start gap-4 py-3">
+        <div className="bg-muted p-2 rounded-lg">
+            <Icon className="h-5 w-5 text-foreground/80" />
+        </div>
+        <div className="flex-1">
+            <p className="font-medium text-foreground">{label}</p>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+        <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
+    </div>
+);
 
 
 export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps) {
@@ -242,281 +249,316 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
         form.setValue('productId', productName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''));
     }
   }, [productName, form, isEditMode]);
+  
+  const sellingPrice = useWatch({ control: form.control, name: 'sellingPrice' }) || 0;
+  const costPrice = useWatch({ control: form.control, name: 'costPrice' }) || 0;
+  const potentialProfit = sellingPrice - costPrice;
+  const profitMargin = costPrice > 0 ? (potentialProfit / costPrice) * 100 : 0;
 
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
-
-        <div className="flex justify-between items-center mb-8">
-            {steps.map((step, index) => (
-                <React.Fragment key={index}>
-                    <div className="flex flex-col items-center">
-                        <div
-                            className={cn(
-                                "w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors",
-                                currentStep === index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
-                                currentStep > index && "bg-green-600 text-white"
-                            )}
-                        >
-                            {index + 1}
-                        </div>
-                        <p className={cn("text-xs mt-1 text-center", currentStep === index ? "font-semibold" : "text-muted-foreground")}>{step.title}</p>
-                    </div>
-                    {index < steps.length - 1 && (
-                        <div className="flex-1 h-1 bg-border mx-2"></div>
-                    )}
-                </React.Fragment>
-            ))}
-        </div>
-        
-        <div className="min-h-[400px]">
-          {currentStep === 0 && (
-             <Card>
-                <CardHeader>
-                    <CardTitle>{steps[0].title}</CardTitle>
-                    <CardDescription>{steps[0].description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {isEditMode && (
-                        <Alert variant="default" className="bg-blue-50 border-blue-200">
-                             <AlertTriangle className="h-4 w-4 text-blue-600" />
-                            <AlertTitle className='text-blue-800'>Edit Mode</AlertTitle>
-                            <AlertDescription className='text-blue-700'>
-                                You are editing an existing product batch. Some master product fields like Product ID are locked.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="productId" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Product ID</FormLabel>
-                                <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode} /></FormControl>
-                                <FormDescription>General ID for this product line.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                         <FormField control={form.control} name="batchNumber" render={({ field }) => (
-                             <FormItem>
-                                <FormLabel>Batch Number</FormLabel>
-                                <div className="flex gap-2">
-                                    <FormControl><Input placeholder="e.g., B-1726..." {...field} /></FormControl>
-                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
-                                </div>
-                                <FormDescription>Unique ID for this specific batch.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                         )} />
-                    </div>
-
-                     <FormField control={form.control} name="barcode" render={({ field }) => (
-                         <FormItem>
-                            <FormLabel>Barcode (SKU)</FormLabel>
-                            <div className="flex gap-2">
-                                <FormControl><Input placeholder="e.g., 890..." {...field} /></FormControl>
-                                <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(Math.random().toString().slice(2, 15))}><Sparkles className="h-4 w-4" /></Button>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div className="lg:col-span-2 space-y-6">
+            <div className="flex justify-between items-center mb-8">
+                {steps.map((step, index) => (
+                    <React.Fragment key={index}>
+                        <div className="flex flex-col items-center">
+                            <div
+                                className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center font-bold transition-colors",
+                                    currentStep === index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
+                                    currentStep > index && "bg-green-600 text-white"
+                                )}
+                            >
+                                {index + 1}
                             </div>
-                            <FormMessage />
-                        </FormItem>
-                     )} />
-                    
-                    <div className="grid grid-cols-3 gap-4">
-                        <FormField control={form.control} name="category" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Category</FormLabel>
-                                <CreatableCombobox 
-                                    options={categories}
-                                    value={field.value}
-                                    onChange={(newValue, isNew) => {
-                                        field.onChange(newValue);
-                                        if (isNew) {
-                                            const newOption = { value: newValue.toLowerCase(), label: newValue };
-                                            setCategories(prev => [...prev, newOption]);
-                                        }
-                                    }}
-                                    placeholder="Select or create category"
-                                />
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                         <FormField control={form.control} name="brand" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Brand</FormLabel>
-                                <CreatableCombobox 
-                                    options={brands}
-                                    value={field.value}
-                                    onChange={(newValue, isNew) => {
-                                        field.onChange(newValue);
-                                        if (isNew) {
-                                            const newOption = { value: newValue.toLowerCase(), label: newValue };
-                                            setBrands(prev => [...prev, newOption]);
-                                        }
-                                    }}
-                                    placeholder="Select or create brand"
-                                />
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={form.control} name="supplierId" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Supplier</FormLabel>
-                                <CreatableCombobox 
-                                    options={suppliers}
-                                    value={field.value}
-                                    onChange={(newValue, isNew) => field.onChange(newValue)}
-                                    placeholder="Select a supplier"
-                                    creatable={false}
-                                />
-                                <FormMessage />
-                            </FormItem>
-                         )} />
-                    </div>
-                </CardContent>
-             </Card>
-          )}
-
-          {currentStep === 1 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <p className={cn("text-xs mt-1 text-center", currentStep === index ? "font-semibold" : "text-muted-foreground")}>{step.title}</p>
+                        </div>
+                        {index < steps.length - 1 && (
+                            <div className="flex-1 h-1 bg-border mx-2"></div>
+                        )}
+                    </React.Fragment>
+                ))}
+            </div>
+            
+            <div className="min-h-[400px]">
+              {currentStep === 0 && (
                  <Card>
                     <CardHeader>
-                        <CardTitle>Pricing &amp; Stock</CardTitle>
+                        <CardTitle>{steps[0].title}</CardTitle>
+                        <CardDescription>{steps[0].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem>
-                            <FormLabel>Cost Price</FormLabel>
-                            <div className="relative">
-                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <FormControl><Input type="number" {...field} className="pl-10" /></FormControl>
-                            </div>
-                            <FormMessage /></FormItem> )} />
-                        <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem>
-                            <FormLabel>Selling Price</FormLabel>
-                             <div className="relative">
-                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <FormControl><Input type="number" {...field} className="pl-10 text-lg h-12" /></FormControl>
-                            </div>
-                            <FormMessage /></FormItem> )} />
-                        <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem>
-                            <FormLabel>{isEditMode ? 'Current Stock' : 'Initial Stock'}</FormLabel>
-                            <div className="relative">
-                                <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <FormControl><Input type="number" {...field} disabled={isEditMode} className="pl-10 text-lg h-12 font-bold" /></FormControl>
-                            </div>
-                            <FormMessage /></FormItem> )} />
                         {isEditMode && (
-                            <Alert variant="destructive">
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Stock Update Notice</AlertTitle>
-                                <AlertDescription>
-                                    Stock can only be adjusted via the <strong>'Purchases (GRN)'</strong> section to maintain an accurate audit trail. This field is for display only.
+                            <Alert variant="default" className="bg-blue-50 border-blue-200">
+                                 <AlertTriangle className="h-4 w-4 text-blue-600" />
+                                <AlertTitle className='text-blue-800'>Edit Mode</AlertTitle>
+                                <AlertDescription className='text-blue-700'>
+                                    You are editing an existing product batch. Some master product fields like Product ID are locked.
                                 </AlertDescription>
                             </Alert>
                         )}
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Units of Measurement</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is sold in.</FormDescription><FormMessage /></FormItem> )} />
-                        <div className="space-y-2">
-                            <FormLabel>Derived Units</FormLabel>
-                            {fields.map((field, index) => (
-                                <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
-                                    <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
-                                    <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder="Factor (e.g., 12)" /></FormItem> )} />
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+
+                        <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="productId" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Product ID</FormLabel>
+                                    <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode} /></FormControl>
+                                    <FormDescription>General ID for this product line.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                             <FormField control={form.control} name="batchNumber" render={({ field }) => (
+                                 <FormItem>
+                                    <FormLabel>Batch Number</FormLabel>
+                                    <div className="flex gap-2">
+                                        <FormControl><Input placeholder="e.g., B-1726..." {...field} /></FormControl>
+                                        <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
+                                    </div>
+                                    <FormDescription>Unique ID for this specific batch.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                             )} />
+                        </div>
+
+                         <FormField control={form.control} name="barcode" render={({ field }) => (
+                             <FormItem>
+                                <FormLabel>Barcode (SKU)</FormLabel>
+                                <div className="flex gap-2">
+                                    <FormControl><Input placeholder="e.g., 890..." {...field} /></FormControl>
+                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(Math.random().toString().slice(2, 15))}><Sparkles className="h-4 w-4" /></Button>
                                 </div>
-                            ))}
-                            <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', conversionFactor: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Derived Unit</Button>
+                                <FormMessage />
+                            </FormItem>
+                         )} />
+                        
+                        <div className="grid grid-cols-3 gap-4">
+                            <FormField control={form.control} name="category" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Category</FormLabel>
+                                    <CreatableCombobox 
+                                        options={categories}
+                                        value={field.value}
+                                        onChange={(newValue, isNew) => {
+                                            field.onChange(newValue);
+                                            if (isNew) {
+                                                const newOption = { value: newValue.toLowerCase(), label: newValue };
+                                                setCategories(prev => [...prev, newOption]);
+                                            }
+                                        }}
+                                        placeholder="Select or create category"
+                                    />
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                             <FormField control={form.control} name="brand" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Brand</FormLabel>
+                                    <CreatableCombobox 
+                                        options={brands}
+                                        value={field.value}
+                                        onChange={(newValue, isNew) => {
+                                            field.onChange(newValue);
+                                            if (isNew) {
+                                                const newOption = { value: newValue.toLowerCase(), label: newValue };
+                                                setBrands(prev => [...prev, newOption]);
+                                            }
+                                        }}
+                                        placeholder="Select or create brand"
+                                    />
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="supplierId" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Supplier</FormLabel>
+                                    <CreatableCombobox 
+                                        options={suppliers}
+                                        value={field.value}
+                                        onChange={(newValue, isNew) => field.onChange(newValue)}
+                                        placeholder="Select a supplier"
+                                        creatable={false}
+                                    />
+                                    <FormMessage />
+                                </FormItem>
+                             )} />
                         </div>
                     </CardContent>
                  </Card>
-            </div>
-          )}
-          
-          {currentStep === 2 && (
-             <Card>
-                <CardHeader>
-                    <CardTitle>{steps[2].title}</CardTitle>
-                    <CardDescription>{steps[2].description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <FormField
-                        control={form.control}
-                        name="tax"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Batch Tax Rate (%)</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="e.g., 15" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="discount"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Batch Default Discount Value</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="e.g., 10 or 100" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="discountType"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Batch Default Discount Type</FormLabel>
-                             <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select discount type" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                <SelectItem value="PERCENTAGE">Percentage (%)</SelectItem>
-                                <SelectItem value="FIXED">Fixed Amount</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                </CardContent>
-             </Card>
-          )}
+              )}
 
-          {currentStep === 3 && (
-             <Card>
-                <CardHeader>
-                    <CardTitle>{steps[3].title}</CardTitle>
-                    <CardDescription>{steps[3].description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Any additional notes about this batch..." {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField name="manufactureDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Manufacture Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField name="expiryDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Expiry Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    </div>
-                    <div className="flex items-center space-x-4">
-                        <FormField name="isActive" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1"><div className="space-y-0.5"><FormLabel>Product Active</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                        <FormField name="isService" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1"><div className="space-y-0.5"><FormLabel>Is a Service</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
-                    </div>
-                </CardContent>
-            </Card>
-          )}
+              {currentStep === 1 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Pricing &amp; Stock</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem>
+                                <FormLabel>Cost Price</FormLabel>
+                                <div className="relative">
+                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <FormControl><Input type="number" {...field} className="pl-10" /></FormControl>
+                                </div>
+                                <FormMessage /></FormItem> )} />
+                            <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem>
+                                <FormLabel>Selling Price</FormLabel>
+                                 <div className="relative">
+                                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <FormControl><Input type="number" {...field} className="pl-10 text-lg h-12" /></FormControl>
+                                </div>
+                                <FormMessage /></FormItem> )} />
+                            <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem>
+                                <FormLabel>{isEditMode ? 'Current Stock' : 'Initial Stock'}</FormLabel>
+                                <div className="relative">
+                                    <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <FormControl><Input type="number" {...field} disabled={isEditMode} className="pl-10 text-lg h-12 font-bold" /></FormControl>
+                                </div>
+                                <FormMessage /></FormItem> )} />
+                            {isEditMode && (
+                                <Alert variant="destructive">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>Stock Update Notice</AlertTitle>
+                                    <AlertDescription>
+                                        Stock can only be adjusted via the <strong>'Purchases (GRN)'</strong> section to maintain an accurate audit trail. This field is for display only.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Units of Measurement</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is sold in.</FormDescription><FormMessage /></FormItem> )} />
+                            <div className="space-y-2">
+                                <FormLabel>Derived Units</FormLabel>
+                                {fields.map((field, index) => (
+                                    <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
+                                        <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
+                                        <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder="Factor (e.g., 12)" /></FormItem> )} />
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', conversionFactor: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Derived Unit</Button>
+                            </div>
+                        </CardContent>
+                     </Card>
+                </div>
+              )}
+              
+              {currentStep === 2 && (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{steps[2].title}</CardTitle>
+                        <CardDescription>{steps[2].description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <FormField
+                            control={form.control}
+                            name="tax"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Batch Tax Rate (%)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="e.g., 15" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="discount"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Batch Default Discount Value</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="e.g., 10 or 100" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="discountType"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Batch Default Discount Type</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g., PERCENTAGE or FIXED" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                            />
+                    </CardContent>
+                 </Card>
+              )}
+
+              {currentStep === 3 && (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{steps[3].title}</CardTitle>
+                        <CardDescription>{steps[3].description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Any additional notes about this batch..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField name="manufactureDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Manufacture Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField name="expiryDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Expiry Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                        <div className="flex items-center space-x-4">
+                            <FormField name="isActive" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1"><div className="space-y-0.5"><FormLabel>Product Active</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                            <FormField name="isService" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm flex-1"><div className="space-y-0.5"><FormLabel>Is a Service</FormLabel></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
+                        </div>
+                    </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+          <div className="lg:col-span-1 space-y-6 lg:sticky lg:top-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Financial Summary</CardTitle>
+                         <CardDescription>A quick look at the profitability of this product.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="divide-y">
+                            <SummaryRow 
+                                icon={Tag} 
+                                label="Selling Price" 
+                                value={`Rs. ${sellingPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            />
+                            <SummaryRow 
+                                icon={Wallet} 
+                                label="Cost Price" 
+                                value={`Rs. ${costPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            />
+                             <Separator className="my-2"/>
+                            <SummaryRow 
+                                icon={TrendingUp} 
+                                label="Potential Profit" 
+                                value={`Rs. ${potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                                valueClassName={potentialProfit >= 0 ? "text-green-600" : "text-red-600"}
+                            />
+                             <SummaryRow 
+                                icon={Coins} 
+                                label="Profit Margin" 
+                                value={`${profitMargin.toFixed(2)}%`}
+                                valueClassName={profitMargin >= 0 ? "text-green-600" : "text-red-600"}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+          </div>
         </div>
 
         {submissionError && (

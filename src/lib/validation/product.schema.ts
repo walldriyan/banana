@@ -32,9 +32,9 @@ export const productSchema = z.object({
   
   // Batch-specific tax and discount
   tax: z.coerce.number().min(0).optional().nullable(),
-  taxtype: z.enum(['PERCENTAGE', 'FIXED']).default('PERCENTAGE'),
+  taxtype: z.string().optional().nullable(),
   discount: z.coerce.number().min(0).optional().nullable(),
-  discountType: z.enum(['PERCENTAGE', 'FIXED']).default('PERCENTAGE'),
+  discountType: z.string().optional().nullable(),
 
   // Optional Fields (can belong to master or batch)
   barcode: z.string().optional().nullable(),
