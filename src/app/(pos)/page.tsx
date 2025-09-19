@@ -168,6 +168,16 @@ export default function MyNewEcommerceShop() {
       // Calculate the new total quantity in the base unit
       const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
+      // STOCK VALIDATION
+      if (newBaseQuantity > currentItem.stock) {
+        toast({
+          variant: "destructive",
+          title: "Stock Limit Exceeded",
+          description: `Cannot add ${newDisplayQuantity} ${unitToUse}. Only ${currentItem.stock / conversionFactor} ${unitToUse} available.`,
+        });
+        return currentCart; // Return original cart without changes
+      }
+
       updatedCart[itemIndex] = {
         ...currentItem,
         displayUnit: unitToUse,
@@ -188,6 +198,17 @@ export default function MyNewEcommerceShop() {
       if (existingItemIndex !== -1) {
         // If item already exists, just increase its quantity by 1 base unit
         const existingItem = currentCart[existingItemIndex];
+        
+        // STOCK VALIDATION
+        if (existingItem.quantity + 1 > existingItem.stock) {
+            toast({
+                variant: "destructive",
+                title: "Stock Limit Exceeded",
+                description: `Cannot add more ${existingItem.name}. Maximum stock reached.`,
+            });
+            return currentCart;
+        }
+
         const newDisplayQuantity = existingItem.displayQuantity + 1;
         const newBaseQuantity = existingItem.quantity + 1;
 
@@ -197,6 +218,16 @@ export default function MyNewEcommerceShop() {
             : item
         );
       } else {
+        // STOCK VALIDATION for new item
+        if (1 > product.stock) {
+             toast({
+                variant: "destructive",
+                title: "Out of Stock",
+                description: `Cannot add ${product.name}, it is out of stock.`,
+            });
+            return currentCart;
+        }
+        
         // If new, add it to the cart
         const saleItem: SaleItem = {
           ...product,
