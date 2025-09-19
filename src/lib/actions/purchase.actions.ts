@@ -74,27 +74,20 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
-                // The item.productId from the form IS the unique ID of the batch that was selected or exists.
                 const existingBatch = await tx.product.findUnique({
                     where: { id: item.productId }
                 });
 
-                // Case 1: The batch number entered in the form is the SAME as an existing batch.
-                // We find this existing batch by its unique ID (item.productId).
                 if (existingBatch && existingBatch.batchNumber === item.batchNumber) {
                     await tx.product.update({
                         where: { id: existingBatch.id },
                         data: {
                             quantity: { increment: item.quantity },
                             stock: { increment: item.quantity },
-                            costPrice: item.costPrice, // Also update cost price
+                            costPrice: item.costPrice,
                         }
                     });
                 } else {
-                    // Case 2: The user entered a NEW batch number for an existing product line.
-                    // We need to find the "master" product details to clone.
-                    // We use the product info from the batch we found via ID (item.productId)
-                    // to get the general `productId`.
                     const productInfoFromExistingBatch = await tx.product.findUnique({
                         where: { id: item.productId }
                     });
@@ -102,8 +95,7 @@ export async function addGrnAction(data: GrnFormValues) {
                     if (!productInfoFromExistingBatch) {
                         throw new Error(`Critical error: Could not find base product with ID ${item.productId} to create a new batch from.`);
                     }
-
-                    // Now find the master record using the GENERAL productId
+                    
                     const productMaster = await tx.product.findFirst({
                         where: { productId: productInfoFromExistingBatch.productId },
                         orderBy: { addeDate: 'desc' }
@@ -122,7 +114,7 @@ export async function addGrnAction(data: GrnFormValues) {
                            quantity: item.quantity,
                            stock: item.quantity,
                            costPrice: item.costPrice,
-                           sellingPrice: productMaster.sellingPrice, // Keep original selling price or adjust as needed
+                           sellingPrice: productMaster.sellingPrice,
                            addeDate: new Date(),
                            units: productMaster.units,
                        }
@@ -152,10 +144,7 @@ export async function addGrnAction(data: GrnFormValues) {
         return { success: true, data: result };
 
     } catch (error) {
-        // Log the full error to the server console for debugging
         console.error('[addGrnAction] Error:', error);
-        
-        // Return a more descriptive error message to the client
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         return { success: false, error: `Failed to create GRN: ${errorMessage}` };
     }
