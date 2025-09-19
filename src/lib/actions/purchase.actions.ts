@@ -210,7 +210,7 @@ export async function deleteGrnAction(grnId: string) {
         // --- Validation Step 2: Check if products from this GRN have been sold ---
         // Find all batch IDs created by this GRN
         const grnItems = await prisma.goodsReceivedNoteItem.findMany({
-            where: { goodsReceivedNoteId: grnId },
+            where: { grnId: grnId },
             select: { productBatchId: true },
         });
         const batchIds = grnItems.map(item => item.productBatchId);
@@ -233,7 +233,7 @@ export async function deleteGrnAction(grnId: string) {
         const result = await prisma.$transaction(async (tx) => {
             // Delete GRN items first (cascading deletes are not relied upon here for clarity)
             await tx.goodsReceivedNoteItem.deleteMany({
-                where: { goodsReceivedNoteId: grnId },
+                where: { grnId: grnId },
             });
 
             // Delete the product batches that were created by this GRN
