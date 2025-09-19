@@ -64,18 +64,8 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
 
             // Process each item to update stock and create GRN line items
             for (const item of items) {
-                 // Find if the exact batch exists based on the original product's general productId and the new batchNumber
-                 const productInfoFromExistingBatch = await tx.product.findUnique({ where: { id: item.productId } });
-                 if (!productInfoFromExistingBatch) {
-                     throw new Error(`The base product for item '${item.productName}' (ID: ${item.productId}) does not exist.`);
-                 }
-                 const generalProductId = productInfoFromExistingBatch.productId;
-
-                 const existingBatch = await tx.product.findFirst({
-                    where: { 
-                        productId: generalProductId,
-                        batchNumber: item.batchNumber 
-                    }
+                const existingBatch = await tx.product.findUnique({
+                    where: { id: item.productId }
                 });
 
                 let productBatchRecord;
@@ -90,16 +80,20 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
                         }
                     });
                 } else {
-                    // New batch, need to create it by cloning from the master product info
-                    const productMaster = productInfoFromExistingBatch; // The record we fetched is good enough
+                    // This case is now for genuinely new products added via GRN, though the UI flow is to add product first.
+                    // This logic remains as a fallback.
+                     const productMaster = await tx.product.findFirst({ where: { productId: item.productId } });
+                     if (!productMaster) {
+                         throw new Error(`Cannot create new batch. No master product found for general productId: ${item.productId}. Add the product manually first.`);
+                     }
                     const { id, quantity, stock, batchNumber, barcode, ...masterDataToClone } = productMaster;
 
                     productBatchRecord = await tx.product.create({
                         data: {
                             ...masterDataToClone,
-                            productId: generalProductId, // Ensure the general ID is carried over
+                            productId: item.productId,
                             batchNumber: item.batchNumber || `B-${Date.now()}`,
-                            barcode: `${generalProductId}-${item.batchNumber || Date.now()}`, // Create a new unique barcode
+                            barcode: `${item.productId}-${item.batchNumber || Date.now()}`,
                             quantity: item.quantity,
                             stock: item.quantity,
                             costPrice: item.costPrice,
