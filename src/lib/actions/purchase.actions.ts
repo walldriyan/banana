@@ -94,7 +94,10 @@ export async function addGrnAction(data: GrnFormValues) {
                 await tx.goodsReceivedNoteItem.create({
                     data: {
                         goodsReceivedNoteId: newGrn.id,
-                        productId: newProductBatch.id, // Link to the newly created batch
+                        // productId: newProductBatch.id, // This is incorrect
+                        product: {
+                            connect: { id: newProductBatch.id },
+                        },
                         batchNumber: newProductBatch.batchNumber,
                         quantity: item.quantity,
                         costPrice: item.costPrice,
@@ -188,7 +191,9 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                     items: {
                         deleteMany: {}, // Delete old items
                         create: newItems.map(item => ({ // Create new items
-                            productId: item.productId, // This should be the unique ID of the product batch
+                            product: {
+                                connect: { id: item.productId }
+                            },
                             batchNumber: item.batchNumber,
                             quantity: item.quantity,
                             costPrice: item.costPrice,
