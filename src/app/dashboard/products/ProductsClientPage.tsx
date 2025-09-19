@@ -204,7 +204,7 @@ export function ProductsClientPage() {
             </CardHeader>
             <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* General Stats */}
-                <Card className="lg:col-span-1">
+                <Card className="lg:col-span-1 bg-card/60">
                     <CardHeader>
                         <CardTitle className="text-lg">General</CardTitle>
                     </CardHeader>
@@ -216,7 +216,7 @@ export function ProductsClientPage() {
                 </Card>
 
                 {/* Financial Stats */}
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 bg-card/60">
                      <CardHeader>
                         <CardTitle className="text-lg">Financials</CardTitle>
                     </CardHeader>
