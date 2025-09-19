@@ -7,15 +7,26 @@ import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
 
 /**
- * Fetches all GRNs that have a 'pending' or 'partial' payment status.
+ * Fetches all GRNs that have an outstanding balance.
+ * This now includes GRNs where paidAmount < totalAmount OR status is pending/partial,
+ * ensuring old records without a status are also fetched.
  */
 export async function getCreditorGrnsAction() {
   try {
     const creditorGrns = await prisma.goodsReceivedNote.findMany({
       where: {
-        paymentStatus: {
-          in: ['pending', 'partial'],
-        },
+        OR: [
+          {
+            paymentStatus: {
+              in: ['pending', 'partial'],
+            },
+          },
+          {
+            paidAmount: {
+              lt: prisma.goodsReceivedNote.fields.totalAmount
+            }
+          }
+        ]
       },
       include: {
         supplier: true,
