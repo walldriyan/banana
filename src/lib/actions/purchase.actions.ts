@@ -25,11 +25,13 @@ export async function getGrnsAction() {
   }
 }
 
+type GrnActionData = GrnFormValues & { totalAmount: number };
+
 /**
  * Server action to add a new GRN.
  * This is a transactional operation: it saves the GRN and updates product stock.
  */
-export async function addGrnAction(data: GrnFormValues & { totalAmount: number }) {
+export async function addGrnAction(data: GrnActionData) {
     console.log('[addGrnAction] Received data on server:', data);
     const validationResult = grnSchema.safeParse(data);
     if (!validationResult.success) {
@@ -154,7 +156,7 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
  * Server action to update an existing GRN.
  * This is a transactional operation: it calculates stock adjustments and updates the GRN.
  */
-export async function updateGrnAction(grnId: string, data: GrnFormValues & { totalAmount: number }) {
+export async function updateGrnAction(grnId: string, data: GrnActionData) {
     console.log('[updateGrnAction] Received data for GRN ID:', grnId, data);
     const validationResult = grnSchema.safeParse(data);
     if (!validationResult.success) {
