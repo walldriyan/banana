@@ -22,7 +22,8 @@ export async function addProductAction(data: ProductFormValues) {
     };
   }
   
-  const { id, supplierId, ...validatedData } = validationResult.data;
+  // Destructure the temporary/UI-only fields so they aren't passed to Prisma
+  const { id, supplierId, addAsNewBatch, ...validatedData } = validationResult.data;
 
   // Enforce composite unique constraint at the application level
   const existingProductBatch = await prisma.product.findFirst({
@@ -179,7 +180,7 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
         };
     }
 
-    const { id: validatedId, supplierId, ...validatedData } = validationResult.data;
+    const { id: validatedId, supplierId, addAsNewBatch, ...validatedData } = validationResult.data;
 
     try {
         const updatedProduct = await prisma.product.update({
