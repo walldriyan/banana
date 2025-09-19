@@ -18,10 +18,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../ui/card";
-import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote, ArrowLeft, ArrowRight } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote, ArrowLeft, ArrowRight, Package, Archive, Tag } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -30,8 +30,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Textarea } from "../ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { getSuppliersAction } from "@/lib/actions/supplier.actions";
-import { getProductsAction } from "@/lib/actions/product.actions";
-import type { Product } from "@/types";
+import { getProductsAction, getProductBatchesAction } from "@/lib/actions/product.actions";
+import type { Product, ProductBatch } from "@/types";
 import { GrnProductSearch } from "./GrnProductSearch";
 import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClientPage";
 import type { Supplier } from "@prisma/client";
@@ -81,11 +81,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [allBatches, setAllBatches] = useState<ProductBatch[]>([]);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const isEditMode = !!grn;
 
   const [currentItem, setCurrentItem] = useState<Partial<GrnItemFormValues>>(initialItemState);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [itemError, setItemError] = useState<string | null>(null);
 
   const [totalAmount, setTotalAmount] = useState(0);
@@ -115,10 +117,11 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     name: "items",
   });
 
-  const fetchProductsAndSuppliers = useCallback(async () => {
-        const [suppliersResult, productsResult] = await Promise.all([
+  const fetchInitialData = useCallback(async () => {
+        const [suppliersResult, productsResult, batchesResult] = await Promise.all([
             getSuppliersAction(),
-            getProductsAction()
+            getProductsAction(),
+            getProductBatchesAction(),
         ]);
 
         if (suppliersResult.success && suppliersResult.data) {
@@ -132,11 +135,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         } else {
             toast({ variant: "destructive", title: "Error", description: "Could not load products." });
         }
+        if (batchesResult.success && batchesResult.data) {
+            setAllBatches(batchesResult.data);
+        } else {
+             toast({ variant: "destructive", title: "Error", description: "Could not load product batch data." });
+        }
   }, [toast]);
 
   useEffect(() => {
-    fetchProductsAndSuppliers();
-  }, [fetchProductsAndSuppliers]);
+    fetchInitialData();
+  }, [fetchInitialData]);
 
 
   const calculateTotal = useCallback(() => {
@@ -182,6 +190,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const handleProductSelect = (product: Product) => {
     setItemError(null);
+    setSelectedProduct(product);
     const unitsObject = typeof product.units === 'string' 
       ? JSON.parse(product.units) 
       : product.units;
@@ -198,6 +207,11 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       tax: 0,
     });
   };
+
+  const handleClearCurrentItem = () => {
+      setCurrentItem(initialItemState);
+      setSelectedProduct(null);
+  }
 
   const handleAddItemToTable = () => {
     setItemError(null);
@@ -217,7 +231,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     }
     
     append(validationResult.data);
-    setCurrentItem(initialItemState);
+    handleClearCurrentItem();
   };
   
   const handleRemoveItem = (index: number) => {
@@ -229,7 +243,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       title: 'Add New Master Product',
       description: 'Fill in the details below to add a new master product to the system.',
       content: <AddProductForm onSuccess={() => {
-        fetchProductsAndSuppliers(); 
+        fetchInitialData(); 
         drawer.closeDrawer();
         toast({ title: 'Success', description: 'New master product added. You can now search for it.'});
       }} />,
@@ -282,6 +296,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const paidAmount = watch('paidAmount') || 0;
   const balance = totalAmount - paidAmount;
+  
+  const selectedProductTotalStock = useMemo(() => {
+    if (!selectedProduct) return 0;
+    return allBatches
+        .filter(batch => batch.productId === selectedProduct.id)
+        .reduce((sum, batch) => sum + batch.stock, 0);
+  }, [selectedProduct, allBatches]);
 
 
   return (
@@ -420,16 +441,43 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                       <GrnProductSearch
                           products={products}
                           onProductSelect={handleProductSelect}
-                          placeholder="Search for a master product..."
+                          placeholder="Search by name or barcode..."
                       />
                   </CardContent>
-                  {currentItem.productId && (
-                    <>
-                    <CardContent className="border-t pt-2">
-                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">Details for: <span className="text-primary">{currentItem.name}</span></h3>
-                            <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
+                  {currentItem.productId && selectedProduct && (
+                    <CardContent className="border-t pt-6 space-y-6">
+                        <div className="flex justify-between items-center">
+                            <h3 className="text-lg font-semibold">Details for: <span className="text-primary">{selectedProduct.name}</span></h3>
+                            <Button type="button" variant="outline" size="sm" onClick={handleClearCurrentItem}>Clear</Button>
                         </div>
+                        
+                         <div className='p-4 rounded-lg bg-muted/50 border'>
+                            <h4 className='text-sm font-semibold mb-3'>Product Summary</h4>
+                            <div className='grid grid-cols-2 md:grid-cols-4 gap-4 text-sm'>
+                                <div className='flex items-center gap-2'>
+                                    <Package className='h-5 w-5 text-muted-foreground' />
+                                    <div>
+                                        <p className='text-xs text-muted-foreground'>Category</p>
+                                        <p className='font-medium'>{selectedProduct.category}</p>
+                                    </div>
+                                </div>
+                                 <div className='flex items-center gap-2'>
+                                    <Tag className='h-5 w-5 text-muted-foreground' />
+                                    <div>
+                                        <p className='text-xs text-muted-foreground'>Brand</p>
+                                        <p className='font-medium'>{selectedProduct.brand}</p>
+                                    </div>
+                                </div>
+                                <div className='flex items-center gap-2'>
+                                    <Archive className='h-5 w-5 text-muted-foreground' />
+                                    <div>
+                                        <p className='text-xs text-muted-foreground'>Total Current Stock</p>
+                                        <p className='font-bold text-base'>{selectedProductTotalStock.toLocaleString()} {selectedProduct.units.baseUnit}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <FormRow title="Batch & Quantity" description="Unique batch number and the quantity being received.">
                            <div className="grid grid-cols-2 gap-4">
                                 <FormItem>
@@ -489,14 +537,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 <AlertDescription>{itemError}</AlertDescription>
                             </Alert>
                         )}
+                        <div className='flex justify-end pt-4'>
+                             <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                                <PackagePlus className="mr-2 h-4 w-4"/>
+                                Add Item to GRN
+                            </Button>
+                        </div>
                     </CardContent>
-                    <CardFooter className="flex justify-end pt-6">
-                        <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
-                            <PackagePlus className="mr-2 h-4 w-4"/>
-                            Add Item to GRN
-                        </Button>
-                    </CardFooter>
-                    </>
                   )}
               </Card>
 
