@@ -27,7 +27,9 @@ export async function getGrnsAction() {
 
 /**
  * Server action to add a new GRN.
- * This is a transactional operation: it saves the GRN and creates NEW product batches for each line item.
+ * This is a transactional operation. It now uses `upsert` logic for its items:
+ * - If a product with the same `productId` and `batchNumber` exists, it updates its stock.
+ * - If it doesn't exist, it creates a new product batch record.
  */
 export async function addGrnAction(data: GrnFormValues) {
     console.log('[addGrnAction] Received data on server:', data);
@@ -60,42 +62,52 @@ export async function addGrnAction(data: GrnFormValues) {
                 }
             });
 
-            // For each item in the GRN, create a new product batch record.
             for (const item of items) {
-                // Find an existing product with the same productId to use as a template for common data.
-                // The `item.productId` here comes from the search input, which is a unique `id` of an existing batch.
-                const productTemplate = await tx.product.findUnique({ where: { id: item.productId } });
+                const productTemplate = await tx.product.findFirst({ where: { productId: item.productId } });
                 
                 if (!productTemplate) {
-                     throw new Error(`Product template with ID '${item.productId}' not found. Cannot create new batch.`);
+                     throw new Error(`Cannot create batch. No existing product found for Product ID: ${item.productId}. Add the product manually first.`);
                 }
                 
-                // Clone the master data, but leave out fields that are specific to a batch.
                 const { id, quantity, stock, batchNumber, barcode, costPrice, addeDate, ...masterDataToClone } = productTemplate;
-
-                // Create the new product batch in the Product table.
-                const newBatch = await tx.product.create({
-                    data: {
-                        ...masterDataToClone, // Clones name, category, brand, units etc.
-                        productId: productTemplate.productId, // Use the master productId
-                        batchNumber: item.batchNumber, // Use the new batch number from the form
-                        barcode: `${productTemplate.productId}-${item.batchNumber}`, // Create a new unique barcode
+                
+                const upsertedBatch = await tx.product.upsert({
+                    where: {
+                        productId_batchNumber: {
+                            productId: item.productId,
+                            batchNumber: item.batchNumber,
+                        },
+                    },
+                    update: {
+                        quantity: {
+                            increment: item.quantity,
+                        },
+                        stock: {
+                            increment: item.quantity,
+                        },
+                        // Optionally update cost price if it has changed
+                        costPrice: item.costPrice,
+                    },
+                    create: {
+                        ...masterDataToClone,
+                        productId: item.productId,
+                        batchNumber: item.batchNumber,
+                        barcode: `${item.productId}-${item.batchNumber}`,
                         quantity: item.quantity,
                         stock: item.quantity,
                         costPrice: item.costPrice,
+                        sellingPrice: productTemplate.sellingPrice, // Carry over selling price
                         addeDate: new Date(),
-                        // Ensure units are carried over as a string
                         units: typeof masterDataToClone.units === 'string' ? masterDataToClone.units : JSON.stringify(masterDataToClone.units),
                         supplierId: headerData.supplierId,
                     }
                 });
                 
-                // Create the line item for the GRN, linking to the newly created batch.
                 await tx.goodsReceivedNoteItem.create({
                     data: {
                         goodsReceivedNoteId: newGrn.id,
-                        productId: newBatch.id, // Link to the new batch's unique ID
-                        batchNumber: newBatch.batchNumber,
+                        productId: upsertedBatch.id,
+                        batchNumber: upsertedBatch.batchNumber,
                         quantity: item.quantity,
                         costPrice: item.costPrice,
                         discount: item.discount,
@@ -119,8 +131,8 @@ export async function addGrnAction(data: GrnFormValues) {
 
             return newGrn;
         }, {
-          maxWait: 15000, // Increased wait time
-          timeout: 30000, // Increased timeout
+          maxWait: 15000,
+          timeout: 30000,
         });
 
         revalidatePath('/dashboard/purchases');
@@ -132,6 +144,9 @@ export async function addGrnAction(data: GrnFormValues) {
     } catch (error) {
         console.error('[addGrnAction] Error:', error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+             return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
+        }
         return { success: false, error: `Failed to create GRN: ${errorMessage}` };
     }
 }
@@ -164,9 +179,9 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                 throw new Error(`GRN with ID ${grnId} not found.`);
             }
 
-            // This logic is complex and prone to errors. For now, we assume updates don't change stock
-            // until a proper stock reconciliation system is built.
-            // We will just update the GRN details.
+            // Note: Stock adjustment on update is a complex operation.
+            // For now, this action will primarily update GRN details and items,
+            // assuming stock changes are handled separately or that GRNs are immutable once created.
             
             const paidAmount = headerData.paidAmount ?? 0;
             const totalAmount = headerData.totalAmount;
@@ -183,8 +198,8 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                     ...headerData,
                     paymentStatus: paymentStatus,
                     items: {
-                        deleteMany: {},
-                        create: newItems.map(item => ({
+                        deleteMany: {}, // Delete old items
+                        create: newItems.map(item => ({ // Create new items
                             productId: item.productId, // This should be the unique ID of the product batch
                             batchNumber: item.batchNumber,
                             quantity: item.quantity,
@@ -196,9 +211,6 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                     },
                 },
             });
-
-            // Note: Stock adjustment on update is disabled to prevent data corruption.
-            // A dedicated stock adjustment feature would be required to handle this safely.
 
             return updatedGrn;
         });
