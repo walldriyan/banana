@@ -45,9 +45,9 @@ export function CreditClientPage() {
     fetchCreditorGrns();
   }, [fetchCreditorGrns]);
   
-  const handlePaymentUpdate = () => {
+  const handlePaymentUpdate = useCallback(() => {
       fetchCreditorGrns(); // Refresh the main list when a payment is made
-  }
+  }, [fetchCreditorGrns]);
 
   const openManagePaymentsDrawer = useCallback((grn: CreditorGrn) => {
     drawer.openDrawer({
