@@ -115,20 +115,23 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   });
 
   const watchedItems = useWatch({ control: form.control, name: 'items' });
+  const watchedPaidAmount = useWatch({ control: form.control, name: 'paidAmount' });
+
 
   useEffect(() => {
     const total = watchedItems.reduce((sum, item) => sum + item.total, 0);
-    form.setValue('totalAmount', total);
-    // Update payment status based on total and paid amount
-    const paid = form.getValues('paidAmount');
-    if (paid >= total && total > 0) {
+    form.setValue('totalAmount', total, { shouldValidate: true });
+    
+    // Determine payment status based on total and paid amount
+    const paid = watchedPaidAmount || 0;
+    if (total > 0 && paid >= total) {
         form.setValue('paymentStatus', 'paid');
-    } else if (paid > 0) {
+    } else if (paid > 0 && paid < total) {
         form.setValue('paymentStatus', 'partial');
     } else {
         form.setValue('paymentStatus', 'pending');
     }
-  }, [watchedItems, form]);
+  }, [watchedItems, watchedPaidAmount, form]);
 
   const handleProductSelect = (product: Product) => {
     const existingItemIndex = fields.findIndex(field => field.productId === product.id);
@@ -191,6 +194,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       });
     }
   }
+
+  const currentTotalAmount = form.getValues('totalAmount');
+  const balance = currentTotalAmount - watchedPaidAmount;
 
   return (
     <Form {...form}>
@@ -398,16 +404,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             <FormItem>
                             <FormLabel>Amount Paid</FormLabel>
                             <FormControl>
-                                <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                                <Input type="number" {...field} />
                             </FormControl>
                             <FormMessage />
                             </FormItem>
                         )}
                     />
                     <div className="space-y-2 text-right font-semibold">
-                        <div className="flex justify-between"><span>Total:</span> <span>Rs. {form.getValues('totalAmount').toFixed(2)}</span></div>
-                        <div className="flex justify-between text-green-600"><span>Paid:</span> <span>Rs. {form.getValues('paidAmount').toFixed(2)}</span></div>
-                        <div className="flex justify-between border-t pt-2 text-red-600 text-lg"><span>Balance:</span> <span>Rs. {(form.getValues('totalAmount') - form.getValues('paidAmount')).toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Total:</span> <span>Rs. {currentTotalAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-green-600"><span>Paid:</span> <span>Rs. {watchedPaidAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between border-t pt-2 text-red-600 text-lg"><span>Balance:</span> <span>Rs. {balance.toFixed(2)}</span></div>
                     </div>
                 </CardContent>
             </Card>
