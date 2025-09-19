@@ -20,6 +20,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
 // Define a type for GRN with its relations for the client-side
 export type GrnWithRelations = GoodsReceivedNote & { supplier: Supplier, items: GoodsReceivedNoteItem[] };
@@ -31,6 +33,8 @@ export function PurchasesClientPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [grnToDelete, setGrnToDelete] = useState<string | null>(null);
+  const [deletionError, setDeletionError] = useState<string | null>(null);
+
 
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -78,6 +82,7 @@ export function PurchasesClientPage() {
   }, [drawer, handleFormSuccess]);
 
   const handleDeleteRequest = (grnId: string) => {
+    setDeletionError(null); // Clear previous errors
     setGrnToDelete(grnId);
     setIsDeleteDialogOpen(true);
   };
@@ -85,12 +90,14 @@ export function PurchasesClientPage() {
   const confirmDeleteGrn = async () => {
     if (!grnToDelete) return;
     
+    setDeletionError(null);
     const result = await deleteGrnAction(grnToDelete);
 
     if (result.success) {
         toast({ title: "GRN Deleted", description: `The purchase record has been successfully deleted.` });
         fetchGrns();
     } else {
+        setDeletionError(result.error);
         toast({ 
             variant: "destructive", 
             title: "Deletion Failed", 
@@ -124,6 +131,17 @@ export function PurchasesClientPage() {
         data={grns}
         onAddGrn={openAddGrnDrawer}
       />
+      
+      {deletionError && (
+        <Alert variant="destructive" className="mt-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Deletion Error Details</AlertTitle>
+            <AlertDescription className="break-all font-mono text-xs">
+                {deletionError}
+            </AlertDescription>
+        </Alert>
+      )}
+
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>

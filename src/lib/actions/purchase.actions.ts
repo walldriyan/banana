@@ -258,8 +258,11 @@ export async function deleteGrnAction(grnId: string) {
 
     } catch (error) {
         console.error(`[deleteGrnAction] Error deleting GRN ${grnId}:`, error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-            return { success: false, error: 'GRN not found for deletion.' };
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+             if (error.code === 'P2025') { // Foreign key constraint failed
+                return { success: false, error: `Prisma Error (P2025): Record to delete does not exist or a related record could not be deleted.` };
+            }
+             return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
         }
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         return { success: false, error: `Failed to delete GRN: ${errorMessage}` };
