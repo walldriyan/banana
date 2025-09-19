@@ -59,7 +59,6 @@ export async function addGrnAction(data: GrnFormValues) {
                     paymentStatus: paymentStatus,
                     items: {
                         create: items.map(item => ({
-                            // We use the unique product.id from the form as the reference
                             productId: item.productId, 
                             batchNumber: item.batchNumber,
                             quantity: item.quantity,
@@ -74,13 +73,31 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
-                const existingBatch = await tx.product.findUnique({
+                // Find an existing product that represents the *master* product line.
+                // We use the item.productId (which is the unique ID of the batch selected in the form)
+                // to find its master product ID.
+                const productInfoFromAnyBatch = await tx.product.findUnique({
                     where: { id: item.productId }
                 });
 
-                if (existingBatch && existingBatch.batchNumber === item.batchNumber) {
+                if (!productInfoFromAnyBatch) {
+                     throw new Error(`Critical error: Could not find any existing product batch with ID ${item.productId} to derive master data from.`);
+                }
+                
+                const generalProductId = productInfoFromAnyBatch.productId;
+
+                // Now, check if a batch with the *new* batch number already exists for this product line.
+                const existingBatchToUpdate = await tx.product.findFirst({
+                    where: { 
+                        productId: generalProductId,
+                        batchNumber: item.batchNumber
+                    }
+                });
+
+                if (existingBatchToUpdate) {
+                     // The batch exists, so just update its stock and cost price
                     await tx.product.update({
-                        where: { id: existingBatch.id },
+                        where: { id: existingBatchToUpdate.id },
                         data: {
                             quantity: { increment: item.quantity },
                             stock: { increment: item.quantity },
@@ -88,24 +105,18 @@ export async function addGrnAction(data: GrnFormValues) {
                         }
                     });
                 } else {
-                    const productInfoFromExistingBatch = await tx.product.findUnique({
-                        where: { id: item.productId }
-                    });
-
-                    if (!productInfoFromExistingBatch) {
-                        throw new Error(`Critical error: Could not find base product with ID ${item.productId} to create a new batch from.`);
-                    }
-                    
+                    // The batch does not exist, so we need to create it.
+                    // We clone data from the master record.
                     const productMaster = await tx.product.findFirst({
-                        where: { productId: productInfoFromExistingBatch.productId },
+                        where: { productId: generalProductId },
                         orderBy: { addeDate: 'desc' }
                     });
 
-                    if (!productMaster) {
-                       throw new Error(`Cannot create new batch. No existing product found for general productId: ${productInfoFromExistingBatch.productId}. Add the product manually first.`);
+                     if (!productMaster) {
+                       throw new Error(`Cannot create new batch. No master product found for general productId: ${generalProductId}. Add the product manually first.`);
                     }
                     
-                    const { id, ...masterDataToClone } = productMaster;
+                    const { id, quantity, stock, batchNumber, ...masterDataToClone } = productMaster;
 
                     await tx.product.create({
                        data: {
