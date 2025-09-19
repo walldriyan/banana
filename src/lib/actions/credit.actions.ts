@@ -64,6 +64,42 @@ export async function getCreditorGrnsAction() {
   }
 }
 
+/**
+ * Fetches a single creditor GRN by its ID.
+ */
+export async function getCreditGrnByIdAction(grnId: string) {
+    try {
+        const grn = await prisma.goodsReceivedNote.findUnique({
+            where: { id: grnId },
+            include: {
+                supplier: true,
+                _count: {
+                    select: { payments: true },
+                },
+            },
+        });
+
+        if (!grn) {
+            return { success: false, error: 'GRN not found.' };
+        }
+
+        const paymentAggr = await prisma.purchasePayment.aggregate({
+            _sum: { amount: true },
+            where: { goodsReceivedNoteId: grn.id },
+        });
+
+        const grnWithPaidAmount = {
+            ...grn,
+            totalPaid: paymentAggr._sum.amount || 0,
+        };
+
+        return { success: true, data: grnWithPaidAmount };
+    } catch (error) {
+        console.error(`[getCreditGrnByIdAction] Error fetching GRN ${grnId}:`, error);
+        return { success: false, error: 'Failed to fetch GRN details.' };
+    }
+}
+
 
 /**
  * Fetches all payments for a specific GRN.
