@@ -44,16 +44,14 @@ export async function addGrnAction(data: GrnFormValues) {
     try {
         const result = await prisma.$transaction(async (tx) => {
             const paidAmount = headerData.paidAmount ?? 0;
-            const totalAmount = headerData.totalAmount;
             
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-            if (totalAmount > 0 && paidAmount >= totalAmount) {
+            if (headerData.totalAmount > 0 && paidAmount >= headerData.totalAmount) {
                 paymentStatus = 'paid';
             } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
             }
 
-            // Create the GRN and all its related items in a single, nested query
             const newGrn = await tx.goodsReceivedNote.create({
                  data: {
                     ...headerData,
