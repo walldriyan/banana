@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
-import { Badge } from "../ui/badge"
+import { Badge } from "@/components/ui/badge"
 
 // Define a new interface for the component props
 interface CellActionsProps {
@@ -90,7 +90,7 @@ export const getColumns = (
 
             if (isGrouped) {
                 return (
-                <div className="flex items-center gap-2 font-bold">
+                <div className="flex items-center gap-2">
                     <Button
                     variant="ghost"
                     size="icon"
@@ -103,12 +103,12 @@ export const getColumns = (
                         <ChevronsRight className="h-4 w-4" />
                     )}
                     </Button>
-                    {value} ({row.subRows.length})
+                    <span className="font-bold">{value} ({row.subRows.length})</span>
                 </div>
                 );
             }
 
-            return <div>{value}</div>;
+            return <div className="pl-8">{value}</div>;
         },
     },
      {
