@@ -191,54 +191,58 @@ export default function MyNewEcommerceShop() {
 
 
   const addToCart = (productBatch: ProductBatch) => {
+    // Find if an item from this specific batch is already in the cart
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
-    if (existingItemIndex !== -1) {
-        const existingItem = cart[existingItemIndex];
-        
-        // STOCK VALIDATION before updating state
-        if (existingItem.quantity + 1 > existingItem.stock) {
-            toast({
-                variant: "destructive",
-                title: "Stock Limit Exceeded",
-                description: `Cannot add more ${existingItem.product.name}. Maximum stock reached.`,
-            });
-            return; // Exit without changing state
-        }
-
-        setCart(currentCart => {
-            const newDisplayQuantity = existingItem.displayQuantity + 1;
-            const newBaseQuantity = existingItem.quantity + 1;
-
-            return currentCart.map((item, index) =>
-                index === existingItemIndex
-                    ? { ...item, displayQuantity: newDisplayQuantity, quantity: newBaseQuantity }
-                    : item
-            );
+    // If item is not in the cart, add it with quantity 1
+    if (existingItemIndex === -1) {
+      if (1 > productBatch.stock) {
+        toast({
+          variant: "destructive",
+          title: "Out of Stock",
+          description: `Cannot add ${productBatch.product.name}, it is out of stock.`,
         });
-    } else {
-        // STOCK VALIDATION for new item
-        if (1 > productBatch.stock) {
-            toast({
-                variant: "destructive",
-                title: "Out of Stock",
-                description: `Cannot add ${productBatch.product.name}, it is out of stock.`,
-            });
-            return; // Exit without changing state
-        }
-        
-        setCart(currentCart => {
-            const saleItem: SaleItem = {
-                ...productBatch,
-                saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                quantity: 1, // Total base units
-                displayQuantity: 1, // Quantity of the selected unit
-                displayUnit: productBatch.product.units.baseUnit, // Default to base unit
-                price: productBatch.sellingPrice,
-            };
-            return [...currentCart, saleItem];
-        });
+        return;
+      }
+      
+      const newSaleItem: SaleItem = {
+        ...productBatch,
+        saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        quantity: 1, // Base unit quantity
+        displayQuantity: 1, // Display quantity
+        displayUnit: productBatch.product.units.baseUnit, // Set the display unit
+        price: productBatch.sellingPrice,
+      };
+      
+      setCart(currentCart => [...currentCart, newSaleItem]);
+      return; // Exit after adding new item
     }
+
+    // If item exists, just increase its quantity
+    setCart(currentCart => {
+      const updatedCart = [...currentCart];
+      const existingItem = updatedCart[existingItemIndex];
+      
+      const newBaseQuantity = existingItem.quantity + 1;
+
+      if (newBaseQuantity > existingItem.stock) {
+        toast({
+          variant: "destructive",
+          title: "Stock Limit Exceeded",
+          description: `Cannot add more ${existingItem.product.name}. Maximum stock reached.`,
+        });
+        return currentCart; // Return original cart without changes
+      }
+
+      // Update the quantity. Assuming we increment by the base unit.
+      updatedCart[existingItemIndex] = {
+        ...existingItem,
+        quantity: newBaseQuantity,
+        displayQuantity: newBaseQuantity, // Let's assume display and base are 1:1 for simple adds
+      };
+
+      return updatedCart;
+    });
 };
 
   const clearCart = () => {
