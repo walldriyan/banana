@@ -78,7 +78,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       grnDate: new Date(grn.grnDate),
       items: grn.items.map(item => ({
         ...item,
-        // The product details are needed for the form, but not part of the schema
         productName: products.find(p => p.id === item.productId)?.name || 'Unknown Product'
       }))
     } : {
@@ -117,6 +116,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
 
   const currentTotalAmount = Array.isArray(watchedItems) ? watchedItems.reduce((sum, item) => sum + (item.total || 0), 0) : 0;
+  const balance = currentTotalAmount - Number(watchedPaidAmount || 0);
 
   const handleProductSelect = (product: Product) => {
     const existingItemIndex = fields.findIndex(field => field.productId === product.id);
@@ -140,7 +140,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     }
   };
 
-  const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax', value: number) => {
+  const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax' | 'batchNumber', value: number | string) => {
       const item = form.getValues(`items.${index}`);
       if(!item) return;
 
@@ -188,8 +188,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         description: "Please check the form for errors and ensure all required fields are filled."
     });
   };
-
-  const balance = currentTotalAmount - Number(watchedPaidAmount || 0);
 
   return (
     <Form {...form}>
@@ -318,7 +316,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         {fields.length > 0 ? fields.map((item, index) => (
                              <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.productName}</TableCell>
-                                <TableCell className="text-muted-foreground">{item.batchNumber}</TableCell>
+                                <TableCell>
+                                    <Input defaultValue={item.batchNumber} onChange={e => handleItemChange(index, 'batchNumber', e.target.value)} className="w-32" />
+                                </TableCell>
                                 <TableCell>
                                     <Input type="number" defaultValue={item.quantity} onChange={e => handleItemChange(index, 'quantity', Number(e.target.value))} className="w-20" />
                                 </TableCell>

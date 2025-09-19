@@ -73,33 +73,49 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
-                const productMaster = await tx.product.findFirst({
-                    where: { productId: item.productId },
-                    orderBy: { addeDate: 'desc' }
+                // Upsert logic to handle both new batches and existing stock updates
+                const existingBatch = await tx.product.findFirst({
+                    where: { 
+                        productId: item.productId, // This is the general product ID
+                        batchNumber: item.batchNumber 
+                    }
                 });
 
-                if (!productMaster) {
-                    throw new Error(`Product master not found for productId: ${item.productId}. Cannot create new batch.`);
+                if (existingBatch) {
+                    // If batch exists, just update the quantity
+                    await tx.product.update({
+                        where: { id: existingBatch.id },
+                        data: {
+                            quantity: { increment: item.quantity },
+                            stock: { increment: item.quantity },
+                            costPrice: item.costPrice, // Also update cost price
+                        }
+                    });
+                } else {
+                    // If batch does not exist, create a new product entry for it
+                    const productMaster = await tx.product.findFirst({
+                        where: { productId: item.productId },
+                        orderBy: { addeDate: 'desc' }
+                    });
+
+                    if (!productMaster) {
+                        throw new Error(`Cannot create new batch. No existing product found for general productId: ${item.productId}. Add the product manually first.`);
+                    }
+
+                    await tx.product.create({
+                       data: {
+                           ...productMaster, // Inherit details like name, category, etc.
+                           id: undefined, // Let Prisma generate a new unique ID
+                           batchNumber: item.batchNumber || `B-${Date.now()}`,
+                           quantity: item.quantity,
+                           stock: item.quantity,
+                           costPrice: item.costPrice,
+                           sellingPrice: productMaster.sellingPrice,
+                           addeDate: new Date(),
+                           units: productMaster.units,
+                       }
+                    });
                 }
-                
-                // Use upsert to either create a new batch or update an existing one's stock
-                await tx.product.upsert({
-                   where: { id: item.productId }, // Unique product batch ID
-                   update: {
-                       quantity: { increment: item.quantity },
-                       stock: { increment: item.quantity },
-                   },
-                   create: {
-                       ...productMaster, // Inherit details from the latest batch
-                       id: item.productId, // This is the unique ID for the new batch
-                       batchNumber: item.batchNumber || `B-${Date.now()}`,
-                       quantity: item.quantity,
-                       stock: item.quantity,
-                       costPrice: item.costPrice,
-                       sellingPrice: productMaster.sellingPrice, // Or adjust as needed
-                       addeDate: new Date(),
-                   }
-                });
             }
             
             if (newGrn.paidAmount > 0) {
