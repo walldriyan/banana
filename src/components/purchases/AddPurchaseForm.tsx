@@ -20,14 +20,14 @@ import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect, useCallback } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Calendar } from "../ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "../ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import { getSuppliersAction } from "@/lib/actions/supplier.actions";
 import { getProductsAction } from "@/lib/actions/product.actions";
 import type { Product } from "@/types";
@@ -54,6 +54,20 @@ const initialItemState: Partial<GrnItemFormValues> = {
     tax: 0,
     total: 0,
 };
+
+const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
+    <div className="flex items-start gap-4 py-3">
+        <div className="bg-muted p-2 rounded-lg">
+            <Icon className="h-5 w-5 text-foreground/80" />
+        </div>
+        <div className="flex-1">
+            <p className="font-medium text-foreground">{label}</p>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+        <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
+    </div>
+);
+
 
 export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const { toast } = useToast();
@@ -511,7 +525,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         name="paidAmount"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Amount Paid</FormLabel>
+                                <FormLabel>Amount Paid Now</FormLabel>
                                 <FormControl>
                                     <Input 
                                         type="number"
@@ -525,10 +539,25 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             </FormItem>
                         )}
                     />
-                    <div className="space-y-2 text-right font-semibold">
-                        <div className="flex justify-between"><span>Total:</span> <span>Rs. {totalAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-green-600"><span>Paid:</span> <span>Rs. {paidAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between border-t pt-2 text-red-600 text-lg"><span>Balance:</span> <span>Rs. {balance.toFixed(2)}</span></div>
+                    <Separator />
+                     <div className="divide-y">
+                        <SummaryRow 
+                            icon={Landmark} 
+                            label="Total GRN Value" 
+                            value={`Rs. ${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        />
+                         <SummaryRow 
+                            icon={Wallet} 
+                            label="Paid Amount" 
+                            value={`Rs. ${paidAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            valueClassName="text-green-600"
+                        />
+                         <SummaryRow 
+                            icon={Banknote} 
+                            label="Balance Due (Credit)" 
+                            value={`Rs. ${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            valueClassName="text-red-600"
+                        />
                     </div>
                 </CardContent>
             </Card>
