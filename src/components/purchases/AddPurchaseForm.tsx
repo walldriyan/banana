@@ -30,7 +30,7 @@ import { Textarea } from "../ui/textarea";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "../ui/table";
 import { getSuppliersAction } from "@/lib/actions/supplier.actions";
 import { getProductsAction } from "@/lib/actions/product.actions";
-import type { Product, ProductBatch } from "@/types";
+import type { Product } from "@/types";
 import { GrnProductSearch } from "./GrnProductSearch";
 import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClientPage";
 import type { Supplier } from "@prisma/client";
@@ -142,12 +142,17 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
 
   const handleProductSelect = (product: Product) => {
+    // The `units` from Prisma is a JSON string. We must parse it into an object.
+    const unitsObject = typeof product.units === 'string' 
+      ? JSON.parse(product.units) 
+      : product.units;
+
     append({
         productId: product.id,
         name: product.name,
         category: product.category,
         brand: product.brand,
-        units: product.units,
+        units: unitsObject, // Use the parsed object here
         sellingPrice: 0, // Default selling price for new batch
         batchNumber: `B-${Date.now()}`,
         quantity: 1,
