@@ -34,18 +34,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       const isWalkIn = customerDetails.name === 'Walk-in Customer' && !phoneToUse;
 
       if (isWalkIn) {
-        // Try to find an existing Walk-in customer with no phone number
         customer = await tx.customer.findFirst({
           where: { name: 'Walk-in Customer', phone: null }
         });
-        // If not found, create one.
         if (!customer) {
           customer = await tx.customer.create({
             data: { name: 'Walk-in Customer', phone: null, address: null }
           });
         }
       } else {
-         // Find or create the customer based on phone number if provided
         customer = await tx.customer.upsert({
           where: { phone: phoneToUse || `__no-phone-${transactionHeader.transactionId}` },
           update: { name: customerDetails.name, address: customerDetails.address },
@@ -57,8 +54,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
         });
       }
 
+      // Determine initial payment status
+      let initialPaymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
+      if (paymentDetails.paidAmount >= transactionHeader.finalTotal) {
+          initialPaymentStatus = 'paid';
+      } else if (paymentDetails.paidAmount > 0) {
+          initialPaymentStatus = 'partial';
+      }
 
-      // Step 2: Create the main transaction record
+      // Create the main transaction record
       const createdTransaction = await tx.transaction.create({
         data: {
           id: transactionHeader.transactionId,
@@ -71,7 +75,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           status: transactionHeader.status,
           campaignId: transactionHeader.campaignId,
           isGiftReceipt: transactionHeader.isGiftReceipt,
-          // Correct way to link a refund to its original transaction
+          paymentStatus: initialPaymentStatus, // Set initial status
           ...(transactionHeader.originalTransactionId && {
             originalTransactionId: transactionHeader.originalTransactionId
           }),
@@ -86,7 +90,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           },
           lines: {
             create: transactionLines.map(line => ({
-              productId: line.batchId, // FIX: Use the unique product ID (batchId) for the relation
+              productId: line.batchId,
               productName: line.productName,
               batchId: line.batchId,
               batchNumber: line.batchNumber,
@@ -116,14 +120,30 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
         },
       });
 
-      // *** STOCK MANAGEMENT LOGIC ***
+      // Record initial payment in the new SalePayment table if it's a credit sale
+      if (initialPaymentStatus === 'partial' || initialPaymentStatus === 'pending') {
+          if (paymentDetails.paidAmount > 0) {
+              await tx.salePayment.create({
+                  data: {
+                      transactionId: createdTransaction.id,
+                      amount: paymentDetails.paidAmount,
+                      paymentDate: new Date(),
+                      paymentMethod: paymentDetails.paymentMethod,
+                      notes: 'Initial payment with transaction.',
+                  }
+              });
+          }
+      }
+
+
+      // STOCK MANAGEMENT LOGIC
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
             await tx.product.update({
-                where: { id: line.batchId }, // line.batchId is the unique Product ID
+                where: { id: line.batchId }, 
                 data: {
                     quantity: {
-                        decrement: line.quantity // Decrement by the base unit quantity
+                        decrement: line.quantity
                     },
                     stock: {
                        decrement: line.quantity
@@ -132,7 +152,6 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             });
         }
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
-         // For refunds, we need to add the quantity of the RETURNED items back to stock.
          const originalTx = await tx.transaction.findUnique({
              where: { id: transactionHeader.originalTransactionId },
              include: { lines: true }
@@ -171,6 +190,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
     console.log(`[DB] Transaction ${newTransaction.id} saved successfully to database.`);
     revalidatePath('/history');
     revalidatePath('/dashboard/products');
+    revalidatePath('/dashboard/debtors');
     return { success: true, data: newTransaction };
 
   } catch (error) {
@@ -199,10 +219,10 @@ export async function getTransactionsFromDb() {
         payment: true,
         lines: true,
         appliedDiscounts: true,
-        originalTransaction: { // To see if it IS a refund
+        originalTransaction: { 
             select: { id: true }
         },
-        refundTransactions: { // To see if it HAS a refund
+        refundTransactions: { 
             select: { id: true }
         }
       },
@@ -211,7 +231,6 @@ export async function getTransactionsFromDb() {
       },
     });
 
-    // We need to shape this data into the `DatabaseReadyTransaction` format that the client expects.
     const formattedTransactions = transactions.map(tx => {
       const dbReadyTx: DatabaseReadyTransaction = {
         transactionHeader: {
@@ -249,10 +268,8 @@ export async function getTransactionsFromDb() {
           outstandingAmount: tx.payment!.outstandingAmount,
           isInstallment: tx.payment!.isInstallment,
         },
-        // These are placeholders as they are not stored in the DB
         companyDetails: { companyId: 'comp-001', companyName: 'My Company' },
         userDetails: { userId: 'user-001', userName: 'Default User' },
-        // Add refund status based on included relations
         isRefunded: !!tx.refundTransactions.length,
       };
       return dbReadyTx;

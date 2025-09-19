@@ -32,7 +32,9 @@
         "purchases.update",
         "purchases.delete",
         "credit.view",
-        "credit.manage"
+        "credit.manage",
+        "debtors.view",
+        "debtors.manage"
       ]
     },
     "cashier": {
