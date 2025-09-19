@@ -7,13 +7,12 @@ import { Prisma }from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
 /**
- * Server action to add a new product to the database.
+ * Server action to add a new product batch to the database.
  * @param data - The product data from the form.
  * @returns An object with success status and either the new product or an error message.
  */
 export async function addProductAction(data: ProductFormValues) {
   console.log('[addProductAction] Called with data:', data);
-  // 1. Validate the data on the server
   const validationResult = productSchema.safeParse(data);
   if (!validationResult.success) {
     console.error('[addProductAction] Validation failed:', validationResult.error.flatten());
@@ -25,24 +24,22 @@ export async function addProductAction(data: ProductFormValues) {
   
   const { id, ...validatedData } = validationResult.data;
 
-  // Check for duplicate productId and batchNumber combination
-    const existingProductBatch = await prisma.product.findFirst({
-        where: {
-            productId: validatedData.productId,
-            batchNumber: validatedData.batchNumber,
-        },
-    });
+  // Enforce composite unique constraint at the application level
+  const existingProductBatch = await prisma.product.findFirst({
+      where: {
+          productId: validatedData.productId,
+          batchNumber: validatedData.batchNumber,
+      },
+  });
 
-    if (existingProductBatch) {
-        return {
-            success: false,
-            error: `A product with the same ID ('${validatedData.productId}') and Batch Number ('${validatedData.batchNumber}') already exists.`,
-        };
-    }
-
+  if (existingProductBatch) {
+      return {
+          success: false,
+          error: `A product with the same Product ID ('${validatedData.productId}') and Batch Number ('${validatedData.batchNumber}') already exists.`,
+      };
+  }
 
   try {
-    // 2. Use Prisma to create the product
     const newProduct = await prisma.product.create({
       data: {
         ...validatedData,
@@ -68,7 +65,7 @@ export async function addProductAction(data: ProductFormValues) {
   } catch (error) {
     console.error("[addProductAction] Error creating product:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === 'P2002') {
+      if (error.code === 'P2002') { // Unique constraint failed
         const target = (error.meta?.target as string[])?.join(', ');
         return { success: false, error: `A product with this ${target} already exists. Please choose a different value.` };
       }
@@ -160,8 +157,8 @@ export async function getProductByIdAction(id: string) {
 }
 
 /**
- * Server action to update an existing product.
- * @param id - The ID of the product to update.
+ * Server action to update an existing product batch.
+ * @param id - The unique ID of the product batch to update.
  * @param data - The new data for the product.
  * @returns The updated product or an error message.
  */
@@ -183,6 +180,8 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
             where: { id },
             data: {
               ...validatedData,
+              // productId cannot be changed during an update to maintain integrity
+              productId: undefined, 
               sellingPrice: Number(validatedData.sellingPrice),
               costPrice: validatedData.costPrice ? Number(validatedData.costPrice) : null,
               quantity: Number(validatedData.quantity),

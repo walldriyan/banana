@@ -98,7 +98,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   }, [fetchProductsAndSuppliers]);
 
 
-  // If in edit mode, reset the form once products and suppliers have loaded
   useEffect(() => {
       if (isEditMode && grn && products.length > 0 && suppliers.length > 0) {
           const loadedItems = grn.items.map(item => {
@@ -114,7 +113,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
               grnDate: new Date(grn.grnDate),
               items: loadedItems,
           });
-          // Also initialize the total amount state
           setTotalAmount(grn.totalAmount);
       }
   }, [isEditMode, grn, products, suppliers, form]);
@@ -135,12 +133,11 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     if(existingItemIndex !== -1) {
         const existingItem = fields[existingItemIndex];
         const newQty = existingItem.quantity + 1;
-        const newTotal = (newQty * existingItem.costPrice) - existingItem.discount;
-        update(existingItemIndex, { ...existingItem, quantity: newQty, total: newTotal });
+        update(existingItemIndex, { ...existingItem, quantity: newQty });
         toast({ title: "Quantity Updated", description: `${product.name} quantity increased to ${newQty}.`});
     } else {
         append({
-            productId: product.id,
+            productId: product.id, // This is the unique batch ID
             productName: product.name,
             batchNumber: product.batchNumber, // Pre-fill with existing batch number
             quantity: 1,
@@ -150,12 +147,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             total: product.costPrice ?? 0
         });
     }
-    calculateTotal();
+    // Defer total calculation to avoid re-rendering during state update
+    setTimeout(calculateTotal, 0);
   };
   
   const handleRemoveItem = (index: number) => {
       remove(index);
-      calculateTotal();
+      setTimeout(calculateTotal, 0);
   }
 
   const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax' | 'batchNumber', value: number | string) => {
@@ -163,20 +161,19 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       if(!item) return;
 
       const numericValue = typeof value === 'string' && field !== 'batchNumber' ? parseFloat(value) : value;
-      const updatedItem = { ...item, [field]: numericValue };
+      
+      const currentValues = form.getValues();
+      const updatedItem = { ...currentValues.items[index], [field]: numericValue };
+      
+      const { quantity, costPrice, discount, tax } = updatedItem;
+      const subTotal = (quantity || 0) * (costPrice || 0);
+      const totalDiscount = (discount || 0);
+      const totalTax = (subTotal - totalDiscount) * ((tax || 0) / 100);
+      const newTotal = subTotal - totalDiscount + totalTax;
 
-      if(field !== 'batchNumber') {
-          const { quantity, costPrice, discount, tax } = updatedItem;
-          const subTotal = (quantity || 0) * (costPrice || 0);
-          const totalDiscount = (discount || 0);
-          const totalTax = (subTotal - totalDiscount) * ((tax || 0) / 100);
-          const newTotal = subTotal - totalDiscount + totalTax;
-
-          update(index, { ...updatedItem, total: newTotal });
-          calculateTotal();
-      } else {
-          update(index, updatedItem);
-      }
+      update(index, { ...updatedItem, total: newTotal });
+      
+      setTimeout(calculateTotal, 0);
   }
 
   const openAddProductDrawer = () => {

@@ -46,31 +46,32 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
             const paidAmount = headerData.paidAmount ?? 0;
             
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-            if (paidAmount >= totalAmount) {
+            if (totalAmount > 0 && paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
             } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
             }
             
-            // Create GRN Header first without items
             const newGrn = await tx.goodsReceivedNote.create({
                  data: {
                     ...headerData,
-                    paidAmount: paidAmount,
                     totalAmount: totalAmount,
+                    paidAmount: paidAmount, // paidAmount is now directly on the GRN
                     paymentStatus: paymentStatus,
                 }
             });
 
-            // Process each item to update stock and create GRN line items
             for (const item of items) {
-                const existingBatch = await tx.product.findUnique({
-                    where: { id: item.productId }
+                // Find an existing batch with the same productId and batchNumber
+                const existingBatch = await tx.product.findFirst({
+                    where: { 
+                        productId: item.productId,
+                        batchNumber: item.batchNumber
+                    }
                 });
 
                 let productBatchRecord;
                 if (existingBatch) {
-                    // Batch exists, update it
                     productBatchRecord = await tx.product.update({
                         where: { id: existingBatch.id },
                         data: {
@@ -80,20 +81,20 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
                         }
                     });
                 } else {
-                    // This case is now for genuinely new products added via GRN, though the UI flow is to add product first.
-                    // This logic remains as a fallback.
-                     const productMaster = await tx.product.findFirst({ where: { productId: item.productId } });
-                     if (!productMaster) {
-                         throw new Error(`Cannot create new batch. No master product found for general productId: ${item.productId}. Add the product manually first.`);
-                     }
+                    // Batch doesn't exist, so create it.
+                    // First, find a "master" product to clone base data from.
+                    const productMaster = await tx.product.findFirst({ where: { productId: item.productId } });
+                    if (!productMaster) {
+                        throw new Error(`Cannot create new batch. No existing product found for Product ID: ${item.productId}. Add the product manually first.`);
+                    }
                     const { id, quantity, stock, batchNumber, barcode, ...masterDataToClone } = productMaster;
 
                     productBatchRecord = await tx.product.create({
                         data: {
                             ...masterDataToClone,
-                            productId: item.productId,
-                            batchNumber: item.batchNumber || `B-${Date.now()}`,
-                            barcode: `${item.productId}-${item.batchNumber || Date.now()}`,
+                            productId: item.productId, // Use the general product ID from the master
+                            batchNumber: item.batchNumber, // Use the new batch number from the form
+                            barcode: `${item.productId}-${item.batchNumber}`, // Create a new unique barcode
                             quantity: item.quantity,
                             stock: item.quantity,
                             costPrice: item.costPrice,
@@ -103,7 +104,6 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
                     });
                 }
                 
-                // Create the GRN line item linked to the correct product batch record
                 await tx.goodsReceivedNoteItem.create({
                     data: {
                         goodsReceivedNoteId: newGrn.id,
@@ -132,8 +132,8 @@ export async function addGrnAction(data: GrnFormValues & { totalAmount: number }
 
             return newGrn;
         }, {
-          maxWait: 10000, // 10 seconds
-          timeout: 20000, // 20 seconds
+          maxWait: 10000,
+          timeout: 20000,
         });
 
         revalidatePath('/dashboard/purchases');
@@ -203,7 +203,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues & { tot
             
             const paidAmount = headerData.paidAmount ?? 0;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-             if (paidAmount >= totalAmount) {
+             if (totalAmount > 0 && paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
             } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
@@ -213,8 +213,8 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues & { tot
                 where: { id: grnId },
                 data: {
                     ...headerData,
-                    paidAmount: paidAmount,
                     totalAmount: totalAmount,
+                    paidAmount: paidAmount,
                     paymentStatus: paymentStatus,
                     items: {
                         deleteMany: {},

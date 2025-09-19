@@ -15,6 +15,7 @@ export const productSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, "Product name must be at least 2 characters."),
   // productId is the general identifier for a product line (e.g., 'dell-inspiron-15')
+  // This is no longer unique on its own. The combination of productId and batchNumber will be unique.
   productId: z.string().min(1, "Product ID is required."),
   // batchNumber is the specific identifier for this batch (e.g., 'B-1726')
   batchNumber: z.string().min(1, "Batch number is required."),

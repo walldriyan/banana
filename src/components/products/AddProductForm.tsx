@@ -233,7 +233,9 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
   const productName = form.watch('name');
   useEffect(() => {
-    if (!isEditMode) { // Only auto-generate for new products
+    // Only auto-generate the general productId for new products
+    // And only if the 'addAsNewBatch' flag is not set (which means it's a truly new product line)
+    if (!isEditMode && !form.getValues('addAsNewBatch')) {
         form.setValue('productId', generateProductIdFromName(productName));
     }
   }, [productName, form, isEditMode]);
@@ -291,11 +293,13 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                                     onCheckedChange={(checked) => {
                                         field.onChange(checked)
                                         if(checked && product) {
-                                            // When checked, suggest a new batch number but allow user to change it
+                                            form.setValue('name', product.name);
+                                            form.setValue('productId', product.productId);
                                             form.setValue('batchNumber', `B-${Date.now()}`);
-                                            form.setValue('quantity', 0); // Reset quantity for new batch
+                                            form.setValue('quantity', 0);
                                         } else if (product) {
-                                            // When unchecked, revert to original batch number
+                                            form.setValue('name', product.name);
+                                            form.setValue('productId', product.productId);
                                             form.setValue('batchNumber', product.batchNumber ?? '');
                                             form.setValue('quantity', product.quantity);
                                         }
@@ -430,10 +434,10 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                         {isEditMode && !form.getValues('addAsNewBatch') && (
                             <Alert variant="destructive">
                                 <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>තොග යාවත්කාලීන කිරීම පිළිබඳ දැනුම්දීම</AlertTitle>
+                                <AlertTitle>Stock Update Notice</AlertTitle>
                                 <AlertDescription>
-                                    මෙහි තොග ප්‍රමාණය ඇතුළත් කළ හැක්කේ නිෂ්පාදනයක් පළමු වරට පද්ධතියට ඇතුළත් කිරීමේදී පමණි. 
-                                    පවතින නිෂ්පාදනයක තොගය වෙනස් කිරීම හෝ නව තොග ලබා ගැනීම සඳහා කරුණාකර, <strong>'Purchases (GRN)'</strong> කොටස භාවිතා කරන්න.
+                                    Initial stock can only be set when first adding a product batch. 
+                                    To adjust stock for an existing batch (add new stock, correct counts), please use the <strong>'Purchases (GRN)'</strong> section.
                                 </AlertDescription>
                             </Alert>
                         )}
