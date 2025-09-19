@@ -21,7 +21,7 @@ import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../ui/card";
-import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote, ArrowLeft, ArrowRight, Package, Archive, Tag, Coins } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus, Landmark, Wallet, Banknote, ArrowLeft, ArrowRight, Package, Archive, Tag, Coins, Boxes } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -482,51 +482,60 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             </div>
                             
                             <div className="md:col-span-2 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormItem>
-                                        <FormLabel>Batch No.</FormLabel>
-                                        <div className="flex items-center gap-1">
+                                <Card>
+                                    <CardHeader><CardTitle className='text-base'>Batch &amp; Quantity</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4">
+                                        <FormItem>
+                                            <FormLabel>Batch No.</FormLabel>
+                                            <div className="flex items-center gap-1">
+                                                <FormControl>
+                                                <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                                </FormControl>
+                                                <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                                            </div>
+                                        </FormItem>
+                                        <FormItem>
+                                            <FormLabel>Quantity</FormLabel>
                                             <FormControl>
-                                            <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                            <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
                                             </FormControl>
-                                            <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
-                                        </div>
-                                    </FormItem>
-                                    <FormItem>
-                                        <FormLabel>Quantity</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
-                                        </FormControl>
-                                    </FormItem>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormItem>
-                                        <FormLabel>Cost Price (per unit)</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
-                                        </FormControl>
-                                    </FormItem>
-                                    <FormItem>
-                                        <FormLabel>Selling Price (per unit)</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
-                                        </FormControl>
-                                    </FormItem>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormItem>
-                                        <FormLabel>Discount (Fixed Total)</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
-                                        </FormControl>
-                                    </FormItem>
-                                    <FormItem>
-                                        <FormLabel>Tax (%)</FormLabel>
-                                        <FormControl>
-                                        <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
-                                        </FormControl>
-                                    </FormItem>
-                                </div>
+                                        </FormItem>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader><CardTitle className='text-base'>Pricing</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4">
+                                         <FormItem>
+                                            <FormLabel>Cost Price (per unit)</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
+                                            </FormControl>
+                                        </FormItem>
+                                        <FormItem>
+                                            <FormLabel>Selling Price (per unit)</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
+                                            </FormControl>
+                                        </FormItem>
+                                    </CardContent>
+                                </Card>
+                               <Card>
+                                    <CardHeader><CardTitle className='text-base'>Adjustments</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4">
+                                        <FormItem>
+                                            <FormLabel>Discount (Fixed Total)</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                            </FormControl>
+                                        </FormItem>
+                                        <FormItem>
+                                            <FormLabel>Tax (%)</FormLabel>
+                                            <FormControl>
+                                            <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                            </FormControl>
+                                        </FormItem>
+                                    </CardContent>
+                                </Card>
 
                                 {itemError && (
                                     <Alert variant="destructive">
