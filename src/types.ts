@@ -193,3 +193,11 @@ export interface DatabaseReadyTransaction {
   };
   isRefunded?: boolean;
 }
+
+// DEPRECATED - Use ProductBatch instead
+export type LegacyProduct = Prisma.ProductGetPayload<{
+  include: {
+    // This is now an invalid structure
+    // batches: true 
+  }
+}>;
