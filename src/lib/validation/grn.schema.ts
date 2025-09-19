@@ -19,7 +19,7 @@ export const grnSchema = z.object({
   invoiceNumber: z.string().optional(),
   items: z.array(grnItemSchema).min(1, "At least one item must be added to the GRN."),
   notes: z.string().optional(),
-  paidAmount: z.coerce.number().min(0).nullable(),
+  paidAmount: z.coerce.number().min(0).nullable().default(0),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
 });
 
