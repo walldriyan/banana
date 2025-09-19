@@ -32,7 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addProductAction, updateProductAction } from "@/lib/actions/product.actions";
 import { useState, useEffect } from "react";
 import type { Product } from "@/types";
-import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
+import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, DollarSign, Tag, Boxes, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,8 @@ import type { Supplier } from '@prisma/client';
 import categoriesData from '@/lib/data/categories.json';
 import brandsData from '@/lib/data/brands.json';
 import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+
 
 interface AddProductFormProps {
   product?: Product;
@@ -350,11 +352,44 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
           {currentStep === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 <div className="space-y-6">
-                     <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Cost Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                     <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Selling Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                     <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Stock Quantity</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                 </div>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Pricing &amp; Initial Stock</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem>
+                            <FormLabel>Cost Price</FormLabel>
+                            <div className="relative">
+                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <FormControl><Input type="number" {...field} className="pl-10" /></FormControl>
+                            </div>
+                            <FormMessage /></FormItem> )} />
+                        <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem>
+                            <FormLabel>Selling Price</FormLabel>
+                             <div className="relative">
+                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <FormControl><Input type="number" {...field} className="pl-10 text-lg h-12" /></FormControl>
+                            </div>
+                            <FormMessage /></FormItem> )} />
+                        <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem>
+                            <FormLabel>Initial Stock Quantity</FormLabel>
+                            <div className="relative">
+                                <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <FormControl><Input type="number" {...field} disabled={isEditMode} className="pl-10 text-lg h-12 font-bold" /></FormControl>
+                            </div>
+                            <FormMessage /></FormItem> )} />
+                        {isEditMode && (
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>තොග යාවත්කාලීන කිරීම පිළිබඳ දැනුම්දීම</AlertTitle>
+                                <AlertDescription>
+                                    මෙහි තොග ප්‍රමාණය ඇතුළත් කළ හැක්කේ නිෂ්පාදනයක් පළමු වරට පද්ධතියට ඇතුළත් කිරීමේදී පමණි. 
+                                    පවතින නිෂ්පාදනයක තොගය වෙනස් කිරීම හෝ නව තොග ලබා ගැනීම සඳහා කරුණාකර, <strong>'Purchases (GRN)'</strong> කොටස භාවිතා කරන්න.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                    </CardContent>
+                </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle>Units of Measurement</CardTitle>
