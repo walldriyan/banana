@@ -65,7 +65,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       notes: '',
       paidAmount: 0,
       paymentMethod: 'credit',
+      totalAmount: 0,
     },
+    mode: 'onBlur',
   });
 
   const { fields, append, remove, update } = useFieldArray({
@@ -97,6 +99,18 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   }, [fetchProductsAndSuppliers]);
 
 
+  const calculateTotal = useCallback(() => {
+    const items = form.getValues('items');
+    const currentTotal = items.reduce((sum, item) => {
+        const itemTotal = (item.quantity * item.costPrice) - item.discount + ( ( (item.quantity * item.costPrice) - item.discount ) * (item.tax / 100) );
+        return sum + itemTotal;
+    }, 0);
+    setTotalAmount(currentTotal);
+    // THE FIX: Register the calculated totalAmount with react-hook-form's state
+    form.setValue('totalAmount', currentTotal, { shouldValidate: true });
+  }, [form]);
+
+
   useEffect(() => {
       if (isEditMode && grn && products.length > 0 && suppliers.length > 0) {
           const loadedItems = grn.items.map(item => {
@@ -114,18 +128,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
               items: loadedItems,
           });
           setTotalAmount(grn.totalAmount);
+          form.setValue('totalAmount', grn.totalAmount);
       }
   }, [isEditMode, grn, products, suppliers, form]);
 
-  
-  const calculateTotal = useCallback(() => {
-    const items = form.getValues('items');
-    const currentTotal = items.reduce((sum, item) => {
-        const itemTotal = (item.quantity * item.costPrice) - item.discount + ( ( (item.quantity * item.costPrice) - item.discount ) * (item.tax / 100) );
-        return sum + itemTotal;
-    }, 0);
-    setTotalAmount(currentTotal);
-  }, [form]);
+  useEffect(() => {
+      calculateTotal();
+  }, [fields, calculateTotal]);
 
 
   const handleProductSelect = (product: Product) => {
@@ -147,19 +156,17 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             total: product.costPrice ?? 0
         });
     }
-    setTimeout(calculateTotal, 0);
   };
   
   const handleRemoveItem = (index: number) => {
       remove(index);
-      setTimeout(calculateTotal, 0);
   }
 
   const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax' | 'batchNumber', value: number | string) => {
       const item = form.getValues(`items.${index}`);
       if(!item) return;
 
-      const numericValue = typeof value === 'string' && field !== 'batchNumber' ? parseFloat(value) : value;
+      const numericValue = typeof value === 'string' && field !== 'batchNumber' ? parseFloat(value) || 0 : value;
       
       const currentValues = form.getValues();
       const updatedItem = { ...currentValues.items[index], [field]: numericValue };
@@ -171,8 +178,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       const newTotal = subTotal - totalDiscount + totalTax;
 
       update(index, { ...updatedItem, total: newTotal });
-      
-      setTimeout(calculateTotal, 0);
   }
 
   const openAddProductDrawer = () => {
@@ -192,11 +197,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     setSubmissionError(null);
     setIsSubmitting(true);
     
-    const finalData = { ...data, totalAmount };
-    
+    // Data now correctly contains totalAmount from the form state via setValue
     const action = isEditMode && grn
-      ? updateGrnAction(grn.id, finalData)
-      : addGrnAction(finalData);
+      ? updateGrnAction(grn.id, data)
+      : addGrnAction(data);
     
     const result = await action;
     
@@ -210,11 +214,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       onSuccess();
     } else {
       setSubmissionError(result.error);
-      toast({
-        variant: "destructive",
-        title: `Error ${isEditMode ? 'updating' : 'adding'} GRN`,
-        description: "Submission failed. Please see the error message on the form for details."
-      });
     }
   }
   
@@ -222,11 +221,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     console.error("Form validation failed:", errors);
     const errorString = JSON.stringify(errors, null, 2);
     setSubmissionError(`Client-side validation failed. Please check the form for errors. Details: ${errorString}`);
-    toast({
-        variant: "destructive",
-        title: "Validation Error",
-        description: "Please check all required fields are filled correctly."
-    });
   };
 
   const paidAmount = form.watch('paidAmount') || 0;
