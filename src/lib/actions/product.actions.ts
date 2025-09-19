@@ -25,21 +25,6 @@ export async function addProductAction(data: ProductFormValues) {
   // Destructure the temporary/UI-only fields so they aren't passed to Prisma
   const { id, supplierId, addAsNewBatch, ...validatedData } = validationResult.data;
 
-  // Enforce composite unique constraint at the application level
-  const existingProductBatch = await prisma.product.findFirst({
-      where: {
-          productId: validatedData.productId,
-          batchNumber: validatedData.batchNumber,
-      },
-  });
-
-  if (existingProductBatch) {
-      return {
-          success: false,
-          error: `A product with the same Product ID ('${validatedData.productId}') and Batch Number ('${validatedData.batchNumber}') already exists.`,
-      };
-  }
-
   try {
     const newProduct = await prisma.product.create({
       data: {
@@ -73,7 +58,11 @@ export async function addProductAction(data: ProductFormValues) {
     console.error("[addProductAction] Error creating product:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') { // Unique constraint failed
-        const target = (error.meta?.target as string[])?.join(', ');
+         const target = (error.meta?.target as string[])?.join(', ');
+         // Check if it's our composite key
+         if (target === 'productId_batchNumber') {
+             return { success: false, error: `A product with the same Product ID ('${validatedData.productId}') and Batch Number ('${validatedData.batchNumber}') already exists.` };
+         }
         return { success: false, error: `A product with this ${target} already exists. Please choose a different value.` };
       }
     }
@@ -215,7 +204,11 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
     } catch (error) {
         console.error(`[updateProductAction] Error updating product ${id} in DB:`, error);
          if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-            const target = (error.meta?.target as string[])?.join(', ');
+             const target = (error.meta?.target as string[])?.join(', ');
+             // Check if it's our composite key
+             if (target === 'productId_batchNumber') {
+                 return { success: false, error: `A product with the same Product ID ('${validatedData.productId}') and Batch Number ('${validatedData.batchNumber}') already exists.` };
+             }
             return { success: false, error: `A product with this ${target} already exists.` };
         }
         return { success: false, error: error instanceof Error ? error.message : "Failed to update product." };
