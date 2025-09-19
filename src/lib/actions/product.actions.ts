@@ -16,50 +16,94 @@ export async function addProductAction(data: ProductFormValues) {
       error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
     };
   }
-  const { units, ...validatedData } = validationResult.data;
+  const { units, quantity, batchNumber, sellingPrice, costPrice, ...validatedProductData } = validationResult.data;
 
   try {
-    const newProduct = await prisma.product.create({
-      data: {
-        ...validatedData,
-        units: units as any, // Prisma expects JSON
-      },
+    const result = await prisma.$transaction(async (tx) => {
+        // 1. Create the master product
+        const newProduct = await tx.product.create({
+            data: {
+                ...validatedProductData,
+                units: units as any, // Prisma expects JSON
+            },
+        });
+
+        // 2. Create the initial batch for this product
+        await tx.productBatch.create({
+            data: {
+                product: { connect: { id: newProduct.id } },
+                batchNumber: batchNumber || `B-${Date.now()}`,
+                sellingPrice: sellingPrice || 0,
+                costPrice: costPrice || 0,
+                stock: quantity || 0,
+                addedDate: new Date(),
+            }
+        });
+
+        return newProduct;
     });
+    
     revalidatePath('/dashboard/products');
-    return { success: true, data: newProduct };
+    return { success: true, data: result };
+
   } catch (error) {
+    console.error('[addProductAction Error]', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return { success: false, error: `A product with this name already exists.` };
+      const target = (error.meta?.target as string[])?.join(', ') || 'fields';
+      return { success: false, error: `A product with the same ${target} already exists.` };
     }
-    return { success: false, error: "Failed to create product." };
+    return { success: false, error: "Failed to create product and initial batch." };
   }
 }
 
-export async function updateProductAction(id: string, data: ProductFormValues) {
+export async function updateProductBatchAction(id: string, data: ProductFormValues) {
+    // This action now specifically updates a BATCH, not a master product.
     const validationResult = productSchema.safeParse(data);
     if (!validationResult.success) {
         return {
             success: false,
-            error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
+            error: "Invalid data for batch update: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
         };
     }
-    const { units, ...validatedData } = validationResult.data;
+    const { units, quantity, batchNumber, sellingPrice, costPrice, name, description, category, brand, isService, isActive } = validationResult.data;
 
     try {
-        const updatedProduct = await prisma.product.update({
+        const oldBatch = await prisma.productBatch.findUnique({ where: { id }});
+        if (!oldBatch) {
+            return { success: false, error: "Batch not found."};
+        }
+
+        // Only update the batch-specific fields
+        const updatedBatch = await prisma.productBatch.update({
             where: { id },
             data: {
-                ...validatedData,
-                units: units as any, // Prisma expects JSON
+                batchNumber,
+                sellingPrice,
+                costPrice,
             },
         });
+
+        // Update the master product fields separately
+        await prisma.product.update({
+            where: { id: oldBatch.productId },
+            data: {
+                name,
+                description,
+                category,
+                brand,
+                units: units as any,
+                isService,
+                isActive,
+            }
+        });
+
         revalidatePath('/dashboard/products');
-        return { success: true, data: updatedProduct };
+        return { success: true, data: updatedBatch };
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-            return { success: false, error: `A product with this name already exists.` };
+            return { success: false, error: `A batch with this Product ID and Batch Number already exists.` };
         }
-        return { success: false, error: "Failed to update product." };
+        return { success: false, error: "Failed to update product batch." };
     }
 }
 
@@ -137,53 +181,32 @@ export async function addProductBatchAction(data: ProductBatchFormValues) {
     }
 }
 
-export async function updateProductBatchAction(id: string, data: ProductBatchFormValues) {
-    const validationResult = productBatchSchema.safeParse(data);
-    if (!validationResult.success) {
-        return { success: false, error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors) };
-    }
-    const validatedData = validationResult.data;
-
-    try {
-        const oldBatch = await prisma.productBatch.findUnique({ where: { id }});
-        if (!oldBatch) {
-            return { success: false, error: "Batch not found."};
-        }
-
-        const quantityChange = validatedData.quantity - oldBatch.quantity;
-
-        const updatedBatch = await prisma.productBatch.update({
-            where: { id },
-            data: {
-                ...validatedData,
-                // Stock should be updated based on the change in quantity
-                stock: {
-                    increment: quantityChange
-                },
-                manufactureDate: validatedData.manufactureDate ? new Date(validatedData.manufactureDate) : null,
-                expiryDate: validatedData.expiryDate ? new Date(validatedData.expiryDate) : null,
-            },
-        });
-        revalidatePath('/dashboard/products');
-        return { success: true, data: updatedBatch };
-    } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-            return { success: false, error: `A batch with this Product ID and Batch Number already exists.` };
-        }
-        return { success: false, error: "Failed to update product batch." };
-    }
-}
-
 
 export async function deleteProductBatchAction(id: string) {
     try {
+        // First check if the batch is part of any transaction lines
+        const transactionLineCount = await prisma.transactionLine.count({
+            where: { productBatchId: id }
+        });
+
+        if (transactionLineCount > 0) {
+            return {
+                success: false,
+                error: `Cannot delete batch. It is part of ${transactionLineCount} existing transaction(s).`
+            };
+        }
+
         await prisma.productBatch.delete({
             where: { id },
         });
+        
         revalidatePath('/dashboard/products');
         return { success: true };
     } catch (error) {
         console.error(`Error deleting batch ${id}:`, error);
-        return { success: false, error: "Failed to delete product batch. It might be in use in transactions." };
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+            return { success: false, error: "Batch not found for deletion." };
+        }
+        return { success: false, error: "Failed to delete product batch." };
     }
 }
