@@ -1,7 +1,7 @@
 // src/components/products/AddProductForm.tsx
 "use client";
 
-import React from 'react'; // <--- FIX: Import React
+import React from 'react';
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -32,10 +32,15 @@ import { useToast } from "@/hooks/use-toast";
 import { addProductAction, updateProductAction } from "@/lib/actions/product.actions";
 import { useState, useEffect } from "react";
 import type { Product } from "@/types";
-import { PlusCircle, Trash2, ArrowLeft, ArrowRight } from "lucide-react";
+import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
+import { getSuppliersAction } from '@/lib/actions/supplier.actions';
+import type { Supplier } from '@prisma/client';
+import categoriesData from '@/lib/data/categories.json';
+import brandsData from '@/lib/data/brands.json';
+import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
 
 interface AddProductFormProps {
   product?: Product;
@@ -67,12 +72,33 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
     }
 ];
 
+
 export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [suppliers, setSuppliers] = useState<ComboboxOption[]>([]);
+  const [categories, setCategories] = useState<ComboboxOption[]>(
+    categoriesData.map(c => ({ value: c.toLowerCase(), label: c }))
+  );
+  const [brands, setBrands] = useState<ComboboxOption[]>(
+     brandsData.map(b => ({ value: b.toLowerCase(), label: b }))
+  );
+
   const isEditMode = !!product;
+
+  useEffect(() => {
+    async function fetchSuppliers() {
+        const result = await getSuppliersAction();
+        if(result.success && result.data) {
+            setSuppliers(result.data.map(s => ({ value: s.id, label: s.name })));
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load suppliers.' });
+        }
+    }
+    fetchSuppliers();
+  }, [toast]);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -114,7 +140,6 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   useEffect(() => {
     if (isEditMode && product) {
       console.log('[AddProductForm.tsx] useEffect triggered in Edit Mode. Product prop received:', product);
-       // Prepare data for reset, ensuring nulls become undefined
       const formData = {
         ...product,
         costPrice: product.costPrice ?? undefined,
@@ -130,7 +155,6 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
         defaultDiscount: product.defaultDiscount ?? undefined,
         defaultDiscountType: product.defaultDiscountType ?? 'PERCENTAGE',
         notes: product.notes ?? undefined,
-        // Ensure dates are in 'YYYY-MM-DD' format for the input[type=date]
         manufactureDate: product.manufactureDate ? new Date(product.manufactureDate).toISOString().split('T')[0] : undefined,
         expiryDate: product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : undefined,
       };
@@ -144,7 +168,6 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
     console.log("[AddProductForm.tsx] onSubmit called. isEditMode:", isEditMode, "Data:", data);
     setIsSubmitting(true);
     
-    // Use the product prop directly for the ID to ensure it's correct
     const action = isEditMode && product
       ? updateProductAction(product.id, data)
       : addProductAction(data);
@@ -157,7 +180,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
         title: `Product ${isEditMode ? 'Updated' : 'Added'}!`,
         description: `Product "${data.name}" has been successfully ${isEditMode ? 'updated' : 'added'}.`,
       });
-      onSuccess(); // Close drawer and refresh
+      onSuccess(); 
     } else {
       toast({
         variant: "destructive",
@@ -194,13 +217,14 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   const handlePreviousStep = () => {
     setCurrentStep(prev => prev - 1);
   };
+  
+  const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
 
-        {/* Stepper Indicator */}
         <div className="flex justify-between items-center mb-8">
             {steps.map((step, index) => (
                 <React.Fragment key={index}>
@@ -223,9 +247,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
             ))}
         </div>
         
-        {/* Step Content */}
         <div className="min-h-[400px]">
-          {/* Step 1: Basic Information */}
           {currentStep === 0 && (
              <Card>
                 <CardHeader>
@@ -234,21 +256,98 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    
                     <div className="grid grid-cols-2 gap-4">
-                        <FormField name="productId" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Product ID</FormLabel><FormControl><Input placeholder="e.g., P001" {...field} /></FormControl><FormDescription>General ID for the product type.</FormDescription><FormMessage /></FormItem> )} />
-                        <FormField name="batchNumber" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Batch Number</FormLabel><FormControl><Input placeholder="e.g., CRACKER-0925-A" {...field} /></FormControl><FormDescription>Leave blank if not applicable.</FormDescription><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="productId" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Product ID</FormLabel>
+                                <div className="flex gap-2">
+                                    <FormControl><Input placeholder="e.g., PROD-1726..." {...field} /></FormControl>
+                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(generateId('PROD'))}><Sparkles className="h-4 w-4" /></Button>
+                                </div>
+                                <FormDescription>General ID for the product type.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                         <FormField control={form.control} name="batchNumber" render={({ field }) => (
+                             <FormItem>
+                                <FormLabel>Batch Number</FormLabel>
+                                <div className="flex gap-2">
+                                    <FormControl><Input placeholder="e.g., BATCH-1726..." {...field} /></FormControl>
+                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(generateId('B'))}><Sparkles className="h-4 w-4" /></Button>
+                                </div>
+                                <FormDescription>This is the initial batch.</FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                         )} />
                     </div>
-                    <FormField name="barcode" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Barcode (SKU)</FormLabel><FormControl><Input placeholder="e.g., 1234567890123" {...field} /></FormControl><FormMessage /></FormItem> )} />
+
+                     <FormField control={form.control} name="barcode" render={({ field }) => (
+                         <FormItem>
+                            <FormLabel>Barcode (SKU)</FormLabel>
+                            <div className="flex gap-2">
+                                <FormControl><Input placeholder="e.g., 890..." {...field} /></FormControl>
+                                <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(Math.random().toString().slice(2, 15))}><Sparkles className="h-4 w-4" /></Button>
+                            </div>
+                            <FormMessage />
+                        </FormItem>
+                     )} />
+                    
                     <div className="grid grid-cols-3 gap-4">
-                        <FormField name="category" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Category</FormLabel><FormControl><Input placeholder="e.g., Laptops" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField name="brand" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Brand</FormLabel><FormControl><Input placeholder="e.g., Dell" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField name="supplierId" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Supplier ID</FormLabel><FormControl><Input placeholder="e.g., SUP001" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="category" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Category</FormLabel>
+                                <CreatableCombobox 
+                                    options={categories}
+                                    value={field.value}
+                                    onChange={(newValue, isNew) => {
+                                        field.onChange(newValue);
+                                        if (isNew) {
+                                            const newOption = { value: newValue.toLowerCase(), label: newValue };
+                                            setCategories(prev => [...prev, newOption]);
+                                        }
+                                    }}
+                                    placeholder="Select or create category"
+                                />
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                         <FormField control={form.control} name="brand" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Brand</FormLabel>
+                                <CreatableCombobox 
+                                    options={brands}
+                                    value={field.value}
+                                    onChange={(newValue, isNew) => {
+                                        field.onChange(newValue);
+                                        if (isNew) {
+                                            const newOption = { value: newValue.toLowerCase(), label: newValue };
+                                            setBrands(prev => [...prev, newOption]);
+                                        }
+                                    }}
+                                    placeholder="Select or create brand"
+                                />
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="supplierId" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Supplier</FormLabel>
+                                <CreatableCombobox 
+                                    options={suppliers}
+                                    value={field.value}
+                                    onChange={(newValue, isNew) => field.onChange(newValue)}
+                                    placeholder="Select a supplier"
+                                    creatable={false}
+                                />
+                                <FormMessage />
+                            </FormItem>
+                         )} />
                     </div>
                 </CardContent>
              </Card>
           )}
 
-          {/* Step 2: Pricing & Stock */}
           {currentStep === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  <div className="space-y-6">
@@ -278,7 +377,6 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
             </div>
           )}
 
-          {/* Step 3: Tax & Discounts */}
           {currentStep === 2 && (
              <Card>
                 <CardHeader>
@@ -298,7 +396,6 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
              </Card>
           )}
 
-          {/* Step 4: Inventory & Other Details */}
           {currentStep === 3 && (
              <Card>
                 <CardHeader>
@@ -325,8 +422,6 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
           )}
         </div>
 
-
-        {/* Navigation Buttons */}
         <div className="flex justify-between items-center pt-4 mt-6 border-t">
           <div>
             <Button type="button" variant="outline" onClick={drawer.closeDrawer}>
