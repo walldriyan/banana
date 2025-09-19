@@ -30,8 +30,8 @@ import { Textarea } from "../ui/textarea";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "../ui/table";
 import { getSuppliersAction } from "@/lib/actions/supplier.actions";
 import { getProductsAction } from "@/lib/actions/product.actions";
-import type { Product } from "@/types";
-import SearchableProductInput from "../POSUI/SearchableProductInput";
+import type { Product, ProductBatch } from "@/types";
+import { GrnProductSearch } from "./GrnProductSearch";
 import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClientPage";
 import type { Supplier } from "@prisma/client";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
@@ -78,7 +78,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const fetchProductsAndSuppliers = useCallback(async () => {
         const [suppliersResult, productsResult] = await Promise.all([
             getSuppliersAction(),
-            getProductsAction()
+            getProductsAction() // Fetches master products
         ]);
 
         if (suppliersResult.success && suppliersResult.data) {
@@ -113,15 +113,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   useEffect(() => {
       if (isEditMode && grn && products.length > 0 && suppliers.length > 0) {
           const loadedItems = grn.items.map(item => {
-             const product = products.find(p => p.id === item.productId);
+             const productBatch = item.productBatch;
              return {
                  ...item,
-                 // These fields might not exist on old GRN items, so we provide fallbacks.
-                 name: product?.name || 'Unknown Product',
-                 category: product?.category || 'unknown',
-                 brand: product?.brand || 'unknown',
-                 units: product?.units || { baseUnit: 'pcs', derivedUnits: [] },
-                 sellingPrice: product?.sellingPrice || 0,
+                 productId: productBatch.productId,
+                 name: productBatch.product.name,
+                 category: productBatch.product.category,
+                 brand: productBatch.product.brand,
+                 units: productBatch.product.units,
+                 sellingPrice: productBatch.sellingPrice,
+                 batchNumber: productBatch.batchNumber
              };
           });
           
@@ -142,21 +143,18 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const handleProductSelect = (product: Product) => {
     append({
-        // Key product info for creating a new batch
-        productId: product.productId, // The common product ID
+        productId: product.id,
         name: product.name,
         category: product.category,
         brand: product.brand,
         units: product.units,
-        sellingPrice: product.sellingPrice,
-        
-        // GRN specific fields with defaults
-        batchNumber: `B-${Date.now()}`, // Suggest a new batch number
+        sellingPrice: 0, // Default selling price for new batch
+        batchNumber: `B-${Date.now()}`,
         quantity: 1,
-        costPrice: product.costPrice ?? 0,
+        costPrice: 0,
         discount: 0,
         tax: 0,
-        total: product.costPrice ?? 0
+        total: 0
     });
   };
   
@@ -164,7 +162,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       remove(index);
   }
 
-  const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax' | 'batchNumber', value: number | string) => {
+  const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax' | 'batchNumber' | 'sellingPrice', value: number | string) => {
       const item = form.getValues(`items.${index}`);
       if(!item) return;
 
@@ -184,12 +182,12 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const openAddProductDrawer = () => {
     drawer.openDrawer({
-      title: 'Add New Product Batch',
-      description: 'Fill in the details below to add a new product batch to the system.',
+      title: 'Add New Master Product',
+      description: 'Fill in the details below to add a new master product to the system.',
       content: <AddProductForm onSuccess={() => {
         fetchProductsAndSuppliers(); 
         drawer.closeDrawer();
-        toast({ title: 'Success', description: 'New product added. You can now search for it.'});
+        toast({ title: 'Success', description: 'New master product added. You can now search for it.'});
       }} />,
       drawerClassName: 'sm:max-w-4xl'
     });
@@ -326,7 +324,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 <div className="flex justify-between items-center">
                     <div>
                         <CardTitle>Add Products</CardTitle>
-                        <CardDescription>Search for an existing product to use as a template for the new batch.</CardDescription>
+                        <CardDescription>Search for a master product to add as a new batch.</CardDescription>
                     </div>
                     <Button type="button" variant="outline" onClick={openAddProductDrawer}>
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -335,13 +333,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 </div>
             </CardHeader>
             <CardContent>
-                <SearchableProductInput
+                <GrnProductSearch
                     products={products}
                     onProductSelect={handleProductSelect}
-                    placeholder="Search by product to add a new batch..."
+                    placeholder="Search by master product to add a new batch..."
                 />
                  <p className="text-xs text-muted-foreground mt-2">
-                    Selecting a product here will pre-fill its details. You can then enter the new batch number and quantity. Each line item will create a new batch in the system.
+                    Selecting a product here will add a new line item below for the new batch.
                 </p>
             </CardContent>
         </Card>
@@ -356,6 +354,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             <TableHead>Batch No.</TableHead>
                             <TableHead>Qty</TableHead>
                             <TableHead>Cost Price</TableHead>
+                            <TableHead>Selling Price</TableHead>
                             <TableHead>Discount</TableHead>
                             <TableHead>Tax (%)</TableHead>
                             <TableHead className="text-right">Total</TableHead>
@@ -381,6 +380,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                     <Input type="number" defaultValue={item.costPrice} onBlur={e => handleItemChange(index, 'costPrice', e.target.value)} className="w-24" />
                                 </TableCell>
                                 <TableCell>
+                                    <Input type="number" defaultValue={item.sellingPrice} onBlur={e => handleItemChange(index, 'sellingPrice', e.target.value)} className="w-24" />
+                                </TableCell>
+                                <TableCell>
                                     <Input type="number" defaultValue={item.discount} onBlur={e => handleItemChange(index, 'discount', e.target.value)} className="w-24" />
                                 </TableCell>
                                 <TableCell>
@@ -397,7 +399,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             </TableRow>
                         )) : (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center h-24">No products added yet.</TableCell>
+                                <TableCell colSpan={9} className="text-center h-24">No products added yet.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

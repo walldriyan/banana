@@ -22,7 +22,7 @@ export async function addProductAction(data: ProductFormValues) {
     const newProduct = await prisma.product.create({
       data: {
         ...validatedData,
-        units: JSON.stringify(units),
+        units: units as any, // Prisma expects JSON
       },
     });
     revalidatePath('/dashboard/products');
@@ -50,7 +50,7 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
             where: { id },
             data: {
                 ...validatedData,
-                units: JSON.stringify(units),
+                units: units as any, // Prisma expects JSON
             },
         });
         revalidatePath('/dashboard/products');
@@ -68,20 +68,11 @@ export async function getProductsAction() {
   try {
     const products = await prisma.product.findMany({
       orderBy: { name: 'asc' },
-      include: {
-        batches: {
-          orderBy: { addedDate: 'desc'}
-        }
-      }
     });
-     const productsForClient = products.map(p => ({
-        ...p,
-        units: JSON.parse(p.units as string),
-    }));
-    return { success: true, data: productsForClient };
+    return { success: true, data: products };
   } catch (error) {
-    console.error("Error fetching products:", error);
-    return { success: false, error: "Failed to fetch products." };
+    console.error("Error fetching master products:", error);
+    return { success: false, error: "Failed to fetch master products." };
   }
 }
 
@@ -112,16 +103,7 @@ export async function getProductBatchesAction() {
             include: { product: true },
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
-        
-        const batchesForClient = batches.map(b => ({
-            ...b,
-            product: {
-                ...b.product,
-                units: JSON.parse(b.product.units as string)
-            }
-        }));
-
-        return { success: true, data: batchesForClient };
+        return { success: true, data: batches };
     } catch (error) {
         console.error("Error fetching product batches:", error);
         return { success: false, error: "Failed to fetch product batches." };

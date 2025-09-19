@@ -1,10 +1,8 @@
-
-// src/components/POSUI/SearchableProductInput.tsx
+// src/components/purchases/GrnProductSearch.tsx
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, PackageSearch } from "lucide-react"
-import { useImperativeHandle } from "react";
+import { ChevronsUpDown, PackageSearch } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import {
@@ -15,53 +13,38 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
-import type { ProductBatch } from "@/types"
+import type { Product } from "@/types"
 
-// Flatten products and batches into a single list for the dropdown
+// This component will now search MASTER products, not batches.
 type SearchableItem = {
-  value: string;
-  label: string;
-  product: ProductBatch;
-  stock: number;
-  price: number;
+  value: string; // Master product ID
+  label: string; // Master product name
+  product: Product;
 };
 
-interface SearchableProductInputProps {
-  products: ProductBatch[];
-  onProductSelect: (product: ProductBatch) => void;
+interface GrnProductSearchProps {
+  products: Product[];
+  onProductSelect: (product: Product) => void;
   placeholder?: string;
   searchPlaceholder?: string;
   emptyText?: string;
 }
 
-export interface SearchableProductInputRef {
-  focusSearchInput: () => void;
-}
-
-const SearchableProductInput = React.forwardRef<SearchableProductInputRef, SearchableProductInputProps>(({
+export function GrnProductSearch({
   products,
   onProductSelect,
   placeholder = "Select product...",
   searchPlaceholder = "Search by name or barcode...",
   emptyText = "No product found."
-}, ref) => {
+}: GrnProductSearchProps) {
   const [inputValue, setInputValue] = React.useState("");
   const inputRef = React.useRef<HTMLInputElement>(null);
 
-  // Expose a function to focus the input to the parent component
-  useImperativeHandle(ref, () => ({
-    focusSearchInput: () => {
-      inputRef.current?.focus();
-    }
-  }));
-
   const searchableItems = React.useMemo(() => {
     return products.map(p => ({
-        value: p.id.toLowerCase(), // Use the unique product-batch ID
-        label: `${p.product.name} (${p.batchNumber})`,
+        value: p.id.toLowerCase(),
+        label: p.name,
         product: p,
-        stock: p.stock,
-        price: p.sellingPrice,
     }));
   }, [products]);
 
@@ -80,7 +63,6 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
         <div className="relative">
             <CommandInput
                 ref={inputRef}
-                id="global-product-search-input" // This ID is crucial for the global keydown listener
                 value={inputValue}
                 onValueChange={setInputValue}
                 placeholder={searchPlaceholder}
@@ -96,8 +78,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                     <CommandGroup>
                         {searchableItems
                          .filter(item => 
-                            item.label.toLowerCase().includes(inputValue.toLowerCase()) ||
-                            item.product.barcode?.toLowerCase().includes(inputValue.toLowerCase())
+                            item.label.toLowerCase().includes(inputValue.toLowerCase())
                           )
                          .map((item) => (
                             <CommandItem
@@ -108,10 +89,10 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                             >
                                 <div className="flex justify-between w-full">
                                     <div className="flex flex-col">
-                                    <span className="font-medium">{item.label}</span>
-                                    <span className="text-xs text-gray-500">Stock: {item.stock} {item.product.units.baseUnit}</span>
+                                      <span className="font-medium">{item.label}</span>
+                                      <span className="text-xs text-gray-500">Category: {item.product.category}</span>
                                     </div>
-                                    <span className="font-semibold">Rs. {item.price.toFixed(2)}</span>
+                                    <span className="font-semibold text-gray-600">{item.product.brand}</span>
                                 </div>
                             </CommandItem>
                         ))}
@@ -121,8 +102,4 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
         )}
     </Command>
   )
-});
-
-SearchableProductInput.displayName = "SearchableProductInput";
-
-export default SearchableProductInput;
+}

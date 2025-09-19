@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import type { Product, SaleItem, DiscountSet } from '@/types';
+import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { allCampaigns } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
@@ -22,7 +22,7 @@ import { LogoutButton } from '@/components/auth/LogoutButton';
 import { defaultDiscounts } from '@/lib/default-campaign';
 import { CustomDiscountForm } from '@/components/POSUI/CustomDiscountForm';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getProductsAction } from '@/lib/actions/product.actions';
+import { getProductBatchesAction } from '@/lib/actions/product.actions';
 
 
 const initialDiscountResult = {
@@ -39,7 +39,7 @@ const initialDiscountResult = {
 
 
 export default function MyNewEcommerceShop() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductBatch[]>([]);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(defaultDiscounts);
   const [transactionId, setTransactionId] = useState<string>('');
@@ -59,7 +59,7 @@ export default function MyNewEcommerceShop() {
   useEffect(() => {
     async function fetchProducts() {
       setIsLoading(true);
-      const result = await getProductsAction();
+      const result = await getProductBatchesAction();
       if (result.success && result.data) {
         setProducts(result.data);
       } else {
@@ -152,7 +152,7 @@ export default function MyNewEcommerceShop() {
   
       const currentItem = cart[itemIndex];
       const unitToUse = newDisplayUnit || currentItem.displayUnit;
-      const allUnits = [{ name: currentItem.units.baseUnit, conversionFactor: 1 }, ...(currentItem.units.derivedUnits || [])];
+      const allUnits = [{ name: currentItem.product.units.baseUnit, conversionFactor: 1 }, ...(currentItem.product.units.derivedUnits || [])];
       const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
       const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
   
@@ -190,8 +190,8 @@ export default function MyNewEcommerceShop() {
     };
 
 
-  const addToCart = (product: Product) => {
-    const existingItemIndex = cart.findIndex(item => item.id === product.id);
+  const addToCart = (productBatch: ProductBatch) => {
+    const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
         const existingItem = cart[existingItemIndex];
@@ -201,7 +201,7 @@ export default function MyNewEcommerceShop() {
             toast({
                 variant: "destructive",
                 title: "Stock Limit Exceeded",
-                description: `Cannot add more ${existingItem.name}. Maximum stock reached.`,
+                description: `Cannot add more ${existingItem.product.name}. Maximum stock reached.`,
             });
             return; // Exit without changing state
         }
@@ -218,23 +218,23 @@ export default function MyNewEcommerceShop() {
         });
     } else {
         // STOCK VALIDATION for new item
-        if (1 > product.stock) {
+        if (1 > productBatch.stock) {
             toast({
                 variant: "destructive",
                 title: "Out of Stock",
-                description: `Cannot add ${product.name}, it is out of stock.`,
+                description: `Cannot add ${productBatch.product.name}, it is out of stock.`,
             });
             return; // Exit without changing state
         }
         
         setCart(currentCart => {
             const saleItem: SaleItem = {
-                ...product,
+                ...productBatch,
                 saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
                 quantity: 1, // Total base units
                 displayQuantity: 1, // Quantity of the selected unit
-                displayUnit: product.units.baseUnit, // Default to base unit
-                price: product.sellingPrice,
+                displayUnit: productBatch.product.units.baseUnit, // Default to base unit
+                price: productBatch.sellingPrice,
             };
             return [...currentCart, saleItem];
         });
@@ -272,7 +272,7 @@ export default function MyNewEcommerceShop() {
 
   const openCustomDiscountDrawer = (item: SaleItem) => {
     drawer.openDrawer({
-      title: `Override Discount for ${item.name}`,
+      title: `Override Discount for ${item.product.name}`,
       description: "Apply a special, one-time discount for this line item.",
       content: (
         <CustomDiscountForm
