@@ -32,11 +32,6 @@ export async function addProductAction(data: ProductFormValues) {
       minStockLevel,
       maxStockLevel,
       defaultQuantity,
-      // Destructure and ignore tax/discount fields that are not in the Product model
-      tax,
-      taxtype,
-      defaultDiscount,
-      defaultDiscountType,
       ...productDataForCreation 
   } = validationResult.data;
 
@@ -45,8 +40,17 @@ export async function addProductAction(data: ProductFormValues) {
         // 1. Create the master product with only its own fields from the schema
         const newProduct = await tx.product.create({
             data: {
-                ...productDataForCreation,
+                name: productDataForCreation.name,
+                description: productDataForCreation.description,
+                category: productDataForCreation.category,
+                brand: productDataForCreation.brand,
                 units: units as any,
+                isService: productDataForCreation.isService,
+                isActive: productDataForCreation.isActive,
+                tax: productDataForCreation.tax,
+                taxtype: productDataForCreation.taxtype,
+                defaultDiscount: productDataForCreation.defaultDiscount,
+                defaultDiscountType: productDataForCreation.defaultDiscountType,
             },
         });
 
@@ -110,7 +114,6 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
         isService, 
         isActive, 
         supplierId, 
-        // Destructure and ignore tax/discount fields
         tax, 
         taxtype, 
         defaultDiscount, 
@@ -145,6 +148,10 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 units: units as any,
                 isService,
                 isActive,
+                tax,
+                taxtype,
+                defaultDiscount,
+                defaultDiscountType,
             }
         });
 

@@ -30,6 +30,23 @@ export function ProductDetailsView({ batch }: ProductDetailsViewProps) {
         return format(new Date(date), "PPP");
     }
 
+    const formatDiscount = () => {
+        if (product.defaultDiscount == null || product.defaultDiscountType == null) return "N/A";
+        if (product.defaultDiscountType === 'PERCENTAGE') {
+            return `${product.defaultDiscount}%`;
+        }
+        return formatCurrency(product.defaultDiscount);
+    }
+
+    const formatTax = () => {
+        if (product.tax == null || product.taxtype == null) return "N/A";
+        if (product.taxtype === 'PERCENTAGE') {
+            return `${product.tax}%`;
+        }
+        return formatCurrency(product.tax);
+    }
+
+
     return (
         <div className="space-y-6">
             <Card>
@@ -42,6 +59,8 @@ export function ProductDetailsView({ batch }: ProductDetailsViewProps) {
                         <DetailRow label="Product ID" value={<Badge variant="outline">{product.id}</Badge>} />
                         <DetailRow label="Category" value={product.category} />
                         <DetailRow label="Brand" value={product.brand} />
+                         <DetailRow label="Default Tax" value={formatTax()} />
+                        <DetailRow label="Default Discount" value={formatDiscount()} />
                         <DetailRow label="Status" value={product.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>} />
                         <DetailRow label="Is Service" value={product.isService ? "Yes" : "No"} />
                         <DetailRow label="Base Unit" value={units.baseUnit} />
