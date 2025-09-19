@@ -22,17 +22,18 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ProductDetailsView } from '@/components/products/ProductDetailsView';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Warehouse, Archive, DollarSign } from 'lucide-react';
+import { Package, Warehouse, Archive, DollarSign, Landmark, TrendingUp, Wallet, Coins } from 'lucide-react';
 
 
-const SummaryCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
-    <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg">
-        <div className="bg-slate-200 p-3 rounded-full">
-            <Icon className="h-6 w-6 text-slate-600" />
+const SummaryCard = ({ title, value, icon: Icon, description }: { title: string, value: string | number, icon: React.ElementType, description?: string }) => (
+    <div className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="bg-muted p-3 rounded-full">
+            <Icon className="h-6 w-6 text-foreground/80" />
         </div>
         <div>
-            <p className="text-sm text-slate-500">{title}</p>
-            <p className="text-2xl font-bold text-slate-800">{value}</p>
+            <p className="text-sm text-muted-foreground">{title}</p>
+            <p className="text-2xl font-bold text-foreground">{value}</p>
+            {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
         </div>
     </div>
 );
@@ -137,13 +138,19 @@ export function ProductsClientPage() {
     const totalBatches = batches.length;
     const totalMasterProducts = new Set(batches.map(b => b.productId)).size;
     const totalStockQuantity = batches.reduce((sum, b) => sum + b.stock, 0);
-    const totalStockValue = batches.reduce((sum, b) => sum + (b.stock * (b.costPrice ?? 0)), 0);
+    const totalStockCostValue = batches.reduce((sum, b) => sum + (b.stock * (b.costPrice ?? 0)), 0);
+    const totalStockSellingValue = batches.reduce((sum, b) => sum + (b.stock * b.sellingPrice), 0);
+    const potentialProfit = totalStockSellingValue - totalStockCostValue;
+    const overallMargin = totalStockCostValue > 0 ? (potentialProfit / totalStockCostValue) * 100 : 0;
 
     return {
         totalBatches,
         totalMasterProducts,
         totalStockQuantity,
-        totalStockValue
+        totalStockCostValue,
+        totalStockSellingValue,
+        potentialProfit,
+        overallMargin
     };
   }, [batches]);
 
@@ -192,13 +199,35 @@ export function ProductsClientPage() {
         <Card className="mt-8">
             <CardHeader>
                 <CardTitle>Inventory Summary</CardTitle>
-                <CardDescription>An overview of your current stock levels and value.</CardDescription>
+                <CardDescription>An advanced overview of your current inventory for decision management.</CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <SummaryCard title="Master Products" value={summary.totalMasterProducts} icon={Package} />
-                <SummaryCard title="Total Batches" value={summary.totalBatches} icon={Warehouse} />
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                <SummaryCard title="Master Products" value={summary.totalMasterProducts} icon={Package} description={`${summary.totalBatches} total batches`} />
                 <SummaryCard title="Total Stock Units" value={summary.totalStockQuantity.toLocaleString()} icon={Archive} />
-                <SummaryCard title="Total Stock Value" value={`Rs. ${summary.totalStockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={DollarSign} />
+                <SummaryCard 
+                    title="Total Stock Value (Cost)" 
+                    value={`Rs. ${summary.totalStockCostValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                    icon={Wallet} 
+                    description="Total investment in current stock"
+                />
+                <SummaryCard 
+                    title="Total Stock Value (Sell)" 
+                    value={`Rs. ${summary.totalStockSellingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                    icon={Landmark}
+                    description="Total revenue if all stock is sold"
+                />
+                 <SummaryCard 
+                    title="Potential Profit" 
+                    value={`Rs. ${summary.potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                    icon={TrendingUp}
+                    description="Estimated gross profit from current stock"
+                />
+                 <SummaryCard 
+                    title="Overall Margin" 
+                    value={`${summary.overallMargin.toFixed(2)}%`} 
+                    icon={Coins}
+                    description="Estimated return on investment"
+                />
             </CardContent>
         </Card>
     </>
