@@ -70,6 +70,11 @@ export async function addGrnAction(data: GrnFormValues) {
                         stock: item.quantity, // Initial stock is the quantity
                         supplierId: headerData.supplierId,
                         addedDate: new Date(),
+                        // Add the missing discount and tax fields
+                        discount: item.discount,
+                        discountType: 'FIXED', // Assuming fixed for GRN, can be changed if schema supports it
+                        tax: item.tax,
+                        taxtype: 'PERCENTAGE', // Assuming percentage for GRN tax
                     }
                 });
                 return {
