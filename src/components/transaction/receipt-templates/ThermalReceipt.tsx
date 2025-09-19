@@ -13,6 +13,7 @@ const Line = () => <div className="border-t border-dashed border-black my-1"></d
 export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: showAsGiftReceiptProp }: ThermalReceiptProps) {
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
 
+  // Determine if the receipt is a gift receipt based on the prop or the transaction data.
   const showAsGiftReceipt = showAsGiftReceiptProp !== undefined
     ? showAsGiftReceiptProp
     : (transactionHeader.isGiftReceipt ?? false);
@@ -59,9 +60,13 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           <tr className="font-bold">
             <th className="text-left">Item</th>
             <th className="text-center">Qty</th>
-            <th className="text-right">Price</th>
-            <th className="text-right">Total</th>
-            <th className="text-right">Our Price</th>
+            {!showAsGiftReceipt && (
+              <>
+                <th className="text-right">Price</th>
+                <th className="text-right">Total</th>
+                <th className="text-right">Our Price</th>
+              </>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -70,15 +75,19 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
               <tr>
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
                 <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
-                <td className="text-right">{item.unitPrice.toFixed(2)}</td>
-                <td className="text-right">
-                  {item.lineTotalBeforeDiscount.toFixed(2)}
-                </td>
-                <td className="text-right">
-                  {item.lineTotalAfterDiscount.toFixed(2)}
-                </td>
+                {!showAsGiftReceipt && (
+                    <>
+                        <td className="text-right">{item.unitPrice.toFixed(2)}</td>
+                        <td className="text-right">
+                        {item.lineTotalBeforeDiscount.toFixed(2)}
+                        </td>
+                        <td className="text-right">
+                        {item.lineTotalAfterDiscount.toFixed(2)}
+                        </td>
+                    </>
+                )}
               </tr>
-              {item.lineDiscount > 0 && (
+              {!showAsGiftReceipt && item.lineDiscount > 0 && (
                 <tr>
                   <td colSpan={3} className="text-right italic text-gray-600">
                     (Discount)
@@ -96,16 +105,20 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
       <Line />
 
       <section className="my-1 space-y-1">
-        <div className="flex justify-between">
-          <span>Subtotal:</span>
-          <span>{transactionHeader.subtotal.toFixed(2)}</span>
-        </div>
+        {!showAsGiftReceipt && (
+          <>
+            <div className="flex justify-between">
+              <span>Subtotal:</span>
+              <span>{transactionHeader.subtotal.toFixed(2)}</span>
+            </div>
 
-        {transactionHeader.totalDiscountAmount > 0 && (
-          <div className="flex justify-between font-bold text-green-700">
-            <span>Total Discounts:</span>
-            <span>({transactionHeader.totalDiscountAmount.toFixed(2)})</span>
-          </div>
+            {transactionHeader.totalDiscountAmount > 0 && (
+              <div className="flex justify-between font-bold text-green-700">
+                <span>Total Discounts:</span>
+                <span>({transactionHeader.totalDiscountAmount.toFixed(2)})</span>
+              </div>
+            )}
+          </>
         )}
 
         <div className="flex justify-between font-bold text-base">
