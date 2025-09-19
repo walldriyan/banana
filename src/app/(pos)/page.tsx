@@ -193,37 +193,40 @@ export default function MyNewEcommerceShop() {
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
-        setCart(currentCart => {
-            const updatedCart = [...currentCart];
-            const existingItem = updatedCart[existingItemIndex];
-            
-            const newDisplayQuantity = existingItem.displayQuantity + 1;
+        // If item exists, update its quantity using a functional update
+        setCart(currentCart => currentCart.map((item, index) => {
+            if (index === existingItemIndex) {
+                const newDisplayQuantity = item.displayQuantity + 1;
+                
+                const unitsData = typeof item.product.units === 'string' 
+                    ? JSON.parse(item.product.units) 
+                    : item.product.units;
+                const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+                const selectedUnitDefinition = allUnits.find(u => u.name === item.displayUnit);
+                const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
 
-            const allUnits = [{ name: existingItem.product.units.baseUnit, conversionFactor: 1 }, ...(existingItem.product.units.derivedUnits || [])];
-            const selectedUnitDefinition = allUnits.find(u => u.name === existingItem.displayUnit);
-            const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-            
-            const newBaseQuantity = newDisplayQuantity * conversionFactor;
+                const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
-            if (newBaseQuantity > existingItem.stock) {
-                toast({
-                    variant: "destructive",
-                    title: "Stock Limit Exceeded",
-                    description: `Cannot add more ${existingItem.product.name}. Maximum stock reached.`,
-                });
-                return currentCart; 
+                if (newBaseQuantity > item.stock) {
+                    toast({
+                        variant: "destructive",
+                        title: "Stock Limit Exceeded",
+                        description: `Cannot add more ${item.product.name}. Maximum stock reached.`,
+                    });
+                    return item; // Return original item if stock is exceeded
+                }
+
+                return {
+                    ...item,
+                    quantity: newBaseQuantity,
+                    displayQuantity: newDisplayQuantity,
+                    // displayUnit is already correct, so no need to set it again
+                };
             }
-
-            updatedCart[existingItemIndex] = {
-                ...existingItem,
-                quantity: newBaseQuantity,
-                displayQuantity: newDisplayQuantity,
-                displayUnit: existingItem.displayUnit, 
-            };
-
-            return updatedCart;
-        });
+            return item;
+        }));
     } else {
+        // If item doesn't exist, add it as a new item to the cart
         if (1 > productBatch.stock) {
             toast({
                 variant: "destructive",
@@ -238,7 +241,7 @@ export default function MyNewEcommerceShop() {
             saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             quantity: 1, 
             displayQuantity: 1, 
-            displayUnit: productBatch.product.units.baseUnit,
+            displayUnit: productBatch.product.units.baseUnit, // Set the display unit explicitly
             price: productBatch.sellingPrice,
         };
         
