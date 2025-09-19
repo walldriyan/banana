@@ -27,19 +27,26 @@ import {
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, ArchiveX } from "lucide-react"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
   onAddProduct: () => void; // Callback to open the add master product drawer
+  hideZeroStock: boolean;
+  onHideZeroStockChange: (checked: boolean) => void;
 }
 
 export function ProductsDataTable<TData, TValue>({
   columns,
   data,
-  onAddProduct
+  onAddProduct,
+  hideZeroStock,
+  onHideZeroStockChange,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -74,7 +81,7 @@ export function ProductsDataTable<TData, TValue>({
 
   return (
     <div>
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between py-4 gap-4">
             <Input
                 placeholder="Filter by product name..."
                 value={(table.getColumn("product.name")?.getFilterValue() as string) ?? ""}
@@ -83,12 +90,25 @@ export function ProductsDataTable<TData, TValue>({
                 }
                 className="max-w-sm"
             />
-            <AuthorizationGuard permissionKey="products.create">
-                <Button onClick={onAddProduct}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Master Product
-                </Button>
-            </AuthorizationGuard>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                    <Switch 
+                        id="hide-zero-stock" 
+                        checked={hideZeroStock}
+                        onCheckedChange={onHideZeroStockChange}
+                    />
+                    <Label htmlFor="hide-zero-stock" className="whitespace-nowrap">
+                        <ArchiveX className="inline-block mr-2 h-4 w-4" />
+                        Hide Zero Stock
+                    </Label>
+                </div>
+                <AuthorizationGuard permissionKey="products.create">
+                    <Button onClick={onAddProduct}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Master Product
+                    </Button>
+                </AuthorizationGuard>
+            </div>
         </div>
         <div className="rounded-md border">
             <Table>

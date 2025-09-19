@@ -21,12 +21,30 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { ProductDetailsView } from '@/components/products/ProductDetailsView';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, Warehouse, Archive, DollarSign } from 'lucide-react';
+
+
+const SummaryCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
+    <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-lg">
+        <div className="bg-slate-200 p-3 rounded-full">
+            <Icon className="h-6 w-6 text-slate-600" />
+        </div>
+        <div>
+            <p className="text-sm text-slate-500">{title}</p>
+            <p className="text-2xl font-bold text-slate-800">{value}</p>
+        </div>
+    </div>
+);
+
 
 export function ProductsClientPage() {
   const [batches, setBatches] = useState<ProductBatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [batchToDelete, setBatchToDelete] = useState<string | null>(null);
+  const [hideZeroStock, setHideZeroStock] = useState(false);
+
 
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -106,6 +124,29 @@ export function ProductsClientPage() {
     setIsDeleteDialogOpen(false);
     setBatchToDelete(null);
   };
+  
+  const filteredBatches = useMemo(() => {
+      if (hideZeroStock) {
+        return batches.filter(batch => batch.stock > 0);
+      }
+      return batches;
+  }, [batches, hideZeroStock]);
+
+
+  const summary = useMemo(() => {
+    const totalBatches = batches.length;
+    const totalMasterProducts = new Set(batches.map(b => b.productId)).size;
+    const totalStockQuantity = batches.reduce((sum, b) => sum + b.stock, 0);
+    const totalStockValue = batches.reduce((sum, b) => sum + (b.stock * (b.costPrice ?? 0)), 0);
+
+    return {
+        totalBatches,
+        totalMasterProducts,
+        totalStockQuantity,
+        totalStockValue
+    };
+  }, [batches]);
+
 
   const columns = useMemo(() => getColumns(openEditBatchDrawer, handleDeleteRequest, openViewDetailsDrawer), [openEditBatchDrawer, openViewDetailsDrawer]);
 
@@ -125,8 +166,10 @@ export function ProductsClientPage() {
     <>
       <ProductsDataTable
         columns={columns}
-        data={batches}
+        data={filteredBatches}
         onAddProduct={openAddProductDrawer}
+        hideZeroStock={hideZeroStock}
+        onHideZeroStockChange={setHideZeroStock}
       />
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
@@ -145,6 +188,19 @@ export function ProductsClientPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+        <Card className="mt-8">
+            <CardHeader>
+                <CardTitle>Inventory Summary</CardTitle>
+                <CardDescription>An overview of your current stock levels and value.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <SummaryCard title="Master Products" value={summary.totalMasterProducts} icon={Package} />
+                <SummaryCard title="Total Batches" value={summary.totalBatches} icon={Warehouse} />
+                <SummaryCard title="Total Stock Units" value={summary.totalStockQuantity.toLocaleString()} icon={Archive} />
+                <SummaryCard title="Total Stock Value" value={`Rs. ${summary.totalStockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={DollarSign} />
+            </CardContent>
+        </Card>
     </>
   );
 }
