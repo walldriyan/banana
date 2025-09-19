@@ -70,10 +70,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     mode: 'onBlur',
   });
 
-  const { fields, append, remove, control, getValues, setValue, watch } = form;
+  const { control, getValues, setValue, watch } = form;
 
-  useFieldArray({
-    control: control,
+  const { fields, append, remove } = useFieldArray({
+    control,
     name: "items",
   });
 
@@ -103,10 +103,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const calculateTotal = useCallback(() => {
     const items = getValues('items');
-    const currentTotal = items.reduce((sum, item) => {
+    const currentTotal = items.reduce((sum, item, index) => {
         const itemTotal = (item.quantity * item.costPrice) - item.discount + ( ( (item.quantity * item.costPrice) - item.discount ) * (item.tax / 100) );
         // Update the individual item total in the form state without re-triggering validation
-        setValue(`items.${items.indexOf(item)}.total`, itemTotal, { shouldValidate: false, shouldDirty: false });
+        setValue(`items.${index}.total`, itemTotal, { shouldValidate: false, shouldDirty: true });
         return sum + itemTotal;
     }, 0);
     setTotalAmount(currentTotal);
@@ -141,8 +141,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       }
   }, [isEditMode, grn, products, suppliers, form, setValue]);
 
-  // Watch for changes in the 'items' array and recalculate the total.
-  // This is the fix for the infinite loop.
   const watchedItems = watch('items');
   useEffect(() => {
       calculateTotal();
@@ -356,7 +354,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {fields.length > 0 ? fields.map((item, index) => (
+                        {fields && fields.length > 0 ? fields.map((item, index) => (
                             <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.name}</TableCell>
                                 <TableCell>
@@ -492,7 +490,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
           <Button type="button" variant="outline" onClick={drawer.closeDrawer}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || fields.length === 0}>
+          <Button type="submit" disabled={isSubmitting || !fields || fields.length === 0}>
             {isSubmitting ? "Saving..." : (isEditMode ? "Update GRN" : "Save GRN")}
           </Button>
         </div>
