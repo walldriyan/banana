@@ -33,6 +33,7 @@ export async function addProductAction(data: ProductFormValues) {
       minStockLevel,
       maxStockLevel,
       defaultQuantity,
+      // Tax and discount fields are now correctly destructured to be saved
       tax,
       taxtype,
       defaultDiscount,
@@ -47,6 +48,11 @@ export async function addProductAction(data: ProductFormValues) {
             data: {
                 ...productDataForCreation,
                 units: units as any, // Prisma expects JSON
+                // Save the tax and default discount values to the master product
+                tax: tax ?? 0,
+                taxtype: taxtype ?? 'PERCENTAGE',
+                defaultDiscount: defaultDiscount ?? 0,
+                defaultDiscountType: defaultDiscountType ?? 'PERCENTAGE',
             },
         });
 
@@ -130,6 +136,10 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 units: units as any,
                 isService,
                 isActive,
+                tax: tax ?? 0,
+                taxtype: taxtype ?? 'PERCENTAGE',
+                defaultDiscount: defaultDiscount ?? 0,
+                defaultDiscountType: defaultDiscountType ?? 'PERCENTAGE',
             }
         });
 

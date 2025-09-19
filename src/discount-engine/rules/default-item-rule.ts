@@ -2,7 +2,7 @@
 import { IDiscountRule } from './interface';
 import { DiscountContext, LineItemData } from '../core/context';
 import { DiscountResult } from '../core/result';
-import type { DiscountSet } from '@/types';
+import type { DiscountSet, SpecificDiscountRuleConfig } from '@/types';
 import { evaluateRule, generateRuleId, isOneTimeRule, validateRuleConfig } from '../utils/helpers';
 
 export class DefaultItemRule implements IDiscountRule {
@@ -19,6 +19,8 @@ export class DefaultItemRule implements IDiscountRule {
   }
 
   apply(context: DiscountContext, result: DiscountResult): void {
+    const isProductDefaultMode = this.campaign.id === 'promo-product-defaults';
+
     context.items.forEach((item) => {
       const lineResult = result.getLineItem(item.lineId);
       if (!lineResult) {
@@ -26,26 +28,61 @@ export class DefaultItemRule implements IDiscountRule {
         return;
       }
       
-      // *** THE FIX ***
-      // If a custom discount has been MANUALLY SET (it's not null or undefined), 
-      // we should NOT apply any default discounts.
-      // A custom value being present signifies user intent to override all campaign rules.
+      // If a higher-priority discount (e.g., custom, batch, product-specific) has already been applied, skip default rules for this item.
       if (item.customDiscountValue != null && item.customDiscountValue > 0) {
         console.log(`Custom discount value is set for ${item.lineId}, skipping default rule.`);
         return;
       }
       
-      // If a higher-priority discount (e.g., batch, product-specific) has already been applied, skip default rules for this item.
       if (lineResult.totalDiscount > 0) {
         console.log(`Higher priority discount already applied to ${item.lineId}, skipping default rule`);
         return;
       }
 
-      console.log(`Processing default rule for item ${item.lineId}, product ${item.productId}`);
+      // --- NEW LOGIC FOR PRODUCT DEFAULTS CAMPAIGN ---
+      if (isProductDefaultMode) {
+        const product = item.product; // The master product is nested in the SaleItem (which extends ProductBatch)
+        if (product.defaultDiscount && product.defaultDiscount > 0) {
+          const productRuleConfig: SpecificDiscountRuleConfig = {
+            isEnabled: true,
+            name: `Product Default: ${product.name}`,
+            type: product.defaultDiscountType === 'PERCENTAGE' ? 'percentage' : 'fixed',
+            value: product.defaultDiscount,
+            applyFixedOnce: false, // Product defaults are typically per-unit
+            description: `Default discount stored on the product.`
+          };
+          
+          const lineTotal = item.price * item.quantity;
+          const discountAmount = evaluateRule(productRuleConfig, item.price, item.quantity, lineTotal, lineTotal);
+          
+          if (discountAmount > 0) {
+            const ruleId = generateRuleId('product-default', product.id, productRuleConfig.type, product.id);
+            lineResult.addDiscount({
+              ruleId,
+              discountAmount,
+              description: productRuleConfig.description || 'Product default discount',
+              isOneTime: false,
+              appliedRuleInfo: {
+                discountCampaignName: this.campaign.name,
+                sourceRuleName: productRuleConfig.name,
+                totalCalculatedDiscount: discountAmount,
+                ruleType: 'product_default_discount',
+                productIdAffected: product.id,
+                appliedOnce: false,
+              }
+            });
+          }
+        }
+        // Once product-default logic is handled, we stop for this item.
+        return; 
+      }
+      // --- END OF NEW LOGIC ---
 
+
+      // --- EXISTING LOGIC FOR OTHER CAMPAIGNS ---
+      console.log(`Processing default rule for item ${item.lineId}, product ${item.productId}`);
       const lineTotal = item.price * item.quantity;
       
-      // Define default rules in priority order
       const rules = [
         { 
           config: this.campaign.defaultLineItemValueRuleJson, 
@@ -73,16 +110,11 @@ export class DefaultItemRule implements IDiscountRule {
         },
       ];
       
-      // Apply first valid default rule only
       for (const rule of rules) {
         if (!rule.config?.isEnabled) {
-          // console.log(`Default rule ${rule.type} is not enabled`);
           continue;
         }
 
-        console.log(`Evaluating default rule ${rule.type}:`, rule.config);
-
-        // Validate rule configuration
         const validation = validateRuleConfig(rule.config);
         if (!validation.isValid) {
           console.warn(`Invalid default rule configuration for ${rule.type}:`, validation.errors);
@@ -97,13 +129,9 @@ export class DefaultItemRule implements IDiscountRule {
           rule.valueToTest
         );
         
-        console.log(`Default rule evaluation result for ${rule.type}: discount=${discountAmount}`);
-        
         if (discountAmount > 0) {
           const ruleId = generateRuleId('default', this.campaign.id, rule.type, item.productId);
           const isOneTime = isOneTimeRule(rule.config, this.campaign.isOneTimePerTransaction);
-
-          console.log(`Applying default discount: ruleId=${ruleId}, amount=${discountAmount}, isOneTime=${isOneTime}`);
 
           lineResult.addDiscount({
               ruleId,
@@ -119,11 +147,7 @@ export class DefaultItemRule implements IDiscountRule {
                   appliedOnce: isOneTime
               }
           });
-          
-          // Stop after first successful default rule application
           break;
-        } else {
-          // console.log(`Default rule ${rule.type} did not qualify for discount`);
         }
       }
     });

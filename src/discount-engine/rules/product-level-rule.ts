@@ -20,7 +20,7 @@ export class ProductLevelRule implements IDiscountRule {
 
   apply(context: DiscountContext, result: DiscountResult): void {
     if (!this.config.isActiveForProductInCampaign) {
-      console.log(`Product configuration ${this.config.id} is not active`);
+      // console.log(`Product configuration ${this.config.id} is not active`);
       return;
     }
 
@@ -30,22 +30,22 @@ export class ProductLevelRule implements IDiscountRule {
         return;
       }
       
-      console.log(`Processing product rule for item ${item.lineId}, product ${item.productId}`);
+      // console.log(`Processing product rule for item ${item.lineId}, product ${item.productId}`);
       
       const lineResult = result.getLineItem(item.lineId);
       // If a higher-priority discount (e.g., custom, batch) is already applied, skip.
       if (!lineResult) {
-        console.log(`No line result found for ${item.lineId}`);
+        // console.log(`No line result found for ${item.lineId}`);
         return;
       }
       
       if (lineResult.totalDiscount > 0) {
-        console.log(`Higher priority discount already applied to ${item.lineId}, skipping product rule`);
+        // console.log(`Higher priority discount already applied to ${item.lineId}, skipping product rule`);
         return;
       }
 
       const lineTotal = item.price * item.quantity;
-      console.log(`Product rule evaluation: price=${item.price}, qty=${item.quantity}, total=${lineTotal}`);
+      // console.log(`Product rule evaluation: price=${item.price}, qty=${item.quantity}, total=${lineTotal}`);
       
       // Define rules in priority order - first matching rule wins
       const rulesToConsider = [
@@ -78,11 +78,11 @@ export class ProductLevelRule implements IDiscountRule {
       // Apply first valid rule only (respecting priority)
       for (const ruleEntry of rulesToConsider) {
         if (!ruleEntry.config?.isEnabled) {
-          console.log(`Product rule ${ruleEntry.type} is not enabled`);
+          // console.log(`Product rule ${ruleEntry.type} is not enabled`);
           continue;
         }
 
-        console.log(`Evaluating product rule ${ruleEntry.type}:`, ruleEntry.config);
+        // console.log(`Evaluating product rule ${ruleEntry.type}:`, ruleEntry.config);
 
         // Validate rule configuration
         const validation = validateRuleConfig(ruleEntry.config);
@@ -99,13 +99,13 @@ export class ProductLevelRule implements IDiscountRule {
             ruleEntry.valueToTest
         );
 
-        console.log(`Product rule evaluation result for ${ruleEntry.type}: discount=${discountAmount}`);
+        // console.log(`Product rule evaluation result for ${ruleEntry.type}: discount=${discountAmount}`);
 
         if (discountAmount > 0) {
           const ruleId = generateRuleId('product', this.config.id, ruleEntry.type, item.productId);
           const isOneTime = isOneTimeRule(ruleEntry.config, this.config.discountSet?.isOneTimePerTransaction);
 
-          console.log(`Applying product discount: ruleId=${ruleId}, amount=${discountAmount}, isOneTime=${isOneTime}`);
+          // console.log(`Applying product discount: ruleId=${ruleId}, amount=${discountAmount}, isOneTime=${isOneTime}`);
 
           lineResult.addDiscount({
               ruleId,
@@ -125,7 +125,7 @@ export class ProductLevelRule implements IDiscountRule {
           // Stop after first successful rule application (priority logic)
           break;
         } else {
-          console.log(`Product rule ${ruleEntry.type} did not qualify for discount`);
+          // console.log(`Product rule ${ruleEntry.type} did not qualify for discount`);
         }
       }
     });

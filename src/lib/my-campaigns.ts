@@ -2,11 +2,12 @@
 import type { DiscountSet } from '@/types';
 import { buyMoreSaveMore } from './buymore-campain';
 import { clearanceSale, vipExclusive, megaDealFest as megaDealFestDefinition } from './campaign-definitions';
-import { defaultDiscounts, noDiscounts } from './default-campaign';
+import { defaultDiscounts, noDiscounts, productDefaults } from './default-campaign';
 
 
 // This is now the main export that combines all campaigns for easy access.
 export const allCampaigns: DiscountSet[] = [
+  productDefaults, // Use product's own default discount/tax
   noDiscounts, // Add the new "No Discount" option first
   defaultDiscounts, // The default campaign
   megaDealFestDefinition,

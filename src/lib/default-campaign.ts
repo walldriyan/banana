@@ -70,3 +70,27 @@ export const noDiscounts: DiscountSet = {
   defaultSpecificQtyThresholdRuleJson: null,
   defaultSpecificUnitPriceThresholdRuleJson: null,
 };
+
+/**
+ * A special campaign that instructs the engine to use the default
+ * discount and tax values stored on the product itself.
+ */
+export const productDefaults: DiscountSet = {
+  id: 'promo-product-defaults',
+  name: 'Product Defaults',
+  description: 'Applies the default tax and discount saved on each product.',
+  isActive: true,
+  isDefault: false,
+  isOneTimePerTransaction: false,
+
+  // All rule configurations are empty or null for this special campaign
+  productConfigurations: [],
+  batchConfigurations: [],
+  buyGetRulesJson: [],
+  globalCartPriceRuleJson: null,
+  globalCartQuantityRuleJson: null,
+  defaultLineItemValueRuleJson: null,
+  defaultLineItemQuantityRuleJson: null,
+  defaultSpecificQtyThresholdRuleJson: null,
+  defaultSpecificUnitPriceThresholdRuleJson: null,
+};
