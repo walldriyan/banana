@@ -152,39 +152,37 @@ export default function MyNewEcommerceShop() {
 
     const currentItem = cart[itemIndex];
     
-    // If the quantity is zero or less, remove the item from the cart.
     if (newDisplayQuantity <= 0) {
       setCart(currentCart => currentCart.filter(item => item.saleItemId !== saleItemId));
       return;
     }
 
     const unitToUse = newDisplayUnit || currentItem.displayUnit;
-    const allUnits = [{ name: currentItem.product.units.baseUnit, conversionFactor: 1 }, ...(currentItem.product.units.derivedUnits || [])];
+    const unitsData = typeof currentItem.product.units === 'string' 
+      ? JSON.parse(currentItem.product.units) 
+      : currentItem.product.units;
+    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
     const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
     const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
 
-    // Calculate the new total quantity in the base unit.
     const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
-    // STOCK VALIDATION
     if (newBaseQuantity > currentItem.stock) {
       toast({
         variant: "destructive",
         title: "Stock Limit Exceeded",
         description: `Cannot set quantity to ${newDisplayQuantity} ${unitToUse}. Only ${currentItem.stock / conversionFactor} ${unitToUse} available.`,
       });
-      // Do not update state if stock limit is exceeded.
       return;
     }
 
-    // Update the state with the new values.
     setCart(currentCart => {
       const updatedCart = [...currentCart];
       updatedCart[itemIndex] = {
         ...currentItem,
         displayUnit: unitToUse,
         displayQuantity: newDisplayQuantity,
-        quantity: newBaseQuantity, // This is the total base unit quantity
+        quantity: newBaseQuantity,
       };
       return updatedCart;
     });
@@ -195,20 +193,16 @@ export default function MyNewEcommerceShop() {
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
-        // Item exists, just increase its quantity
         setCart(currentCart => {
             const updatedCart = [...currentCart];
             const existingItem = updatedCart[existingItemIndex];
             
-            // Increment the display quantity by 1
             const newDisplayQuantity = existingItem.displayQuantity + 1;
 
-            // Find the conversion factor for the current display unit
             const allUnits = [{ name: existingItem.product.units.baseUnit, conversionFactor: 1 }, ...(existingItem.product.units.derivedUnits || [])];
             const selectedUnitDefinition = allUnits.find(u => u.name === existingItem.displayUnit);
             const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
             
-            // Calculate the new total base quantity
             const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
             if (newBaseQuantity > existingItem.stock) {
@@ -217,22 +211,19 @@ export default function MyNewEcommerceShop() {
                     title: "Stock Limit Exceeded",
                     description: `Cannot add more ${existingItem.product.name}. Maximum stock reached.`,
                 });
-                return currentCart; // Return original cart without changes
+                return currentCart; 
             }
 
-            // Update the item in the cart
             updatedCart[existingItemIndex] = {
                 ...existingItem,
                 quantity: newBaseQuantity,
                 displayQuantity: newDisplayQuantity,
-                // Ensure displayUnit is carried over
                 displayUnit: existingItem.displayUnit, 
             };
 
             return updatedCart;
         });
     } else {
-        // Item is not in the cart, add it
         if (1 > productBatch.stock) {
             toast({
                 variant: "destructive",
@@ -245,9 +236,9 @@ export default function MyNewEcommerceShop() {
         const newSaleItem: SaleItem = {
             ...productBatch,
             saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            quantity: 1, // Base unit quantity
-            displayQuantity: 1, // Display quantity
-            displayUnit: productBatch.product.units.baseUnit, // Set the default display unit
+            quantity: 1, 
+            displayQuantity: 1, 
+            displayUnit: productBatch.product.units.baseUnit,
             price: productBatch.sellingPrice,
         };
         
