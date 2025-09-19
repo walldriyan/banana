@@ -362,55 +362,55 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 />
             </CardContent>
             {currentItem.productId && (
-                 <CardContent className="border-t pt-6 space-y-4">
-                     <div className="flex justify-between items-center">
+                 <CardContent className="border-t pt-6 space-y-6">
+                     <div className="flex justify-between items-start">
                          <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
-                         <Button type="button" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
+                         <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                           <FormItem>
                              <FormLabel>Batch No.</FormLabel>
                              <div className="flex items-center gap-1">
-                                <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} />
-                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                                <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
                             </div>
                           </FormItem>
                           <FormItem>
                              <FormLabel>Quantity</FormLabel>
-                             <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} />
+                             <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
                           </FormItem>
                            <FormItem>
                              <FormLabel>Cost Price</FormLabel>
-                             <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} />
+                             <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
                           </FormItem>
                            <FormItem>
                              <FormLabel>Selling Price</FormLabel>
-                             <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} />
+                             <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
                           </FormItem>
                       </div>
-                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
                            <FormItem>
                              <FormLabel>Discount (Fixed)</FormLabel>
-                             <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} />
+                             <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
                           </FormItem>
                           <FormItem>
                              <FormLabel>Tax (%)</FormLabel>
-                             <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} />
+                             <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
                           </FormItem>
+                          <div className="lg:col-start-4 flex justify-end">
+                            <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                               <PackagePlus className="mr-2 h-4 w-4"/>
+                               Add Item to GRN
+                            </Button>
+                          </div>
                        </div>
                        {itemError && (
-                          <Alert variant="destructive">
+                          <Alert variant="destructive" className="mt-4">
                               <AlertTriangle className="h-4 w-4" />
                               <AlertTitle>Validation Error</AlertTitle>
                               <AlertDescription>{itemError}</AlertDescription>
                           </Alert>
                        )}
-                       <div className="flex justify-end">
-                           <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
-                               <PackagePlus className="mr-2 h-4 w-4"/>
-                               Add Item to GRN
-                           </Button>
-                       </div>
                        {isEditMode && <p className="text-sm text-destructive text-right">Cannot add new items in Edit Mode.</p>}
                  </CardContent>
             )}
