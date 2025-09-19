@@ -123,6 +123,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const { control, getValues, setValue, watch, trigger } = form;
 
+  const supplierId = watch('supplierId');
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "items",
@@ -414,149 +416,142 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle>Add New Batch</CardTitle>
-                            <CardDescription>Search for a master product, then fill the details below to add a new batch.</CardDescription>
-                        </div>
-                        <Button type="button" variant="outline" onClick={openAddProductDrawer}>
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Add New Master Product
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <GrnProductSearch
-                        products={products}
-                        onProductSelect={handleProductSelect}
-                        placeholder="Search for a master product..."
-                    />
-                </CardContent>
-                {currentItem.productId && (
-                  <CardContent className="border-t pt-2">
-                      <div className="flex justify-between items-center mb-2">
-                          <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
-                          <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
-                      </div>
-
-                      <FormRow title="Batch & Quantity" description="Enter the unique batch number and the quantity received.">
-                          <div className="flex gap-4">
-                              <FormItem className="flex-1">
-                                  <FormLabel>Batch No.</FormLabel>
-                                  <div className="flex items-center gap-1">
-                                      <FormControl>
-                                        <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
-                                      </FormControl>
-                                      <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
-                                  </div>
-                              </FormItem>
-                              <FormItem className="flex-1">
-                                  <FormLabel>Quantity</FormLabel>
-                                  <FormControl>
-                                    <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
-                                  </FormControl>
-                              </FormItem>
+           {supplierId && (
+            <>
+              <Card>
+                  <CardHeader>
+                      <div className="flex justify-between items-center">
+                          <div>
+                              <CardTitle>Add New Batch</CardTitle>
+                              <CardDescription>Search for a master product, then fill the details below to add a new batch.</CardDescription>
                           </div>
-                      </FormRow>
-                      
-                       <FormRow title="Pricing" description="Set the cost for this batch and the intended selling price.">
-                          <div className="flex gap-4">
-                              <FormItem className="flex-1">
-                                  <FormLabel>Cost Price (per unit)</FormLabel>
-                                   <FormControl>
-                                     <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
-                                  </FormControl>
-                              </FormItem>
-                              <FormItem className="flex-1">
-                                  <FormLabel>Selling Price (per unit)</FormLabel>
-                                  <FormControl>
-                                    <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
-                                  </FormControl>
-                              </FormItem>
-                          </div>
-                      </FormRow>
-
-                      <FormRow title="Adjustments" description="Apply any discounts or taxes specific to this batch from the supplier.">
-                           <div className="flex gap-4">
-                              <FormItem className="flex-1">
-                                  <FormLabel>Discount (Fixed Total)</FormLabel>
-                                  <FormControl>
-                                    <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
-                                  </FormControl>
-                              </FormItem>
-                              <FormItem className="flex-1">
-                                  <FormLabel>Tax (%)</FormLabel>
-                                   <FormControl>
-                                    <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
-                                  </FormControl>
-                              </FormItem>
-                          </div>
-                      </FormRow>
-                      
-                      {itemError && (
-                          <Alert variant="destructive" className="mt-4">
-                              <AlertTriangle className="h-4 w-4" />
-                              <AlertTitle>Validation Error</AlertTitle>
-                              <AlertDescription>{itemError}</AlertDescription>
-                          </Alert>
-                      )}
-                      {isEditMode && <p className="text-sm text-destructive text-right mt-2">Cannot add new items in Edit Mode.</p>}
-                       <div className="flex justify-end pt-4">
-                          <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
-                            <PackagePlus className="mr-2 h-4 w-4"/>
-                            Add Item to GRN
+                          <Button type="button" variant="outline" onClick={openAddProductDrawer}>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Add New Master Product
                           </Button>
                       </div>
+                  </CardHeader>
+                  <CardContent>
+                      <GrnProductSearch
+                          products={products}
+                          onProductSelect={handleProductSelect}
+                          placeholder="Search for a master product..."
+                      />
                   </CardContent>
-                )}
-            </Card>
+                  {currentItem.productId && (
+                    <CardContent className="border-t pt-6 space-y-6">
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
+                            <Button type="button" variant="outline" size="sm" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                             <FormItem className="lg:col-span-2">
+                                <FormLabel>Batch No.</FormLabel>
+                                <div className="flex items-center gap-1">
+                                    <FormControl>
+                                      <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                    </FormControl>
+                                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                                </div>
+                            </FormItem>
+                            <FormItem>
+                                <FormLabel>Quantity</FormLabel>
+                                <FormControl>
+                                  <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
+                                </FormControl>
+                            </FormItem>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                            <FormItem>
+                                <FormLabel>Cost Price</FormLabel>
+                                 <FormControl>
+                                   <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
+                                </FormControl>
+                            </FormItem>
+                            <FormItem>
+                                <FormLabel>Selling Price</FormLabel>
+                                <FormControl>
+                                  <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
+                                </FormControl>
+                            </FormItem>
+                             <FormItem>
+                                <FormLabel>Discount (Fixed)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                </FormControl>
+                            </FormItem>
+                            <FormItem>
+                                <FormLabel>Tax (%)</FormLabel>
+                                 <FormControl>
+                                  <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                </FormControl>
+                            </FormItem>
+                        </div>
+                        
+                        {itemError && (
+                            <Alert variant="destructive" className="mt-4">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Validation Error</AlertTitle>
+                                <AlertDescription>{itemError}</AlertDescription>
+                            </Alert>
+                        )}
+                        {isEditMode && <p className="text-sm text-destructive text-right mt-2">Cannot add new items in Edit Mode.</p>}
+                         <div className="flex justify-end pt-4">
+                            <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                              <PackagePlus className="mr-2 h-4 w-4"/>
+                              Add Item to GRN
+                            </Button>
+                        </div>
+                    </CardContent>
+                  )}
+              </Card>
 
-            <Card>
-                <CardHeader><CardTitle>GRN Items</CardTitle></CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[250px]">Product</TableHead>
-                                <TableHead>Batch No.</TableHead>
-                                <TableHead>Qty</TableHead>
-                                <TableHead>Cost Price</TableHead>
-                                <TableHead>Discount</TableHead>
-                                <TableHead>Tax (%)</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {fields.length > 0 ? fields.map((item, index) => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell>{item.batchNumber}</TableCell>
-                                    <TableCell>{item.quantity}</TableCell>
-                                    <TableCell>{item.costPrice.toFixed(2)}</TableCell>
-                                    <TableCell>{item.discount.toFixed(2)}</TableCell>
-                                    <TableCell>{item.tax.toFixed(2)}</TableCell>
-                                    <TableCell className="text-right font-semibold">
-                                        {item.total.toFixed(2)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isEditMode}>
-                                            <Trash2 className="h-4 w-4 text-red-500"/>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            )) : (
-                                <TableRow>
-                                    <TableCell colSpan={9} className="text-center h-24">No products added yet.</TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                    {isEditMode && <p className="text-sm text-destructive text-center mt-4">Cannot modify items in Edit Mode. Please delete and recreate the GRN to change items.</p>}
-                </CardContent>
-            </Card>
+              <Card>
+                  <CardHeader><CardTitle>GRN Items</CardTitle></CardHeader>
+                  <CardContent>
+                      <Table>
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead className="w-[250px]">Product</TableHead>
+                                  <TableHead>Batch No.</TableHead>
+                                  <TableHead>Qty</TableHead>
+                                  <TableHead>Cost Price</TableHead>
+                                  <TableHead>Discount</TableHead>
+                                  <TableHead>Tax (%)</TableHead>
+                                  <TableHead className="text-right">Total</TableHead>
+                                  <TableHead>Actions</TableHead>
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {fields.length > 0 ? fields.map((item, index) => (
+                                  <TableRow key={item.id}>
+                                      <TableCell className="font-medium">{item.name}</TableCell>
+                                      <TableCell>{item.batchNumber}</TableCell>
+                                      <TableCell>{item.quantity}</TableCell>
+                                      <TableCell>{item.costPrice.toFixed(2)}</TableCell>
+                                      <TableCell>{item.discount.toFixed(2)}</TableCell>
+                                      <TableCell>{item.tax.toFixed(2)}</TableCell>
+                                      <TableCell className="text-right font-semibold">
+                                          {item.total.toFixed(2)}
+                                      </TableCell>
+                                      <TableCell>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isEditMode}>
+                                              <Trash2 className="h-4 w-4 text-red-500"/>
+                                          </Button>
+                                      </TableCell>
+                                  </TableRow>
+                              )) : (
+                                  <TableRow>
+                                      <TableCell colSpan={9} className="text-center h-24">No products added yet.</TableCell>
+                                  </TableRow>
+                              )}
+                          </TableBody>
+                      </Table>
+                      {isEditMode && <p className="text-sm text-destructive text-center mt-4">Cannot modify items in Edit Mode. Please delete and recreate the GRN to change items.</p>}
+                  </CardContent>
+              </Card>
+            </>
+           )}
           </div>
         )}
 
