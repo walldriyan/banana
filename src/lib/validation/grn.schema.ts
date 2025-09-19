@@ -19,10 +19,10 @@ export const grnSchema = z.object({
   invoiceNumber: z.string().optional(),
   items: z.array(grnItemSchema).min(1, "At least one item must be added to the GRN."),
   notes: z.string().optional(),
-  totalAmount: z.coerce.number(),
+  // totalAmount is calculated dynamically and not part of the form submission schema for validation
   paidAmount: z.coerce.number().min(0).default(0),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
   paymentStatus: z.enum(['pending', 'partial', 'paid']),
 });
 
-export type GrnFormValues = z.infer<typeof grnSchema>;
+export type GrnFormValues = z.infer<typeof grnSchema> & { totalAmount?: number };

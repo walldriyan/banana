@@ -88,7 +88,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       invoiceNumber: '',
       items: [],
       notes: '',
-      totalAmount: 0,
       paidAmount: 0,
       paymentMethod: 'cash',
       paymentStatus: 'pending',
@@ -118,20 +117,19 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const watchedPaidAmount = useWatch({ control: form.control, name: 'paidAmount' });
 
 
+  const currentTotalAmount = Array.isArray(watchedItems) ? watchedItems.reduce((sum, item) => sum + (item.total || 0), 0) : 0;
+
   useEffect(() => {
-    const total = watchedItems.reduce((sum, item) => sum + item.total, 0);
-    form.setValue('totalAmount', total, { shouldValidate: true });
-    
     // Determine payment status based on total and paid amount
     const paid = Number(watchedPaidAmount || 0);
-    if (total > 0 && paid >= total) {
+    if (currentTotalAmount > 0 && paid >= currentTotalAmount) {
         form.setValue('paymentStatus', 'paid');
-    } else if (paid > 0 && paid < total) {
+    } else if (paid > 0 && paid < currentTotalAmount) {
         form.setValue('paymentStatus', 'partial');
     } else {
         form.setValue('paymentStatus', 'pending');
     }
-  }, [watchedItems, watchedPaidAmount, form]);
+  }, [watchedItems, watchedPaidAmount, form, currentTotalAmount]);
 
   const handleProductSelect = (product: Product) => {
     const existingItemIndex = fields.findIndex(field => field.productId === product.id);
@@ -172,9 +170,15 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   async function onSubmit(data: GrnFormValues) {
     setIsSubmitting(true);
     
+    // Manually set the totalAmount before sending to the server action
+    const finalData = {
+        ...data,
+        totalAmount: currentTotalAmount
+    };
+
     const action = isEditMode && grn
-      ? updateGrnAction(grn.id, data)
-      : addGrnAction(data);
+      ? updateGrnAction(grn.id, finalData)
+      : addGrnAction(finalData);
     
     const result = await action;
     
@@ -194,13 +198,21 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       });
     }
   }
+  
+  const onError = (errors: any) => {
+    console.error("Form validation failed:", errors);
+    toast({
+        variant: "destructive",
+        title: "Validation Error",
+        description: "Please check the form for errors and ensure all required fields are filled."
+    });
+  };
 
-  const currentTotalAmount = form.getValues('totalAmount');
   const balance = currentTotalAmount - Number(watchedPaidAmount || 0);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>GRN Header</CardTitle>

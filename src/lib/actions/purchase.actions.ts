@@ -39,14 +39,18 @@ export async function addGrnAction(data: GrnFormValues) {
         };
     }
 
-    const { items, ...headerData } = validationResult.data;
+    const { items, totalAmount, ...headerData } = validationResult.data;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
+            // Recalculate total amount on the server for security
+            const calculatedTotalAmount = items.reduce((sum, item) => sum + item.total, 0);
+
             // 1. Create the GRN Header
             const newGrn = await tx.goodsReceivedNote.create({
                 data: {
                     ...headerData,
+                    totalAmount: calculatedTotalAmount, // Use server-calculated total
                     items: {
                         create: items.map(item => ({
                             productId: item.productId,
@@ -126,7 +130,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
         };
     }
 
-    const { items: newItems, ...headerData } = validationResult.data;
+    const { items: newItems, totalAmount, ...headerData } = validationResult.data;
 
     try {
         const result = await prisma.$transaction(async (tx) => {
@@ -168,6 +172,9 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                 }
             }
             
+            // Recalculate total amount on the server for security
+            const calculatedTotalAmount = newItems.reduce((sum, item) => sum + item.total, 0);
+
             // 4. Update the GRN itself
             // For simplicity, we are assuming that initial payments are not editable via this form.
             // Payment management will be handled separately.
@@ -175,6 +182,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
                 where: { id: grnId },
                 data: {
                     ...headerData,
+                    totalAmount: calculatedTotalAmount, // Use server-calculated total
                     items: {
                         // Delete old items and create new ones
                         deleteMany: {},
