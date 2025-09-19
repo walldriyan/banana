@@ -62,7 +62,6 @@ const steps = [
     { title: "Payment & Finish", description: "Finalize payment details and save." }
 ];
 
-
 const FormRow = ({ title, description, children }: { title: string; description: string; children: React.ReactNode }) => (
     <div className="flex flex-col md:flex-row items-start justify-between py-4 border-b last:border-b-0">
         <div className="md:w-1/3 mb-2 md:mb-0">
@@ -483,13 +482,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             
                             <div className="md:col-span-2 space-y-4">
                                 <Card>
-                                    <CardHeader><CardTitle className='text-base'>Batch &amp; Quantity</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4">
+                                    <CardHeader><CardTitle className='text-base'>Batch & Quantity</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4 p-4">
                                         <FormItem>
                                             <FormLabel>Batch No.</FormLabel>
                                             <div className="flex items-center gap-1">
                                                 <FormControl>
-                                                <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
+                                                <Input className='h-9' value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} placeholder="e.g. B-123" />
                                                 </FormControl>
                                                 <Button type="button" variant="ghost" size="icon" className="h-9 w-9" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
                                             </div>
@@ -497,41 +496,41 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                         <FormItem>
                                             <FormLabel>Quantity</FormLabel>
                                             <FormControl>
-                                            <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
+                                            <Input className='h-9' type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} placeholder="e.g. 100" />
                                             </FormControl>
                                         </FormItem>
                                     </CardContent>
                                 </Card>
                                 <Card>
                                     <CardHeader><CardTitle className='text-base'>Pricing</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4">
+                                    <CardContent className="grid grid-cols-2 gap-4 p-4">
                                          <FormItem>
                                             <FormLabel>Cost Price (per unit)</FormLabel>
                                             <FormControl>
-                                            <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
+                                            <Input className='h-9' type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} placeholder="e.g. 550.00" />
                                             </FormControl>
                                         </FormItem>
                                         <FormItem>
                                             <FormLabel>Selling Price (per unit)</FormLabel>
                                             <FormControl>
-                                            <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
+                                            <Input className='h-9' type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} placeholder="e.g. 750.00" />
                                             </FormControl>
                                         </FormItem>
                                     </CardContent>
                                 </Card>
                                <Card>
                                     <CardHeader><CardTitle className='text-base'>Adjustments</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4">
+                                    <CardContent className="grid grid-cols-2 gap-4 p-4">
                                         <FormItem>
                                             <FormLabel>Discount (Fixed Total)</FormLabel>
                                             <FormControl>
-                                            <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                            <Input className='h-9' type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
                                             </FormControl>
                                         </FormItem>
                                         <FormItem>
                                             <FormLabel>Tax (%)</FormLabel>
                                             <FormControl>
-                                            <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                            <Input className='h-9' type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
                                             </FormControl>
                                         </FormItem>
                                     </CardContent>
