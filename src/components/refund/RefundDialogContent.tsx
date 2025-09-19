@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
-import type { SaleItem, Product, DiscountSet } from '@/types';
+import type { SaleItem, ProductBatch, DiscountSet } from '@/types';
 import { transactionLinesToSaleItems } from '@/lib/pos-data-transformer';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ import { RefundSummary } from './RefundSummary';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Terminal } from 'lucide-react';
 import { saveTransactionToDb } from '@/lib/actions/database.actions';
+import { getProductBatchesAction } from '@/lib/actions/product.actions';
 
 
 interface RefundDialogContentProps {
@@ -37,22 +38,35 @@ export function RefundDialogContent({
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet | null>(null);
   const { toast } = useToast();
+  const [allBatches, setAllBatches] = useState<ProductBatch[]>([]);
 
-  // Find the original campaign when the component mounts
+  // Find the original campaign and map transaction lines to sale items
   useEffect(() => {
-    const campaignId = originalTransaction.transactionHeader.campaignId;
-    if (campaignId) {
-      const foundCampaign = findCampaignById(campaignId);
-      if (foundCampaign) {
-        setActiveCampaign(foundCampaign);
-      } else {
-        console.error(`Campaign with ID "${campaignId}" not found!`);
-      }
+    const initialize = async () => {
+        setIsProcessing(true);
+        const campaignId = originalTransaction.transactionHeader.campaignId;
+        if (campaignId) {
+            const foundCampaign = findCampaignById(campaignId);
+            if (foundCampaign) {
+                setActiveCampaign(foundCampaign);
+            } else {
+                console.error(`Campaign with ID "${campaignId}" not found!`);
+            }
+        }
+        
+        // Fetch all product batches to correctly map transaction lines to SaleItems
+        const batchesResult = await getProductBatchesAction();
+        if (batchesResult.success && batchesResult.data) {
+            setAllBatches(batchesResult.data);
+            const items = transactionLinesToSaleItems(originalTransaction.transactionLines, batchesResult.data);
+            setRefundCart(items);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load product batch data for refund.' });
+        }
+        setIsProcessing(false);
     }
-    // Use the updated transactionLinesToSaleItems which now restores custom discounts
-    const items = transactionLinesToSaleItems(originalTransaction.transactionLines, []);
-    setRefundCart(items);
-  }, [originalTransaction]);
+    initialize();
+  }, [originalTransaction, toast]);
 
   // Recalculate discounts whenever the refund cart or the campaign changes
   useEffect(() => {
@@ -98,7 +112,7 @@ export function RefundDialogContent({
       const updatedCart = [...currentCart];
       const currentItem = updatedCart[itemIndex];
 
-      const originalLine = originalTransaction.transactionLines.find(line => line.productId === currentItem.productId && line.batchNumber === currentItem.batchNumber);
+      const originalLine = originalTransaction.transactionLines.find(line => line.batchId === currentItem.id);
       const maxQty = originalLine?.quantity || 0;
 
       let newQuantity = Number(currentItem.quantity) + Number(change);

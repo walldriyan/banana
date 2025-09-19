@@ -99,7 +99,12 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                             item.label.toLowerCase().includes(inputValue.toLowerCase()) ||
                             item.product.barcode?.toLowerCase().includes(inputValue.toLowerCase())
                           )
-                         .map((item) => (
+                         .map((item) => {
+                             const units = typeof item.product.product.units === 'string'
+                                ? JSON.parse(item.product.product.units)
+                                : item.product.product.units;
+
+                            return (
                             <CommandItem
                                 key={item.value}
                                 value={item.value}
@@ -109,12 +114,12 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                                 <div className="flex justify-between w-full">
                                     <div className="flex flex-col">
                                     <span className="font-medium">{item.label}</span>
-                                    <span className="text-xs text-gray-500">Stock: {item.stock} {item.product.units.baseUnit}</span>
+                                    <span className="text-xs text-gray-500">Stock: {item.stock} {units.baseUnit}</span>
                                     </div>
                                     <span className="font-semibold">Rs. {item.price.toFixed(2)}</span>
                                 </div>
                             </CommandItem>
-                        ))}
+                        )})}
                     </CommandGroup>
                 </CommandList>
             </div>

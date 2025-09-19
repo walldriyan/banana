@@ -26,8 +26,9 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, isCalculating, discou
   const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
   
   const isCustomDiscount = item.customDiscountValue !== undefined;
-
-  const allUnits = [{ name: item.units.baseUnit, conversionFactor: 1 }, ...(item.units.derivedUnits || [])];
+  
+  const units = typeof item.product.units === 'string' ? JSON.parse(item.product.units) : item.product.units;
+  const allUnits = [{ name: units.baseUnit, conversionFactor: 1 }, ...(units.derivedUnits || [])];
   const hasDerivedUnits = allUnits.length > 1;
 
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,14 +47,14 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, isCalculating, discou
       <div className="flex items-start justify-between gap-4">
         <div className="flex-grow">
           <p className="font-semibold text-gray-900">
-            {item.name}{' '}
+            {item.product.name}{' '}
             {item.batchNumber && (
               <span className="text-sm font-normal text-gray-500">
                 (Batch: {item.batchNumber})
               </span>
             )}
           </p>
-          <p className="text-sm text-gray-600">Rs. {item.price.toFixed(2)} / {item.units.baseUnit}</p>
+          <p className="text-sm text-gray-600">Rs. {item.price.toFixed(2)} / {units.baseUnit}</p>
         </div>
         {isCalculating ? (
             <Skeleton className="h-7 w-24" />
@@ -109,7 +110,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, isCalculating, discou
                 </SelectContent>
             </Select>
         ) : (
-            <span className="text-sm text-gray-500 px-3">{item.units.baseUnit}</span>
+            <span className="text-sm text-gray-500 px-3">{units.baseUnit}</span>
         )}
 
         <Button 
@@ -164,7 +165,7 @@ const CartItemCard: React.FC<CartItemCardProps> = ({ item, isCalculating, discou
 
         <div className="flex justify-between items-baseline text-xs mt-2">
            <span className="text-gray-500">
-            Total Base Qty: {item.quantity.toFixed(2)} {item.units.baseUnit}
+            Total Base Qty: {item.quantity.toFixed(2)} {units.baseUnit}
           </span>
           {isCalculating ? (
              <Skeleton className="h-4 w-20" />

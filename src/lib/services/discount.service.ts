@@ -9,7 +9,7 @@
 
 import { DiscountEngine } from '@/discount-engine';
 import { DiscountResult } from '@/discount-engine/core/result';
-import type { SaleItem, DiscountSet, Product } from '@/types';
+import type { SaleItem, DiscountSet, ProductBatch } from '@/types';
 
 /**
  * Calculates discounts for a given set of items and an active campaign.

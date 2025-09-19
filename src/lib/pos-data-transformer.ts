@@ -1,5 +1,5 @@
 // src/lib/pos-data-transformer.ts
-import type { SaleItem, AppliedRuleInfo, Product, DiscountSet } from '@/types';
+import type { SaleItem, AppliedRuleInfo, Product, DiscountSet, ProductBatch } from '@/types';
 
 // Define types for the data we'll collect from the UI
 export interface CustomerData {
@@ -55,7 +55,7 @@ export interface TransactionLine {
     // Add fields to store the manual override state
     customDiscountValue?: number;
     customDiscountType?: 'fixed' | 'percentage';
-    customApplyFixedOnce?: boolean; // Persist the one-time choice
+    customApplyFixedOnce?: boolean;
 }
 
 
@@ -129,7 +129,7 @@ export function transformTransactionDataForDb(
     return {
       saleItemId: item.saleItemId,
       productId: item.productId, // General product ID
-      productName: item.name,
+      productName: item.product.name,
       batchId: item.id, // Unique product ID (acting as batch ID)
       batchNumber: item.batchNumber,
       quantity: item.quantity,
@@ -173,30 +173,41 @@ export function transformTransactionDataForDb(
 }
 
 // Helper to convert DB transaction lines back to SaleItems for the refund cart
-export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: number })[], products: Product[]): SaleItem[] {
+export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: number })[], products: ProductBatch[]): SaleItem[] {
     return lines.map(line => {
         // Find the matching product-batch combination from the current sample products
-        const product = products.find(p => p.id === line.batchId);
+        const productBatch = products.find(p => p.id === line.batchId);
         
         const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         const unitPrice = line.unitPrice || line.price || 0;
 
-        if (!product) {
+        if (!productBatch) {
             // Fallback for products that might not exist in the current product list
-            console.warn(`Product with ID (batchId) ${line.batchId} not found in sampleProducts. Creating fallback SaleItem.`);
+            console.warn(`ProductBatch with ID ${line.batchId} not found in sampleProducts. Creating fallback SaleItem.`);
+            
+            const units = { baseUnit: line.displayUnit || 'unit', derivedUnits: [] };
+            
             return {
                 id: line.batchId,
                 productId: line.productId,
-                name: line.productName,
                 batchNumber: line.batchNumber || 'N/A',
                 sellingPrice: unitPrice,
                 costPrice: 0,
                 stock: 0, // Cannot determine stock
-                units: { baseUnit: line.displayUnit || 'unit', derivedUnits: [] },
-                isService: false,
-                isActive: false,
-                defaultQuantity: 1,
+                addedDate: new Date(),
+                product: {
+                    id: line.productId,
+                    name: line.productName,
+                    description: '',
+                    category: '',
+                    brand: '',
+                    units: units as any,
+                    isService: false,
+                    isActive: false,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
                 // --- Core SaleItem Fields ---
                 saleItemId,
                 price: unitPrice,
@@ -212,7 +223,7 @@ export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: 
         }
                 
         return {
-            ...product,
+            ...productBatch,
             saleItemId,
             quantity: line.quantity, // Base unit quantity
             displayUnit: line.displayUnit,
