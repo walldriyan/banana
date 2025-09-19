@@ -27,10 +27,7 @@ export async function getGrnsAction() {
 
 /**
  * Server action to add a new GRN.
- * This is a transactional operation. It now uses a "No Template" model.
- * It assumes the frontend provides all necessary information for each line item
- * to create a new product batch from scratch. It does not rely on finding an
- * existing product to clone data.
+ * This is a transactional operation. It creates new product batches for each line item.
  */
 export async function addGrnAction(data: GrnFormValues) {
     console.log('[addGrnAction] Received data on server:', data);
@@ -55,59 +52,46 @@ export async function addGrnAction(data: GrnFormValues) {
             } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
             }
-            
+
+            // Create the GRN and all its related items in a single, nested query
             const newGrn = await tx.goodsReceivedNote.create({
                  data: {
                     ...headerData,
                     paymentStatus: paymentStatus,
+                    items: {
+                        create: items.map(item => ({
+                            product: {
+                                create: {
+                                    name: item.name,
+                                    productId: item.productId,
+                                    batchNumber: item.batchNumber,
+                                    sellingPrice: item.sellingPrice,
+                                    category: item.category,
+                                    brand: item.brand,
+                                    units: JSON.stringify(item.units),
+                                    costPrice: item.costPrice,
+                                    quantity: item.quantity,
+                                    stock: item.quantity,
+                                    supplierId: headerData.supplierId,
+                                    addeDate: new Date(),
+                                    isActive: true,
+                                    isService: false,
+                                    barcode: `${item.productId}-${item.batchNumber}`,
+                                    tax: 0,
+                                    defaultDiscount: 0,
+                                }
+                            },
+                            batchNumber: item.batchNumber,
+                            quantity: item.quantity,
+                            costPrice: item.costPrice,
+                            discount: item.discount,
+                            tax: item.tax,
+                            total: item.total,
+                        }))
+                    }
                 }
             });
 
-            for (const item of items) {
-                // ALWAYS create a new product batch record for each GRN line item.
-                const newProductBatch = await tx.product.create({
-                    data: {
-                        name: item.name, // From frontend
-                        productId: item.productId, // From frontend
-                        batchNumber: item.batchNumber, // From frontend
-                        sellingPrice: item.sellingPrice, // From frontend
-                        category: item.category, // From frontend
-                        brand: item.brand, // From frontend
-                        units: JSON.stringify(item.units), // From frontend
-                        
-                        costPrice: item.costPrice,
-                        quantity: item.quantity,
-                        stock: item.quantity, // Initial stock is the GRN quantity
-                        
-                        supplierId: headerData.supplierId,
-                        addeDate: new Date(),
-                        isActive: true,
-                        isService: false,
-                        
-                        // Defaulting other nullable fields
-                        barcode: `${item.productId}-${item.batchNumber}`,
-                        tax: 0,
-                        defaultDiscount: 0,
-                    }
-                });
-                
-                await tx.goodsReceivedNoteItem.create({
-                    data: {
-                        goodsReceivedNoteId: newGrn.id,
-                        // productId: newProductBatch.id, // This is incorrect
-                        product: {
-                            connect: { id: newProductBatch.id },
-                        },
-                        batchNumber: newProductBatch.batchNumber,
-                        quantity: item.quantity,
-                        costPrice: item.costPrice,
-                        discount: item.discount,
-                        tax: item.tax,
-                        total: item.total,
-                    }
-                });
-            }
-            
             if (paidAmount > 0) {
               await tx.purchasePayment.create({
                 data: {
