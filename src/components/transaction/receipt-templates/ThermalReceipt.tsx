@@ -24,7 +24,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
   const finalCashChange = paymentDetails.paidAmount - finalTotalToShow;
 
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
-  
+
   const shouldShowPaymentDetails = !showAsGiftReceipt || (showAsGiftReceipt && paymentDetails.isInstallment);
 
 
@@ -66,13 +66,13 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
               <tr>
                 <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
                 <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
-                
+
                 <td className="text-right">{item.unitPrice.toFixed(2)}</td>
                 <td className="text-right">{item.lineTotalBeforeDiscount.toFixed(2)}</td>
 
                 <td className="text-right">{item.lineTotalAfterDiscount.toFixed(2)}</td>
               </tr>
-              
+
               {!showAsGiftReceipt && item.lineDiscount > 0 && (
                 <tr>
                   <td colSpan={3} className="text-right italic text-gray-600">
@@ -107,17 +107,42 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           </>
         )}
 
+
+
+
+
+        {/* {!showAsGiftReceipt && (
+
+
         <div className="flex justify-between font-bold text-base">
           <span>TOTAL:</span>
           <span>Rs. {finalTotalToShow.toFixed(2)}</span>
         </div>
         
+)} */}
+
+        {!showAsGiftReceipt && (
+          <div className="flex justify-between font-bold text-base">
+            <span>TOTAL:</span>
+            <span>Rs.{finalTotalToShow.toFixed(2)}</span>
+          </div>
+        )}
+
+        {showAsGiftReceipt && (
+          <div className="flex justify-between font-bold text-base">
+            <span>TOTAL:</span>
+            {/* <span>Rs.{finalTotalToShow.toFixed(2)}</span> */}
+            <span>Rs.{transactionHeader.subtotal.toFixed(2)}</span>
+
+          </div>
+        )}
+
         {transactionHeader.totalDiscountAmount > 0 && showAsGiftReceipt && (
           <>
             <Line />
             <div className="flex justify-between font-bold text-blue-700">
-                <span>Your Savings:</span>
-                <span>Rs. {transactionHeader.totalDiscountAmount.toFixed(2)}</span>
+              <span>Your Savings:</span>
+              <span>Rs. {transactionHeader.totalDiscountAmount.toFixed(2)}</span>
             </div>
           </>
         )}
@@ -168,7 +193,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                     <span>0.00</span>
                   </div>
                 )}
-                
+
                 {paymentDetails.outstandingAmount > 0 && (
                   <div className="flex justify-between font-bold">
                     <span>New Outstanding:</span>
@@ -184,15 +209,15 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
                 </div>
 
                 {paymentDetails.outstandingAmount > 0 ? (
-                   <div className="flex justify-between font-bold text-red-600">
-                      <span>Outstanding:</span>
-                      <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
-                    </div>
+                  <div className="flex justify-between font-bold text-red-600">
+                    <span>Outstanding:</span>
+                    <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
+                  </div>
                 ) : (
-                    <div className="flex justify-between">
-                      <span>Change:</span>
-                      <span>{finalCashChange.toFixed(2)}</span>
-                    </div>
+                  <div className="flex justify-between">
+                    <span>Change:</span>
+                    <span>{finalCashChange.toFixed(2)}</span>
+                  </div>
                 )}
               </>
             )}
