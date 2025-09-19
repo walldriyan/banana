@@ -70,7 +70,7 @@ export async function addProductAction(data: ProductFormValues) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
         const target = (error.meta?.target as string[])?.join(', ');
-        return { success: false, error: `A product with this ${target} already exists.` };
+        return { success: false, error: `A product with this ${target} already exists. Please choose a different value.` };
       }
     }
     return {

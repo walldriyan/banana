@@ -73,54 +73,26 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
-                const existingBatch = await tx.product.findFirst({
-                    where: { 
-                        id: item.productId,
+                 // The `item.productId` from the GRN form IS the unique `id` of the product batch.
+                 const productToUpdate = await tx.product.findUnique({
+                    where: { id: item.productId }
+                 });
+
+                 if (!productToUpdate) {
+                     throw new Error(`Critical error: Product with unique ID ${item.productId} was selected in the form but not found in the database.`);
+                 }
+
+                // Regardless of whether it's a new batch number or an existing one,
+                // we are adding stock to an existing product record.
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: {
+                        quantity: { increment: item.quantity },
+                        stock: { increment: item.quantity },
+                        // Optionally update the cost price of the batch from this new purchase
+                        costPrice: item.costPrice, 
                     }
                 });
-
-                if (existingBatch && existingBatch.batchNumber === item.batchNumber) {
-                     await tx.product.update({
-                        where: { id: existingBatch.id },
-                        data: {
-                            quantity: { increment: item.quantity },
-                            stock: { increment: item.quantity },
-                            costPrice: item.costPrice,
-                        }
-                    });
-                } else {
-                    const productInfoFromExistingBatch = await tx.product.findUnique({
-                        where: { id: item.productId }
-                    });
-
-                    if (!productInfoFromExistingBatch) {
-                         throw new Error(`Cannot create new batch. No base product info found for ID: ${item.productId}.`);
-                    }
-
-                    const generalProductId = productInfoFromExistingBatch.productId;
-
-                    const productMaster = await tx.product.findFirst({
-                        where: { productId: generalProductId }, 
-                    });
-
-                    if (!productMaster) {
-                       throw new Error(`Cannot create new batch. No master product found for general productId: ${generalProductId}. Add the product manually first.`);
-                    }
-                    
-                    const { id, quantity, stock, batchNumber, barcode, ...masterDataToClone } = productMaster;
-
-                    await tx.product.create({
-                       data: {
-                           ...masterDataToClone,
-                           batchNumber: item.batchNumber || `B-${Date.now()}`,
-                           barcode: `SKU-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-                           quantity: item.quantity,
-                           stock: item.quantity,
-                           costPrice: item.costPrice,
-                           addeDate: new Date(),
-                       }
-                    });
-                }
             }
             
             if (newGrn.paidAmount > 0) {
@@ -136,6 +108,9 @@ export async function addGrnAction(data: GrnFormValues) {
             }
 
             return newGrn;
+        }, {
+          maxWait: 10000, // 10 seconds
+          timeout: 20000, // 20 seconds
         });
 
         revalidatePath('/dashboard/purchases');
