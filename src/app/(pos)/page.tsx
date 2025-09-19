@@ -147,102 +147,110 @@ export default function MyNewEcommerceShop() {
 
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
-      const itemIndex = cart.findIndex(item => item.saleItemId === saleItemId);
-      if (itemIndex === -1) return;
-  
-      const currentItem = cart[itemIndex];
-      const unitToUse = newDisplayUnit || currentItem.displayUnit;
-      const allUnits = [{ name: currentItem.product.units.baseUnit, conversionFactor: 1 }, ...(currentItem.product.units.derivedUnits || [])];
-      const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
-      const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-  
-      // Calculate the new total quantity in the base unit
-      const newBaseQuantity = newDisplayQuantity * conversionFactor;
-  
-      // STOCK VALIDATION
-      if (newBaseQuantity > currentItem.stock) {
-        toast({
-          variant: "destructive",
-          title: "Stock Limit Exceeded",
-          description: `Cannot add ${newDisplayQuantity} ${unitToUse}. Only ${currentItem.stock / conversionFactor} ${unitToUse} available.`,
-        });
-        return; // Exit without updating state
-      }
-  
-      setCart(currentCart => {
-        const updatedCart = [...currentCart];
-  
-        // If the new quantity is zero or less, remove the item
-        if (newDisplayQuantity <= 0) {
-          updatedCart.splice(itemIndex, 1);
-          return updatedCart;
-        }
-  
-        updatedCart[itemIndex] = {
-          ...currentItem,
-          displayUnit: unitToUse,
-          displayQuantity: newDisplayQuantity,
-          quantity: newBaseQuantity // This is the total base unit quantity
-        };
-  
-        return updatedCart;
+    const itemIndex = cart.findIndex(item => item.saleItemId === saleItemId);
+    if (itemIndex === -1) return;
+
+    const currentItem = cart[itemIndex];
+    
+    // If the quantity is zero or less, remove the item from the cart.
+    if (newDisplayQuantity <= 0) {
+      setCart(currentCart => currentCart.filter(item => item.saleItemId !== saleItemId));
+      return;
+    }
+
+    const unitToUse = newDisplayUnit || currentItem.displayUnit;
+    const allUnits = [{ name: currentItem.product.units.baseUnit, conversionFactor: 1 }, ...(currentItem.product.units.derivedUnits || [])];
+    const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+    const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+
+    // Calculate the new total quantity in the base unit.
+    const newBaseQuantity = newDisplayQuantity * conversionFactor;
+
+    // STOCK VALIDATION
+    if (newBaseQuantity > currentItem.stock) {
+      toast({
+        variant: "destructive",
+        title: "Stock Limit Exceeded",
+        description: `Cannot set quantity to ${newDisplayQuantity} ${unitToUse}. Only ${currentItem.stock / conversionFactor} ${unitToUse} available.`,
       });
-    };
+      // Do not update state if stock limit is exceeded.
+      return;
+    }
+
+    // Update the state with the new values.
+    setCart(currentCart => {
+      const updatedCart = [...currentCart];
+      updatedCart[itemIndex] = {
+        ...currentItem,
+        displayUnit: unitToUse,
+        displayQuantity: newDisplayQuantity,
+        quantity: newBaseQuantity, // This is the total base unit quantity
+      };
+      return updatedCart;
+    });
+  };
 
 
   const addToCart = (productBatch: ProductBatch) => {
-    // Find if an item from this specific batch is already in the cart
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
-    // If item is not in the cart, add it with quantity 1
-    if (existingItemIndex === -1) {
-      if (1 > productBatch.stock) {
-        toast({
-          variant: "destructive",
-          title: "Out of Stock",
-          description: `Cannot add ${productBatch.product.name}, it is out of stock.`,
+    if (existingItemIndex !== -1) {
+        // Item exists, just increase its quantity
+        setCart(currentCart => {
+            const updatedCart = [...currentCart];
+            const existingItem = updatedCart[existingItemIndex];
+            
+            // Increment the display quantity by 1
+            const newDisplayQuantity = existingItem.displayQuantity + 1;
+
+            // Find the conversion factor for the current display unit
+            const allUnits = [{ name: existingItem.product.units.baseUnit, conversionFactor: 1 }, ...(existingItem.product.units.derivedUnits || [])];
+            const selectedUnitDefinition = allUnits.find(u => u.name === existingItem.displayUnit);
+            const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+            
+            // Calculate the new total base quantity
+            const newBaseQuantity = newDisplayQuantity * conversionFactor;
+
+            if (newBaseQuantity > existingItem.stock) {
+                toast({
+                    variant: "destructive",
+                    title: "Stock Limit Exceeded",
+                    description: `Cannot add more ${existingItem.product.name}. Maximum stock reached.`,
+                });
+                return currentCart; // Return original cart without changes
+            }
+
+            // Update the item in the cart
+            updatedCart[existingItemIndex] = {
+                ...existingItem,
+                quantity: newBaseQuantity,
+                displayQuantity: newDisplayQuantity,
+            };
+
+            return updatedCart;
         });
-        return;
-      }
-      
-      const newSaleItem: SaleItem = {
-        ...productBatch,
-        saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        quantity: 1, // Base unit quantity
-        displayQuantity: 1, // Display quantity
-        displayUnit: productBatch.product.units.baseUnit, // Set the display unit
-        price: productBatch.sellingPrice,
-      };
-      
-      setCart(currentCart => [...currentCart, newSaleItem]);
-      return; // Exit after adding new item
+    } else {
+        // Item is not in the cart, add it
+        if (1 > productBatch.stock) {
+            toast({
+                variant: "destructive",
+                title: "Out of Stock",
+                description: `Cannot add ${productBatch.product.name}, it is out of stock.`,
+            });
+            return;
+        }
+        
+        const newSaleItem: SaleItem = {
+            ...productBatch,
+            saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            quantity: 1, // Base unit quantity
+            displayQuantity: 1, // Display quantity
+            displayUnit: productBatch.product.units.baseUnit, // Set the default display unit
+            price: productBatch.sellingPrice,
+        };
+        
+        setCart(currentCart => [...currentCart, newSaleItem]);
     }
-
-    // If item exists, just increase its quantity
-    setCart(currentCart => {
-      const updatedCart = [...currentCart];
-      const existingItem = updatedCart[existingItemIndex];
-      
-      const newBaseQuantity = existingItem.quantity + 1;
-
-      if (newBaseQuantity > existingItem.stock) {
-        toast({
-          variant: "destructive",
-          title: "Stock Limit Exceeded",
-          description: `Cannot add more ${existingItem.product.name}. Maximum stock reached.`,
-        });
-        return currentCart; // Return original cart without changes
-      }
-
-      // Update the quantity. Assuming we increment by the base unit.
-      updatedCart[existingItemIndex] = {
-        ...existingItem,
-        quantity: newBaseQuantity,
-        displayQuantity: newBaseQuantity, // Let's assume display and base are 1:1 for simple adds
-      };
-
-      return updatedCart;
-    });
 };
 
   const clearCart = () => {
