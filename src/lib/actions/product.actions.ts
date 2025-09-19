@@ -22,7 +22,7 @@ export async function addProductAction(data: ProductFormValues) {
     };
   }
   
-  const { id, ...validatedData } = validationResult.data;
+  const { id, supplierId, ...validatedData } = validationResult.data;
 
   // Enforce composite unique constraint at the application level
   const existingProductBatch = await prisma.product.findFirst({
@@ -55,6 +55,12 @@ export async function addProductAction(data: ProductFormValues) {
         expiryDate: validatedData.expiryDate ? new Date(validatedData.expiryDate) : null,
         addeDate: new Date(),
         units: JSON.stringify(validatedData.units),
+        // Handle the supplier relation correctly
+        ...(supplierId && {
+          supplier: {
+            connect: { id: supplierId },
+          },
+        }),
       },
     });
     
@@ -173,7 +179,7 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
         };
     }
 
-    const { id: validatedId, ...validatedData } = validationResult.data;
+    const { id: validatedId, supplierId, ...validatedData } = validationResult.data;
 
     try {
         const updatedProduct = await prisma.product.update({
@@ -193,6 +199,10 @@ export async function updateProductAction(id: string, data: ProductFormValues) {
               manufactureDate: validatedData.manufactureDate ? new Date(validatedData.manufactureDate) : null,
               expiryDate: validatedData.expiryDate ? new Date(validatedData.expiryDate) : null,
               units: JSON.stringify(validatedData.units),
+               // Handle the supplier relation correctly for updates
+              ...(supplierId
+                ? { supplier: { connect: { id: supplierId } } }
+                : { supplier: { disconnect: true } }),
             },
         });
         
