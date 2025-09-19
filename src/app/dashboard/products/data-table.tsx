@@ -11,6 +11,9 @@ import {
   SortingState,
   ColumnFiltersState,
   getFilteredRowModel,
+  getGroupedRowModel,
+  getExpandedRowModel,
+  ExpandedState,
 } from "@tanstack/react-table"
 
 import {
@@ -41,6 +44,8 @@ export function ProductsDataTable<TData, TValue>({
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [rowSelection, setRowSelection] = useState({})
+    const [grouping, setGrouping] = useState<string[]>(['name'])
+    const [expanded, setExpanded] = useState<ExpandedState>({})
 
 
   const table = useReactTable({
@@ -53,10 +58,16 @@ export function ProductsDataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onRowSelectionChange: setRowSelection,
+    onGroupingChange: setGrouping,
+    getGroupedRowModel: getGroupedRowModel(),
+    onExpandedChange: setExpanded,
+    getExpandedRowModel: getExpandedRowModel(),
     state: {
       sorting,
       columnFilters,
       rowSelection,
+      grouping,
+      expanded,
     },
   })
 
@@ -85,7 +96,7 @@ export function ProductsDataTable<TData, TValue>({
                     <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
                         return (
-                        <TableHead key={header.id}>
+                        <TableHead key={header.id} colSpan={header.colSpan}>
                             {header.isPlaceholder
                             ? null
                             : flexRender(
@@ -106,7 +117,7 @@ export function ProductsDataTable<TData, TValue>({
                         data-state={row.getIsSelected() && "selected"}
                     >
                         {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 2}rem` }}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                         ))}

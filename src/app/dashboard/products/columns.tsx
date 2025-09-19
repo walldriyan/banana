@@ -3,7 +3,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import type { Product } from "@/types"
-import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, ChevronsRight, ChevronsDownUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -13,9 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
-import { deleteProductAction } from "@/lib/actions/product.actions"
-import { useToast } from "@/hooks/use-toast"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
+import { Badge } from "../ui/badge"
 
 // Define a new interface for the component props
 interface CellActionsProps {
@@ -45,12 +44,12 @@ const CellActions = ({ product, onEdit, onDelete }: CellActionsProps) => {
                 </DropdownMenuItem>
                  <AuthorizationGuard permissionKey="products.update">
                     <DropdownMenuItem onClick={handleEditClick}>
-                      Edit
+                      Edit Batch
                     </DropdownMenuItem>
                 </AuthorizationGuard>
                  <AuthorizationGuard permissionKey="products.delete">
                     <DropdownMenuItem onClick={() => onDelete(product.id)} className="text-red-500">
-                        Delete
+                        Delete Batch
                     </DropdownMenuItem>
                 </AuthorizationGuard>
             </DropdownMenuContent>
@@ -84,25 +83,39 @@ export const getColumns = (
     },
     {
         accessorKey: "name",
-        header: ({ column }) => {
-          return (
-            <Button
-              variant="ghost"
-              onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-              Name
-              <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-          )
-        },
-        cell: ({ row }) => {
-            const product = row.original;
-            return (
-                <div className="font-medium">
-                    {product.name}
-                    {product.batchNumber && <span className="text-xs text-muted-foreground ml-2">({product.batchNumber})</span>}
+        header: "Name",
+        cell: ({ row, getValue }) => {
+            const isGrouped = row.getIsGrouped();
+            const value = getValue() as string;
+
+            if (isGrouped) {
+                return (
+                <div className="flex items-center gap-2 font-bold">
+                    <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={row.getToggleExpandedHandler()}
+                    className="h-6 w-6"
+                    >
+                    {row.getIsExpanded() ? (
+                        <ChevronsDownUp className="h-4 w-4" />
+                    ) : (
+                        <ChevronsRight className="h-4 w-4" />
+                    )}
+                    </Button>
+                    {value} ({row.subRows.length})
                 </div>
-            )
+                );
+            }
+
+            return <div>{value}</div>;
+        },
+    },
+     {
+        accessorKey: "batchNumber",
+        header: "Batch Number",
+        cell: ({ row }) => {
+            return <Badge variant="secondary">{row.getValue("batchNumber")}</Badge>
         }
     },
     {
@@ -142,6 +155,11 @@ export const getColumns = (
     },
     {
         id: "actions",
-        cell: ({ row }) => <CellActions product={row.original} onEdit={onEdit} onDelete={onDelete} />,
+        cell: ({ row }) => {
+            if (row.getIsGrouped()) {
+                return null; // No actions on grouped rows
+            }
+            return <CellActions product={row.original} onEdit={onEdit} onDelete={onDelete} />
+        },
     },
 ]
