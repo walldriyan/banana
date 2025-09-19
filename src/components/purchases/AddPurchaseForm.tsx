@@ -482,8 +482,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             
                             <div className="md:col-span-2 space-y-2">
                                 <Card>
-                                    <CardHeader><CardTitle className='text-base'>Batch & Quantity</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4 p-4">
+                                    <CardHeader className="p-4 pb-2"><CardTitle className='text-base'>Batch & Quantity</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4 p-4 pt-0">
                                         <FormItem>
                                             <FormLabel>Batch No.</FormLabel>
                                             <div className="flex items-center gap-1">
@@ -502,8 +502,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                     </CardContent>
                                 </Card>
                                 <Card>
-                                    <CardHeader><CardTitle className='text-base'>Pricing</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4 p-4">
+                                    <CardHeader className="p-4 pb-2"><CardTitle className='text-base'>Pricing</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4 p-4 pt-0">
                                          <FormItem>
                                             <FormLabel>Cost Price (per unit)</FormLabel>
                                             <FormControl>
@@ -519,8 +519,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                     </CardContent>
                                 </Card>
                                <Card>
-                                    <CardHeader><CardTitle className='text-base'>Adjustments</CardTitle></CardHeader>
-                                    <CardContent className="grid grid-cols-2 gap-4 p-4">
+                                    <CardHeader className="p-4 pb-2"><CardTitle className='text-base'>Adjustments</CardTitle></CardHeader>
+                                    <CardContent className="grid grid-cols-2 gap-4 p-4 pt-0">
                                         <FormItem>
                                             <FormLabel>Discount (Fixed Total)</FormLabel>
                                             <FormControl>
