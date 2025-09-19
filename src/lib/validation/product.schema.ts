@@ -30,6 +30,12 @@ export const productSchema = z.object({
   costPrice: z.coerce.number().min(0, "Cost price must be non-negative.").optional().nullable(),
   quantity: z.coerce.number().int().min(0, "Initial stock must be a non-negative integer."),
   
+  // Batch-specific tax and discount
+  tax: z.coerce.number().min(0).optional().nullable(),
+  taxtype: z.enum(['PERCENTAGE', 'FIXED']).default('PERCENTAGE'),
+  discount: z.coerce.number().min(0).optional().nullable(),
+  discountType: z.enum(['PERCENTAGE', 'FIXED']).default('PERCENTAGE'),
+
   // Optional Fields (can belong to master or batch)
   barcode: z.string().optional().nullable(),
   supplierId: z.string().optional().nullable(),
@@ -41,10 +47,6 @@ export const productSchema = z.object({
   // Unused fields from original schema, kept for compatibility, but can be removed later
   minStockLevel: z.coerce.number().optional().nullable(),
   maxStockLevel: z.coerce.number().optional().nullable(),
-  tax: z.coerce.number().optional().nullable(),
-  taxtype: z.string().optional().nullable(),
-  defaultDiscount: z.coerce.number().optional().nullable(),
-  defaultDiscountType: z.string().optional().nullable(),
   defaultQuantity: z.coerce.number().optional().nullable(),
 });
 
@@ -66,6 +68,11 @@ export const productBatchSchema = z.object({
     maxStockLevel: z.coerce.number().int().min(0).optional().nullable(),
     location: z.string().optional().nullable(),
     notes: z.string().optional().nullable(),
+    // Batch-level tax and discount
+    tax: z.coerce.number().min(0).optional().nullable(),
+    taxtype: z.enum(['PERCENTAGE', 'FIXED']).default('PERCENTAGE'),
+    discount: z.coerce.number().min(0).optional().nullable(),
+    discountType: z.enum(['PERCENTAGE', 'FIXED']).default('PERCENTAGE'),
 });
 
 export type ProductBatchFormValues = z.infer<typeof productBatchSchema>;

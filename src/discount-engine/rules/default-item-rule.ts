@@ -28,7 +28,6 @@ export class DefaultItemRule implements IDiscountRule {
         return;
       }
       
-      // If a higher-priority discount (e.g., custom, batch, product-specific) has already been applied, skip default rules for this item.
       if (item.customDiscountValue != null && item.customDiscountValue > 0) {
         console.log(`Custom discount value is set for ${item.lineId}, skipping default rule.`);
         return;
@@ -41,39 +40,40 @@ export class DefaultItemRule implements IDiscountRule {
 
       // --- NEW LOGIC FOR PRODUCT DEFAULTS CAMPAIGN ---
       if (isProductDefaultMode) {
-        const product = item.product; // The master product is nested in the SaleItem (which extends ProductBatch)
-        if (product.defaultDiscount && product.defaultDiscount > 0) {
-          const productRuleConfig: SpecificDiscountRuleConfig = {
+        // In this mode, we use the discount stored on the BATCH (SaleItem) itself.
+        if (item.discount && item.discount > 0) {
+          const batchRuleConfig: SpecificDiscountRuleConfig = {
             isEnabled: true,
-            name: `Product Default: ${product.name}`,
-            type: product.defaultDiscountType === 'PERCENTAGE' ? 'percentage' : 'fixed',
-            value: product.defaultDiscount,
-            applyFixedOnce: false, // Product defaults are typically per-unit
-            description: `Default discount stored on the product.`
+            name: `Batch Default: ${item.batchNumber}`,
+            type: item.discountType === 'PERCENTAGE' ? 'percentage' : 'fixed',
+            value: item.discount,
+            applyFixedOnce: false, // Batch defaults are typically per-unit
+            description: `Default discount stored on the product batch.`
           };
           
           const lineTotal = item.price * item.quantity;
-          const discountAmount = evaluateRule(productRuleConfig, item.price, item.quantity, lineTotal, lineTotal);
+          const discountAmount = evaluateRule(batchRuleConfig, item.price, item.quantity, lineTotal, lineTotal);
           
           if (discountAmount > 0) {
-            const ruleId = generateRuleId('product-default', product.id, productRuleConfig.type, product.id);
+            const ruleId = generateRuleId('batch-default', item.id, batchRuleConfig.type, item.productId);
             lineResult.addDiscount({
               ruleId,
               discountAmount,
-              description: productRuleConfig.description || 'Product default discount',
+              description: batchRuleConfig.description || 'Batch default discount',
               isOneTime: false,
               appliedRuleInfo: {
                 discountCampaignName: this.campaign.name,
-                sourceRuleName: productRuleConfig.name,
+                sourceRuleName: batchRuleConfig.name,
                 totalCalculatedDiscount: discountAmount,
-                ruleType: 'product_default_discount',
-                productIdAffected: product.id,
+                ruleType: 'product_batch_default_discount',
+                productIdAffected: item.productId,
+                batchIdAffected: item.id,
                 appliedOnce: false,
               }
             });
           }
         }
-        // Once product-default logic is handled, we stop for this item.
+        // Once batch-default logic is handled, we stop for this item.
         return; 
       }
       // --- END OF NEW LOGIC ---

@@ -78,7 +78,7 @@ export const noDiscounts: DiscountSet = {
 export const productDefaults: DiscountSet = {
   id: 'promo-product-defaults',
   name: 'Product Defaults',
-  description: 'Applies the default tax and discount saved on each product.',
+  description: 'Applies the default tax and discount saved on each product batch.',
   isActive: true,
   isDefault: false,
   isOneTimePerTransaction: false,

@@ -64,8 +64,8 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
     },
     {
         title: "Tax & Discounts",
-        description: "Set default tax and discount values.",
-        fields: ["tax", "taxtype", "defaultDiscount", "defaultDiscountType"]
+        description: "Set batch-specific tax and discount values.",
+        fields: ["tax", "taxtype", "discount", "discountType"]
     },
     {
         title: "Inventory & Other Details",
@@ -122,8 +122,8 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
       maxStockLevel: 0,
       tax: 0,
       taxtype: "PERCENTAGE",
-      defaultDiscount: 0,
-      defaultDiscountType: "PERCENTAGE",
+      discount: 0,
+      discountType: "PERCENTAGE",
       defaultQuantity: 1,
       isActive: true,
       isService: false,
@@ -157,6 +157,11 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
         costPrice: productBatch.costPrice ?? 0,
         quantity: productBatch.stock, // In edit mode, quantity represents current stock
         
+        tax: productBatch.tax ?? 0,
+        taxtype: productBatch.taxtype ?? 'PERCENTAGE',
+        discount: productBatch.discount ?? 0,
+        discountType: productBatch.discountType ?? 'PERCENTAGE',
+
         barcode: productBatch.barcode ?? "",
         supplierId: productBatch.supplierId ?? "",
         manufactureDate: productBatch.manufactureDate ? new Date(productBatch.manufactureDate).toISOString().split('T')[0] : undefined,
@@ -446,7 +451,7 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                         name="tax"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Tax Rate (%)</FormLabel>
+                            <FormLabel>Batch Tax Rate (%)</FormLabel>
                             <FormControl>
                                 <Input type="number" placeholder="e.g., 15" {...field} />
                             </FormControl>
@@ -456,10 +461,10 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                     />
                     <FormField
                         control={form.control}
-                        name="defaultDiscount"
+                        name="discount"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Default Discount Value</FormLabel>
+                            <FormLabel>Batch Default Discount Value</FormLabel>
                             <FormControl>
                                 <Input type="number" placeholder="e.g., 10 or 100" {...field} />
                             </FormControl>
@@ -469,10 +474,10 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                     />
                      <FormField
                         control={form.control}
-                        name="defaultDiscountType"
+                        name="discountType"
                         render={({ field }) => (
                             <FormItem>
-                            <FormLabel>Default Discount Type</FormLabel>
+                            <FormLabel>Batch Default Discount Type</FormLabel>
                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
                                 <SelectTrigger>

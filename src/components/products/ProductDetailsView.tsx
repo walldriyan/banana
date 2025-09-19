@@ -30,20 +30,20 @@ export function ProductDetailsView({ batch }: ProductDetailsViewProps) {
         return format(new Date(date), "PPP");
     }
 
-    const formatDiscount = () => {
-        if (product.defaultDiscount == null || product.defaultDiscountType == null) return "N/A";
-        if (product.defaultDiscountType === 'PERCENTAGE') {
-            return `${product.defaultDiscount}%`;
+    const formatDiscount = (discount: number | null | undefined, discountType: string | null | undefined) => {
+        if (discount == null || discountType == null) return "N/A";
+        if (discountType === 'PERCENTAGE') {
+            return `${discount}%`;
         }
-        return formatCurrency(product.defaultDiscount);
+        return formatCurrency(discount);
     }
 
-    const formatTax = () => {
-        if (product.tax == null || product.taxtype == null) return "N/A";
-        if (product.taxtype === 'PERCENTAGE') {
-            return `${product.tax}%`;
+    const formatTax = (tax: number | null | undefined, taxtype: string | null | undefined) => {
+        if (tax == null || taxtype == null) return "N/A";
+        if (taxtype === 'PERCENTAGE') {
+            return `${tax}%`;
         }
-        return formatCurrency(product.tax);
+        return formatCurrency(tax);
     }
 
 
@@ -59,8 +59,6 @@ export function ProductDetailsView({ batch }: ProductDetailsViewProps) {
                         <DetailRow label="Product ID" value={<Badge variant="outline">{product.id}</Badge>} />
                         <DetailRow label="Category" value={product.category} />
                         <DetailRow label="Brand" value={product.brand} />
-                         <DetailRow label="Default Tax" value={formatTax()} />
-                        <DetailRow label="Default Discount" value={formatDiscount()} />
                         <DetailRow label="Status" value={product.isActive ? <Badge>Active</Badge> : <Badge variant="destructive">Inactive</Badge>} />
                         <DetailRow label="Is Service" value={product.isService ? "Yes" : "No"} />
                         <DetailRow label="Base Unit" value={units.baseUnit} />
@@ -88,6 +86,9 @@ export function ProductDetailsView({ batch }: ProductDetailsViewProps) {
                         <DetailRow label="Current Stock" value={<span className="font-bold text-lg">{batch.stock} {units.baseUnit}</span>} />
                         <DetailRow label="Cost Price" value={formatCurrency(batch.costPrice)} />
                         <DetailRow label="Selling Price" value={<span className="font-bold text-blue-600">{formatCurrency(batch.sellingPrice)}</span>} />
+                        <Separator />
+                        <DetailRow label="Batch Tax" value={formatTax(batch.tax, batch.taxtype)} />
+                        <DetailRow label="Batch Discount" value={formatDiscount(batch.discount, batch.discountType)} />
                         <Separator />
                         <DetailRow label="Manufacture Date" value={formatDate(batch.manufactureDate)} />
                         <DetailRow label="Expiry Date" value={formatDate(batch.expiryDate)} />

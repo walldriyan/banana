@@ -31,6 +31,10 @@ export async function addProductAction(data: ProductFormValues) {
       notes,
       minStockLevel,
       maxStockLevel,
+      tax, // Batch-specific
+      taxtype, // Batch-specific
+      discount, // Batch-specific
+      discountType, // Batch-specific
       defaultQuantity,
       ...productDataForCreation 
   } = validationResult.data;
@@ -47,10 +51,6 @@ export async function addProductAction(data: ProductFormValues) {
                 units: units as any,
                 isService: productDataForCreation.isService,
                 isActive: productDataForCreation.isActive,
-                tax: productDataForCreation.tax,
-                taxtype: productDataForCreation.taxtype,
-                defaultDiscount: productDataForCreation.defaultDiscount,
-                defaultDiscountType: productDataForCreation.defaultDiscountType,
             },
         });
 
@@ -65,6 +65,10 @@ export async function addProductAction(data: ProductFormValues) {
                 stock: quantity || 0, 
                 barcode: barcode,
                 addedDate: new Date(),
+                tax: tax,
+                taxtype: taxtype,
+                discount: discount,
+                discountType: discountType,
                 ...(supplierId && { supplier: { connect: { id: supplierId } } }),
                 location: location,
                 notes: notes,
@@ -103,7 +107,7 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
     }
     const { 
         units, 
-        quantity, 
+        quantity, // stock is not directly editable
         batchNumber, 
         sellingPrice, 
         costPrice, 
@@ -116,8 +120,8 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
         supplierId, 
         tax, 
         taxtype, 
-        defaultDiscount, 
-        defaultDiscountType, 
+        discount, 
+        discountType, 
         ...otherData 
     } = validationResult.data;
 
@@ -134,6 +138,10 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 sellingPrice,
                 costPrice,
                 supplierId: supplierId || null,
+                tax,
+                taxtype,
+                discount,
+                discountType,
                 ...otherData
             },
         });
@@ -148,10 +156,6 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 units: units as any,
                 isService,
                 isActive,
-                tax,
-                taxtype,
-                defaultDiscount,
-                defaultDiscountType,
             }
         });
 
