@@ -63,6 +63,19 @@ const steps = [
 ];
 
 
+const FormRow = ({ title, description, children }: { title: string; description: string; children: React.ReactNode }) => (
+    <div className="flex flex-col md:flex-row items-start justify-between py-4 border-b last:border-b-0">
+        <div className="md:w-1/3 mb-2 md:mb-0">
+            <h4 className="font-semibold text-sm">{title}</h4>
+            <p className="text-xs text-muted-foreground">{description}</p>
+        </div>
+        <div className="w-full md:w-2/3">
+            {children}
+        </div>
+    </div>
+);
+
+
 export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -432,16 +445,18 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                           placeholder="Search for a master product..."
                       />
                   </CardContent>
-                  {currentItem.productId && selectedProduct && (
+                   {currentItem.productId && selectedProduct && (
                     <CardContent className="border-t pt-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">Details for: <span className="text-primary">{selectedProduct.name}</span></h3>
-                            <Button type="button" variant="outline" size="sm" onClick={handleClearCurrentItem}>Clear</Button>
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="text-lg font-semibold text-primary">{selectedProduct.name}</h3>
+                                <p className="text-sm text-muted-foreground">Enter the details for the new batch of this product.</p>
+                            </div>
+                            <Button type="button" variant="ghost" size="sm" onClick={handleClearCurrentItem}>Clear</Button>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Left Column: Product Summary */}
-                            <div className="md:col-span-1 p-4 rounded-lg bg-muted/50 border space-y-4">
+                            <div className="md:col-span-1 p-4 rounded-lg bg-muted/20 space-y-4">
                                 <h4 className='text-sm font-semibold text-foreground'>Product Summary</h4>
                                 <div className='flex items-center gap-3'>
                                     <Package className='h-5 w-5 text-muted-foreground' />
@@ -466,7 +481,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                 </div>
                             </div>
                             
-                            {/* Right Column: Input Fields */}
                             <div className="md:col-span-2 space-y-4">
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormItem>
