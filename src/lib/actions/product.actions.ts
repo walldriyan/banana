@@ -25,6 +25,21 @@ export async function addProductAction(data: ProductFormValues) {
   
   const { id, ...validatedData } = validationResult.data;
 
+  // Check for duplicate productId and batchNumber combination
+    const existingProductBatch = await prisma.product.findFirst({
+        where: {
+            productId: validatedData.productId,
+            batchNumber: validatedData.batchNumber,
+        },
+    });
+
+    if (existingProductBatch) {
+        return {
+            success: false,
+            error: `A product with the same ID ('${validatedData.productId}') and Batch Number ('${validatedData.batchNumber}') already exists.`,
+        };
+    }
+
 
   try {
     // 2. Use Prisma to create the product
@@ -73,9 +88,10 @@ export async function addProductAction(data: ProductFormValues) {
 export async function getProductsAction() {
     try {
         const products = await prisma.product.findMany({
-            orderBy: {
-                name: 'asc'
-            }
+            orderBy: [
+                { productId: 'asc' },
+                { batchNumber: 'asc' }
+            ]
         });
         
         // Convert Date objects to strings and parse the 'units' JSON string for client compatibility

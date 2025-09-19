@@ -55,7 +55,7 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
     {
         title: "Basic Information",
         description: "Enter the primary details of the product.",
-        fields: ["name", "productId", "barcode", "batchNumber", "category", "brand", "supplierId"]
+        fields: ["name", "productId", "batchNumber", "category", "brand", "supplierId"]
     },
     {
         title: "Pricing & Stock",
@@ -126,6 +126,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
       defaultQuantity: 1,
       isActive: true,
       isService: false,
+      addAsNewBatch: false,
       units: {
         baseUnit: 'pcs',
         derivedUnits: []
@@ -144,6 +145,8 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
       console.log('[AddProductForm.tsx] useEffect triggered in Edit Mode. Product prop received:', product);
       const formData = {
         ...product,
+        addAsNewBatch: false, // Default to false when editing
+        batchNumber: product.batchNumber ?? '',
         costPrice: product.costPrice ?? undefined,
         barcode: product.barcode ?? undefined,
         brand: product.brand ?? undefined,
@@ -170,7 +173,8 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
     console.log("[AddProductForm.tsx] onSubmit called. isEditMode:", isEditMode, "Data:", data);
     setIsSubmitting(true);
     
-    const action = isEditMode && product
+    // If it's edit mode AND "add as new batch" is checked, force it to be an add action.
+    const action = (isEditMode && !data.addAsNewBatch && product)
       ? updateProductAction(product.id, data)
       : addProductAction(data);
 
@@ -179,14 +183,14 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
     if (result.success) {
       toast({
-        title: `Product ${isEditMode ? 'Updated' : 'Added'}!`,
-        description: `Product "${data.name}" has been successfully ${isEditMode ? 'updated' : 'added'}.`,
+        title: `Product ${isEditMode && !data.addAsNewBatch ? 'Updated' : 'Added'}!`,
+        description: `Product "${data.name}" has been successfully ${isEditMode && !data.addAsNewBatch ? 'updated' : 'added'}.`,
       });
       onSuccess(); 
     } else {
       toast({
         variant: "destructive",
-        title: `Error ${isEditMode ? 'updating' : 'adding'} product`,
+        title: `Error ${isEditMode && !data.addAsNewBatch ? 'updating' : 'adding'} product`,
         description: result.error,
       });
     }
@@ -221,6 +225,18 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
   };
   
   const generateId = (prefix: string) => `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+  const generateProductIdFromName = (name: string) => {
+      if (!name) return '';
+      return name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  }
+
+  const productName = form.watch('name');
+  useEffect(() => {
+    if (!isEditMode) { // Only auto-generate for new products
+        form.setValue('productId', generateProductIdFromName(productName));
+    }
+  }, [productName, form, isEditMode]);
 
 
   return (
@@ -257,17 +273,50 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                     <CardDescription>{steps[0].description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    {isEditMode && (
+                        <FormField
+                            control={form.control}
+                            name="addAsNewBatch"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-blue-50 border-blue-200">
+                                <div className="space-y-0.5">
+                                    <FormLabel className="text-base">Add as a New Batch</FormLabel>
+                                    <FormDescription>
+                                        Enable this to save these details as a new batch for this product, instead of updating the existing one.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                    checked={field.value}
+                                    onCheckedChange={(checked) => {
+                                        field.onChange(checked)
+                                        if(checked) {
+                                            // When checked, suggest a new batch number but allow user to change it
+                                            form.setValue('batchNumber', `B-${Date.now()}`);
+                                            form.setValue('quantity', 0); // Reset quantity for new batch
+                                        } else {
+                                            // When unchecked, revert to original batch number
+                                            form.setValue('batchNumber', product.batchNumber ?? '');
+                                            form.setValue('quantity', product.quantity);
+                                        }
+                                    }}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    )}
+
+                    <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} disabled={isEditMode && !form.getValues('addAsNewBatch')} /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="productId" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Product ID</FormLabel>
                                 <div className="flex gap-2">
-                                    <FormControl><Input placeholder="e.g., PROD-1726..." {...field} /></FormControl>
-                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(generateId('PROD'))}><Sparkles className="h-4 w-4" /></Button>
+                                    <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode && !form.getValues('addAsNewBatch')} /></FormControl>
                                 </div>
-                                <FormDescription>General ID for the product type.</FormDescription>
+                                <FormDescription>General ID for this product line.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -275,10 +324,10 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                              <FormItem>
                                 <FormLabel>Batch Number</FormLabel>
                                 <div className="flex gap-2">
-                                    <FormControl><Input placeholder="e.g., BATCH-1726..." {...field} /></FormControl>
-                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(generateId('B'))}><Sparkles className="h-4 w-4" /></Button>
+                                    <FormControl><Input placeholder="e.g., B-1726..." {...field} /></FormControl>
+                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
                                 </div>
-                                <FormDescription>This is the initial batch.</FormDescription>
+                                <FormDescription>Unique ID for this specific batch.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                          )} />
@@ -375,10 +424,10 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
                             <FormLabel>Initial Stock Quantity</FormLabel>
                             <div className="relative">
                                 <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                <FormControl><Input type="number" {...field} disabled={isEditMode} className="pl-10 text-lg h-12 font-bold" /></FormControl>
+                                <FormControl><Input type="number" {...field} disabled={isEditMode && !form.getValues('addAsNewBatch')} className="pl-10 text-lg h-12 font-bold" /></FormControl>
                             </div>
                             <FormMessage /></FormItem> )} />
-                        {isEditMode && (
+                        {isEditMode && !form.getValues('addAsNewBatch') && (
                             <Alert variant="destructive">
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle>තොග යාවත්කාලීන කිරීම පිළිබඳ දැනුම්දීම</AlertTitle>
@@ -480,7 +529,7 @@ export function AddProductForm({ product, onSuccess }: AddProductFormProps) {
 
              {currentStep === steps.length - 1 && (
                 <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? "Saving..." : (isEditMode ? "Update Product" : "Save Product")}
+                    {isSubmitting ? "Saving..." : (isEditMode && !form.getValues('addAsNewBatch') ? "Update Product" : "Save Product")}
                 </Button>
              )}
           </div>

@@ -15,7 +15,7 @@ export const productSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(2, "Product name must be at least 2 characters."),
   productId: z.string().min(1, "Product ID is required."),
-  batchNumber: z.string().optional(),
+  batchNumber: z.string().min(1, "Batch number is required."),
   
   sellingPrice: z.coerce.number().min(0, "Selling price must be a non-negative number."),
   costPrice: z.coerce.number().min(0, "Cost price must be a non-negative number.").optional().nullable(),
@@ -46,6 +46,8 @@ export const productSchema = z.object({
   maxStockLevel: z.coerce.number().int().min(0).optional().nullable(),
   
   notes: z.string().optional().nullable(),
+  // For the "add as new batch" feature
+  addAsNewBatch: z.boolean().optional(),
 });
 
 export type ProductFormValues = z.infer<typeof productSchema>;
