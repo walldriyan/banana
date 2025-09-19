@@ -19,10 +19,10 @@ export const grnSchema = z.object({
   invoiceNumber: z.string().optional(),
   items: z.array(grnItemSchema).min(1, "At least one item must be added to the GRN."),
   notes: z.string().optional(),
-  // Paid amount can now be null or a number, defaulting to 0.
-  // The complex refine logic is removed as it's better handled in the UI.
   paidAmount: z.coerce.number().min(0).nullable().default(0),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
+  // THE FIX: Add totalAmount to the schema to ensure it's validated and passed to the action.
+  totalAmount: z.coerce.number().min(0, "Total amount must be non-negative."),
 });
 
 
