@@ -86,7 +86,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           },
           lines: {
             create: transactionLines.map(line => ({
-              productId: line.productId,
+              productId: line.batchId, // FIX: Use the unique product ID (batchId) for the relation
               productName: line.productName,
               batchId: line.batchId,
               batchNumber: line.batchNumber,
