@@ -70,7 +70,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     mode: 'onBlur',
   });
 
-  const { fields, append, remove, update } = useFieldArray({
+  const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "items",
   });
@@ -78,7 +78,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const fetchProductsAndSuppliers = useCallback(async () => {
         const [suppliersResult, productsResult] = await Promise.all([
             getSuppliersAction(),
-            getProductsAction() // Fetches master products
+            getProductsAction()
         ]);
 
         if (suppliersResult.success && suppliersResult.data) {
@@ -129,7 +129,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
           form.reset({
               ...grn,
               grnDate: new Date(grn.grnDate),
-              items: loadedItems as any, // Cast as any to bypass strict type checking for this one-time load
+              items: loadedItems as any,
           });
           setTotalAmount(grn.totalAmount);
           form.setValue('totalAmount', grn.totalAmount);
@@ -137,12 +137,12 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   }, [isEditMode, grn, products, suppliers, form]);
 
   useEffect(() => {
-      calculateTotal();
-  }, [fields, calculateTotal]);
+      const subscription = form.watch(() => calculateTotal());
+      return () => subscription.unsubscribe();
+  }, [form, calculateTotal]);
 
 
   const handleProductSelect = (product: Product) => {
-    // The `units` from Prisma is a JSON string. We must parse it into an object.
     const unitsObject = typeof product.units === 'string' 
       ? JSON.parse(product.units) 
       : product.units;
@@ -152,8 +152,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         name: product.name,
         category: product.category,
         brand: product.brand,
-        units: unitsObject, // Use the parsed object here
-        sellingPrice: 0, // Default selling price for new batch
+        units: unitsObject,
+        sellingPrice: 0,
         batchNumber: `B-${Date.now()}`,
         quantity: 1,
         costPrice: 0,
@@ -165,24 +165,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   
   const handleRemoveItem = (index: number) => {
       remove(index);
-  }
-
-  const handleItemChange = (index: number, field: 'quantity' | 'costPrice' | 'discount' | 'tax' | 'batchNumber' | 'sellingPrice', value: number | string) => {
-      const item = form.getValues(`items.${index}`);
-      if(!item) return;
-
-      const numericValue = typeof value === 'string' && field !== 'batchNumber' ? parseFloat(value) || 0 : value;
-      
-      const currentValues = form.getValues();
-      const updatedItem = { ...currentValues.items[index], [field]: numericValue };
-      
-      const { quantity, costPrice, discount, tax } = updatedItem;
-      const subTotal = (quantity || 0) * (costPrice || 0);
-      const totalDiscount = (discount || 0);
-      const totalTax = (subTotal - totalDiscount) * ((tax || 0) / 100);
-      const newTotal = subTotal - totalDiscount + totalTax;
-
-      update(index, { ...updatedItem, total: newTotal });
   }
 
   const openAddProductDrawer = () => {
@@ -355,7 +337,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[300px]">Product</TableHead>
+                            <TableHead className="w-[250px]">Product</TableHead>
                             <TableHead>Batch No.</TableHead>
                             <TableHead>Qty</TableHead>
                             <TableHead>Cost Price</TableHead>
@@ -368,33 +350,37 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     </TableHeader>
                     <TableBody>
                         {fields.length > 0 ? fields.map((item, index) => (
-                             <TableRow key={item.id}>
+                            <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.name}</TableCell>
-                                 <TableCell>
-                                    <div className="flex items-center gap-1">
-                                        <Input defaultValue={item.batchNumber} onBlur={e => handleItemChange(index, 'batchNumber', e.target.value)} className="w-32" />
-                                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => form.setValue(`items.${index}.batchNumber`, `B-${Date.now()}`)}>
-                                            <Sparkles className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                                <TableCell>
+                                    <FormField
+                                        control={form.control}
+                                        name={`items.${index}.batchNumber`}
+                                        render={({ field }) => (
+                                            <div className="flex items-center gap-1">
+                                                <Input {...field} className="w-32" />
+                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
+                                            </div>
+                                        )}
+                                    />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.quantity} onBlur={e => handleItemChange(index, 'quantity', e.target.value)} className="w-20" />
+                                     <FormField control={form.control} name={`items.${index}.quantity`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.costPrice} onBlur={e => handleItemChange(index, 'costPrice', e.target.value)} className="w-24" />
+                                    <FormField control={form.control} name={`items.${index}.costPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.sellingPrice} onBlur={e => handleItemChange(index, 'sellingPrice', e.target.value)} className="w-24" />
+                                    <FormField control={form.control} name={`items.${index}.sellingPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.discount} onBlur={e => handleItemChange(index, 'discount', e.target.value)} className="w-24" />
+                                    <FormField control={form.control} name={`items.${index}.discount`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell>
-                                    <Input type="number" defaultValue={item.tax} onBlur={e => handleItemChange(index, 'tax', e.target.value)} className="w-20" />
+                                    <FormField control={form.control} name={`items.${index}.tax`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
                                 </TableCell>
                                 <TableCell className="text-right font-semibold">
-                                    {item.total.toFixed(2)}
+                                    {form.watch(`items.${index}.total`).toFixed(2)}
                                 </TableCell>
                                 <TableCell>
                                     <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
