@@ -33,7 +33,7 @@ import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
-  onAddProduct: () => void; // Callback to open the add product drawer
+  onAddProduct: () => void; // Callback to open the add master product drawer
 }
 
 export function ProductsDataTable<TData, TValue>({
@@ -44,7 +44,7 @@ export function ProductsDataTable<TData, TValue>({
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [rowSelection, setRowSelection] = useState({})
-    const [grouping, setGrouping] = useState<string[]>(['name'])
+    const [grouping, setGrouping] = useState<string[]>(['product.name']) // Group by master product name
     const [expanded, setExpanded] = useState<ExpandedState>({})
 
 
@@ -62,6 +62,7 @@ export function ProductsDataTable<TData, TValue>({
     getGroupedRowModel: getGroupedRowModel(),
     onExpandedChange: setExpanded,
     getExpandedRowModel: getExpandedRowModel(),
+    autoResetAll: false, // Prevents table from resetting on data change
     state: {
       sorting,
       columnFilters,
@@ -75,17 +76,17 @@ export function ProductsDataTable<TData, TValue>({
     <div>
         <div className="flex items-center justify-between py-4">
             <Input
-                placeholder="Filter products by name..."
-                value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+                placeholder="Filter by product name..."
+                value={(table.getColumn("product.name")?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
-                    table.getColumn("name")?.setFilterValue(event.target.value)
+                    table.getColumn("product.name")?.setFilterValue(event.target.value)
                 }
                 className="max-w-sm"
             />
             <AuthorizationGuard permissionKey="products.create">
                 <Button onClick={onAddProduct}>
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Product
+                  Add Master Product
                 </Button>
             </AuthorizationGuard>
         </div>
@@ -117,7 +118,7 @@ export function ProductsDataTable<TData, TValue>({
                         data-state={row.getIsSelected() && "selected"}
                     >
                         {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 2}rem` }}>
+                        <TableCell key={cell.id} style={{ paddingLeft: cell.getIsGrouped() ? `${row.depth * 2}rem` : (row.depth + 1) * 2 + 'rem' }}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                         ))}
