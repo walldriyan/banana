@@ -92,7 +92,6 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             create: transactionLines.map(line => ({
               productName: line.productName,
               batchNumber: line.batchNumber,
-              productId: line.productId, // This is the master product ID
               productBatch: { // Connect to the existing ProductBatch
                 connect: { id: line.batchId }
               },
