@@ -78,12 +78,27 @@ export async function addGrnAction(data: GrnFormValues) {
                     },
                 });
             }
+            
+            // 3. If an initial payment was made, record it
+            if (newGrn.paidAmount > 0) {
+              await tx.purchasePayment.create({
+                data: {
+                  goodsReceivedNoteId: newGrn.id,
+                  amount: newGrn.paidAmount,
+                  paymentDate: newGrn.grnDate,
+                  paymentMethod: newGrn.paymentMethod,
+                  notes: 'Initial payment with GRN creation.',
+                },
+              });
+            }
+
 
             return newGrn;
         });
 
         revalidatePath('/dashboard/purchases');
         revalidatePath('/dashboard/products');
+        revalidatePath('/dashboard/credit');
         
         return { success: true, data: result };
 
@@ -154,6 +169,8 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
             }
             
             // 4. Update the GRN itself
+            // For simplicity, we are assuming that initial payments are not editable via this form.
+            // Payment management will be handled separately.
             const updatedGrn = await tx.goodsReceivedNote.update({
                 where: { id: grnId },
                 data: {
@@ -179,6 +196,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
         
         revalidatePath('/dashboard/purchases');
         revalidatePath('/dashboard/products');
+        revalidatePath('/dashboard/credit');
         
         return { success: true, data: result };
 

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart } from 'lucide-react';
+import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 
@@ -13,6 +13,7 @@ const navItems = [
   { href: '/dashboard/customers', icon: Users, label: 'Customers', permission: 'customers.view' },
   { href: '/dashboard/suppliers', icon: Building, label: 'Suppliers', permission: 'suppliers.view' },
   { href: '/dashboard/purchases', icon: ShoppingCart, label: 'Purchases (GRN)', permission: 'purchases.view' },
+  { href: '/dashboard/credit', icon: CreditCard, label: 'Credit Mgt.', permission: 'credit.view' },
   // Add more dashboard items here
 ];
 

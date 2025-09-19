@@ -30,7 +30,9 @@
         "purchases.view",
         "purchases.create",
         "purchases.update",
-        "purchases.delete"
+        "purchases.delete",
+        "credit.view",
+        "credit.manage"
       ]
     },
     "cashier": {
