@@ -20,6 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ProductDetailsView } from '@/components/products/ProductDetailsView';
 
 export function ProductsClientPage() {
   const [batches, setBatches] = useState<ProductBatch[]>([]);
@@ -72,6 +73,15 @@ export function ProductsClientPage() {
     });
   }, [drawer, handleFormSuccess]);
 
+  const openViewDetailsDrawer = useCallback((batch: ProductBatch) => {
+    drawer.openDrawer({
+      title: `Details for ${batch.product.name}`,
+      description: `Batch: ${batch.batchNumber}`,
+      content: <ProductDetailsView batch={batch} />,
+      drawerClassName: 'sm:max-w-2xl'
+    });
+  }, [drawer]);
+
   const handleDeleteRequest = (batchId: string) => {
     setBatchToDelete(batchId);
     setIsDeleteDialogOpen(true);
@@ -97,7 +107,7 @@ export function ProductsClientPage() {
     setBatchToDelete(null);
   };
 
-  const columns = useMemo(() => getColumns(openEditBatchDrawer, handleDeleteRequest), [openEditBatchDrawer]);
+  const columns = useMemo(() => getColumns(openEditBatchDrawer, handleDeleteRequest, openViewDetailsDrawer), [openEditBatchDrawer, openViewDetailsDrawer]);
 
   if (isLoading) {
     return (

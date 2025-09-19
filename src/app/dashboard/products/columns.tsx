@@ -3,7 +3,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import type { ProductBatch } from "@/types"
-import { MoreHorizontal, ArrowUpDown, ChevronsRight, ChevronsDownUp } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, ChevronsRight, ChevronsDownUp, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
@@ -19,15 +20,12 @@ import { Badge } from "@/components/ui/badge"
 // Define a new interface for the component props
 interface CellActionsProps {
   batch: ProductBatch;
-  onEdit: (batch: ProductBatch) => void; // Callback to open the edit drawer
-  onDelete: (batchId: string) => void; // Callback to handle deletion
+  onEdit: (batch: ProductBatch) => void;
+  onDelete: (batchId: string) => void;
+  onViewDetails: (batch: ProductBatch) => void;
 }
 
-const CellActions = ({ batch, onEdit, onDelete }: CellActionsProps) => {
-    const handleEditClick = () => {
-        onEdit(batch);
-    }
-    
+const CellActions = ({ batch, onEdit, onDelete, onViewDetails }: CellActionsProps) => {
     return (
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -38,11 +36,16 @@ const CellActions = ({ batch, onEdit, onDelete }: CellActionsProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onViewDetails(batch)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(batch.id)}>
                     Copy Batch ID
                 </DropdownMenuItem>
+                 <DropdownMenuSeparator />
                  <AuthorizationGuard permissionKey="products.update">
-                    <DropdownMenuItem onClick={handleEditClick}>
+                    <DropdownMenuItem onClick={() => onEdit(batch)}>
                       Edit Batch
                     </DropdownMenuItem>
                 </AuthorizationGuard>
@@ -59,7 +62,8 @@ const CellActions = ({ batch, onEdit, onDelete }: CellActionsProps) => {
 // Update the type definition for the columns factory
 export const getColumns = (
   onEdit: (batch: ProductBatch) => void,
-  onDelete: (batchId: string) => void
+  onDelete: (batchId: string) => void,
+  onViewDetails: (batch: ProductBatch) => void,
 ): ColumnDef<ProductBatch>[] => [
     {
         id: "select",
@@ -162,7 +166,7 @@ export const getColumns = (
             if (row.getIsGrouped()) {
                 return null; // No actions on grouped rows
             }
-            return <CellActions batch={row.original} onEdit={onEdit} onDelete={onDelete} />
+            return <CellActions batch={row.original} onEdit={onEdit} onDelete={onDelete} onViewDetails={onViewDetails} />
         },
     },
 ]
