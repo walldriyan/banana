@@ -34,7 +34,8 @@
         "credit.view",
         "credit.manage",
         "debtors.view",
-        "debtors.manage"
+        "debtors.manage",
+        "reports.view"
       ]
     },
     "cashier": {
