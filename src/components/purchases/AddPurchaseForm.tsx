@@ -34,6 +34,8 @@ import type { Product } from "@/types";
 import SearchableProductInput from "../POSUI/SearchableProductInput";
 import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClientPage";
 import type { Supplier } from "@prisma/client";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface AddPurchaseFormProps {
   grn?: GrnWithRelations;
@@ -46,6 +48,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const isEditMode = !!grn;
 
   useEffect(() => {
@@ -155,6 +158,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   }
 
   async function onSubmit(data: GrnFormValues) {
+    setSubmissionError(null);
     setIsSubmitting(true);
     
     const action = isEditMode && grn
@@ -172,20 +176,23 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       });
       onSuccess();
     } else {
+      setSubmissionError(result.error);
       toast({
         variant: "destructive",
         title: `Error ${isEditMode ? 'updating' : 'adding'} GRN`,
-        description: result.error,
+        description: "Submission failed. Please see the error message on the form for details."
       });
     }
   }
   
   const onError = (errors: any) => {
     console.error("Form validation failed:", errors);
+    const errorString = JSON.stringify(errors, null, 2);
+    setSubmissionError(`Client-side validation failed. Please check the form for errors. Details: ${errorString}`);
     toast({
         variant: "destructive",
         title: "Validation Error",
-        description: "Please check the form for errors and ensure all required fields are filled."
+        description: "Please check all required fields are filled correctly."
     });
   };
 
@@ -412,6 +419,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             </Card>
         </div>
         
+        {submissionError && (
+            <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Submission Error</AlertTitle>
+                <AlertDescription className="break-all font-mono">
+                    {submissionError}
+                </AlertDescription>
+            </Alert>
+        )}
+
         <div className="flex justify-end gap-4 pt-4 border-t">
           <Button type="button" variant="outline" onClick={drawer.closeDrawer}>
             Cancel
