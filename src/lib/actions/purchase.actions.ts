@@ -59,7 +59,8 @@ export async function addGrnAction(data: GrnFormValues) {
                     paymentStatus: paymentStatus,
                     items: {
                         create: items.map(item => ({
-                            productId: item.productId,
+                            // We use the unique product.id from the form as the reference
+                            productId: item.productId, 
                             batchNumber: item.batchNumber,
                             quantity: item.quantity,
                             costPrice: item.costPrice,
@@ -73,16 +74,14 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             for (const item of newGrn.items) {
-                // Upsert logic to handle both new batches and existing stock updates
-                const existingBatch = await tx.product.findFirst({
-                    where: { 
-                        productId: item.productId, // This is the general product ID
-                        batchNumber: item.batchNumber 
-                    }
+                // The item.productId from the form IS the unique ID of the batch that was selected or exists.
+                const existingBatch = await tx.product.findUnique({
+                    where: { id: item.productId }
                 });
 
-                if (existingBatch) {
-                    // If batch exists, just update the quantity
+                // Case 1: The batch number entered in the form is the SAME as an existing batch.
+                // We find this existing batch by its unique ID (item.productId).
+                if (existingBatch && existingBatch.batchNumber === item.batchNumber) {
                     await tx.product.update({
                         where: { id: existingBatch.id },
                         data: {
@@ -92,25 +91,38 @@ export async function addGrnAction(data: GrnFormValues) {
                         }
                     });
                 } else {
-                    // If batch does not exist, create a new product entry for it
+                    // Case 2: The user entered a NEW batch number for an existing product line.
+                    // We need to find the "master" product details to clone.
+                    // We use the product info from the batch we found via ID (item.productId)
+                    // to get the general `productId`.
+                    const productInfoFromExistingBatch = await tx.product.findUnique({
+                        where: { id: item.productId }
+                    });
+
+                    if (!productInfoFromExistingBatch) {
+                        throw new Error(`Critical error: Could not find base product with ID ${item.productId} to create a new batch from.`);
+                    }
+
+                    // Now find the master record using the GENERAL productId
                     const productMaster = await tx.product.findFirst({
-                        where: { productId: item.productId },
+                        where: { productId: productInfoFromExistingBatch.productId },
                         orderBy: { addeDate: 'desc' }
                     });
 
                     if (!productMaster) {
-                        throw new Error(`Cannot create new batch. No existing product found for general productId: ${item.productId}. Add the product manually first.`);
+                       throw new Error(`Cannot create new batch. No existing product found for general productId: ${productInfoFromExistingBatch.productId}. Add the product manually first.`);
                     }
+                    
+                    const { id, ...masterDataToClone } = productMaster;
 
                     await tx.product.create({
                        data: {
-                           ...productMaster, // Inherit details like name, category, etc.
-                           id: undefined, // Let Prisma generate a new unique ID
+                           ...masterDataToClone,
                            batchNumber: item.batchNumber || `B-${Date.now()}`,
                            quantity: item.quantity,
                            stock: item.quantity,
                            costPrice: item.costPrice,
-                           sellingPrice: productMaster.sellingPrice,
+                           sellingPrice: productMaster.sellingPrice, // Keep original selling price or adjust as needed
                            addeDate: new Date(),
                            units: productMaster.units,
                        }
@@ -140,11 +152,12 @@ export async function addGrnAction(data: GrnFormValues) {
         return { success: true, data: result };
 
     } catch (error) {
+        // Log the full error to the server console for debugging
         console.error('[addGrnAction] Error:', error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            return { success: false, error: `Database error: ${error.message}` };
-        }
-        return { success: false, error: "Failed to create GRN and update stock." };
+        
+        // Return a more descriptive error message to the client
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        return { success: false, error: `Failed to create GRN: ${errorMessage}` };
     }
 }
 
@@ -241,9 +254,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
 
     } catch (error) {
         console.error(`[updateGrnAction] Error updating GRN ${grnId}:`, error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-            return { success: false, error: `Database error: ${error.message}` };
-        }
-        return { success: false, error: "Failed to update GRN and adjust stock." };
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        return { success: false, error: `Failed to update GRN: ${errorMessage}` };
     }
 }
