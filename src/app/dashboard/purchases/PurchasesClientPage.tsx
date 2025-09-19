@@ -21,11 +21,26 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Banknote, Building, FileText, Landmark, Wallet } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Define a type for GRN with its relations for the client-side
 export type GrnWithRelations = GoodsReceivedNote & { supplier: Supplier, items: GoodsReceivedNoteItem[] };
 type GoodsReceivedNoteItem = import('@prisma/client').GoodsReceivedNoteItem;
+
+
+const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
+    <div className="flex items-start gap-4 py-3">
+        <div className="bg-muted p-2 rounded-lg">
+            <Icon className="h-5 w-5 text-foreground/80" />
+        </div>
+        <div className="flex-1">
+            <p className="font-medium text-foreground">{label}</p>
+            {description && <p className="text-xs text-muted-foreground">{description}</p>}
+        </div>
+        <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
+    </div>
+);
 
 
 export function PurchasesClientPage() {
@@ -110,6 +125,23 @@ export function PurchasesClientPage() {
     setGrnToDelete(null);
   };
 
+  const summary = useMemo(() => {
+    const totalGrns = grns.length;
+    const totalSuppliers = new Set(grns.map(g => g.supplierId)).size;
+    const totalPurchaseValue = grns.reduce((sum, g) => sum + g.totalAmount, 0);
+    const totalPaidValue = grns.reduce((sum, g) => sum + g.paidAmount, 0);
+    const totalOutstandingValue = totalPurchaseValue - totalPaidValue;
+
+    return {
+        totalGrns,
+        totalSuppliers,
+        totalPurchaseValue,
+        totalPaidValue,
+        totalOutstandingValue,
+    };
+  }, [grns]);
+
+
   const columns = useMemo(() => getColumns(openEditGrnDrawer, handleDeleteRequest), [openEditGrnDrawer]);
 
   if (isLoading) {
@@ -158,6 +190,55 @@ export function PurchasesClientPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+
+         <Card className="mt-8 bg-muted/20">
+            <CardHeader>
+                <CardTitle>Purchase Summary</CardTitle>
+                <CardDescription>An overview of your goods received notes and supplier credit.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* General Stats */}
+                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
+                    <CardHeader>
+                        <CardTitle className="text-lg">General</CardTitle>
+                    </CardHeader>
+                    <CardContent className="divide-y">
+                        <SummaryRow icon={FileText} label="Total GRNs" value={summary.totalGrns} />
+                        <SummaryRow icon={Building} label="Unique Suppliers" value={summary.totalSuppliers} />
+                    </CardContent>
+                </Card>
+
+                {/* Financial Stats */}
+                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
+                     <CardHeader>
+                        <CardTitle className="text-lg">Financials</CardTitle>
+                    </CardHeader>
+                    <CardContent className="divide-y">
+                         <SummaryRow 
+                            icon={Landmark} 
+                            label="Total Purchase Value" 
+                            value={`Rs. ${summary.totalPurchaseValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            description="Total value of all recorded GRNs"
+                        />
+                         <SummaryRow 
+                            icon={Wallet} 
+                            label="Total Paid to Suppliers" 
+                            value={`Rs. ${summary.totalPaidValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            description="Total cash outflow for purchases"
+                            valueClassName="text-green-600"
+                        />
+                         <SummaryRow 
+                            icon={Banknote} 
+                            label="Total Outstanding (Credit)" 
+                            value={`Rs. ${summary.totalOutstandingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                            description="Total amount owed to suppliers"
+                            valueClassName="text-red-600"
+                        />
+                    </CardContent>
+                </Card>
+
+            </CardContent>
+        </Card>
     </>
   );
 }
