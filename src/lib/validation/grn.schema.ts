@@ -41,7 +41,7 @@ export const grnSchema = z.object({
   notes: z.string().optional(),
   paidAmount: z.coerce.number().min(0).nullable().default(0),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
-  totalAmount: z.coerce.number().min(0, "Total amount must be non-negative."),
+  totalAmount: z.coerce.number().min(0, "Total amount must be non-negative.").nullable().default(0),
 });
 
 
