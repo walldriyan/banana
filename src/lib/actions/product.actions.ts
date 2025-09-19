@@ -20,7 +20,7 @@ export async function addProductAction(data: ProductFormValues) {
 
   try {
     const result = await prisma.$transaction(async (tx) => {
-        // Exclude fields not belonging to the Product model from productDataForCreation
+        // Exclude ALL fields not belonging to the Product model from productDataForCreation
         const { 
             productId, 
             barcode, 
@@ -32,13 +32,17 @@ export async function addProductAction(data: ProductFormValues) {
             minStockLevel,
             maxStockLevel,
             defaultQuantity,
+            tax,
+            taxtype,
+            defaultDiscount,
+            defaultDiscountType,
             ...productDataForCreation 
         } = validatedProductData;
         
         // 1. Create the master product with only its own fields
         const newProduct = await tx.product.create({
             data: {
-                ...productDataForCreation, // This now only contains fields like name, category, brand, etc.
+                ...productDataForCreation,
                 units: units as any, // Prisma expects JSON
             },
         });
@@ -121,10 +125,6 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 units: units as any,
                 isService,
                 isActive,
-                tax,
-                taxtype,
-                defaultDiscount,
-                defaultDiscountType
             }
         });
 
