@@ -1,6 +1,7 @@
 // src/components/products/AddProductForm.tsx
 "use client";
 
+import React from 'react'; // <--- FIX: Import React
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
