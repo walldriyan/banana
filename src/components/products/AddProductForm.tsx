@@ -401,7 +401,7 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                             <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem>
                                 <FormLabel>Cost Price</FormLabel>
                                 <div className="relative">
-                                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                    <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                                     <FormControl><Input type="number" {...field} className="pl-10" /></FormControl>
                                 </div>
                                 <FormMessage /></FormItem> )} />
