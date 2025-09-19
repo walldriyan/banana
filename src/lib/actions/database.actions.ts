@@ -90,9 +90,9 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           },
           lines: {
             create: transactionLines.map(line => ({
-              productId: line.batchId,
-              productName: line.productName,
-              batchNumber: line.batchNumber,
+              productBatch: { // Connect to the existing ProductBatch
+                connect: { id: line.batchId }
+              },
               quantity: line.quantity,
               displayUnit: line.displayUnit,
               displayQuantity: line.displayQuantity,
@@ -138,12 +138,9 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       // STOCK MANAGEMENT LOGIC
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
-            await tx.product.update({
+            await tx.productBatch.update({ // Changed from Product to ProductBatch
                 where: { id: line.batchId }, 
                 data: {
-                    quantity: {
-                        decrement: line.quantity
-                    },
                     stock: {
                        decrement: line.quantity
                     }
@@ -161,18 +158,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
          }
 
          for (const originalLine of originalTx.lines) {
-             const keptLine = transactionLines.find(line => line.productId === originalLine.productId);
+             const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); // Changed to batchId
              const originalQty = originalLine.quantity;
              const keptQty = keptLine ? keptLine.quantity : 0;
              const returnedQty = originalQty - keptQty;
 
              if (returnedQty > 0) {
-                 await tx.product.update({
-                     where: { id: originalLine.productId },
+                 await tx.productBatch.update({ // Changed from Product to ProductBatch
+                     where: { id: originalLine.productBatchId! }, // Use the correct ID from the original line
                      data: {
-                         quantity: {
-                             increment: returnedQty
-                         },
                          stock: {
                              increment: returnedQty
                          }
@@ -216,7 +210,15 @@ export async function getTransactionsFromDb() {
       include: {
         customer: true,
         payment: true,
-        lines: true,
+        lines: {
+          include: {
+            productBatch: {
+              include: {
+                product: true
+              }
+            }
+          }
+        },
         appliedDiscounts: true,
         originalTransaction: { 
             select: { id: true }
@@ -247,7 +249,10 @@ export async function getTransactionsFromDb() {
         },
         transactionLines: tx.lines.map(line => ({
           ...line,
-          batchId: line.productId, // Re-map for client-side consistency
+          productName: line.productBatch.product.name, // Get name from master product
+          batchNumber: line.productBatch.batchNumber,
+          productId: line.productBatch.productId, // The general master product ID
+          batchId: line.productBatchId!, // The unique ID of the batch
           customDiscountType: line.customDiscountType as 'fixed' | 'percentage' | undefined,
         })),
         appliedDiscountsLog: tx.appliedDiscounts.map(log => ({

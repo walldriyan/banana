@@ -128,7 +128,7 @@ export function transformTransactionDataForDb(
     
     return {
       saleItemId: item.saleItemId,
-      productId: item.productId, // General product ID
+      productId: item.product.id, // General product ID from nested product
       productName: item.product.name,
       batchId: item.id, // Unique product ID (acting as batch ID)
       batchNumber: item.batchNumber,
@@ -173,7 +173,7 @@ export function transformTransactionDataForDb(
 }
 
 // Helper to convert DB transaction lines back to SaleItems for the refund cart
-export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: number })[], products: ProductBatch[]): SaleItem[] {
+export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: number, productBatch?: any })[], products: ProductBatch[]): SaleItem[] {
     return lines.map(line => {
         // Find the matching product-batch combination from the current sample products
         const productBatch = products.find(p => p.id === line.batchId);
@@ -184,38 +184,44 @@ export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: 
 
         if (!productBatch) {
             // Fallback for products that might not exist in the current product list
-            console.warn(`ProductBatch with ID ${line.batchId} not found in sampleProducts. Creating fallback SaleItem.`);
+            console.warn(`ProductBatch with ID ${line.batchId} not found in sampleProducts. Creating fallback SaleItem from transaction line data.`);
             
-            const units = { baseUnit: line.displayUnit || 'unit', derivedUnits: [] };
-            
-            return {
+            // Reconstruct a minimal product object from the line itself
+            const fallbackProduct: Product = {
+                id: line.productId,
+                name: line.productName,
+                description: '',
+                category: line.productBatch?.product?.category || '',
+                brand: line.productBatch?.product?.brand || '',
+                units: line.productBatch?.product?.units || { baseUnit: line.displayUnit || 'unit', derivedUnits: [] },
+                isService: false,
+                isActive: true,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            };
+
+            const fallbackBatch: ProductBatch = {
                 id: line.batchId,
                 productId: line.productId,
                 batchNumber: line.batchNumber || 'N/A',
                 sellingPrice: unitPrice,
                 costPrice: 0,
-                stock: 0, // Cannot determine stock
+                stock: 0, 
                 addedDate: new Date(),
-                product: {
-                    id: line.productId,
-                    name: line.productName,
-                    description: '',
-                    category: '',
-                    brand: '',
-                    units: units as any,
-                    isService: false,
-                    isActive: false,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-                // --- Core SaleItem Fields ---
+                product: fallbackProduct,
+                 quantity: 0, // Not available
+                 barcode: null,
+                 supplierId: null,
+            };
+            
+            return {
+                ...fallbackBatch,
                 saleItemId,
                 price: unitPrice,
                 quantity: line.quantity,
                 originalQuantity: line.quantity,
                 displayUnit: line.displayUnit,
                 displayQuantity: line.displayQuantity,
-                // --- Custom Discount Fields ---
                 customDiscountValue: line.customDiscountValue,
                 customDiscountType: line.customDiscountType,
                 customApplyFixedOnce: line.customApplyFixedOnce,
