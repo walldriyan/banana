@@ -1,9 +1,9 @@
 // src/components/purchases/AddPurchaseForm.tsx
 "use client";
 
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { grnSchema, type GrnFormValues } from "@/lib/validation/grn.schema";
+import { grnSchema, type GrnFormValues, grnItemSchema, type GrnItemFormValues } from "@/lib/validation/grn.schema";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,7 +20,7 @@ import { addGrnAction, updateGrnAction } from "@/lib/actions/purchase.actions";
 import { useState, useEffect, useCallback } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
-import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles } from "lucide-react";
+import { CalendarIcon, PlusCircle, Trash2, AlertTriangle, Sparkles, PackagePlus } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -36,12 +36,24 @@ import type { GrnWithRelations } from "@/app/dashboard/purchases/PurchasesClient
 import type { Supplier } from "@prisma/client";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { AddProductForm } from "../products/AddProductForm";
-
+import { Separator } from "../ui/separator";
 
 interface AddPurchaseFormProps {
   grn?: GrnWithRelations;
   onSuccess: () => void;
 }
+
+const initialItemState: Partial<GrnItemFormValues> = {
+    productId: '',
+    name: '',
+    batchNumber: '',
+    quantity: 1,
+    costPrice: 0,
+    sellingPrice: 0,
+    discount: 0,
+    tax: 0,
+    total: 0,
+};
 
 export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const { toast } = useToast();
@@ -51,6 +63,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const isEditMode = !!grn;
+
+  // State for the temporary item entry form
+  const [currentItem, setCurrentItem] = useState<Partial<GrnItemFormValues>>(initialItemState);
+  const [itemError, setItemError] = useState<string | null>(null);
 
   const [totalAmount, setTotalAmount] = useState(0);
 
@@ -103,16 +119,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const calculateTotal = useCallback(() => {
     const items = getValues('items');
-    const currentTotal = items.reduce((sum, item, index) => {
-        const itemTotal = (item.quantity * item.costPrice) - item.discount + ( ( (item.quantity * item.costPrice) - item.discount ) * (item.tax / 100) );
-        // Update the individual item total in the form state without re-triggering validation
-        setValue(`items.${index}.total`, itemTotal, { shouldValidate: false, shouldDirty: true });
-        return sum + itemTotal;
-    }, 0);
+    const currentTotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
     setTotalAmount(currentTotal);
-    // Also update the main total amount in the form
-    setValue('totalAmount', currentTotal, { shouldValidate: true });
+    setValue('totalAmount', currentTotal, { shouldValidate: true, shouldDirty: true });
   }, [getValues, setValue]);
+
+
+  const watchedItems = watch('items');
+  useEffect(() => {
+      calculateTotal();
+  }, [watchedItems, calculateTotal]);
 
 
   useEffect(() => {
@@ -141,31 +157,45 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       }
   }, [isEditMode, grn, products, suppliers, form, setValue]);
 
-  const watchedItems = watch('items');
-  useEffect(() => {
-      calculateTotal();
-  }, [watchedItems, calculateTotal]);
-
 
   const handleProductSelect = (product: Product) => {
+    setItemError(null);
     const unitsObject = typeof product.units === 'string' 
       ? JSON.parse(product.units) 
       : product.units;
 
-    append({
-        productId: product.id,
-        name: product.name,
-        category: product.category,
-        brand: product.brand,
-        units: unitsObject,
-        sellingPrice: 0,
-        batchNumber: `B-${Date.now()}`,
-        quantity: 1,
-        costPrice: 0,
-        discount: 0,
-        tax: 0,
-        total: 0
+    setCurrentItem({
+      productId: product.id,
+      name: product.name,
+      units: unitsObject,
+      batchNumber: `B-${Date.now()}`,
+      quantity: 1,
+      costPrice: 0,
+      sellingPrice: 0,
+      discount: 0,
+      tax: 0,
     });
+  };
+
+  const handleAddItemToTable = () => {
+    setItemError(null);
+    const itemTotal = ((currentItem.quantity || 0) * (currentItem.costPrice || 0)) - (currentItem.discount || 0) + ( ( ((currentItem.quantity || 0) * (currentItem.costPrice || 0)) - (currentItem.discount || 0) ) * ((currentItem.tax || 0) / 100) );
+    
+    const itemToValidate = {
+        ...currentItem,
+        total: itemTotal,
+    };
+    
+    const validationResult = grnItemSchema.safeParse(itemToValidate);
+    
+    if (!validationResult.success) {
+        const errorMessages = Object.values(validationResult.error.flatten().fieldErrors).flat().join(' ');
+        setItemError(errorMessages || "Please fill all required item fields correctly.");
+        return;
+    }
+    
+    append(validationResult.data);
+    setCurrentItem(initialItem-state); // Reset the form
   };
   
   const handleRemoveItem = (index: number) => {
@@ -315,8 +345,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <div>
-                        <CardTitle>Add Products</CardTitle>
-                        <CardDescription>Search for a master product to add as a new batch.</CardDescription>
+                        <CardTitle>Add New Batch</CardTitle>
+                        <CardDescription>Search for a master product, then fill the details below to add a new batch.</CardDescription>
                     </div>
                     <Button type="button" variant="outline" onClick={openAddProductDrawer}>
                         <PlusCircle className="mr-2 h-4 w-4" />
@@ -328,12 +358,62 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 <GrnProductSearch
                     products={products}
                     onProductSelect={handleProductSelect}
-                    placeholder="Search by master product to add a new batch..."
+                    placeholder="Search for a master product..."
                 />
-                 <p className="text-xs text-muted-foreground mt-2">
-                    Selecting a product here will add a new line item below for the new batch.
-                </p>
             </CardContent>
+            {currentItem.productId && (
+                 <CardContent className="border-t pt-6 space-y-4">
+                     <div className="flex justify-between items-center">
+                         <h3 className="text-lg font-semibold">Details for: {currentItem.name}</h3>
+                         <Button type="button" onClick={() => setCurrentItem(initialItemState)}>Clear</Button>
+                     </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                          <FormItem>
+                             <FormLabel>Batch No.</FormLabel>
+                             <div className="flex items-center gap-1">
+                                <Input value={currentItem.batchNumber} onChange={e => setCurrentItem(prev => ({...prev, batchNumber: e.target.value}))} />
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentItem(prev => ({...prev, batchNumber: `B-${Date.now()}`}))}><Sparkles className="h-4 w-4" /></Button>
+                            </div>
+                          </FormItem>
+                          <FormItem>
+                             <FormLabel>Quantity</FormLabel>
+                             <Input type="number" value={currentItem.quantity} onChange={e => setCurrentItem(prev => ({...prev, quantity: Number(e.target.value)}))} />
+                          </FormItem>
+                           <FormItem>
+                             <FormLabel>Cost Price</FormLabel>
+                             <Input type="number" value={currentItem.costPrice} onChange={e => setCurrentItem(prev => ({...prev, costPrice: Number(e.target.value)}))} />
+                          </FormItem>
+                           <FormItem>
+                             <FormLabel>Selling Price</FormLabel>
+                             <Input type="number" value={currentItem.sellingPrice} onChange={e => setCurrentItem(prev => ({...prev, sellingPrice: Number(e.target.value)}))} />
+                          </FormItem>
+                      </div>
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                           <FormItem>
+                             <FormLabel>Discount (Fixed)</FormLabel>
+                             <Input type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} />
+                          </FormItem>
+                          <FormItem>
+                             <FormLabel>Tax (%)</FormLabel>
+                             <Input type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} />
+                          </FormItem>
+                       </div>
+                       {itemError && (
+                          <Alert variant="destructive">
+                              <AlertTriangle className="h-4 w-4" />
+                              <AlertTitle>Validation Error</AlertTitle>
+                              <AlertDescription>{itemError}</AlertDescription>
+                          </Alert>
+                       )}
+                       <div className="flex justify-end">
+                           <Button type="button" onClick={handleAddItemToTable} disabled={isEditMode}>
+                               <PackagePlus className="mr-2 h-4 w-4"/>
+                               Add Item to GRN
+                           </Button>
+                       </div>
+                       {isEditMode && <p className="text-sm text-destructive text-right">Cannot add new items in Edit Mode.</p>}
+                 </CardContent>
+            )}
         </Card>
 
         <Card>
@@ -346,7 +426,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                             <TableHead>Batch No.</TableHead>
                             <TableHead>Qty</TableHead>
                             <TableHead>Cost Price</TableHead>
-                            <TableHead>Selling Price</TableHead>
                             <TableHead>Discount</TableHead>
                             <TableHead>Tax (%)</TableHead>
                             <TableHead className="text-right">Total</TableHead>
@@ -354,41 +433,19 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {fields && fields.length > 0 ? fields.map((item, index) => (
+                        {fields.length > 0 ? fields.map((item, index) => (
                             <TableRow key={item.id}>
                                 <TableCell className="font-medium">{item.name}</TableCell>
-                                <TableCell>
-                                    <FormField
-                                        control={control}
-                                        name={`items.${index}.batchNumber`}
-                                        render={({ field }) => (
-                                            <div className="flex items-center gap-1">
-                                                <Input {...field} className="w-32" />
-                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
-                                            </div>
-                                        )}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                     <FormField control={control} name={`items.${index}.quantity`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
-                                </TableCell>
-                                <TableCell>
-                                    <FormField control={control} name={`items.${index}.costPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
-                                </TableCell>
-                                <TableCell>
-                                    <FormField control={control} name={`items.${index}.sellingPrice`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
-                                </TableCell>
-                                <TableCell>
-                                    <FormField control={control} name={`items.${index}.discount`} render={({ field }) => ( <Input type="number" {...field} className="w-24" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
-                                </TableCell>
-                                <TableCell>
-                                    <FormField control={control} name={`items.${index}.tax`} render={({ field }) => ( <Input type="number" {...field} className="w-20" onChange={e => field.onChange(parseFloat(e.target.value) || 0)} /> )} />
-                                </TableCell>
+                                <TableCell>{item.batchNumber}</TableCell>
+                                <TableCell>{item.quantity}</TableCell>
+                                <TableCell>{item.costPrice.toFixed(2)}</TableCell>
+                                <TableCell>{item.discount.toFixed(2)}</TableCell>
+                                <TableCell>{item.tax.toFixed(2)}</TableCell>
                                 <TableCell className="text-right font-semibold">
-                                    {watch(`items.${index}.total`)?.toFixed(2) ?? '0.00'}
+                                    {item.total.toFixed(2)}
                                 </TableCell>
                                 <TableCell>
-                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)}>
+                                    <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isEditMode}>
                                         <Trash2 className="h-4 w-4 text-red-500"/>
                                     </Button>
                                 </TableCell>
@@ -400,6 +457,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                         )}
                     </TableBody>
                 </Table>
+                 {isEditMode && <p className="text-sm text-destructive text-center mt-4">Cannot modify items in Edit Mode. Please delete and recreate the GRN to change items.</p>}
             </CardContent>
         </Card>
 
@@ -490,7 +548,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
           <Button type="button" variant="outline" onClick={drawer.closeDrawer}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || !fields || fields.length === 0}>
+          <Button type="submit" disabled={isSubmitting || fields.length === 0}>
             {isSubmitting ? "Saving..." : (isEditMode ? "Update GRN" : "Save GRN")}
           </Button>
         </div>

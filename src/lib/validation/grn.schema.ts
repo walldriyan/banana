@@ -19,16 +19,18 @@ export const grnItemSchema = z.object({
   category: z.string().optional().nullable(),
   brand: z.string().optional().nullable(),
   units: unitDefinitionSchema,
-  sellingPrice: z.coerce.number().min(0),
-
-  // GRN-specific details
+  
+  // GRN-specific details for the new batch
   batchNumber: z.string().min(1, "Batch number is required."),
   quantity: z.coerce.number().int().min(1, "Quantity must be at least 1."),
   costPrice: z.coerce.number().min(0, "Cost price must be non-negative."),
+  sellingPrice: z.coerce.number().min(0, "Selling price must be non-negative."),
   discount: z.coerce.number().min(0).default(0),
   tax: z.coerce.number().min(0).default(0),
-  total: z.coerce.number(),
+  total: z.coerce.number().optional(), // This will be calculated, but optional in the form
 });
+
+export type GrnItemFormValues = z.infer<typeof grnItemSchema>;
 
 export const grnSchema = z.object({
   grnNumber: z.string().min(1, "GRN number is required."),
