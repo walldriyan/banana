@@ -123,7 +123,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     form.setValue('totalAmount', total, { shouldValidate: true });
     
     // Determine payment status based on total and paid amount
-    const paid = watchedPaidAmount || 0;
+    const paid = Number(watchedPaidAmount || 0);
     if (total > 0 && paid >= total) {
         form.setValue('paymentStatus', 'paid');
     } else if (paid > 0 && paid < total) {
@@ -196,7 +196,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
   }
 
   const currentTotalAmount = form.getValues('totalAmount');
-  const balance = currentTotalAmount - (watchedPaidAmount || 0);
+  const balance = currentTotalAmount - Number(watchedPaidAmount || 0);
 
   return (
     <Form {...form}>
@@ -412,7 +412,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     />
                     <div className="space-y-2 text-right font-semibold">
                         <div className="flex justify-between"><span>Total:</span> <span>Rs. {currentTotalAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-green-600"><span>Paid:</span> <span>Rs. {(watchedPaidAmount || 0).toFixed(2)}</span></div>
+                        <div className="flex justify-between text-green-600"><span>Paid:</span> <span>Rs. {Number(watchedPaidAmount || 0).toFixed(2)}</span></div>
                         <div className="flex justify-between border-t pt-2 text-red-600 text-lg"><span>Balance:</span> <span>Rs. {balance.toFixed(2)}</span></div>
                     </div>
                 </CardContent>
