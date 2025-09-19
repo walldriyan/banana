@@ -59,9 +59,9 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           <tr className="font-bold">
             <th className="text-left">Item</th>
             <th className="text-center">Qty</th>
-            {!showAsGiftReceipt && <th className="text-right">Price</th>}
-            {!showAsGiftReceipt && <th className="text-right">Total</th>}
-            {!showAsGiftReceipt && <th className="text-right">Our Price</th>}
+            <th className="text-right">Price</th>
+            <th className="text-right">Total</th>
+            <th className="text-right">Our Price</th>
           </tr>
         </thead>
         <tbody>
