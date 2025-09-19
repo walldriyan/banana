@@ -177,7 +177,6 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
     setSubmissionError(null);
     setIsSubmitting(true);
     
-    // Correctly call updateProductBatchAction for edits and addProductAction for new products.
     const action = isEditMode && productBatch
       ? updateProductBatchAction(productBatch.id, data)
       : addProductAction(data);
@@ -438,7 +437,20 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
           {currentStep === 2 && (
              <Card>
                 <CardHeader>
-                    <CardTitle>Other Details</CardTitle>
+                    <CardTitle>{steps[2].title}</CardTitle>
+                    <CardDescription>{steps[2].description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className='text-muted-foreground'>This step is not yet implemented.</p>
+                </CardContent>
+             </Card>
+          )}
+
+          {currentStep === 3 && (
+             <Card>
+                <CardHeader>
+                    <CardTitle>{steps[3].title}</CardTitle>
+                    <CardDescription>{steps[3].description}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <FormField control={form.control} name="location" render={({ field }) => ( <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
@@ -453,18 +465,6 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                     </div>
                 </CardContent>
             </Card>
-          )}
-
-          {currentStep === 3 && (
-             <Card>
-                <CardHeader>
-                    <CardTitle>{steps[3].title}</CardTitle>
-                    <CardDescription>{steps[3].description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className='text-muted-foreground'>This step is not yet implemented.</p>
-                </CardContent>
-             </Card>
           )}
         </div>
 
@@ -492,14 +492,14 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                 </Button>
              )}
 
-             {currentStep < 2 && (
+             {currentStep < 3 && (
                  <Button type="button" onClick={handleNextStep}>
                     Next
                     <ArrowRight className="ml-2 h-4 w-4" />
                  </Button>
              )}
 
-             {currentStep === 2 && (
+             {currentStep === 3 && (
                 <Button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? "Saving..." : (isEditMode ? "Update Product" : "Save Product")}
                 </Button>

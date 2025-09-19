@@ -37,6 +37,7 @@ export async function addProductAction(data: ProductFormValues) {
                 costPrice: costPrice || 0,
                 stock: quantity || 0,
                 addedDate: new Date(),
+                supplierId: validatedProductData.supplierId || null,
             }
         });
 
@@ -65,7 +66,7 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
             error: "Invalid data for batch update: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
         };
     }
-    const { units, quantity, batchNumber, sellingPrice, costPrice, name, description, category, brand, isService, isActive } = validationResult.data;
+    const { units, quantity, batchNumber, sellingPrice, costPrice, name, description, category, brand, isService, isActive, supplierId, ...otherData } = validationResult.data;
 
     try {
         const oldBatch = await prisma.productBatch.findUnique({ where: { id }});
@@ -80,6 +81,8 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
                 batchNumber,
                 sellingPrice,
                 costPrice,
+                supplierId: supplierId || null,
+                ...otherData
             },
         });
 
