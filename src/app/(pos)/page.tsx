@@ -41,6 +41,7 @@ const initialDiscountResult = {
 export default function MyNewEcommerceShop() {
   const [products, setProducts] = useState<ProductBatch[]>([]);
   const [cart, setCart] = useState<SaleItem[]>([]);
+  const prevCartRef = useRef<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(defaultDiscounts);
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
@@ -82,12 +83,23 @@ export default function MyNewEcommerceShop() {
   // Recalculate discounts when cart or campaign changes
   useEffect(() => {
     const recalculate = async () => {
-      if (cart.length === 0) {
+      
+      const cartWithUnits = cart.map(item => {
+        if (!item.displayUnit) {
+          const unitsData = typeof item.product.units === 'string' 
+            ? JSON.parse(item.product.units) 
+            : item.product.units;
+          return { ...item, displayUnit: unitsData.baseUnit };
+        }
+        return item;
+      });
+
+      if (cartWithUnits.length === 0) {
         setDiscountResult(initialDiscountResult);
         return;
       }
       setIsCalculating(true);
-      const result = await calculateDiscountsAction(cart, activeCampaign);
+      const result = await calculateDiscountsAction(cartWithUnits, activeCampaign);
       if (result.success && result.data) {
         // We receive a plain object from the server action, not a class instance.
         // We need to re-attach any methods our components rely on.
@@ -182,20 +194,19 @@ export default function MyNewEcommerceShop() {
         const updatedCart = [...currentCart];
         updatedCart[itemIndex] = {
             ...currentItem,
-            displayUnit: unitToUse,
-            displayQuantity: newDisplayQuantity,
             quantity: newBaseQuantity,
+            displayQuantity: newDisplayQuantity,
+            displayUnit: unitToUse, // Explicitly set the correct unit
         };
         return updatedCart;
     });
   };
 
 
-  const addToCart = (productBatch: ProductBatch) => {
+ const addToCart = (productBatch: ProductBatch) => {
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
-        // If item exists, update its quantity using a functional update
         setCart(currentCart => currentCart.map((item, index) => {
             if (index === existingItemIndex) {
                 const newDisplayQuantity = item.displayQuantity + 1;
@@ -203,6 +214,7 @@ export default function MyNewEcommerceShop() {
                 const unitsData = typeof item.product.units === 'string' 
                     ? JSON.parse(item.product.units) 
                     : item.product.units;
+
                 const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
                 const selectedUnitDefinition = allUnits.find(u => u.name === item.displayUnit);
                 const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
@@ -215,21 +227,18 @@ export default function MyNewEcommerceShop() {
                         title: "Stock Limit Exceeded",
                         description: `Cannot add more ${item.product.name}. Maximum stock reached.`,
                     });
-                    return item; // Return original item if stock is exceeded
+                    return item;
                 }
-
-                // Return the updated item, ensuring displayUnit is preserved
+                
                 return {
                     ...item,
                     quantity: newBaseQuantity,
                     displayQuantity: newDisplayQuantity,
-                    displayUnit: item.displayUnit, // Explicitly carry over the display unit
                 };
             }
             return item;
         }));
     } else {
-        // If item doesn't exist, add it as a new item to the cart
         if (1 > productBatch.stock) {
             toast({
                 variant: "destructive",
@@ -248,7 +257,7 @@ export default function MyNewEcommerceShop() {
             saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             quantity: 1, 
             displayQuantity: 1, 
-            displayUnit: unitsData.baseUnit, // Set the display unit explicitly from parsed units
+            displayUnit: unitsData.baseUnit,
             price: productBatch.sellingPrice,
         };
         
@@ -279,11 +288,36 @@ export default function MyNewEcommerceShop() {
       return item;
     }));
     drawer.closeDrawer();
-    toast({
-      title: "Custom Discount Applied!",
-      description: `A custom ${type} discount of ${value} was applied to the item.`,
-    });
   };
+  
+  // This effect will run after the cart state has been updated and the component has re-rendered.
+  useEffect(() => {
+    if (cart.length > 0 && prevCartRef.current.length > 0) {
+      // Find an item that has just had a custom discount applied or changed
+      const changedItem = cart.find(currentItem => {
+        const prevItem = prevCartRef.current.find(pi => pi.saleItemId === currentItem.saleItemId);
+        if (!prevItem) return false; // New item, not a discount change
+        
+        // A discount was just applied or changed if the values are now different
+        const wasChanged = prevItem.customDiscountValue !== currentItem.customDiscountValue || prevItem.customDiscountType !== currentItem.customDiscountType;
+        // And there is an actual discount value
+        const hasValue = currentItem.customDiscountValue !== undefined && currentItem.customDiscountValue > 0;
+        
+        return wasChanged && hasValue;
+      });
+
+      if (changedItem) {
+        toast({
+          title: "Custom Discount Applied!",
+          description: `A custom ${changedItem.customDiscountType} discount of ${changedItem.customDiscountValue} was applied.`,
+        });
+      }
+    }
+
+    // Update the ref to the current cart for the next render cycle.
+    prevCartRef.current = cart;
+  }, [cart, toast]);
+
 
   const openCustomDiscountDrawer = (item: SaleItem) => {
     drawer.openDrawer({
