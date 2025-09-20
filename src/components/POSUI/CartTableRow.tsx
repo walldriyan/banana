@@ -1,0 +1,142 @@
+// src/components/POSUI/CartTableRow.tsx
+'use client';
+import React from 'react';
+import type { SaleItem } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Tag, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { TableCell, TableRow } from '@/components/ui/table';
+import { Skeleton } from '../ui/skeleton';
+
+interface CartTableRowProps {
+  item: SaleItem;
+  isCalculating: boolean;
+  discountResult: any; // Using any because it's a plain object from server
+  onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
+  onOverrideDiscount: (item: SaleItem) => void;
+}
+
+export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount }: CartTableRowProps) {
+  const lineItemResult = discountResult?.lineItems?.find((li: any) => li.lineId === item.saleItemId);
+  const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
+  const originalLineTotal = item.price * item.quantity;
+  const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
+  const isCustomDiscount = item.customDiscountValue !== undefined;
+  
+  const units = typeof item.product.units === 'string' ? JSON.parse(item.product.units) : item.product.units;
+  const allUnits = [{ name: units.baseUnit, conversionFactor: 1 }, ...(units.derivedUnits || [])];
+  const hasDerivedUnits = allUnits.length > 1;
+
+  const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const newQuantity = value === '' ? 0 : parseFloat(value);
+    if (!isNaN(newQuantity) && newQuantity >= 0) {
+      onUpdateQuantity(item.saleItemId, newQuantity);
+    }
+  };
+
+  return (
+    <TableRow>
+      <TableCell className="font-medium">
+        <p className="font-semibold text-gray-900">{item.product.name}</p>
+        <p className="text-xs text-gray-500">Batch: {item.batchNumber}</p>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1">
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-7 w-7"
+            onClick={() => onUpdateQuantity(item.saleItemId, item.displayQuantity - 1)}
+          >
+            -
+          </Button>
+          <Input
+            type="number"
+            value={item.displayQuantity}
+            onChange={handleQuantityInputChange}
+            onBlur={(e) => { if (e.target.value === '' || parseFloat(e.target.value) <= 0) { onUpdateQuantity(item.saleItemId, 1); } }}
+            className="w-16 h-8 text-center"
+            step="0.01"
+          />
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-7 w-7"
+            onClick={() => onUpdateQuantity(item.saleItemId, item.displayQuantity + 1)}
+          >
+            +
+          </Button>
+           {hasDerivedUnits ? (
+            <Select 
+                value={item.displayUnit}
+                onValueChange={(newUnit) => onUpdateQuantity(item.saleItemId, item.displayQuantity, newUnit)}
+            >
+                <SelectTrigger className="w-[80px] h-8 ml-2 text-xs">
+                    <SelectValue placeholder="Unit" />
+                </SelectTrigger>
+                <SelectContent>
+                    {allUnits.map(u => (
+                        <SelectItem key={u.name} value={u.name} className="text-xs">{u.name}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        ) : (
+             <span className="text-xs text-gray-500 ml-2">{units.baseUnit}</span>
+        )}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="text-sm">Rs. {item.price.toFixed(2)}</div>
+         <div className="text-xs text-gray-500 line-through">
+              {hasDiscounts ? `Rs. ${originalLineTotal.toFixed(2)}` : ''}
+          </div>
+      </TableCell>
+      <TableCell>
+        {isCalculating ? <Skeleton className="h-6 w-full" /> : (
+            hasDiscounts && lineItemResult ? (
+                <div className="space-y-1">
+                    {isCustomDiscount && (
+                        <p className="flex items-center text-xs bg-yellow-50 text-yellow-800 p-1 rounded-md">
+                        <span className="font-bold truncate pr-1">Manual</span>
+                        <span className="font-semibold bg-yellow-200 px-1.5 py-0.5 rounded-full">
+                            {item.customDiscountType === 'percentage' ? `${item.customDiscountValue}%` : `Rs. ${item.customDiscountValue}`}
+                        </span>
+                        </p>
+                    )}
+                    {!isCustomDiscount && lineItemResult.appliedRules.map((rule: any, i: number) => (
+                        <p key={i} className="text-xs text-green-800">
+                        -Rs. {rule.discountAmount.toFixed(2)}
+                        <span className="text-gray-500 ml-1">({rule.appliedRuleInfo.sourceRuleName})</span>
+                        </p>
+                    ))}
+                </div>
+            ) : (
+                <div className="flex justify-center">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onOverrideDiscount(item)}>
+                        <Tag className="mr-1 h-3 w-3" />
+                        Add
+                    </Button>
+                </div>
+            )
+        )}
+      </TableCell>
+      <TableCell className="text-right">
+        {isCalculating ? <Skeleton className="h-7 w-20 ml-auto" /> : (
+          <>
+            <p className="font-bold text-base text-gray-800">Rs. {finalLineTotal.toFixed(2)}</p>
+            <Button
+                variant="ghost"
+                size="icon"
+                className="text-gray-400 hover:text-red-500 hover:bg-red-50 w-6 h-6 mt-1 ml-auto"
+                onClick={() => onUpdateQuantity(item.saleItemId, 0)}
+            >
+                <Trash2 className="h-3 w-3" />
+            </Button>
+          </>
+        )}
+      </TableCell>
+    </TableRow>
+  );
+}

@@ -1,10 +1,11 @@
 // src/components/POSUI/ShoppingCart.tsx
 import React from 'react';
 import type { SaleItem } from '@/types';
-// import { DiscountResult } from '@/discount-engine/core/result';
-import CartItemCard from './CartItemCard';
 import OrderSummary from './OrderSummary';
 import { Skeleton } from '../ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { CartTableRow } from './CartTableRow';
+
 
 interface ShoppingCartProps {
   cart: SaleItem[];
@@ -21,25 +22,37 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
       <h2 className="text-2xl font-semibold text-gray-900 mb-5">Shopping Cart</h2>
-      <div className="space-y-4">
+      
+      <div className="w-full">
         {cart.length === 0 ? (
           <p className="text-center text-gray-500 py-8">Your cart is empty.</p>
         ) : (
-          cart.map((item) => {
-            return (
-              <CartItemCard
-                key={item.saleItemId}
-                item={item}
-                isCalculating={isCalculating}
-                // Pass the entire discount result down to the card
-                discountResult={discountResult} 
-                onUpdateQuantity={onUpdateQuantity}
-                onOverrideDiscount={onOverrideDiscount}
-              />
-            );
-          })
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40%]">Product</TableHead>
+                <TableHead className="w-[25%]">Qty</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead>Discounts</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {cart.map((item) => (
+                <CartTableRow
+                  key={item.saleItemId}
+                  item={item}
+                  isCalculating={isCalculating}
+                  discountResult={discountResult}
+                  onUpdateQuantity={onUpdateQuantity}
+                  onOverrideDiscount={onOverrideDiscount}
+                />
+              ))}
+            </TableBody>
+          </Table>
         )}
       </div>
+
 
       <hr className="my-6 border-gray-200" />
       
