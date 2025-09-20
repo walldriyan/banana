@@ -15,7 +15,7 @@ import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { History, LayoutDashboard } from 'lucide-react';
+import { History, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
@@ -23,6 +23,8 @@ import { defaultDiscounts } from '@/lib/default-campaign';
 import { CustomDiscountForm } from '@/components/POSUI/CustomDiscountForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getProductBatchesAction } from '@/lib/actions/product.actions';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 
 const initialDiscountResult = {
@@ -50,6 +52,7 @@ export default function MyNewEcommerceShop() {
 
   const [isCalculating, setIsCalculating] = useState(false);
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
+  const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
 
   const user = useSessionStore(state => state.user);
 
@@ -470,39 +473,55 @@ export default function MyNewEcommerceShop() {
               </AuthorizationGuard>
               
                <div className="mt-4">
-                  <DiscountBehaviorPanel
+                 <ShoppingCart
+                    cart={cart}
                     isCalculating={isCalculating}
                     discountResult={discountResult}
-                    activeCampaign={activeCampaign}
-                    transactionId={transactionId}
+                    onUpdateQuantity={handleCartUpdate}
+                    onOverrideDiscount={openCustomDiscountDrawer}
                   />
-
-                  {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
-                      <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
-                      <div className="space-y-1 text-blue-700">
-                        <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
-                        <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
-                        <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
-                        <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
-                        <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
-                      </div>
-                    </div>
-                  )}
                </div>
 
             </div>
           </AuthorizationGuard>
         </div>
 
-        <aside className="lg:sticky lg:top-8 h-fit">
-          <ShoppingCart
-            cart={cart}
-            isCalculating={isCalculating}
-            discountResult={discountResult}
-            onUpdateQuantity={handleCartUpdate}
-            onOverrideDiscount={openCustomDiscountDrawer}
-          />
+        <aside className="lg:sticky lg:top-8 h-fit space-y-6">
+           <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg">
+                <Switch 
+                  id="analysis-mode" 
+                  checked={showAnalysisPanel}
+                  onCheckedChange={setShowAnalysisPanel}
+                />
+                <Label htmlFor="analysis-mode" className="flex items-center gap-2">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Show Discount Analysis
+                </Label>
+              </div>
+
+           {showAnalysisPanel && (
+            <>
+                <DiscountBehaviorPanel
+                    isCalculating={isCalculating}
+                    discountResult={discountResult}
+                    activeCampaign={activeCampaign}
+                    transactionId={transactionId}
+                />
+
+                {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
+                    <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
+                    <div className="space-y-1 text-blue-700">
+                    <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
+                    <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
+                    <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
+                    <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
+                    <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
+                    </div>
+                </div>
+                )}
+            </>
+           )}
         </aside>
       </div>
     </div>
