@@ -468,6 +468,29 @@ export default function MyNewEcommerceShop() {
                   )}
                 </div>
               </AuthorizationGuard>
+              
+               <div className="mt-4">
+                  <DiscountBehaviorPanel
+                    isCalculating={isCalculating}
+                    discountResult={discountResult}
+                    activeCampaign={activeCampaign}
+                    transactionId={transactionId}
+                  />
+
+                  {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
+                      <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
+                      <div className="space-y-1 text-blue-700">
+                        <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
+                        <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
+                        <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
+                        <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
+                        <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
+                      </div>
+                    </div>
+                  )}
+               </div>
+
             </div>
           </AuthorizationGuard>
         </div>
@@ -480,26 +503,6 @@ export default function MyNewEcommerceShop() {
             onUpdateQuantity={handleCartUpdate}
             onOverrideDiscount={openCustomDiscountDrawer}
           />
-
-          <DiscountBehaviorPanel
-            isCalculating={isCalculating}
-            discountResult={discountResult}
-            activeCampaign={activeCampaign}
-            transactionId={transactionId}
-          />
-
-          {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
-              <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
-              <div className="space-y-1 text-blue-700">
-                <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
-                <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
-                <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
-                <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
-                <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
-              </div>
-            </div>
-          )}
         </aside>
       </div>
     </div>
