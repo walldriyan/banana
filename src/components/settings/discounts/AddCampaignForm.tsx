@@ -1,7 +1,7 @@
 // src/components/settings/discounts/AddCampaignForm.tsx
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { discountSetSchema, type DiscountSetFormValues, specificDiscountRuleSchema } from "@/lib/validation/discount.schema";
 import { Button } from "@/components/ui/button";
