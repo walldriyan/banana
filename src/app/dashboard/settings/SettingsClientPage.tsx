@@ -57,7 +57,7 @@ export function SettingsClientPage() {
                             <TabsTrigger value={nav.value} className="h-auto w-full p-4 justify-start text-left data-[state=active]:bg-primary/10 data-[state=active]:shadow-none border-l-4 border-transparent data-[state=active]:border-primary">
                                 <div className="flex items-start gap-4">
                                     <nav.icon className="h-5 w-5 mt-1 text-muted-foreground group-data-[state=active]:text-primary" />
-                                    <div>
+                                    <div className="overflow-hidden">
                                         <h4 className="font-semibold text-base text-foreground">{nav.title}</h4>
                                         <p className="text-xs text-muted-foreground">{nav.description}</p>
                                     </div>
