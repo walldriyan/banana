@@ -113,7 +113,7 @@ export function DebtorsClientPage() {
     const iframeDoc = iframe.contentWindow?.document;
     if (iframeDoc) {
       iframeDoc.open();
-      iframeDoc.write(`<html><head><title>Print Transaction Statement</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
+      iframeDoc.write(`<html><head><title>Print Transaction Statement</title><style>${receiptStyles}</style></head><body class="printable-area">${receiptHTML}</body></html>`);
       iframeDoc.close();
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();

@@ -114,7 +114,7 @@ export function CreditClientPage() {
     const iframeDoc = iframe.contentWindow?.document;
     if (iframeDoc) {
       iframeDoc.open();
-      iframeDoc.write(`<html><head><title>Print GRN Statement</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
+      iframeDoc.write(`<html><head><title>Print GRN Statement</title><style>${receiptStyles}</style></head><body class="printable-area">${receiptHTML}</body></html>`);
       iframeDoc.close();
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();

@@ -21,8 +21,8 @@ import { Label } from '../ui/label';
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
 const receiptStyles = `
-  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; }
-  .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; font-size: 10px; }
+  .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
   .text-center { text-align: center; }
   .space-y-1 > * + * { margin-top: 4px; }
   .text-lg { font-size: 1.125rem; }
@@ -44,6 +44,8 @@ const receiptStyles = `
   .text-blue-700 { color: #1d4ed8; }
   .text-red-600 { color: #dc2626; }
   .mt-2 { margin-top: 8px; }
+  .text-xs { font-size: 0.75rem; }
+  .capitalize { text-transform: capitalize; }
 `;
 
 interface TransactionDialogContentProps {
@@ -143,7 +145,7 @@ export function TransactionDialogContent({
     const iframeDoc = iframe.contentWindow?.document;
     if (iframeDoc) {
       iframeDoc.open();
-      iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
+      iframeDoc.write(`<html><head><title>Print Receipt</title><style>${receiptStyles}</style></head><body class="printable-area">${receiptHTML}</body></html>`);
       iframeDoc.close();
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
@@ -222,7 +224,7 @@ export function TransactionDialogContent({
 
         {step === 'print' && finalTransactionData && (
           <div className='py-4'>
-            <div className="bg-gray-100 p-4 rounded-lg overflow-y-auto max-h-[60vh]">
+            <div className="bg-gray-100 p-4 rounded-lg overflow-y-auto max-h-[60vh] printable-area">
               <div style={{ maxWidth: '300px', margin: '0 auto' }}>
                 <ThermalReceipt data={finalTransactionData} showAsGiftReceipt={isGiftReceipt} />
               </div>

@@ -108,7 +108,7 @@
       left: 0;
       top: 0;
       width: 100%;
-      padding: 0; /* Remove padding to rely on @page margin */
+      padding: 0;
     }
 
     .no-print {
