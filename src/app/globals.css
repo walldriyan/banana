@@ -85,20 +85,32 @@
 
 @layer utilities {
   @media print {
+    @page {
+      size: auto;
+      margin: 5mm;
+    }
+    
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
     body * {
       visibility: hidden;
     }
+
     .printable-area, .printable-area * {
       visibility: visible;
     }
+
     .printable-area {
       position: absolute;
       left: 0;
       top: 0;
       width: 100%;
-      padding-left: 5px;
-      padding-right: 5px;
+      padding: 0; /* Remove padding to rely on @page margin */
     }
+
     .no-print {
       display: none;
     }
