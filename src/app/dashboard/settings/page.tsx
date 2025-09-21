@@ -1,5 +1,5 @@
 // src/app/dashboard/settings/page.tsx
-import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
+import { SettingsClientPage } from "./SettingsClientPage";
 
 export default async function SettingsPage() {
   return (
@@ -10,13 +10,7 @@ export default async function SettingsPage() {
             <p className="text-muted-foreground">Manage global application settings and preferences.</p>
         </div>
       </div>
-      <AuthorizationGuard permissionKey="settings.view" fallback={
-        <p className="text-destructive">You do not have permission to view settings.</p>
-      }>
-        <div>
-            <p>Application settings will be configured here.</p>
-        </div>
-      </AuthorizationGuard>
+      <SettingsClientPage />
     </div>
   );
 }
