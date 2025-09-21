@@ -1,0 +1,369 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ------------------------------
+// APPLICATION MODELS
+// ------------------------------
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  category    String
+  brand       String
+  units       Json
+  isService   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batches ProductBatch[]
+}
+
+model ProductBatch {
+  id              String  @id @default(cuid())
+  productId       String
+  batchNumber     String
+  sellingPrice    Float
+  costPrice       Float?
+  quantity        Int // The original quantity when added
+  stock           Int // The current stock level
+  barcode         String? @unique
+  addedDate       DateTime
+  manufactureDate DateTime?
+  expiryDate      DateTime?
+  location        String?
+  notes           String?
+  tax             Float?
+  taxtype         String? // PERCENTAGE or FIXED
+  discount        Float?
+  discountType    String? // PERCENTAGE or FIXED
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  transactionLines TransactionLine[]
+
+  // Relation to GoodsReceivedNoteItem
+  grnItem GoodsReceivedNoteItem?
+
+  @@unique([productId, batchNumber])
+}
+
+model Customer {
+  id              String        @id @default(cuid())
+  name            String
+  phone           String?       @unique
+  email           String?       @unique
+  address         String?
+  transactions    Transaction[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Transaction {
+  id                    String   @id
+  transactionDate       DateTime
+  subtotal              Float
+  totalDiscountAmount   Float
+  finalTotal            Float
+  totalItems            Int
+  totalQuantity         Float
+  status                String // "completed", "refund", "pending"
+  isGiftReceipt         Boolean  @default(false)
+  campaignId            String
+  paymentStatus         String   @default("pending") // 'pending', 'partial', 'paid'
+  originalTransactionId String?  @unique
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  payment           TransactionPayment?
+  lines             TransactionLine[]
+  appliedDiscounts  AppliedDiscountLog[]
+  salePayments      SalePayment[] // Payments received for this transaction
+
+  originalTransaction  Transaction? @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions Transaction[]  @relation("RefundToOriginal")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TransactionPayment {
+  id                String      @id @default(cuid())
+  transactionId     String      @unique
+  paidAmount        Float
+  paymentMethod     String
+  outstandingAmount Float
+  isInstallment     Boolean
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model TransactionLine {
+  id                      String       @id @default(cuid())
+  transactionId           String
+  productBatchId          String?
+  productName             String
+  batchNumber             String?
+  quantity                Float // Base unit quantity
+  displayUnit             String
+  displayQuantity         Float
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+  customDiscountValue     Float?
+  customDiscountType      String?
+  customApplyFixedOnce    Boolean?
+  transaction             Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productBatch            ProductBatch? @relation(fields: [productBatchId], references: [id])
+}
+
+model AppliedDiscountLog {
+  id                      String      @id @default(cuid())
+  transactionId           String
+  discountCampaignName    String
+  sourceRuleName          String
+  totalCalculatedDiscount Float
+  ruleType                String
+  productIdAffected       String?
+  batchIdAffected         String?
+  appliedOnce             Boolean?
+  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model Supplier {
+  id             String             @id @default(cuid())
+  name           String             @unique
+  contactPerson  String?
+  phone          String?
+  email          String?
+  address        String?
+  notes          String?
+  productBatches ProductBatch[]
+  grns           GoodsReceivedNote[]
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model GoodsReceivedNote {
+  id             String                  @id @default(cuid())
+  grnNumber      String                  @unique
+  grnDate        DateTime
+  supplierId     String
+  invoiceNumber  String?
+  totalAmount    Float
+  paidAmount     Float                   @default(0)
+  paymentMethod  String
+  paymentStatus  String                  @default("pending") // 'pending', 'partial', 'paid'
+  notes          String?
+  supplier       Supplier                @relation(fields: [supplierId], references: [id])
+  items          GoodsReceivedNoteItem[]
+  payments       PurchasePayment[]
+}
+
+model GoodsReceivedNoteItem {
+  id             String            @id @default(cuid())
+  grnId          String
+  productBatchId String            @unique
+  quantity       Float
+  costPrice      Float
+  discount       Float
+  tax            Float
+  total          Float
+  grn            GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  productBatch   ProductBatch      @relation(fields: [productBatchId], references: [id], onDelete: Cascade)
+}
+
+model PurchasePayment {
+  id                  String            @id @default(cuid())
+  goodsReceivedNoteId String
+  amount              Float
+  paymentDate         DateTime
+  paymentMethod       String
+  notes               String?
+  grn                 GoodsReceivedNote @relation(fields: [goodsReceivedNoteId], references: [id], onDelete: Cascade)
+}
+
+model SalePayment {
+  id            String      @id @default(cuid())
+  transactionId String
+  amount        Float
+  paymentDate   DateTime
+  paymentMethod String
+  notes         String?
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+
+model Company {
+    id                 String   @id @default(cuid())
+    name               String   @unique
+    address            String?
+    phone              String?
+    email              String?
+    registrationNumber String?
+    taxNumber          String?
+    logoUrl            String?
+    isActive           Boolean  @default(true)
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+}
+
+// ------------------------------
+// DISCOUNT ENGINE MODELS
+// ------------------------------
+
+model DiscountSet {
+  id                                  String    @id @default(cuid())
+  name                                String    @unique
+  description                         String?
+  isActive                            Boolean   @default(true)
+  isDefault                           Boolean   @default(false)
+  isOneTimePerTransaction             Boolean   @default(false)
+  validFrom                           DateTime?
+  validTo                             DateTime?
+  productConfigurations               ProductDiscountConfiguration[]
+  buyGetRules                         BuyGetRule[]
+  
+  // One-to-one relations for global/default rules
+  globalCartPriceRuleJsonId           String?                      @unique
+  globalCartPriceRuleJson             SpecificDiscountRuleConfig?  @relation("DSC_GlobalCartPrice", fields: [globalCartPriceRuleJsonId], references: [id])
+  globalCartQuantityRuleJsonId        String?                      @unique
+  globalCartQuantityRuleJson          SpecificDiscountRuleConfig?  @relation("DSC_GlobalCartQuantity", fields: [globalCartQuantityRuleJsonId], references: [id])
+  defaultLineItemValueRuleJsonId      String?                      @unique
+  defaultLineItemValueRuleJson        SpecificDiscountRuleConfig?  @relation("DSC_DefaultLineItemValue", fields: [defaultLineItemValueRuleJsonId], references: [id])
+  defaultLineItemQuantityRuleJsonId   String?                      @unique
+  defaultLineItemQuantityRuleJson     SpecificDiscountRuleConfig?  @relation("DSC_DefaultLineItemQuantity", fields: [defaultLineItemQuantityRuleJsonId], references: [id])
+  defaultSpecificQtyThresholdRuleJsonId  String?                   @unique
+  defaultSpecificQtyThresholdRuleJson    SpecificDiscountRuleConfig? @relation("DSC_DefaultSpecificQty", fields: [defaultSpecificQtyThresholdRuleJsonId], references: [id])
+  defaultSpecificUnitPriceThresholdRuleJsonId String?              @unique
+  defaultSpecificUnitPriceThresholdRuleJson SpecificDiscountRuleConfig? @relation("DSC_DefaultSpecificUnit", fields: [defaultSpecificUnitPriceThresholdRuleJsonId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProductDiscountConfiguration {
+  id                           String    @id @default(cuid())
+  productId                    String
+  productNameAtConfiguration   String
+  discountSetId                String
+  isActiveForProductInCampaign Boolean   @default(true)
+  priority                     Int?
+  discountSet                  DiscountSet @relation(fields: [discountSetId], references: [id], onDelete: Cascade)
+  
+  // One-to-one relations for specific rules
+  lineItemValueRuleJsonId      String? @unique
+  lineItemValueRuleJson        SpecificDiscountRuleConfig? @relation("PDC_LineItemValue", fields: [lineItemValueRuleJsonId], references: [id])
+  lineItemQuantityRuleJsonId   String? @unique
+  lineItemQuantityRuleJson     SpecificDiscountRuleConfig? @relation("PDC_LineItemQuantity", fields: [lineItemQuantityRuleJsonId], references: [id])
+  specificQtyThresholdRuleJsonId String? @unique
+  specificQtyThresholdRuleJson   SpecificDiscountRuleConfig? @relation("PDC_SpecificQty", fields: [specificQtyThresholdRuleJsonId], references: [id])
+  specificUnitPriceThresholdRuleJsonId String? @unique
+  specificUnitPriceThresholdRuleJson SpecificDiscountRuleConfig? @relation("PDC_SpecificUnitPrice", fields: [specificUnitPriceThresholdRuleJsonId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([discountSetId, productId])
+}
+
+model BuyGetRule {
+  id             String      @id @default(cuid())
+  discountSetId  String
+  name           String
+  buyProductId   String
+  buyQuantity    Int
+  getProductId   String
+  getQuantity    Int
+  discountType   String // 'percentage', 'fixed', 'free'
+  discountValue  Float
+  isRepeatable   Boolean
+  maxApplications Int?
+  priority       Int?
+  description    String?
+  discountSet    DiscountSet @relation(fields: [discountSetId], references: [id], onDelete: Cascade)
+}
+
+model SpecificDiscountRuleConfig {
+  id          String    @id @default(cuid())
+  name        String
+  type        String // 'percentage' or 'fixed'
+  value       Float
+  conditionMin Float?
+  conditionMax Float?
+  applyFixedOnce Boolean?
+  description String?
+  isEnabled   Boolean   @default(true)
+
+  // Back-relations to DiscountSet
+  discountSetGlobalCartPrice           DiscountSet? @relation("DSC_GlobalCartPrice")
+  discountSetGlobalCartQuantity        DiscountSet? @relation("DSC_GlobalCartQuantity")
+  discountSetDefaultLineItemValue      DiscountSet? @relation("DSC_DefaultLineItemValue")
+  discountSetDefaultLineItemQuantity   DiscountSet? @relation("DSC_DefaultLineItemQuantity")
+  discountSetDefaultSpecificQty        DiscountSet? @relation("DSC_DefaultSpecificQty")
+  discountSetDefaultSpecificUnit       DiscountSet? @relation("DSC_DefaultSpecificUnit")
+  
+  // Back-relations to ProductDiscountConfiguration
+  pdcLineItemValue        ProductDiscountConfiguration? @relation("PDC_LineItemValue")
+  pdcLineItemQuantity     ProductDiscountConfiguration? @relation("PDC_LineItemQuantity")
+  pdcSpecificQty          ProductDiscountConfiguration? @relation("PDC_SpecificQty")
+  pdcSpecificUnitPrice    ProductDiscountConfiguration? @relation("PDC_SpecificUnitPrice")
+}
