@@ -22,7 +22,7 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
   const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
   const originalLineTotal = item.price * item.quantity;
   const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
-  const isCustomDiscount = item.customDiscountValue !== undefined;
+  const isCustomDiscount = item.customDiscountValue !== undefined && item.customDiscountValue > 0;
   
   const units = typeof item.product.units === 'string' ? JSON.parse(item.product.units) : item.product.units;
   const allUnits = [{ name: units.baseUnit, conversionFactor: 1 }, ...(units.derivedUnits || [])];
@@ -95,31 +95,31 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
       </TableCell>
       <TableCell>
         {isCalculating ? <Skeleton className="h-6 w-full" /> : (
-            hasDiscounts && lineItemResult ? (
-                <div className="space-y-1">
-                    {isCustomDiscount && (
-                        <p className="flex items-center text-xs bg-yellow-50 text-yellow-800 p-1 rounded-md">
-                        <span className="font-bold truncate pr-1">Manual</span>
-                        <span className="font-semibold bg-yellow-200 px-1.5 py-0.5 rounded-full">
-                            {item.customDiscountType === 'percentage' ? `${item.customDiscountValue}%` : `Rs. ${item.customDiscountValue}`}
-                        </span>
-                        </p>
-                    )}
-                    {!isCustomDiscount && lineItemResult.appliedRules.map((rule: any, i: number) => (
-                        <p key={i} className="text-xs text-green-800">
-                        -Rs. {rule.discountAmount.toFixed(2)}
-                        <span className="text-gray-500 ml-1">({rule.appliedRuleInfo.sourceRuleName})</span>
-                        </p>
-                    ))}
-                </div>
-            ) : (
-                <div className="flex justify-center">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => onOverrideDiscount(item)}>
-                        <Tag className="mr-1 h-3 w-3" />
-                        Add
-                    </Button>
-                </div>
-            )
+           <div className="flex flex-col items-center gap-1">
+            {hasDiscounts && lineItemResult && (
+              <div className="space-y-1 w-full">
+                {isCustomDiscount ? (
+                  <p className="flex items-center text-xs bg-yellow-50 text-yellow-800 p-1 rounded-md">
+                    <span className="font-bold truncate pr-1">Manual</span>
+                    <span className="font-semibold bg-yellow-200 px-1.5 py-0.5 rounded-full">
+                      {item.customDiscountType === 'percentage' ? `${item.customDiscountValue}%` : `Rs. ${item.customDiscountValue}`}
+                    </span>
+                  </p>
+                ) : (
+                  lineItemResult.appliedRules.map((rule: any, i: number) => (
+                    <p key={i} className="text-xs text-green-800">
+                      -Rs. {rule.discountAmount.toFixed(2)}
+                      <span className="text-gray-500 ml-1">({rule.appliedRuleInfo.sourceRuleName})</span>
+                    </p>
+                  ))
+                )}
+              </div>
+            )}
+            <Button variant="ghost" size="sm" className="h-7 text-xs w-full justify-center" onClick={() => onOverrideDiscount(item)}>
+                <Tag className="mr-1 h-3 w-3" />
+                {isCustomDiscount ? 'Edit' : hasDiscounts ? 'Override' : 'Add'}
+            </Button>
+          </div>
         )}
       </TableCell>
       <TableCell className="text-right">
