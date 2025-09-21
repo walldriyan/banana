@@ -2,8 +2,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Transaction, Customer } from '@prisma/client';
-import { getDebtorTransactionsAction } from '@/lib/actions/debtor.actions';
+import type { Transaction, Customer, SalePayment } from '@prisma/client';
+import { getDebtorTransactionsAction, getPaymentsForSaleAction } from '@/lib/actions/debtor.actions';
 import { DebtorsDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +11,9 @@ import { useDrawer } from '@/hooks/use-drawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ManageSalePaymentsDrawer } from '@/components/debtors/ManageSalePaymentsDrawer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Users, Landmark, Wallet, Banknote } from 'lucide-react';
+import { FileText, Users, Landmark, Wallet, Banknote, Printer } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { SaleReceipt } from '@/components/debtors/SaleReceipt';
 
 
 export type DebtorTransaction = Transaction & {
@@ -32,6 +34,34 @@ const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: {
         <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
     </div>
 );
+
+const receiptStyles = `
+  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; font-size: 10px; }
+  .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  .text-center { text-align: center; }
+  .space-y-1 > * + * { margin-top: 4px; }
+  .text-lg { font-size: 1.125rem; }
+  .font-bold { font-weight: 700; }
+  .border-t { border-top-width: 1px; }
+  .border-dashed { border-style: dashed; }
+  .border-black { border-color: black; }
+  .my-1 { margin-top: 4px; margin-bottom: 4px; }
+  .w-full { width: 100%; }
+  .text-left { text-align: left; }
+  .text-right { text-align: right; }
+  .text-base { font-size: 1rem; }
+  .italic { font-style: italic; }
+  .text-gray-600 { color: #555; }
+  .flex { display: flex; }
+  .justify-between { justify-content: space-between; }
+  .font-bold { font-weight: bold; }
+  .text-green-700 { color: #047857; }
+  .text-blue-700 { color: #1d4ed8; }
+  .text-red-600 { color: #dc2626; }
+  .mt-2 { margin-top: 8px; }
+  .text-xs { font-size: 0.75rem; }
+  .capitalize { text-transform: capitalize; }
+`;
 
 
 export function DebtorsClientPage() {
@@ -64,14 +94,51 @@ export function DebtorsClientPage() {
       fetchDebtorTransactions(); // Refresh the main list when a payment is made
   }, [fetchDebtorTransactions]);
 
+  const handlePrint = useCallback(async (transaction: DebtorTransaction) => {
+    const paymentsResult = await getPaymentsForSaleAction(transaction.id);
+    if (!paymentsResult.success || !paymentsResult.data) {
+        toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch payment history for printing.'});
+        return;
+    }
+
+    const ReactDOMServer = (await import('react-dom/server')).default;
+    const receiptHTML = ReactDOMServer.renderToString(
+      <SaleReceipt transaction={transaction} payments={paymentsResult.data} />
+    );
+
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentWindow?.document;
+    if (iframeDoc) {
+      iframeDoc.open();
+      iframeDoc.write(`<html><head><title>Print Transaction Statement</title><style>${receiptStyles}</style></head><body>${receiptHTML}</body></html>`);
+      iframeDoc.close();
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    }
+
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 500);
+  }, [toast]);
+
+
   const openManagePaymentsDrawer = useCallback((transaction: DebtorTransaction) => {
     drawer.openDrawer({
         title: `Manage Payments for Txn: ${transaction.id}`,
         description: `Customer: ${transaction.customer.name}`,
+        headerActions: (
+            <Button onClick={() => handlePrint(transaction)} variant="outline" size="sm">
+                <Printer className="mr-2 h-4 w-4" />
+                Print Statement
+            </Button>
+        ),
         content: <ManageSalePaymentsDrawer transaction={transaction} onPaymentUpdate={handlePaymentUpdate} />,
         drawerClassName: 'sm:max-w-4xl'
     });
-  }, [drawer, handlePaymentUpdate]);
+  }, [drawer, handlePaymentUpdate, handlePrint]);
   
   const summary = useMemo(() => {
     const totalTransactions = transactions.length;
