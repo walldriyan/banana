@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
-import { allCampaigns } from '@/lib/my-campaigns';
+import { allCampaigns as hardcodedCampaigns } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
 import ShoppingCart from '@/components/POSUI/ShoppingCart';
 import SearchableProductInput from '@/components/POSUI/SearchableProductInput';
@@ -23,6 +23,7 @@ import { defaultDiscounts } from '@/lib/default-campaign';
 import { CustomDiscountForm } from '@/components/POSUI/CustomDiscountForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getProductBatchesAction } from '@/lib/actions/product.actions';
+import { getDiscountSetsAction } from '@/lib/actions/discount.actions';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
@@ -42,6 +43,7 @@ const initialDiscountResult = {
 
 export default function MyNewEcommerceShop() {
   const [products, setProducts] = useState<ProductBatch[]>([]);
+  const [allCampaigns, setAllCampaigns] = useState<DiscountSet[]>(hardcodedCampaigns);
   const [cart, setCart] = useState<SaleItem[]>([]);
   const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(defaultDiscounts);
   const [transactionId, setTransactionId] = useState<string>('');
@@ -60,21 +62,40 @@ export default function MyNewEcommerceShop() {
   const createNewTransactionId = () => `txn-${Date.now()}`;
 
   useEffect(() => {
-    async function fetchProducts() {
+    async function fetchData() {
       setIsLoading(true);
-      const result = await getProductBatchesAction();
-      if (result.success && result.data) {
-        setProducts(result.data);
+      
+      const [productsResult, campaignsResult] = await Promise.all([
+        getProductBatchesAction(),
+        getDiscountSetsAction()
+      ]);
+
+      if (productsResult.success && productsResult.data) {
+        setProducts(productsResult.data);
       } else {
         toast({
           variant: 'destructive',
           title: 'Error fetching products',
-          description: result.error,
+          description: productsResult.error,
         });
       }
+
+      if (campaignsResult.success && campaignsResult.data) {
+        // Combine hardcoded campaigns with database campaigns
+        setAllCampaigns([...hardcodedCampaigns, ...campaignsResult.data]);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error fetching custom campaigns',
+          description: campaignsResult.error,
+        });
+        setAllCampaigns(hardcodedCampaigns); // Fallback to hardcoded
+      }
+
+
       setIsLoading(false);
     }
-    fetchProducts();
+    fetchData();
   }, [toast]);
 
 
