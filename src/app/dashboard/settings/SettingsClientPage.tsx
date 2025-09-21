@@ -50,7 +50,7 @@ export function SettingsClientPage() {
             permissionKey="settings.view" 
             fallback={<p className="text-destructive">You do not have permission to view settings.</p>}
         >
-            <Tabs defaultValue="discounts" orientation="vertical" className="md:flex gap-8">
+            <Tabs defaultValue="discounts" orientation="vertical" className="flex flex-col md:flex-row gap-8">
                 <TabsList className="h-auto flex-shrink-0 md:w-1/3 lg:w-1/4 bg-transparent p-0 flex flex-col items-stretch">
                     {settingsNav.map(nav => (
                          <AuthorizationGuard key={nav.value} permissionKey={nav.permission}>
