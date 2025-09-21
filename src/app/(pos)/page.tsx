@@ -145,7 +145,7 @@ export default function MyNewEcommerceShop() {
     };
 
     recalculate();
-  }, [cart, activeCampaign]);
+  }, [cart, activeCampaign, toast]);
 
 
   useEffect(() => {
@@ -310,7 +310,7 @@ export default function MyNewEcommerceShop() {
       }
       return item;
     }));
-    
+
     if (value > 0) {
       toast({
         title: "Custom Discount Applied!",
