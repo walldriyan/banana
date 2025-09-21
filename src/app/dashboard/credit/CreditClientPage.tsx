@@ -12,8 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ManagePaymentsDrawer } from '@/components/credit/ManagePaymentsDrawer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Building, Landmark, Wallet, Banknote, Printer } from 'lucide-react';
-import { Button } from '../ui/button';
-import { GrnReceipt } from '../credit/GrnReceipt';
+import { Button } from '@/components/ui/button';
+import { GrnReceipt } from '@/components/credit/GrnReceipt';
 
 
 export type CreditorGrn = GoodsReceivedNote & {
