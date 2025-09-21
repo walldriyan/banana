@@ -54,8 +54,8 @@ const RuleEditor = ({ control, name, title, description }: { control: any, name:
           <CardContent className="space-y-4 border-t pt-6">
              <FormField control={control} name={`${name}.name`} render={({ field }) => ( <FormItem><FormLabel>Rule Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
              <div className="grid grid-cols-2 gap-4">
-                <FormField control={control} name={`${name}.conditionMin`} render={({ field }) => ( <FormItem><FormLabel>Minimum Condition</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription className="text-xs">Minimum value/qty to activate.</FormDescription><FormMessage /></FormItem> )} />
-                <FormField control={control} name={`${name}.conditionMax`} render={({ field }) => ( <FormItem><FormLabel>Maximum Condition</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription className="text-xs">Maximum value/qty to activate.</FormDescription><FormMessage /></FormItem> )} />
+                <FormField control={control} name={`${name}.conditionMin`} render={({ field }) => ( <FormItem><FormLabel>Minimum Condition</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormDescription className="text-xs">Minimum value/qty to activate.</FormDescription><FormMessage /></FormItem> )} />
+                <FormField control={control} name={`${name}.conditionMax`} render={({ field }) => ( <FormItem><FormLabel>Maximum Condition</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ''} /></FormControl><FormDescription className="text-xs">Maximum value/qty to activate.</FormDescription><FormMessage /></FormItem> )} />
              </div>
              <div className="grid grid-cols-2 gap-4">
                 <FormField control={control} name={`${name}.type`} render={({ field }) => (
