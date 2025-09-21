@@ -235,6 +235,21 @@ export async function getTransactionsFromDb() {
     });
 
     const formattedTransactions = transactions.map(tx => {
+      // Gracefully handle cases where the payment relation might be null
+      const paymentDetails = tx.payment
+        ? {
+            paidAmount: tx.payment.paidAmount,
+            paymentMethod: tx.payment.paymentMethod as 'cash' | 'card' | 'online',
+            outstandingAmount: tx.payment.outstandingAmount,
+            isInstallment: tx.payment.isInstallment,
+          }
+        : {
+            paidAmount: 0,
+            paymentMethod: 'cash' as 'cash',
+            outstandingAmount: tx.finalTotal,
+            isInstallment: false,
+          };
+
       const dbReadyTx: DatabaseReadyTransaction = {
         transactionHeader: {
           transactionId: tx.id,
@@ -269,12 +284,7 @@ export async function getTransactionsFromDb() {
           phone: tx.customer.phone ?? '',
           address: tx.customer.address ?? '',
         },
-        paymentDetails: {
-          paidAmount: tx.payment!.paidAmount,
-          paymentMethod: tx.payment!.paymentMethod as 'cash' | 'card' | 'online',
-          outstandingAmount: tx.payment!.outstandingAmount,
-          isInstallment: tx.payment!.isInstallment,
-        },
+        paymentDetails, // Use the safely handled paymentDetails object
         companyDetails: { companyId: 'comp-001', companyName: 'My Company' },
         userDetails: { userId: 'user-001', userName: 'Default User' },
         isRefunded: !!tx.refundTransactions.length,
