@@ -134,18 +134,18 @@ export default function MyNewEcommerceShop() {
           getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
         });
       } else {
-        toast({
-          variant: "destructive",
-          title: "Discount Error",
-          description: result.error,
-        });
+        // toast({
+        //   variant: "destructive",
+        //   title: "Discount Error",
+        //   description: result.error,
+        // });
         setDiscountResult(initialDiscountResult);
       }
       setIsCalculating(false);
     };
 
     recalculate();
-  }, [cart, activeCampaign, toast]);
+  }, [cart, activeCampaign]);
 
 
   useEffect(() => {
@@ -206,11 +206,8 @@ export default function MyNewEcommerceShop() {
         const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
         if (newBaseQuantity > currentItem.stock) {
-            toast({
-                variant: "destructive",
-                title: "Stock Limit Exceeded",
-                description: `Cannot set quantity to ${newDisplayQuantity} ${unitToUse}. Only ${currentItem.stock / conversionFactor} ${unitToUse} available.`,
-            });
+            // NOTE: Toast removed from here to prevent render-phase updates.
+            // Consider showing this error inline in the UI.
             return currentCart; // Return original cart without changes
         }
 
@@ -245,11 +242,7 @@ export default function MyNewEcommerceShop() {
                 const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
                 if (newBaseQuantity > item.stock) {
-                    toast({
-                        variant: "destructive",
-                        title: "Stock Limit Exceeded",
-                        description: `Cannot add more ${item.product.name}. Maximum stock reached.`,
-                    });
+                    // NOTE: Toast removed from here to prevent render-phase updates.
                     return item;
                 }
                 
@@ -263,11 +256,7 @@ export default function MyNewEcommerceShop() {
         }));
     } else {
         if (1 > productBatch.stock) {
-            toast({
-                variant: "destructive",
-                title: "Out of Stock",
-                description: `Cannot add ${productBatch.product.name}, it is out of stock.`,
-            });
+            // NOTE: Toast removed from here to prevent render-phase updates.
             return;
         }
         
