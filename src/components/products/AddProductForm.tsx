@@ -36,6 +36,7 @@ import brandsData from '@/lib/data/brands.json';
 import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Separator } from '../ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 interface AddProductFormProps {
@@ -470,11 +471,19 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                             name="discountType"
                             render={({ field }) => (
                                 <FormItem>
-                                <FormLabel>Batch Default Discount Type</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g., PERCENTAGE or FIXED" {...field} />
-                                </FormControl>
-                                <FormMessage />
+                                    <FormLabel>Batch Default Discount Type</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a discount type" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="PERCENTAGE">PERCENTAGE</SelectItem>
+                                            <SelectItem value="FIXED">FIXED</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
                                 </FormItem>
                             )}
                             />
