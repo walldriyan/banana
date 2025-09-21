@@ -59,7 +59,6 @@ export function SettingsClientPage() {
                                     <nav.icon className="h-5 w-5 mt-1 text-muted-foreground group-data-[state=active]:text-primary" />
                                     <div className="overflow-hidden">
                                         <h4 className="font-semibold text-base text-foreground">{nav.title}</h4>
-                                        <p className="text-xs text-muted-foreground truncate">{nav.description}</p>
                                     </div>
                                 </div>
                             </TabsTrigger>
