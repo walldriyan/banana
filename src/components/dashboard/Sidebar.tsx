@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer, Settings } from 'lucide-react';
+import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase } from 'lucide-react';
 import {
   SidebarContent,
   SidebarMenu,
@@ -43,7 +43,8 @@ const reportItems = [
 ]
 
 const settingsItems = [
-  { href: '/dashboard/company', icon: Settings, label: 'Company', permission: 'company.manage' },
+  { href: '/dashboard/company', icon: Briefcase, label: 'Company', permission: 'company.manage' },
+  { href: '/dashboard/settings', icon: Settings, label: 'Application Settings', permission: 'settings.view' },
 ]
 
 export function DashboardSidebar() {
