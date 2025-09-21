@@ -1,7 +1,7 @@
 // src/app/(pos)/page.tsx
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { allCampaigns as hardcodedCampaigns } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -84,12 +84,8 @@ export default function MyNewEcommerceShop() {
         // Combine hardcoded campaigns with database campaigns
         setAllCampaigns([...hardcodedCampaigns, ...campaignsResult.data]);
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error fetching custom campaigns',
-          description: campaignsResult.error,
-        });
-        setAllCampaigns(hardcodedCampaigns); // Fallback to hardcoded
+        // Fallback to hardcoded if DB fetch fails
+        setAllCampaigns(hardcodedCampaigns);
       }
 
 
@@ -180,6 +176,21 @@ export default function MyNewEcommerceShop() {
     };
   }, []);
 
+  const availableProducts = useMemo(() => {
+    const cartQuantities: { [batchId: string]: number } = {};
+    for (const item of cart) {
+        cartQuantities[item.id] = (cartQuantities[item.id] || 0) + item.quantity;
+    }
+
+    return products.map(p => {
+        const quantityInCart = cartQuantities[p.id] || 0;
+        return {
+            ...p,
+            stock: p.stock - quantityInCart
+        };
+    });
+}, [products, cart]);
+
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
     setCart(currentCart => {
@@ -204,10 +215,12 @@ export default function MyNewEcommerceShop() {
         const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
 
         const newBaseQuantity = newDisplayQuantity * conversionFactor;
+        
+        // Check against the original stock of the product, not the calculated available stock
+        const originalProduct = products.find(p => p.id === currentItem.id);
+        const originalStock = originalProduct?.stock || 0;
 
-        if (newBaseQuantity > currentItem.stock) {
-            // NOTE: Toast removed from here to prevent render-phase updates.
-            // Consider showing this error inline in the UI.
+        if (newBaseQuantity > originalStock) {
             return currentCart; // Return original cart without changes
         }
 
@@ -224,6 +237,8 @@ export default function MyNewEcommerceShop() {
 
 
  const addToCart = (productBatch: ProductBatch) => {
+    const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
+    
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
@@ -241,8 +256,10 @@ export default function MyNewEcommerceShop() {
 
                 const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
-                if (newBaseQuantity > item.stock) {
-                    // NOTE: Toast removed from here to prevent render-phase updates.
+                const originalProduct = products.find(p => p.id === item.id);
+                const originalStock = originalProduct?.stock || 0;
+
+                if (newBaseQuantity > originalStock) {
                     return item;
                 }
                 
@@ -255,8 +272,7 @@ export default function MyNewEcommerceShop() {
             return item;
         }));
     } else {
-        if (1 > productBatch.stock) {
-            // NOTE: Toast removed from here to prevent render-phase updates.
+        if (1 > availableStock) {
             return;
         }
         
@@ -299,14 +315,6 @@ export default function MyNewEcommerceShop() {
       }
       return item;
     }));
-
-    if (value > 0) {
-      toast({
-        title: "Custom Discount Applied!",
-        description: `A custom ${type} discount of ${value} was applied.`,
-      });
-    }
-
     drawer.closeDrawer();
   };
 
@@ -456,7 +464,7 @@ export default function MyNewEcommerceShop() {
 
               <SearchableProductInput
                 ref={productSearchRef}
-                products={products}
+                products={availableProducts}
                 onProductSelect={addToCart}
               />
 
