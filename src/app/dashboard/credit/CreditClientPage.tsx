@@ -23,7 +23,8 @@ export type CreditorGrn = GoodsReceivedNote & {
 };
 
 const receiptStyles = `
-  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; font-size: 10px; }
+  @page { size: auto; margin: 5px; }
+  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 0; }
   .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
   .text-center { text-align: center; }
   .space-y-1 > * + * { margin-top: 4px; }
@@ -96,30 +97,52 @@ export function CreditClientPage() {
   }, [fetchCreditorGrns]);
 
   const handlePrint = useCallback(async (grn: CreditorGrn) => {
+    // 1. Fetch the LATEST payment history just before printing.
     const paymentsResult = await getPaymentsForGrnAction(grn.id);
     if (!paymentsResult.success || !paymentsResult.data) {
-        toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch payment history for printing.'});
+        toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch latest payment history for printing.'});
         return;
     }
+    
+    // 2. We also need the latest GRN data (e.g., totalPaid)
+    const latestGrn = {
+        ...grn,
+        totalPaid: paymentsResult.data.reduce((sum, p) => sum + p.amount, 0),
+    };
 
+
+    // 3. Dynamically render the receipt component to an HTML string.
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      <GrnReceipt grn={grn} payments={paymentsResult.data} />
+      <GrnReceipt grn={latestGrn} payments={paymentsResult.data} />
     );
 
+    // 4. Create and configure the iframe for printing.
     const iframe = document.createElement('iframe');
     iframe.style.display = 'none';
     document.body.appendChild(iframe);
 
     const iframeDoc = iframe.contentWindow?.document;
     if (iframeDoc) {
+      // 5. Inject the styles and the HTML content directly into the iframe's document.
       iframeDoc.open();
-      iframeDoc.write(`<html><head><title>Print GRN Statement</title><style>${receiptStyles}</style></head><body class="printable-area">${receiptHTML}</body></html>`);
+      iframeDoc.write(`
+        <html>
+          <head>
+            <title>Print GRN Statement</title>
+            <style>${receiptStyles}</style>
+          </head>
+          <body>
+            ${receiptHTML}
+          </body>
+        </html>
+      `);
       iframeDoc.close();
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
     }
 
+    // 6. Clean up the iframe after a short delay.
     setTimeout(() => {
       document.body.removeChild(iframe);
     }, 500);

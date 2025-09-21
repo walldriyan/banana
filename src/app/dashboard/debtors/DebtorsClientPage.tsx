@@ -36,7 +36,8 @@ const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: {
 );
 
 const receiptStyles = `
-  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 5px; font-size: 10px; }
+  @page { size: auto; margin: 5px; }
+  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 0; }
   .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
   .text-center { text-align: center; }
   .space-y-1 > * + * { margin-top: 4px; }
@@ -100,10 +101,15 @@ export function DebtorsClientPage() {
         toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch payment history for printing.'});
         return;
     }
+    
+    const latestTransaction = {
+        ...transaction,
+        totalPaid: paymentsResult.data.reduce((sum, p) => sum + p.amount, 0),
+    };
 
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      <SaleReceipt transaction={transaction} payments={paymentsResult.data} />
+      <SaleReceipt transaction={latestTransaction} payments={paymentsResult.data} />
     );
 
     const iframe = document.createElement('iframe');
@@ -113,7 +119,17 @@ export function DebtorsClientPage() {
     const iframeDoc = iframe.contentWindow?.document;
     if (iframeDoc) {
       iframeDoc.open();
-      iframeDoc.write(`<html><head><title>Print Transaction Statement</title><style>${receiptStyles}</style></head><body class="printable-area">${receiptHTML}</body></html>`);
+      iframeDoc.write(`
+        <html>
+          <head>
+            <title>Print Transaction Statement</title>
+            <style>${receiptStyles}</style>
+          </head>
+          <body>
+            ${receiptHTML}
+          </body>
+        </html>
+      `);
       iframeDoc.close();
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
