@@ -133,8 +133,12 @@ export function ManagePaymentsDrawer({ grn: initialGrn, onPaymentUpdate }: Manag
                     </Card>
                  ) : (
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>Summary</CardTitle>
+                             <Button onClick={handlePrint} variant="outline" size="sm">
+                                <Printer className="mr-2 h-4 w-4" />
+                                Print Statement
+                            </Button>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex justify-between text-lg">
@@ -151,12 +155,6 @@ export function ManagePaymentsDrawer({ grn: initialGrn, onPaymentUpdate }: Manag
                                 <span className="text-red-600">Rs. {balance.toFixed(2)}</span>
                             </div>
                         </CardContent>
-                        <CardFooter>
-                            <Button onClick={handlePrint} variant="outline" className="w-full">
-                                <Printer className="mr-2 h-4 w-4" />
-                                Print Statement
-                            </Button>
-                        </CardFooter>
                     </Card>
                  )}
                 <AuthorizationGuard permissionKey='credit.manage'>
