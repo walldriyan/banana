@@ -13,7 +13,7 @@ import { useDrawer } from '@/hooks/use-drawer';
 import { cn } from '@/lib/utils';
 
 export function GlobalDrawer() {
-  const { isOpen, closeDrawer, content, title, description, closeOnOverlayClick, drawerClassName } = useDrawer();
+  const { isOpen, closeDrawer, content, title, description, closeOnOverlayClick, drawerClassName, headerActions } = useDrawer();
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -33,8 +33,8 @@ export function GlobalDrawer() {
       >
         <SheetHeader>
           {title && <SheetTitle>{title}</SheetTitle>}
-          {/* Ensure SheetDescription is rendered for accessibility, even if empty. */}
-          <SheetDescription>{description}</SheetDescription>
+          {description && <SheetDescription>{description}</SheetDescription>}
+          {headerActions && <div className="pt-4">{headerActions}</div>}
         </SheetHeader>
         <div className="mt-4">{content}</div>
       </SheetContent>
