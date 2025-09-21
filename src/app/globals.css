@@ -87,7 +87,7 @@
   @media print {
     @page {
       size: auto;
-      margin: 5mm;
+      margin: 5px;
     }
     
     body {
