@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer } from 'lucide-react';
+import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer, Settings } from 'lucide-react';
 import {
   SidebarContent,
   SidebarMenu,
@@ -40,6 +40,10 @@ const financeItems = [
 
 const reportItems = [
     { href: '/dashboard/reports', icon: Printer, label: 'Reports', permission: 'reports.view' },
+]
+
+const settingsItems = [
+  { href: '/dashboard/company', icon: Settings, label: 'Company', permission: 'company.manage' },
 ]
 
 export function DashboardSidebar() {
@@ -105,6 +109,11 @@ export function DashboardSidebar() {
         <SidebarGroup>
             <SidebarGroupLabel>REPORTS & PRINTING</SidebarGroupLabel>
             <SidebarMenu>{reportItems.map(renderLink)}</SidebarMenu>
+        </SidebarGroup>
+
+         <SidebarGroup>
+            <SidebarGroupLabel>SETTINGS</SidebarGroupLabel>
+            <SidebarMenu>{settingsItems.map(renderLink)}</SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
 
