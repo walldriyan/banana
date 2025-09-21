@@ -36,7 +36,9 @@
         "debtors.view",
         "debtors.manage",
         "reports.view",
-        "company.manage"
+        "company.manage",
+        "settings.view",
+        "settings.discounts"
       ]
     },
     "cashier": {

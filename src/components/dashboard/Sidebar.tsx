@@ -112,10 +112,12 @@ export function DashboardSidebar() {
             <SidebarMenu>{reportItems.map(renderLink)}</SidebarMenu>
         </SidebarGroup>
 
-         <SidebarGroup>
-            <SidebarGroupLabel>SETTINGS</SidebarGroupLabel>
-            <SidebarMenu>{settingsItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
+        <AuthorizationGuard permissionKey='settings.view'>
+             <SidebarGroup>
+                <SidebarGroupLabel>SETTINGS</SidebarGroupLabel>
+                <SidebarMenu>{settingsItems.map(renderLink)}</SidebarMenu>
+            </SidebarGroup>
+        </AuthorizationGuard>
       </SidebarContent>
 
       <SidebarFooter>

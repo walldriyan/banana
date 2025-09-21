@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Percent, Printer, Bell, Users, Palette } from "lucide-react";
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
+import { DiscountSettings } from "@/components/settings/discounts/DiscountSettings";
 
 const settingsNav = [
     {
@@ -68,15 +69,7 @@ export function SettingsClientPage() {
 
                 <div className="flex-1 mt-6 md:mt-0 md:pl-8">
                     <TabsContent value="discounts">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Discount Settings</CardTitle>
-                                <CardDescription>Global controls for the discount engine.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p>Discount settings will be configured here.</p>
-                            </CardContent>
-                        </Card>
+                       <DiscountSettings />
                     </TabsContent>
                     <TabsContent value="printing">
                         <Card>
