@@ -145,7 +145,7 @@ export default function MyNewEcommerceShop() {
     };
 
     recalculate();
-  }, [cart, activeCampaign, toast]);
+  }, [cart, activeCampaign]);
 
 
   useEffect(() => {
