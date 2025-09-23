@@ -23,8 +23,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Landmark } from 'lucide-react';
+import { TrendingUp, TrendingDown, Landmark, Briefcase } from 'lucide-react';
 import { AddTransactionForm } from './AddTransactionForm';
+import { Button } from '../ui/button';
+import Link from 'next/link';
 
 type TransactionWithRelations = FinancialTransaction & {
     company: Company | null;
@@ -97,7 +99,7 @@ export function FinanceClientPage() {
   const openAddDrawer = () => {
     drawer.openDrawer({
       title: 'Add Financial Transaction',
-      content: <AddTransactionForm onSuccess={handleFormSuccess} {...data} categories={[]} />,
+      content: <AddTransactionForm onSuccess={handleFormSuccess} {...data} />,
       drawerClassName: 'sm:max-w-md'
     });
   };
@@ -105,7 +107,7 @@ export function FinanceClientPage() {
   const openEditDrawer = useCallback((transaction: TransactionWithRelations) => {
     drawer.openDrawer({
         title: 'Edit Transaction',
-        content: <AddTransactionForm transaction={transaction} onSuccess={handleFormSuccess} {...data} categories={[]} />,
+        content: <AddTransactionForm transaction={transaction} onSuccess={handleFormSuccess} {...data} />,
         drawerClassName: 'sm:max-w-md'
     });
   }, [drawer, handleFormSuccess, data]);
@@ -151,6 +153,28 @@ export function FinanceClientPage() {
         <Skeleton className="h-96 w-full" />
       </div>
     );
+  }
+
+  // If no companies are set up, prompt the user to create one first.
+  if (data.companies.length === 0) {
+      return (
+          <Card className="text-center">
+              <CardHeader>
+                  <CardTitle>No Companies Found</CardTitle>
+                  <CardDescription>
+                    To manage income and expenses, you must first add a company profile.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <Link href="/dashboard/company">
+                    <Button>
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        Add Your First Company
+                    </Button>
+                  </Link>
+              </CardContent>
+          </Card>
+      )
   }
 
   return (
