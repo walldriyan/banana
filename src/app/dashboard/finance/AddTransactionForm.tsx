@@ -66,7 +66,8 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
 
   async function onSubmit(data: FinancialTransactionFormValues) {
     setIsSubmitting(true);
-    setSubmissionError(null); // Clear previous errors
+    setSubmissionError(null);
+    
     const action = isEditMode
       ? updateTransactionAction(transaction.id, data)
       : addTransactionAction(data);
@@ -78,8 +79,9 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
       toast({ title: `Transaction ${isEditMode ? 'Updated' : 'Added'}!` });
       onSuccess();
     } else {
+      console.error("Financial transaction submission failed:", result.error);
       setSubmissionError(result.error);
-      toast({ variant: "destructive", title: "Error", description: "Could not save the transaction." });
+      toast({ variant: "destructive", title: "Submission Failed", description: "Could not save the transaction. See error below." });
     }
   }
 

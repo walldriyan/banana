@@ -68,7 +68,8 @@ export async function addTransactionAction(data: FinancialTransactionFormValues)
     revalidatePath('/dashboard/finance');
     return { success: true, data: transaction };
   } catch (error) {
-    return { success: false, error: "Failed to add financial transaction." };
+    console.error("[addTransactionAction Error]", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to add financial transaction." };
   }
 }
 
@@ -119,7 +120,8 @@ export async function updateTransactionAction(id: string, data: FinancialTransac
         revalidatePath('/dashboard/finance');
         return { success: true, data: transaction };
     } catch (error) {
-        return { success: false, error: "Failed to update financial transaction." };
+        console.error("[updateTransactionAction Error]", error);
+        return { success: false, error: error instanceof Error ? error.message : "Failed to update financial transaction." };
     }
 }
 
@@ -130,6 +132,7 @@ export async function deleteTransactionAction(id: string) {
     revalidatePath('/dashboard/finance');
     return { success: true };
   } catch (error) {
-    return { success: false, error: "Failed to delete financial transaction." };
+    console.error("[deleteTransactionAction Error]", error);
+    return { success: false, error: error instanceof Error ? error.message : "Failed to delete financial transaction." };
   }
 }
