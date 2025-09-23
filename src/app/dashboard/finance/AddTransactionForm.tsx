@@ -13,12 +13,14 @@ import { useState, useEffect } from "react";
 import type { FinancialTransaction, Company, Customer, Supplier, FinancialTransactionCategory } from "@prisma/client";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, AlertTriangle } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 interface AddTransactionFormProps {
   transaction?: FinancialTransaction;
@@ -33,6 +35,7 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
   const { toast } = useToast();
   const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const isEditMode = !!transaction;
 
   const form = useForm<FinancialTransactionFormValues>({
@@ -63,6 +66,7 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
 
   async function onSubmit(data: FinancialTransactionFormValues) {
     setIsSubmitting(true);
+    setSubmissionError(null); // Clear previous errors
     const action = isEditMode
       ? updateTransactionAction(transaction.id, data)
       : addTransactionAction(data);
@@ -74,13 +78,20 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
       toast({ title: `Transaction ${isEditMode ? 'Updated' : 'Added'}!` });
       onSuccess();
     } else {
-      toast({ variant: "destructive", title: "Error", description: result.error });
+      setSubmissionError(result.error);
+      toast({ variant: "destructive", title: "Error", description: "Could not save the transaction." });
     }
   }
 
+  const onError = (errors: any) => {
+    console.error("[AddTransactionForm] Form validation errors:", errors);
+    const errorString = JSON.stringify(errors, null, 2);
+    setSubmissionError(`Client-side validation failed. Please check the form for errors. Details: ${errorString}`);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
         <FormField control={form.control} name="date" render={({ field }) => (
           <FormItem className="flex flex-col"><FormLabel>Date</FormLabel>
             <Popover>
@@ -141,6 +152,16 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
             </FormItem>
         )} />
         {/* Company field is now hidden */}
+
+        {submissionError && (
+            <Alert variant="destructive" className="mt-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Submission Error</AlertTitle>
+                <AlertDescription className="break-all font-mono text-xs">
+                    {submissionError}
+                </AlertDescription>
+            </Alert>
+        )}
 
         <div className="flex justify-end gap-4 pt-4">
           <Button type="button" variant="outline" onClick={drawer.closeDrawer}>Cancel</Button>

@@ -75,7 +75,7 @@ export function FinanceClientPage() {
         if (transactionsRes.success && transactionsRes.data) {
             setTransactions(transactionsRes.data as TransactionWithRelations[]);
         } else {
-             toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch transactions.' });
+             toast({ variant: 'destructive', title: 'Error', description: transactionsRes.error || 'Could not fetch transactions.' });
         }
         
         setData({
@@ -142,7 +142,7 @@ export function FinanceClientPage() {
     return { totalIncome, totalExpense, netBalance };
   }, [transactions]);
   
-  const columns = useMemo(() => getColumns(openEditDrawer, handleDeleteRequest), [openEditDrawer]);
+  const columns = useMemo(() => getColumns(openEditDrawer, handleDeleteRequest), [openEditDrawer, handleDeleteRequest]);
   
   const formatCurrency = (value: number) => `Rs. ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
