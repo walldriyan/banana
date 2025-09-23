@@ -10,127 +10,259 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-
-// --- Master Product Model ---
-// Contains general information about a product, independent of stock or price.
-model Product {
-  id          String        @id @default(cuid())
-  name        String        @unique // e.g., "Dell Inspiron 15 Laptop"
-  description String?
-  category    String
-  brand       String
-  units       Json // { "baseUnit": "pcs", "derivedUnits": [{"name": "box", "conversionFactor": 12}] }
-  isService   Boolean       @default(false) // e.g., for repair services
-  isActive    Boolean       @default(true)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  batches     ProductBatch[] // A master product can have many batches
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
 }
 
-// --- Product Batch Model ---
-// Represents a specific batch of a product with its own stock, price, etc.
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------------- Application Models ----------------
+
+model Company {
+  id                 String                  @id @default(cuid())
+  name               String                  @unique
+  address            String?
+  phone              String?                 @unique
+  email              String?                 @unique
+  registrationNumber String?
+  taxNumber          String?
+  logoUrl            String?
+  isActive           Boolean                 @default(true)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  financialTransactions FinancialTransaction[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String?
+  brand       String?
+  units       Json
+  isService   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batches ProductBatch[]
+}
+
 model ProductBatch {
-  id              String  @id @default(cuid())
-  productId       String
-  batchNumber     String
-  sellingPrice    Float
-  costPrice       Float?
-  stock           Int
-  quantity        Int // Initial quantity when added
-  barcode         String? @unique
-  addedDate       DateTime @default(now())
-  
-  // Batch-specific tax and discount overrides
-  tax             Float?
-  taxtype         String? // e.g., 'PERCENTAGE', 'FIXED'
-  discount        Float?
-  discountType    String? // e.g., 'PERCENTAGE', 'FIXED'
+  id                      String    @id @default(cuid())
+  productId               String
+  batchNumber             String
+  stock                   Int
+  quantity                Int
+  costPrice               Float?
+  sellingPrice            Float
+  barcode                 String?   @unique
+  addedDate               DateTime
+  manufactureDate         DateTime?
+  expiryDate              DateTime?
+  location                String?
+  notes                   String?
+  tax                     Float?
+  taxtype                 String?
+  discount                Float?
+  discountType            String?
+  supplierId              String?
+  goodsReceivedNoteItem   GoodsReceivedNoteItem?
 
-  // Foreign key for Supplier
-  supplierId      String?
-  
-  // Optional metadata
-  manufactureDate DateTime?
-  expiryDate      DateTime?
-  location        String?
-  notes           String?
-
-  product         Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  supplier        Supplier?  @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  
-  transactionLines TransactionLine[]
-
-  // Opposite relation field for GoodsReceivedNoteItem
-  goodsReceivedNoteItem GoodsReceivedNoteItem?
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  lines    TransactionLine[]
 
   @@unique([productId, batchNumber])
 }
 
-// --- Transaction Models ---
+
+model Supplier {
+  id            String           @id @default(cuid())
+  name          String           @unique
+  contactPerson String?
+  phone         String?          @unique
+  email         String?          @unique
+  address       String?
+  notes         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  batches       ProductBatch[]
+  grns          GoodsReceivedNote[]
+  financialTransactions FinancialTransaction[]
+}
+
+model GoodsReceivedNote {
+  id             String    @id @default(cuid())
+  grnNumber      String    @unique
+  grnDate        DateTime
+  supplierId     String
+  invoiceNumber  String?
+  totalAmount    Float
+  paidAmount     Float     @default(0)
+  paymentMethod  String
+  paymentStatus  String    @default("pending") // pending, partial, paid
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+  items    GoodsReceivedNoteItem[]
+  payments PurchasePayment[]
+}
+
+model GoodsReceivedNoteItem {
+  id             String       @id @default(cuid())
+  grnId          String
+  productBatchId String       @unique
+  quantity       Int
+  costPrice      Float
+  discount       Float
+  tax            Float
+  total          Float
+
+  grn            GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  productBatch   ProductBatch      @relation(fields: [productBatchId], references: [id], onDelete: Restrict)
+}
+
+model PurchasePayment {
+  id                   String            @id @default(cuid())
+  goodsReceivedNoteId  String
+  amount               Float
+  paymentDate          DateTime
+  paymentMethod        String
+  notes                String?
+  createdAt            DateTime          @default(now())
+
+  grn                  GoodsReceivedNote @relation(fields: [goodsReceivedNoteId], references: [id], onDelete: Cascade)
+}
+
+model Customer {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String?   @unique
+  email       String?   @unique
+  address     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  transactions Transaction[]
+  financialTransactions FinancialTransaction[]
+}
 
 model Transaction {
-  id                  String       @id
-  transactionDate     DateTime
-  subtotal            Float
-  totalDiscountAmount Float
-  finalTotal          Float
-  totalItems          Int
-  totalQuantity       Float
-  status              String // "completed", "refund", "pending"
-  campaignId          String
-  isGiftReceipt       Boolean      @default(false)
-  paymentStatus       String       @default("pending") // "pending", "partial", "paid"
+  id                    String                   @id
+  transactionDate       DateTime
+  subtotal              Float
+  totalDiscountAmount   Float
+  finalTotal            Float
+  totalItems            Int
+  totalQuantity         Float
+  status                String
+  campaignId            String
+  originalTransactionId String?                  @unique
+  paymentStatus         String                   @default("pending") // pending, partial, paid
+  isGiftReceipt         Boolean                  @default(false)
 
-  // For refunds
-  originalTransactionId String?    @unique
-  originalTransaction   Transaction? @relation("RefundHistory", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  refundTransactions    Transaction[] @relation("RefundHistory")
-  
-  // Relations
-  customerId          String
-  customer            Customer     @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  payment             TransactionPayment?
-  lines               TransactionLine[]
-  appliedDiscounts    AppliedDiscount[]
-  salePayments        SalePayment[]
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  payment Payment?
+
+  lines             TransactionLine[]
+  appliedDiscounts  AppliedDiscount[]
+  salePayments      SalePayment[]
+
+  originalTransaction Transaction? @relation("Refunds", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions  Transaction[] @relation("Refunds")
 }
+
+model Payment {
+  id                String      @id @default(cuid())
+  transactionId     String      @unique
+  paidAmount        Float
+  paymentMethod     String
+  outstandingAmount Float
+  isInstallment     Boolean
+  createdAt         DateTime    @default(now())
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
+model SalePayment {
+  id             String      @id @default(cuid())
+  transactionId  String
+  amount         Float
+  paymentDate    DateTime
+  paymentMethod  String
+  notes          String?
+  createdAt      DateTime    @default(now())
+
+  transaction  Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+}
+
 
 model TransactionLine {
-  id                      String   @id @default(cuid())
-  transactionId           String
-  productBatchId          String? // Changed from productId to productBatchId
-  productName             String
-  batchNumber             String?
-  quantity                Float // Base unit quantity
-  displayUnit             String
-  displayQuantity         Float
-  unitPrice               Float
-  lineTotalBeforeDiscount Float
-  lineDiscount            Float
-  lineTotalAfterDiscount  Float
-  
-  // For custom discount overrides
-  customDiscountValue   Float?
-  customDiscountType    String?
-  customApplyFixedOnce  Boolean?
+  id                       String       @id @default(cuid())
+  transactionId            String
+  productBatchId           String?
+  productName              String
+  batchNumber              String?
+  quantity                 Float
+  displayUnit              String
+  displayQuantity          Float
+  unitPrice                Float
+  lineTotalBeforeDiscount  Float
+  lineDiscount             Float
+  lineTotalAfterDiscount   Float
+  customDiscountValue      Float?
+  customDiscountType       String?
+  customApplyFixedOnce     Boolean?
 
-  // Relations
   transaction  Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  productBatch ProductBatch? @relation(fields: [productBatchId], references: [id], onDelete: Restrict)
-}
-
-model TransactionPayment {
-    id                  String      @id @default(cuid())
-    transactionId       String      @unique
-    paidAmount          Float
-    paymentMethod       String
-    outstandingAmount   Float
-    isInstallment       Boolean
-    transaction         Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productBatch ProductBatch? @relation(fields: [productBatchId], references: [id], onDelete: SetNull)
 }
 
 model AppliedDiscount {
-  id                      String   @id @default(cuid())
+  id                      String  @id @default(cuid())
   transactionId           String
   discountCampaignName    String
   sourceRuleName          String
@@ -139,156 +271,45 @@ model AppliedDiscount {
   productIdAffected       String?
   batchIdAffected         String?
   appliedOnce             Boolean?
-  transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
 }
-
-model SalePayment {
-  id              String      @id @default(cuid())
-  transactionId   String
-  amount          Float
-  paymentDate     DateTime
-  paymentMethod   String      // "cash", "card", etc.
-  notes           String?
-  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-}
-
-
-// --- People & Company Models ---
-
-model Customer {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String?       @unique
-  email        String?       @unique
-  address      String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  transactions Transaction[]
-  financialTransactions FinancialTransaction[]
-}
-
-model Supplier {
-  id            String           @id @default(cuid())
-  name          String           @unique
-  contactPerson String?
-  phone         String?
-  email         String?
-  address       String?
-  notes         String?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  productBatches ProductBatch[]
-  grns          GoodsReceivedNote[]
-  financialTransactions FinancialTransaction[]
-}
-
-model Company {
-    id                  String        @id @default(cuid())
-    name                String        @unique
-    address             String?
-    phone               String?
-    email               String?
-    registrationNumber  String?
-    taxNumber           String?
-    logoUrl             String?
-    isActive            Boolean       @default(true)
-    createdAt           DateTime      @default(now())
-    updatedAt           DateTime      @updatedAt
-    financialTransactions FinancialTransaction[]
-}
-
-// --- Purchase & Stock Models ---
-
-model GoodsReceivedNote {
-  id            String        @id @default(cuid())
-  grnNumber     String        @unique
-  grnDate       DateTime
-  supplierId    String
-  invoiceNumber String?
-  totalAmount   Float
-  paidAmount    Float         @default(0)
-  paymentMethod String        // e.g., "cash", "credit"
-  paymentStatus String        @default("pending") // "pending", "partial", "paid"
-  notes         String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  
-  supplier      Supplier      @relation(fields: [supplierId], references: [id], onDelete: Restrict)
-  items         GoodsReceivedNoteItem[]
-  payments      PurchasePayment[]
-}
-
-model GoodsReceivedNoteItem {
-  id             String            @id @default(cuid())
-  grnId          String
-  productBatchId String            @unique
-  quantity       Int
-  costPrice      Float
-  discount       Float
-  tax            Float
-  total          Float
-  
-  grn            GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
-  productBatch   ProductBatch      @relation(fields: [productBatchId], references: [id], onDelete: Restrict)
-}
-
-model PurchasePayment {
-  id                  String      @id @default(cuid())
-  goodsReceivedNoteId String
-  amount              Float
-  paymentDate         DateTime
-  paymentMethod       String      // "cash", "card", "cheque", "online"
-  notes               String?
-  
-  grn                 GoodsReceivedNote @relation(fields: [goodsReceivedNoteId], references: [id], onDelete: Cascade)
-}
-
-
-// --- Discount Configuration Models ---
 
 model DiscountSet {
-  id                  String        @id @default(cuid())
-  name                String        @unique
-  description         String?
-  isActive            Boolean       @default(true)
-  isDefault           Boolean       @default(false)
-  isOneTimePerTransaction Boolean   @default(false)
-  validFrom           DateTime?
-  validTo             DateTime?
-
-  // Storing complex rule configs as JSON
-  globalCartPriceRuleJson           Json?
-  globalCartQuantityRuleJson        Json?
-  defaultLineItemValueRuleJson      Json?
-  defaultLineItemQuantityRuleJson   Json?
-  defaultSpecificQtyThresholdRuleJson Json?
+  id                                    String   @id @default(cuid())
+  name                                  String   @unique
+  description                           String?
+  isActive                              Boolean  @default(true)
+  isDefault                             Boolean  @default(false)
+  isOneTimePerTransaction               Boolean  @default(false)
+  createdAt                             DateTime @default(now())
+  updatedAt                             DateTime @updatedAt
+  validFrom                             DateTime?
+  validTo                               DateTime?
+  globalCartPriceRuleJson               Json?
+  globalCartQuantityRuleJson            Json?
+  defaultLineItemValueRuleJson          Json?
+  defaultLineItemQuantityRuleJson       Json?
+  defaultSpecificQtyThresholdRuleJson   Json?
   defaultSpecificUnitPriceThresholdRuleJson Json?
-
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
 }
 
-// --- Financial Management Models ---
-
 model FinancialTransaction {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   date        DateTime
-  type        String      // "INCOME" or "EXPENSE"
+  type        String   // "INCOME" or "EXPENSE"
   amount      Float
   description String
-  category    String      // This is now a simple string field
+  category    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  // Relations to other models
-  companyId   String
-  company     Company     @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  companyId  String?
+  company    Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
-  // Optional relations
-  customerId  String?
-  customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
-
-  supplierId  String?
-  supplier    Supplier?   @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
 }
