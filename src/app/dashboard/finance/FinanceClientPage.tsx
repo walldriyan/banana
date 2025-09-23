@@ -25,7 +25,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Landmark, Briefcase } from 'lucide-react';
 import { AddTransactionForm } from './AddTransactionForm';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 type TransactionWithRelations = FinancialTransaction & {
