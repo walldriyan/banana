@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase } from 'lucide-react';
+import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp } from 'lucide-react';
 import {
   SidebarContent,
   SidebarMenu,
@@ -36,6 +36,7 @@ const peopleItems = [
 const financeItems = [
   { href: '/dashboard/credit', icon: CreditCard, label: 'Creditors', permission: 'credit.view' },
   { href: '/dashboard/debtors', icon: HandCoins, label: 'Debtors', permission: 'debtors.view' },
+  { href: '/dashboard/finance', icon: TrendingUp, label: 'Income/Expenses', permission: 'finance.view' },
 ];
 
 const reportItems = [

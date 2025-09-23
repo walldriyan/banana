@@ -38,7 +38,9 @@
         "reports.view",
         "company.manage",
         "settings.view",
-        "settings.discounts"
+        "settings.discounts",
+        "finance.view",
+        "finance.manage"
       ]
     },
     "cashier": {

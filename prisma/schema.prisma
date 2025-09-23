@@ -1,18 +1,18 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
 }
 
-// ---------------------------------
-// Company & People
-// ---------------------------------
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --------------------------------------
+// Core Models
+// --------------------------------------
 
 model Company {
   id                 String  @id @default(cuid())
@@ -21,141 +21,163 @@ model Company {
   phone              String? @unique
   email              String? @unique
   registrationNumber String? @unique
-  taxNumber          String? @unique
+  taxNumber          String?
   logoUrl            String?
   isActive           Boolean @default(true)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-}
 
-model Customer {
-  id           String        @id @default(cuid())
-  name         String
-  phone        String?       @unique
-  email        String?       @unique
-  address      String?
-  transactions Transaction[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  financialTransactions FinancialTransaction[]
 }
 
 model Supplier {
-  id            String             @id @default(cuid())
-  name          String             @unique
+  id            String  @id @default(cuid())
+  name          String  @unique
   contactPerson String?
-  phone         String?            @unique
-  email         String?            @unique
+  phone         String? @unique
+  email         String? @unique
   address       String?
   notes         String?
-  batches       ProductBatch[]
-  purchases     GoodsReceivedNote[]
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+
+  productBatches      ProductBatch[]
+  goodsReceivedNotes  GoodsReceivedNote[]
+  financialTransactions FinancialTransaction[]
 }
 
-// ---------------------------------
-// Product & Inventory
-// ---------------------------------
+model Customer {
+  id       String  @id @default(cuid())
+  name     String
+  phone    String? @unique
+  email    String? @unique
+  address  String?
+
+  transactions Transaction[]
+  financialTransactions FinancialTransaction[]
+
+  @@unique([name, phone])
+}
+
+// --------------------------------------
+// Product & Inventory Models
+// --------------------------------------
 
 model Product {
-  id          String         @id @default(cuid())
-  name        String
+  id          String   @id @default(cuid())
+  name        String   @unique
   description String?
   category    String
   brand       String
-  units       Json // e.g., { baseUnit: 'pcs', derivedUnits: [{ name: 'box', conversionFactor: 12 }] }
-  isService   Boolean        @default(false)
-  isActive    Boolean        @default(true)
-  batches     ProductBatch[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  units       Json
+  isService   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  batches ProductBatch[]
 }
 
 model ProductBatch {
-  id                      String                 @id @default(cuid())
-  product                 Product                @relation(fields: [productId], references: [id])
-  productId               String
-  batchNumber             String
-  sellingPrice            Float
-  costPrice               Float?
-  quantity                Int // Initial quantity when added
-  stock                   Int // Current available stock
-  barcode                 String?                @unique
-  addedDate               DateTime               @default(now())
-  manufactureDate         DateTime?
-  expiryDate              DateTime?
-  location                String?
-  notes                   String?
-  supplier                Supplier?              @relation(fields: [supplierId], references: [id])
-  supplierId              String?
-  tax                     Float?
-  taxtype                 String? // PERCENTAGE or FIXED
-  discount                Float?
-  discountType            String? // PERCENTAGE or FIXED
-  transactionLines        TransactionLine[]
+  id              String    @id @default(cuid())
+  product         Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId       String
+  batchNumber     String
+  sellingPrice    Float
+  costPrice       Float?
+  quantity        Int // Original quantity added
+  stock           Int // Current available stock
+  barcode         String?   @unique
+  addedDate       DateTime  @default(now())
+  manufactureDate DateTime?
+  expiryDate      DateTime?
+  location        String?
+  notes           String?
+  
+  // Batch-level default tax and discount
+  tax             Float?
+  taxtype         String? // e.g., "PERCENTAGE", "FIXED"
+  discount        Float?
+  discountType    String? // e.g., "PERCENTAGE", "FIXED"
+
+  supplier        Supplier? @relation(fields: [supplierId], references: [id])
+  supplierId      String?
+
+  transactionLines    TransactionLine[]
   goodsReceivedNoteItems GoodsReceivedNoteItem[]
 
   @@unique([productId, batchNumber])
 }
 
-// ---------------------------------
-// Transactions & Sales
-// ---------------------------------
+// --------------------------------------
+// Transaction & Sales Models
+// --------------------------------------
 
 model Transaction {
-  id                    String                @id
-  transactionDate       DateTime
+  id                    String    @id
+  transactionDate       DateTime  @default(now())
   subtotal              Float
   totalDiscountAmount   Float
   finalTotal            Float
   totalItems            Int
   totalQuantity         Float
-  status                String // e.g., 'completed', 'refund', 'pending'
-  campaignId            String
-  isGiftReceipt         Boolean?
-  paymentStatus         String? // e.g., 'pending', 'partial', 'paid'
-  originalTransactionId String?               @unique
-  originalTransaction   Transaction?          @relation("Refund", fields: [originalTransactionId], references: [id])
-  refundTransactions    Transaction[]         @relation("Refund")
-  customer              Customer              @relation(fields: [customerId], references: [id])
+  status                String // "completed", "refund", "pending"
+  campaignId            String?
+  isGiftReceipt         Boolean?  @default(false)
+  paymentStatus         String?   @default("pending") // pending, partial, paid
+
+  // Relation to Customer
+  customer              Customer  @relation(fields: [customerId], references: [id])
   customerId            String
+
+  // One-to-One relation to Payment
   payment               Payment?
+
+  // One-to-Many relation to TransactionLine
   lines                 TransactionLine[]
-  appliedDiscounts      AppliedDiscountLog[]
+
+  // One-to-Many relation to AppliedDiscount
+  appliedDiscounts      AppliedDiscount[]
+
+  // For refunds
+  originalTransactionId String?          @unique
+  originalTransaction   Transaction?     @relation("RefundToOriginal", fields: [originalTransactionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  refundTransactions    Transaction[]    @relation("RefundToOriginal")
+
   salePayments          SalePayment[]
+
+  @@index([transactionDate])
 }
 
 model Payment {
   id                String      @id @default(cuid())
-  transactionId     String      @unique
-  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   paidAmount        Float
   paymentMethod     String
   outstandingAmount Float
   isInstallment     Boolean
+  transaction       Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId     String      @unique
 }
 
 model TransactionLine {
-  id                       String        @id @default(cuid())
-  transaction              Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-  transactionId            String
-  productBatch             ProductBatch  @relation(fields: [productBatchId], references: [id])
-  productBatchId           String
-  productName              String
-  batchNumber              String?
-  quantity                 Float
-  displayUnit              String
-  displayQuantity          Float
-  unitPrice                Float
-  lineTotalBeforeDiscount  Float
-  lineDiscount             Float
-  lineTotalAfterDiscount   Float
-  customDiscountValue      Float?
-  customDiscountType       String?
-  customApplyFixedOnce     Boolean?
+  id                      String       @id @default(cuid())
+  transaction             Transaction  @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  transactionId           String
+  productBatch            ProductBatch @relation(fields: [productBatchId], references: [id])
+  productBatchId          String
+  productName             String
+  batchNumber             String?
+  quantity                Float
+  displayUnit             String?
+  displayQuantity         Float?
+  unitPrice               Float
+  lineTotalBeforeDiscount Float
+  lineDiscount            Float
+  lineTotalAfterDiscount  Float
+
+  // Custom discount info
+  customDiscountValue   Float?
+  customDiscountType    String?
+  customApplyFixedOnce  Boolean?
 }
 
-model AppliedDiscountLog {
+model AppliedDiscount {
   id                      String      @id @default(cuid())
   transaction             Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
   transactionId           String
@@ -168,26 +190,26 @@ model AppliedDiscountLog {
   appliedOnce             Boolean?
 }
 
-// ---------------------------------
-// Purchases
-// ---------------------------------
+// --------------------------------------
+// Purchase & GRN Models
+// --------------------------------------
 
 model GoodsReceivedNote {
-  id             String                   @id @default(cuid())
-  grnNumber      String                   @unique
+  id             String    @id @default(cuid())
+  grnNumber      String    @unique
   grnDate        DateTime
-  supplier       Supplier                 @relation(fields: [supplierId], references: [id])
-  supplierId     String
   invoiceNumber  String?
   totalAmount    Float
-  paidAmount     Float                    @default(0)
-  paymentMethod  String
-  paymentStatus  String                   @default("pending") // 'pending', 'partial', 'paid'
+  paidAmount     Float     @default(0)
+  paymentMethod  String?   // cash, card, cheque, credit
+  paymentStatus  String?   @default("pending") // pending, partial, paid
   notes          String?
+
+  supplier       Supplier  @relation(fields: [supplierId], references: [id])
+  supplierId     String
+
   items          GoodsReceivedNoteItem[]
   payments       PurchasePayment[]
-  createdAt      DateTime                 @default(now())
-  updatedAt      DateTime                 @updatedAt
 }
 
 model GoodsReceivedNoteItem {
@@ -195,7 +217,7 @@ model GoodsReceivedNoteItem {
   grn            GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
   grnId          String
   productBatch   ProductBatch      @relation(fields: [productBatchId], references: [id])
-  productBatchId String            @unique // Each GRN item creates one unique batch
+  productBatchId String
   quantity       Int
   costPrice      Float
   discount       Float
@@ -203,10 +225,9 @@ model GoodsReceivedNoteItem {
   total          Float
 }
 
-
-// ---------------------------------
-// Payments (Credit & Debit)
-// ---------------------------------
+// --------------------------------------
+// Payment Tracking Models
+// --------------------------------------
 
 model PurchasePayment {
   id                  String            @id @default(cuid())
@@ -214,9 +235,8 @@ model PurchasePayment {
   goodsReceivedNoteId String
   amount              Float
   paymentDate         DateTime
-  paymentMethod       String
+  paymentMethod       String // cash, card, cheque, online
   notes               String?
-  createdAt           DateTime          @default(now())
 }
 
 model SalePayment {
@@ -225,77 +245,77 @@ model SalePayment {
   transactionId String
   amount        Float
   paymentDate   DateTime
-  paymentMethod String
+  paymentMethod String // cash, card, cheque, online
   notes         String?
-  createdAt     DateTime    @default(now())
 }
 
-
-// ---------------------------------
-// Dynamic Discount Models
-// ---------------------------------
+// --------------------------------------
+// Discount & Campaign Models
+// --------------------------------------
 
 model DiscountSet {
-  id                                  String                         @id @default(cuid())
-  name                                String                         @unique
-  description                         String?
-  isActive                            Boolean                        @default(true)
-  isDefault                           Boolean                        @default(false)
-  isOneTimePerTransaction             Boolean                        @default(false)
-  validFrom                           DateTime?
-  validTo                             DateTime?
-  maxUsagePerCustomer                 Int?
+  id                                    String    @id @default(cuid())
+  name                                  String    @unique
+  description                           String?
+  isActive                              Boolean   @default(true)
+  isDefault                             Boolean   @default(false)
+  isOneTimePerTransaction             Boolean   @default(false)
+  validFrom                             DateTime?
+  validTo                               DateTime?
   
-  // JSON fields for simple rule configurations
+  // Storing rules as JSON fields for simplicity and flexibility
   globalCartPriceRuleJson             Json?
   globalCartQuantityRuleJson          Json?
   defaultLineItemValueRuleJson        Json?
   defaultLineItemQuantityRuleJson     Json?
   defaultSpecificQtyThresholdRuleJson Json?
   defaultSpecificUnitPriceThresholdRuleJson Json?
+}
 
-  // One-to-many relations for more complex rule types
-  productConfigurations               ProductDiscountConfiguration[]
-  buyGetRules                         BuyGetRule[]
+// --------------------------------------
+// FINANCIAL TRANSACTIONS (INCOME/EXPENSE)
+// --------------------------------------
+
+enum FinancialTransactionType {
+  INCOME
+  EXPENSE
+}
+
+model FinancialTransactionCategory {
+  id            String   @id @default(cuid())
+  name          String   @unique
+  type          FinancialTransactionType // INCOME or EXPENSE
+  description   String?
+  createdAt     DateTime @default(now())
   
-  createdAt                           DateTime                       @default(now())
-  updatedAt                           DateTime                       @updatedAt
+  transactions  FinancialTransaction[]
 }
 
-model ProductDiscountConfiguration {
-  id                          String      @id @default(cuid())
-  discountSet                 DiscountSet @relation(fields: [discountSetId], references: [id], onDelete: Cascade)
-  discountSetId               String
-  productId                   String // General product ID, not the batch ID
-  productNameAtConfiguration  String
-  isActiveForProductInCampaign Boolean     @default(true)
-  priority                    Int?
+model FinancialTransaction {
+  id            String   @id @default(cuid())
+  date          DateTime
+  type          FinancialTransactionType
+  amount        Float
+  description   String
+  
+  // Optional relations
+  company       Company?  @relation(fields: [companyId], references: [id])
+  companyId     String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  customerId    String?
+  supplier      Supplier? @relation(fields: [supplierId], references: [id])
+  supplierId    String?
 
-  // JSON fields for simple rule configurations
-  lineItemValueRuleJson             Json?
-  lineItemQuantityRuleJson          Json?
-  specificQtyThresholdRuleJson      Json?
-  specificUnitPriceThresholdRuleJson Json?
-
-  createdAt                   DateTime    @default(now())
-  updatedAt                   DateTime    @updatedAt
+  category      FinancialTransactionCategory @relation(fields: [categoryId], references: [id])
+  categoryId    String
+  
+  // You might want to link this to a specific user who entered it
+  // user User @relation(...)
+  // userId String
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
-model BuyGetRule {
-  id              String      @id @default(cuid())
-  discountSet     DiscountSet @relation(fields: [discountSetId], references: [id], onDelete: Cascade)
-  discountSetId   String
-  name            String
-  buyProductId    String
-  buyQuantity     Int
-  getProductId    String
-  getQuantity     Int
-  discountType    String // 'percentage', 'fixed', 'free'
-  discountValue   Float
-  isRepeatable    Boolean     @default(false)
-  maxApplications Int?
-  priority        Int?
-  description     String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-}
+// NOTE: Models related to user authentication and roles might be handled separately
+// or defined here if using a database adapter for NextAuth.
