@@ -45,12 +45,22 @@ export async function addTransactionAction(data: FinancialTransactionFormValues)
   if (!validation.success) {
     return { success: false, error: JSON.stringify(validation.error.flatten()) };
   }
-  const { customerId, supplierId, ...validatedData } = validation.data;
+  const { customerId, supplierId, companyId, ...validatedData } = validation.data;
   
   try {
+    let finalCompanyId = companyId;
+    if (!finalCompanyId) {
+        const firstCompany = await prisma.company.findFirst();
+        if (!firstCompany) {
+            return { success: false, error: "No companies found in the database. Please add a company first." };
+        }
+        finalCompanyId = firstCompany.id;
+    }
+
     const transaction = await prisma.financialTransaction.create({ 
         data: {
             ...validatedData,
+            companyId: finalCompanyId,
             customerId: customerId || null,
             supplierId: supplierId || null,
         }
@@ -85,13 +95,23 @@ export async function updateTransactionAction(id: string, data: FinancialTransac
     if (!validation.success) {
         return { success: false, error: JSON.stringify(validation.error.flatten()) };
     }
-    const { customerId, supplierId, ...validatedData } = validation.data;
+    const { customerId, supplierId, companyId, ...validatedData } = validation.data;
 
     try {
+        let finalCompanyId = companyId;
+        if (!finalCompanyId) {
+            const firstCompany = await prisma.company.findFirst();
+             if (!firstCompany) {
+                return { success: false, error: "No companies found in the database. Please add a company first." };
+            }
+            finalCompanyId = firstCompany.id;
+        }
+
         const transaction = await prisma.financialTransaction.update({
             where: { id },
             data: {
                 ...validatedData,
+                companyId: finalCompanyId,
                 customerId: customerId || null,
                 supplierId: supplierId || null,
             },

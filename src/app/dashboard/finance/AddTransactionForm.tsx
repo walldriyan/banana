@@ -43,7 +43,7 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
       amount: 0,
       description: '',
       categoryId: '',
-      companyId: companies[0]?.id || '',
+      companyId: companies[0]?.id || '', // Automatically select the first company
     },
   });
   
@@ -54,12 +54,12 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
       form.reset({
         ...transaction,
         date: new Date(transaction.date),
-        companyId: transaction.companyId ?? undefined,
+        companyId: transaction.companyId ?? companies[0]?.id, // Ensure companyId has a value
         customerId: transaction.customerId ?? undefined,
         supplierId: transaction.supplierId ?? undefined,
       });
     }
-  }, [transaction, isEditMode, form]);
+  }, [transaction, isEditMode, form, companies]);
 
   async function onSubmit(data: FinancialTransactionFormValues) {
     setIsSubmitting(true);
@@ -121,23 +121,26 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
                 <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl>
                     <SelectContent>
-                        {categories.filter(c => c.type === transactionType).map(c => (
-                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                        ))}
+                        {transactionType === 'INCOME' ? (
+                            <>
+                                <SelectItem value="sales">Sales</SelectItem>
+                                <SelectItem value="services">Services</SelectItem>
+                                <SelectItem value="other_income">Other Income</SelectItem>
+                            </>
+                        ) : (
+                            <>
+                                <SelectItem value="rent">Rent</SelectItem>
+                                <SelectItem value="salaries">Salaries</SelectItem>
+                                <SelectItem value="utilities">Utilities</SelectItem>
+                                <SelectItem value="supplies">Supplies</SelectItem>
+                                <SelectItem value="other_expense">Other Expense</SelectItem>
+                            </>
+                        )}
                     </SelectContent>
                 </Select><FormMessage />
             </FormItem>
         )} />
-        <FormField control={form.control} name="companyId" render={({ field }) => (
-            <FormItem><FormLabel>Company</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue placeholder="Select a company"/></SelectTrigger></FormControl>
-                    <SelectContent>
-                        {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                    </SelectContent>
-                </Select><FormMessage />
-            </FormItem>
-        )} />
+        {/* Company field is now hidden */}
 
         <div className="flex justify-end gap-4 pt-4">
           <Button type="button" variant="outline" onClick={drawer.closeDrawer}>Cancel</Button>
