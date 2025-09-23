@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { addTransactionAction, updateTransactionAction } from "@/lib/actions/finance.actions";
 import { useState, useEffect } from "react";
-import type { FinancialTransaction, Company, Customer, Supplier, FinancialTransactionCategory } from "@prisma/client";
+import type { FinancialTransaction, Company, Customer, Supplier } from "@prisma/client";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon, AlertTriangle } from "lucide-react";
@@ -28,10 +28,9 @@ interface AddTransactionFormProps {
   companies: Company[];
   customers: Customer[];
   suppliers: Supplier[];
-  categories: FinancialTransactionCategory[];
 }
 
-export function AddTransactionForm({ transaction, onSuccess, companies, customers, suppliers, categories }: AddTransactionFormProps) {
+export function AddTransactionForm({ transaction, onSuccess, companies, customers, suppliers }: AddTransactionFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +44,7 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
       type: 'EXPENSE',
       amount: 0,
       description: '',
-      categoryId: '',
+      category: '',
       companyId: companies[0]?.id || '', // Automatically select the first company
     },
   });
@@ -129,7 +128,7 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
         <FormField control={form.control} name="description" render={({ field }) => (
           <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
         )} />
-        <FormField control={form.control} name="categoryId" render={({ field }) => (
+        <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem><FormLabel>Category</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue placeholder="Select a category"/></SelectTrigger></FormControl>
