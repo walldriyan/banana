@@ -2,7 +2,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import type { FinancialTransaction, Company, Customer, Supplier, FinancialTransactionCategory } from "@prisma/client"
+import type { FinancialTransaction, Company, Customer, Supplier } from "@prisma/client"
 import { MoreHorizontal, ArrowUpDown, TrendingUp, TrendingDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge"
 import { format } from "date-fns"
 
 type TransactionWithRelations = FinancialTransaction & {
-    category: FinancialTransactionCategory;
     company: Company | null;
     customer: Customer | null;
     supplier: Supplier | null;
@@ -88,7 +87,7 @@ export const getColumns = (
         header: "Description",
     },
     {
-        accessorKey: "category.name",
+        accessorKey: "category",
         header: "Category",
     },
     {

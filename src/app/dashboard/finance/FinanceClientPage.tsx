@@ -2,12 +2,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { FinancialTransaction, Company, Customer, Supplier, FinancialTransactionCategory } from '@prisma/client';
+import type { FinancialTransaction, Company, Customer, Supplier } from '@prisma/client';
 import { getTransactionsAction, deleteTransactionAction } from '@/lib/actions/finance.actions';
 import { getCompaniesAction } from '@/lib/actions/company.actions';
 import { getCustomersAction } from '@/lib/actions/customer.actions';
 import { getSuppliersAction } from '@/lib/actions/supplier.actions';
-import { getCategoriesAction } from '@/lib/actions/finance.actions';
 import { FinanceDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -28,7 +27,6 @@ import { TrendingUp, TrendingDown, Landmark } from 'lucide-react';
 import { AddTransactionForm } from './AddTransactionForm';
 
 type TransactionWithRelations = FinancialTransaction & {
-    category: FinancialTransactionCategory;
     company: Company | null;
     customer: Customer | null;
     supplier: Supplier | null;
@@ -52,7 +50,6 @@ export function FinanceClientPage() {
       companies: [] as Company[],
       customers: [] as Customer[],
       suppliers: [] as Supplier[],
-      categories: [] as FinancialTransactionCategory[],
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -64,12 +61,11 @@ export function FinanceClientPage() {
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-        const [transactionsRes, companiesRes, customersRes, suppliersRes, categoriesRes] = await Promise.all([
+        const [transactionsRes, companiesRes, customersRes, suppliersRes] = await Promise.all([
             getTransactionsAction(),
             getCompaniesAction(),
             getCustomersAction(),
             getSuppliersAction(),
-            getCategoriesAction()
         ]);
         
         if (transactionsRes.success && transactionsRes.data) {
@@ -82,7 +78,6 @@ export function FinanceClientPage() {
             companies: companiesRes.success ? companiesRes.data || [] : [],
             customers: customersRes.success ? customersRes.data || [] : [],
             suppliers: suppliersRes.success ? suppliersRes.data || [] : [],
-            categories: categoriesRes.success ? categoriesRes.data || [] : [],
         });
     } catch(e) {
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch initial data.' });
@@ -102,7 +97,7 @@ export function FinanceClientPage() {
   const openAddDrawer = () => {
     drawer.openDrawer({
       title: 'Add Financial Transaction',
-      content: <AddTransactionForm onSuccess={handleFormSuccess} {...data} />,
+      content: <AddTransactionForm onSuccess={handleFormSuccess} {...data} categories={[]} />,
       drawerClassName: 'sm:max-w-md'
     });
   };
@@ -110,7 +105,7 @@ export function FinanceClientPage() {
   const openEditDrawer = useCallback((transaction: TransactionWithRelations) => {
     drawer.openDrawer({
         title: 'Edit Transaction',
-        content: <AddTransactionForm transaction={transaction} onSuccess={handleFormSuccess} {...data} />,
+        content: <AddTransactionForm transaction={transaction} onSuccess={handleFormSuccess} {...data} categories={[]} />,
         drawerClassName: 'sm:max-w-md'
     });
   }, [drawer, handleFormSuccess, data]);
