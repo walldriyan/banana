@@ -66,6 +66,7 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
   async function onSubmit(data: FinancialTransactionFormValues) {
     setIsSubmitting(true);
     setSubmissionError(null);
+    console.log("[AddTransactionForm] Submitting data:", data);
     
     const action = isEditMode
       ? updateTransactionAction(transaction.id, data)
@@ -93,40 +94,43 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-6">
-        <FormField control={form.control} name="date" render={({ field }) => (
-          <FormItem className="flex flex-col"><FormLabel>Date</FormLabel>
-            <Popover>
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-              </PopoverContent>
-            </Popover>
-            <FormMessage />
-          </FormItem>
-        )} />
-        <FormField control={form.control} name="type" render={({ field }) => (
-            <FormItem><FormLabel>Type</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                    <SelectContent>
-                        <SelectItem value="EXPENSE">Expense</SelectItem>
-                        <SelectItem value="INCOME">Income</SelectItem>
-                    </SelectContent>
-                </Select><FormMessage />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField control={form.control} name="date" render={({ field }) => (
+            <FormItem className="flex flex-col"><FormLabel>Date</FormLabel>
+                <Popover>
+                <PopoverTrigger asChild>
+                    <FormControl>
+                    <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                    </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                </PopoverContent>
+                </Popover>
+                <FormMessage />
             </FormItem>
-        )} />
+            )} />
+             <FormField control={form.control} name="type" render={({ field }) => (
+                <FormItem><FormLabel>Type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                        <SelectContent>
+                            <SelectItem value="EXPENSE">Expense</SelectItem>
+                            <SelectItem value="INCOME">Income</SelectItem>
+                        </SelectContent>
+                    </Select><FormMessage />
+                </FormItem>
+            )} />
+        </div>
+        
         <FormField control={form.control} name="amount" render={({ field }) => (
-          <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Amount</FormLabel><FormControl><Input type="number" {...field} placeholder="0.00" /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={form.control} name="description" render={({ field }) => (
-          <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
+          <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea {...field} placeholder="e.g., Monthly electricity bill" /></FormControl><FormMessage /></FormItem>
         )} />
         <FormField control={form.control} name="category" render={({ field }) => (
             <FormItem><FormLabel>Category</FormLabel>
@@ -152,7 +156,34 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
                 </Select><FormMessage />
             </FormItem>
         )} />
-        {/* Company field is now hidden */}
+
+        <div className="space-y-4 rounded-md border p-4">
+             <h3 className="text-sm font-medium text-muted-foreground">Link to (Optional)</h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField control={form.control} name="customerId" render={({ field }) => (
+                    <FormItem><FormLabel>Customer</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a customer"/></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="">None</SelectItem>
+                                {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select><FormMessage />
+                    </FormItem>
+                )} />
+                 <FormField control={form.control} name="supplierId" render={({ field }) => (
+                    <FormItem><FormLabel>Supplier</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Select a supplier"/></SelectTrigger></FormControl>
+                            <SelectContent>
+                                 <SelectItem value="">None</SelectItem>
+                                {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select><FormMessage />
+                    </FormItem>
+                )} />
+            </div>
+        </div>
 
         {submissionError && (
             <Alert variant="destructive" className="mt-4">
