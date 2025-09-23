@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import type { FinancialTransaction, Company, Customer, Supplier } from "@prisma/client";
 import { useDrawer } from "@/hooks/use-drawer";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, AlertTriangle } from "lucide-react";
+import { CalendarIcon, AlertTriangle, ChevronsUpDown } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -21,6 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 
 
 interface AddTransactionFormProps {
@@ -36,6 +41,7 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
   const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [isLinkingCardOpen, setIsLinkingCardOpen] = useState(false);
   const isEditMode = !!transaction;
 
   const form = useForm<FinancialTransactionFormValues>({
@@ -54,6 +60,8 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
 
   useEffect(() => {
     if (isEditMode && transaction) {
+      const hasLinks = !!transaction.customerId || !!transaction.supplierId;
+      setIsLinkingCardOpen(hasLinks);
       form.reset({
         ...transaction,
         date: new Date(transaction.date),
@@ -173,34 +181,46 @@ export function AddTransactionForm({ transaction, onSuccess, companies, customer
             </CardContent>
         </Card>
        
-        <Card>
-            <CardHeader>
-                <CardTitle>Link to (Optional)</CardTitle>
-                <CardDescription>Optionally link this transaction to a customer or supplier.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={form.control} name="customerId" render={({ field }) => (
-                    <FormItem><FormLabel>Customer</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select a customer"/></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select><FormMessage />
-                    </FormItem>
-                )} />
-                 <FormField control={form.control} name="supplierId" render={({ field }) => (
-                    <FormItem><FormLabel>Supplier</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Select a supplier"/></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                            </SelectContent>
-                        </Select><FormMessage />
-                    </FormItem>
-                )} />
-            </CardContent>
-        </Card>
+        <Collapsible open={isLinkingCardOpen} onOpenChange={setIsLinkingCardOpen}>
+          <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                      <CardTitle>Link to (Optional)</CardTitle>
+                      <CardDescription>Optionally link this transaction to a customer or supplier.</CardDescription>
+                  </div>
+                  <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                          <ChevronsUpDown className="h-4 w-4" />
+                          <span className="sr-only">Toggle</span>
+                      </Button>
+                  </CollapsibleTrigger>
+              </CardHeader>
+              <CollapsibleContent>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField control={form.control} name="customerId" render={({ field }) => (
+                        <FormItem><FormLabel>Customer</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select a customer"/></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select><FormMessage />
+                        </FormItem>
+                    )} />
+                    <FormField control={form.control} name="supplierId" render={({ field }) => (
+                        <FormItem><FormLabel>Supplier</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select a supplier"/></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select><FormMessage />
+                        </FormItem>
+                    )} />
+                </CardContent>
+              </CollapsibleContent>
+          </Card>
+        </Collapsible>
         
         {submissionError && (
             <Alert variant="destructive" className="mt-4">
