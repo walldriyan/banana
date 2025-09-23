@@ -4,41 +4,10 @@
 import { prisma } from "@/lib/prisma";
 import { 
     financialTransactionSchema, type FinancialTransactionFormValues,
-    financialTransactionCategorySchema, type FinancialTransactionCategoryFormValues 
 } from "@/lib/validation/finance.schema";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 
-// --- Category Actions ---
-
-export async function addCategoryAction(data: FinancialTransactionCategoryFormValues) {
-  const validation = financialTransactionCategorySchema.safeParse(data);
-  if (!validation.success) return { success: false, error: JSON.stringify(validation.error.flatten()) };
-  try {
-    const category = await prisma.financialTransactionCategory.create({ data: validation.data });
-    revalidatePath('/dashboard/finance');
-    return { success: true, data: category };
-  } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return { success: false, error: "A category with this name already exists for the selected type." };
-    }
-    return { success: false, error: "Failed to create category." };
-  }
-}
-
-export async function getCategoriesAction() {
-    try {
-        const categories = await prisma.financialTransactionCategory.findMany({
-            orderBy: { name: 'asc' },
-        });
-        return { success: true, data: categories };
-    } catch (error) {
-        return { success: false, error: "Failed to fetch categories." };
-    }
-}
-
-
-// --- Transaction Actions ---
 
 export async function addTransactionAction(data: FinancialTransactionFormValues) {
   const validation = financialTransactionSchema.safeParse(data);
@@ -77,7 +46,6 @@ export async function getTransactionsAction() {
   try {
     const transactions = await prisma.financialTransaction.findMany({
       include: {
-        category: true,
         company: true,
         customer: true,
         supplier: true,
