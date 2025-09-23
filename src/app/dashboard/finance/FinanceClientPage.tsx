@@ -27,6 +27,7 @@ import { TrendingUp, TrendingDown, Landmark, Briefcase } from 'lucide-react';
 import { AddTransactionForm } from './AddTransactionForm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
 
 type TransactionWithRelations = FinancialTransaction & {
     company: Company | null;
@@ -35,7 +36,7 @@ type TransactionWithRelations = FinancialTransaction & {
 };
 
 const SummaryCard = ({ icon: Icon, label, value, valueClassName }: { icon: React.ElementType, label: string, value: string, valueClassName?: string }) => (
-    <Card>
+    <Card className="flex-1">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{label}</CardTitle>
         <Icon className={`h-4 w-4 text-muted-foreground ${valueClassName}`} />
@@ -100,7 +101,7 @@ export function FinanceClientPage() {
     drawer.openDrawer({
       title: 'Add Financial Transaction',
       content: <AddTransactionForm onSuccess={handleFormSuccess} {...data} />,
-      drawerClassName: 'sm:max-w-md'
+      drawerClassName: 'sm:max-w-2xl'
     });
   };
 
@@ -108,7 +109,7 @@ export function FinanceClientPage() {
     drawer.openDrawer({
         title: 'Edit Transaction',
         content: <AddTransactionForm transaction={transaction} onSuccess={handleFormSuccess} {...data} />,
-        drawerClassName: 'sm:max-w-md'
+        drawerClassName: 'sm:max-w-2xl'
     });
   }, [drawer, handleFormSuccess, data]);
 
@@ -179,17 +180,32 @@ export function FinanceClientPage() {
 
   return (
     <>
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <SummaryCard icon={TrendingUp} label="Total Income" value={formatCurrency(summary.totalIncome)} valueClassName="text-green-600" />
-        <SummaryCard icon={TrendingDown} label="Total Expenses" value={formatCurrency(summary.totalExpense)} valueClassName="text-red-600" />
-        <SummaryCard icon={Landmark} label="Net Balance" value={formatCurrency(summary.netBalance)} valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"}/>
-      </div>
+      <Card>
+          <CardHeader>
+            <CardTitle>Financial Overview</CardTitle>
+            <CardDescription>A summary of your total income, expenses, and net balance.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4">
+              <SummaryCard icon={TrendingUp} label="Total Income" value={formatCurrency(summary.totalIncome)} valueClassName="text-green-600" />
+              <SummaryCard icon={TrendingDown} label="Total Expenses" value={formatCurrency(summary.totalExpense)} valueClassName="text-red-600" />
+              <SummaryCard icon={Landmark} label="Net Balance" value={formatCurrency(summary.netBalance)} valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"}/>
+            </div>
+          </CardContent>
+          <Separator />
+          <CardHeader>
+              <CardTitle>Transaction History</CardTitle>
+              <CardDescription>View, add, edit, and manage all your financial transactions.</CardDescription>
+          </CardHeader>
+          <CardContent>
+             <FinanceDataTable
+                columns={columns}
+                data={transactions}
+                onAddTransaction={openAddDrawer}
+            />
+          </CardContent>
+      </Card>
 
-      <FinanceDataTable
-        columns={columns}
-        data={transactions}
-        onAddTransaction={openAddDrawer}
-      />
        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
