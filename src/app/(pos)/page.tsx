@@ -150,35 +150,48 @@ export default function MyNewEcommerceShop() {
 
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
+        const target = event.target as HTMLElement;
 
-      const isTyping =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
+        const isTyping =
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.isContentEditable;
+        
+        const isDrawerOpen = document.querySelector('[data-state="open"]');
 
-      const isInteracting =
-        target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
-
-      if (isTyping || isInteracting) {
-        return;
-      }
-
-      const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-
-      if (isPrintableKey) {
-        if (productSearchRef.current) {
-          productSearchRef.current.focusSearchInput();
+        // Handle Ctrl+Enter for completing transaction
+        if (event.ctrlKey && event.key === 'Enter') {
+            event.preventDefault();
+            if (cart.length > 0 && !isDrawerOpen) {
+                openTransactionDrawer();
+            }
+            return; // Prevent other handlers
         }
-      }
+        
+        // Existing logic to focus search input
+        const isInteracting =
+            target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
+
+        if (isTyping || isInteracting) {
+            return;
+        }
+
+        const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+
+        if (isPrintableKey) {
+            if (productSearchRef.current) {
+                productSearchRef.current.focusSearchInput();
+            }
+        }
     };
 
     document.addEventListener('keydown', handleGlobalKeyDown);
 
     return () => {
-      document.removeEventListener('keydown', handleGlobalKeyDown);
+        document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []);
+  }, [cart]); // Add cart to dependencies to ensure the latest state is used in the handler
+
 
   const availableProducts = useMemo(() => {
     const cartQuantities: { [batchId: string]: number } = {};
