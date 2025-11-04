@@ -74,7 +74,7 @@ export async function addGrnAction(data: GrnFormValues) {
                         discount: item.discount,
                         discountType: item.discountType,
                         tax: item.tax,
-                        taxtype: item.taxType,
+                        taxType: item.taxType,
                     }
                 });
                 return {
