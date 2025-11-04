@@ -1,7 +1,7 @@
 // src/app/(pos)/page.tsx
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { allCampaigns as hardcodedCampaigns } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -148,6 +148,34 @@ export default function MyNewEcommerceShop() {
   }, [cart, activeCampaign]);
 
 
+  const handleTransactionComplete = useCallback(() => {
+    drawer.closeDrawer();
+    clearCart();
+    toast({
+      title: "Transaction Complete!",
+      description: "The cart has been cleared and a new transaction is ready.",
+    });
+  }, [drawer, toast]); // clearCart is stable
+
+
+  const openTransactionDrawer = useCallback(() => {
+    drawer.openDrawer({
+      title: 'Complete Transaction',
+      content: (
+        <TransactionDialogContent
+          cart={cart}
+          discountResult={discountResult}
+          transactionId={transactionId}
+          activeCampaign={activeCampaign}
+          onTransactionComplete={handleTransactionComplete}
+        />
+      ),
+      closeOnOverlayClick: false,
+      drawerClassName: "sm:max-w-4xl"
+    });
+  }, [drawer, cart, discountResult, transactionId, activeCampaign, handleTransactionComplete]);
+
+
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
         const target = event.target as HTMLElement;
@@ -165,7 +193,16 @@ export default function MyNewEcommerceShop() {
             if (cart.length > 0 && !isDrawerOpen) {
                 openTransactionDrawer();
             }
-            return; // Prevent other handlers
+            return;
+        }
+
+        // Handle Ctrl+LeftArrow for going back (closing drawer)
+        if (event.ctrlKey && event.key === 'ArrowLeft') {
+            if (isDrawerOpen) {
+                event.preventDefault();
+                drawer.closeDrawer();
+            }
+            return;
         }
         
         // Existing logic to focus search input
@@ -190,7 +227,7 @@ export default function MyNewEcommerceShop() {
     return () => {
         document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, [cart]); // Add cart to dependencies to ensure the latest state is used in the handler
+  }, [cart.length, openTransactionDrawer, drawer]);
 
 
   const availableProducts = useMemo(() => {
@@ -350,32 +387,6 @@ export default function MyNewEcommerceShop() {
     });
   };
 
-
-  const handleTransactionComplete = () => {
-    drawer.closeDrawer();
-    clearCart();
-    toast({
-      title: "Transaction Complete!",
-      description: "The cart has been cleared and a new transaction is ready.",
-    });
-  };
-
-  const openTransactionDrawer = () => {
-    drawer.openDrawer({
-      title: 'Complete Transaction',
-      content: (
-        <TransactionDialogContent
-          cart={cart}
-          discountResult={discountResult}
-          transactionId={transactionId}
-          activeCampaign={activeCampaign}
-          onTransactionComplete={handleTransactionComplete}
-        />
-      ),
-      closeOnOverlayClick: false,
-      drawerClassName: "sm:max-w-4xl"
-    });
-  };
   
   const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const finalTotal = discountResult?.finalTotal || originalTotal;
