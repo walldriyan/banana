@@ -368,216 +368,161 @@ export default function MyNewEcommerceShop() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
-        <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="lg:col-span-1 space-y-8">
-            {/* Header Skeleton */}
-            <div className="mb-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <Skeleton className="h-10 w-64 mb-3" />
-                  <Skeleton className="h-5 w-48" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-10 w-32" />
-                  <Skeleton className="h-10 w-24" />
-                </div>
-              </div>
-              <Skeleton className="h-4 w-72 mt-4" />
-            </div>
-
-            {/* Campaign and Search Skeletons */}
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-48" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-              <Skeleton className="h-12 w-full" />
-              <div className="flex gap-3">
-                <Skeleton className="h-10 w-28" />
-                <Skeleton className="h-10 w-48" />
-              </div>
-            </div>
+      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans p-4 sm:p-6 lg:p-8">
+        <header className="flex justify-between items-center mb-6">
+          <Skeleton className="h-10 w-64" />
+          <div className="flex items-center gap-4">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-24" />
           </div>
-
-          <aside className="lg:sticky lg:top-8 h-fit">
-            {/* Shopping Cart Skeleton */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg space-y-4">
-              <Skeleton className="h-8 w-1/2" />
-              <Skeleton className="h-24 w-full" />
-              <Skeleton className="h-24 w-full" />
-              <hr className="my-2 border-gray-200" />
-              <Skeleton className="h-6 w-1/3" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-8 w-full mt-4" />
-            </div>
-          </aside>
-        </div>
+        </header>
+        <Card>
+            <CardContent className="p-4 sm:p-6 space-y-6">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-64 w-full" />
+            </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
-          <header className="mb-6">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
-                <p className="text-base text-muted-foreground mt-2">
-                  Welcome, {user?.name || 'User'}! ({user?.role})
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <AuthorizationGuard permissionKey='history.view'>
-                  <Link href="/history" passHref>
-                    <Button variant="outline">
-                      <History className="mr-2 h-4 w-4" />
-                      View History
-                    </Button>
-                  </Link>
-                </AuthorizationGuard>
-                 <AuthorizationGuard permissionKey='products.view'>
-                  <Link href="/dashboard/products" passHref>
-                    <Button variant="outline">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </Button>
-                  </Link>
-                </AuthorizationGuard>
-                <LogoutButton />
-              </div>
-            </div>
-            <div className="text-sm text-gray-400 mt-4">
-              Transaction ID: {transactionId}
-              {activeCampaign.isOneTimePerTransaction && (
-                <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md text-xs">
-                  One-Time Campaign
-                </span>
-              )}
-            </div>
-          </header>
-
-          <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
-            <div className="space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 lg:p-8 border-b">
+         <div className="flex flex-col">
+            <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
+            <p className="text-base text-muted-foreground mt-2">
+                Welcome, {user?.name || 'User'}! ({user?.role})
+            </p>
+         </div>
+        <div className="flex-grow max-w-sm">
+           <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
               <CampaignSelector
                 activeCampaign={activeCampaign}
                 allCampaigns={allCampaigns}
                 onCampaignChange={setActiveCampaign}
               />
-            </div>
           </AuthorizationGuard>
         </div>
+        <div className="flex items-center gap-2">
+            <AuthorizationGuard permissionKey='history.view'>
+                <Link href="/history" passHref>
+                <Button variant="outline">
+                    <History className="mr-2 h-4 w-4" />
+                    View History
+                </Button>
+                </Link>
+            </AuthorizationGuard>
+            <AuthorizationGuard permissionKey='products.view'>
+                <Link href="/dashboard/products" passHref>
+                <Button variant="outline">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                </Button>
+                </Link>
+            </AuthorizationGuard>
+            <LogoutButton />
+        </div>
+      </header>
 
-        <aside className="lg:col-span-2 lg:sticky lg:top-8 h-fit space-y-6">
-            <Card className="p-4 sm:p-6">
-              <CardContent className="p-0">
-                <SearchableProductInput
-                      ref={productSearchRef}
-                      products={availableProducts}
-                      onProductSelect={addToCart}
-                    />
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardContent className="p-4 sm:p-6">
-                  <ShoppingCart
-                      cart={cart}
-                      isCalculating={isCalculating}
-                      discountResult={discountResult}
-                      onUpdateQuantity={handleCartUpdate}
-                      onOverrideDiscount={openCustomDiscountDrawer}
-                    />
-                </CardContent>
-              </Card>
-              <div className="space-y-6">
-                <Card>
-                  <CardContent className="p-4 sm:p-6">
-                    {isCalculating && cart.length > 0 ? (
-                      <div className="space-y-4">
-                          <Skeleton className="h-6 w-1/3 mb-2" />
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-10 w-full" />
-                          <Skeleton className="h-8 w-full mt-4" />
-                      </div>
-                    ) : (
-                      <OrderSummary
-                        originalTotal={originalTotal}
-                        finalTotal={finalTotal}
-                        discountResult={discountResult}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-                 <AuthorizationGuard permissionKey='pos.create.transaction'>
-                  <Card>
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex flex-col gap-3">
-                        {isCalculating ? (
-                          <Skeleton className="h-12 w-full" />
+      <main className="p-4 sm:p-6 lg:p-8">
+        <Card className="w-full">
+            <CardContent className="p-4 sm:p-6 space-y-6">
+                 <SearchableProductInput
+                    ref={productSearchRef}
+                    products={availableProducts}
+                    onProductSelect={addToCart}
+                />
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2">
+                        <ShoppingCart
+                            cart={cart}
+                            isCalculating={isCalculating}
+                            discountResult={discountResult}
+                            onUpdateQuantity={handleCartUpdate}
+                            onOverrideDiscount={openCustomDiscountDrawer}
+                            />
+                    </div>
+                    <div className="lg:col-span-1 space-y-6">
+                        {isCalculating && cart.length > 0 ? (
+                        <div className="space-y-4">
+                            <Skeleton className="h-6 w-1/3 mb-2" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-8 w-full mt-4" />
+                        </div>
                         ) : (
-                          <button
-                            onClick={openTransactionDrawer}
-                            disabled={cart.length === 0}
-                            className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
-                          >
-                            Complete Transaction
-                          </button>
+                        <OrderSummary
+                            originalTotal={originalTotal}
+                            finalTotal={finalTotal}
+                            discountResult={discountResult}
+                        />
                         )}
-                        <button
-                          onClick={clearCart}
-                          className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                        >
-                          Clear Cart
-                        </button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </AuthorizationGuard>
-              </div>
-            </div>
-        
-           <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg">
-                <Switch 
-                  id="analysis-mode" 
-                  checked={showAnalysisPanel}
-                  onCheckedChange={setShowAnalysisPanel}
-                />
-                <Label htmlFor="analysis-mode" className="flex items-center gap-2">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Show Discount Analysis
-                </Label>
-              </div>
 
-           {showAnalysisPanel && (
-            <>
-                <DiscountBehaviorPanel
-                    isCalculating={isCalculating}
-                    discountResult={discountResult}
-                    activeCampaign={activeCampaign}
-                    transactionId={transactionId}
-                />
-
-                {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
-                    <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
-                    <div className="space-y-1 text-blue-700">
-                    <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
-                    <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
-                    <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
-                    <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
-                    <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
+                        <AuthorizationGuard permissionKey='pos.create.transaction'>
+                          <div className="flex flex-col gap-3">
+                            {isCalculating ? (
+                              <Skeleton className="h-12 w-full" />
+                            ) : (
+                              <button
+                                onClick={openTransactionDrawer}
+                                disabled={cart.length === 0}
+                                className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                              >
+                                Complete Transaction
+                              </button>
+                            )}
+                            <button
+                              onClick={clearCart}
+                              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                            >
+                              Clear Cart
+                            </button>
+                          </div>
+                        </AuthorizationGuard>
                     </div>
                 </div>
+
+                <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg mt-6">
+                    <Switch 
+                    id="analysis-mode" 
+                    checked={showAnalysisPanel}
+                    onCheckedChange={setShowAnalysisPanel}
+                    />
+                    <Label htmlFor="analysis-mode" className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Show Discount Analysis
+                    </Label>
+                </div>
+                
+                {showAnalysisPanel && (
+                <>
+                    <DiscountBehaviorPanel
+                        isCalculating={isCalculating}
+                        discountResult={discountResult}
+                        activeCampaign={activeCampaign}
+                        transactionId={transactionId}
+                    />
+
+                    {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
+                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
+                        <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
+                        <div className="space-y-1 text-blue-700">
+                        <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
+                        <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
+                        <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
+                        <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
+                        <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
+                        </div>
+                    </div>
+                    )}
+                </>
                 )}
-            </>
-           )}
-        </aside>
-      </div>
+            </CardContent>
+        </Card>
+      </main>
     </div>
   );
 }
