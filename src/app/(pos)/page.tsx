@@ -185,25 +185,18 @@ export default function MyNewEcommerceShop() {
             target.tagName === 'TEXTAREA' ||
             target.isContentEditable;
         
-        const isDrawerOpen = document.querySelector('[data-state="open"]');
+        const isDrawerOpen = !!document.querySelector('[data-state="open"]');
 
-        // Handle Ctrl+Enter for completing transaction
-        if (event.ctrlKey && event.key === 'Enter') {
+        // Handle Ctrl+Enter for completing transaction *only if drawer is closed*
+        if (event.ctrlKey && event.key === 'Enter' && !isDrawerOpen) {
             event.preventDefault();
-            if (cart.length > 0 && !isDrawerOpen) {
+            if (cart.length > 0) {
                 openTransactionDrawer();
             }
             return;
         }
 
-        // Handle Ctrl+LeftArrow for going back (closing drawer)
-        if (event.ctrlKey && event.key === 'ArrowLeft') {
-            if (isDrawerOpen) {
-                event.preventDefault();
-                drawer.closeDrawer();
-            }
-            return;
-        }
+        // The back-navigation for the drawer is handled inside the drawer component itself.
         
         // Existing logic to focus search input
         const isInteracting =

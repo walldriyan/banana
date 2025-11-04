@@ -1,7 +1,7 @@
 // src/components/transaction/TransactionDialogContent.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -72,6 +72,9 @@ export function TransactionDialogContent({
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const finishButtonRef = useRef<HTMLButtonElement>(null);
+
 
   useEffect(() => {
     const savedPreference = localStorage.getItem(PRINT_TOGGLE_STORAGE_KEY);
@@ -213,6 +216,37 @@ export function TransactionDialogContent({
     }
   };
 
+  useEffect(() => {
+    const handleDrawerKeyDown = (event: KeyboardEvent) => {
+        if (!drawer.isOpen) return;
+
+        // Next Step: Ctrl + Enter
+        if (event.ctrlKey && event.key === 'Enter') {
+            event.preventDefault();
+            if (step === 'details' && confirmButtonRef.current) {
+                confirmButtonRef.current.click();
+            } else if (step === 'print' && finishButtonRef.current) {
+                finishButtonRef.current.click();
+            }
+        }
+
+        // Previous Step / Close: Ctrl + Left Arrow
+        if (event.ctrlKey && event.key === 'ArrowLeft') {
+            event.preventDefault();
+            if (step === 'print') {
+                setStep('details');
+            } else if (step === 'details') {
+                drawer.closeDrawer();
+            }
+        }
+    };
+    
+    document.addEventListener('keydown', handleDrawerKeyDown);
+    return () => {
+        document.removeEventListener('keydown', handleDrawerKeyDown);
+    };
+  }, [drawer, step]);
+
   return (
     <FormProvider {...methods}>
       <div className="flex flex-col h-full no-print">
@@ -225,7 +259,7 @@ export function TransactionDialogContent({
             <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-end">
                 <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
-                    <Button type="submit" disabled={!isValid || isSubmitting}>
+                    <Button ref={confirmButtonRef} type="submit" disabled={!isValid || isSubmitting}>
                         Confirm & Preview Receipt
                     </Button>
                 </div>
@@ -261,7 +295,7 @@ export function TransactionDialogContent({
                 </div>
                 <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={() => setStep('details')}>Back</Button>
-                    <Button onClick={processTransaction} disabled={isSaving}>
+                    <Button ref={finishButtonRef} onClick={processTransaction} disabled={isSaving}>
                         {isSaving ? "Saving..." : "Save & Finish"}
                     </Button>
                 </div>
