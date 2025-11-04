@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import OrderSummary from '@/components/POSUI/OrderSummary';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 
 
 const initialDiscountResult = {
@@ -419,7 +420,7 @@ export default function MyNewEcommerceShop() {
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-1">
           <header className="mb-6">
             <div className="flex justify-between items-start">
@@ -470,59 +471,74 @@ export default function MyNewEcommerceShop() {
           </AuthorizationGuard>
         </div>
 
-        <aside className="lg:sticky lg:top-8 h-fit space-y-6">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg space-y-4">
-                 <SearchableProductInput
-                    ref={productSearchRef}
-                    products={availableProducts}
-                    onProductSelect={addToCart}
-                  />
+        <aside className="lg:col-span-2 lg:sticky lg:top-8 h-fit space-y-6">
+            <Card className="p-4 sm:p-6">
+              <CardContent className="p-0">
+                <SearchableProductInput
+                      ref={productSearchRef}
+                      products={availableProducts}
+                      onProductSelect={addToCart}
+                    />
+              </CardContent>
+            </Card>
 
-                 <ShoppingCart
-                    cart={cart}
-                    isCalculating={isCalculating}
-                    discountResult={discountResult}
-                    onUpdateQuantity={handleCartUpdate}
-                    onOverrideDiscount={openCustomDiscountDrawer}
-                  />
-                
-                 <Separator className="my-4" />
-
-                {isCalculating && cart.length > 0 ? (
-                  <div className="space-y-4">
-                      <Skeleton className="h-6 w-1/3 mb-2" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-10 w-full" />
-                      <Skeleton className="h-8 w-full mt-4" />
-                  </div>
-              ) : (
-                  <OrderSummary
-                    originalTotal={originalTotal}
-                    finalTotal={finalTotal}
-                    discountResult={discountResult}
-                  />
-              )}
-               <AuthorizationGuard permissionKey='pos.create.transaction'>
-                <div className="flex flex-col gap-3 mt-6">
-                  {isCalculating ? (
-                    <Skeleton className="h-12 w-full" />
-                  ) : (
-                    <button
-                      onClick={openTransactionDrawer}
-                      disabled={cart.length === 0}
-                      className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
-                    >
-                      Complete Transaction
-                    </button>
-                  )}
-                  <button
-                    onClick={clearCart}
-                    className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                  >
-                    Clear Cart
-                  </button>
-                </div>
-              </AuthorizationGuard>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="p-4 sm:p-6">
+                  <ShoppingCart
+                      cart={cart}
+                      isCalculating={isCalculating}
+                      discountResult={discountResult}
+                      onUpdateQuantity={handleCartUpdate}
+                      onOverrideDiscount={openCustomDiscountDrawer}
+                    />
+                </CardContent>
+              </Card>
+              <div className="space-y-6">
+                <Card>
+                  <CardContent className="p-4 sm:p-6">
+                    {isCalculating && cart.length > 0 ? (
+                      <div className="space-y-4">
+                          <Skeleton className="h-6 w-1/3 mb-2" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-8 w-full mt-4" />
+                      </div>
+                    ) : (
+                      <OrderSummary
+                        originalTotal={originalTotal}
+                        finalTotal={finalTotal}
+                        discountResult={discountResult}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+                 <AuthorizationGuard permissionKey='pos.create.transaction'>
+                  <Card>
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col gap-3">
+                        {isCalculating ? (
+                          <Skeleton className="h-12 w-full" />
+                        ) : (
+                          <button
+                            onClick={openTransactionDrawer}
+                            disabled={cart.length === 0}
+                            className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                          >
+                            Complete Transaction
+                          </button>
+                        )}
+                        <button
+                          onClick={clearCart}
+                          className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                          Clear Cart
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </AuthorizationGuard>
+              </div>
             </div>
         
            <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg">
@@ -565,5 +581,3 @@ export default function MyNewEcommerceShop() {
     </div>
   );
 }
-
-    
