@@ -27,6 +27,7 @@ import { getDiscountSetsAction } from '@/lib/actions/discount.actions';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import OrderSummary from '@/components/POSUI/OrderSummary';
+import { Separator } from '@/components/ui/separator';
 
 
 const initialDiscountResult = {
@@ -465,15 +466,18 @@ export default function MyNewEcommerceShop() {
                 allCampaigns={allCampaigns}
                 onCampaignChange={setActiveCampaign}
               />
+            </div>
+          </AuthorizationGuard>
+        </div>
 
-              <SearchableProductInput
-                ref={productSearchRef}
-                products={availableProducts}
-                onProductSelect={addToCart}
-              />
+        <aside className="lg:sticky lg:top-8 h-fit space-y-6">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg space-y-4">
+                 <SearchableProductInput
+                    ref={productSearchRef}
+                    products={availableProducts}
+                    onProductSelect={addToCart}
+                  />
 
-              
-               <div className="mt-4">
                  <ShoppingCart
                     cart={cart}
                     isCalculating={isCalculating}
@@ -481,14 +485,9 @@ export default function MyNewEcommerceShop() {
                     onUpdateQuantity={handleCartUpdate}
                     onOverrideDiscount={openCustomDiscountDrawer}
                   />
-               </div>
+                
+                 <Separator className="my-4" />
 
-            </div>
-          </AuthorizationGuard>
-        </div>
-
-        <aside className="lg:sticky lg:top-8 h-fit space-y-6">
-            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
                 {isCalculating && cart.length > 0 ? (
                   <div className="space-y-4">
                       <Skeleton className="h-6 w-1/3 mb-2" />
@@ -566,3 +565,5 @@ export default function MyNewEcommerceShop() {
     </div>
   );
 }
+
+    

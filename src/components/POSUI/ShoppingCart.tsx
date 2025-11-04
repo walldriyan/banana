@@ -16,7 +16,7 @@ interface ShoppingCartProps {
 const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
+    <div className="w-full">
       <h2 className="text-2xl font-semibold text-gray-900 mb-5">Shopping Cart</h2>
       
       <div className="w-full">
@@ -53,3 +53,5 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
 };
 
 export default ShoppingCart;
+
+    
