@@ -1,8 +1,6 @@
 // src/components/POSUI/ShoppingCart.tsx
 import React from 'react';
 import type { SaleItem } from '@/types';
-import OrderSummary from './OrderSummary';
-import { Skeleton } from '../ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { CartTableRow } from './CartTableRow';
 
@@ -16,8 +14,6 @@ interface ShoppingCartProps {
 }
 
 const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
-  const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const finalTotal = discountResult?.finalTotal || originalTotal;
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-lg">
@@ -52,24 +48,6 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
           </Table>
         )}
       </div>
-
-
-      <hr className="my-6 border-gray-200" />
-      
-      {isCalculating && cart.length > 0 ? (
-          <div className="space-y-4">
-              <Skeleton className="h-6 w-1/3 mb-2" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-8 w-full mt-4" />
-          </div>
-      ) : (
-          <OrderSummary
-            originalTotal={originalTotal}
-            finalTotal={finalTotal}
-            discountResult={discountResult}
-          />
-      )}
     </div>
   );
 };
