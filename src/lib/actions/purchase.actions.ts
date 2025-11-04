@@ -74,7 +74,7 @@ export async function addGrnAction(data: GrnFormValues) {
                         discount: item.discount,
                         discountType: item.discountType,
                         tax: item.tax,
-                        taxType: item.taxType,
+                        taxtype: item.taxType,
                     }
                 });
                 return {
@@ -82,10 +82,10 @@ export async function addGrnAction(data: GrnFormValues) {
                     quantity: item.quantity,
                     costPrice: item.costPrice,
                     discount: item.discount,
-                    discountType: item.discountType,
                     tax: item.tax,
-                    taxType: item.taxType,
                     total: item.total,
+                    discountType: item.discountType,
+                    taxType: item.taxType,
                 };
             }));
 
