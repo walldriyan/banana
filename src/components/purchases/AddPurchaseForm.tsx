@@ -209,27 +209,39 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const handleAddItemToTable = () => {
     setItemError(null);
-    
-    // Calculate total based on tax type
-    const cost = (currentItem.costPrice || 0);
-    const qty = (currentItem.quantity || 0);
-    const discount = (currentItem.discount || 0);
-    
-    const taxableAmount = (cost * qty) - discount;
 
-    let taxAmount = 0;
-    if(currentItem.taxType === 'PERCENTAGE') {
-        taxAmount = taxableAmount * ((currentItem.tax || 0) / 100);
+    const cost = currentItem.costPrice || 0;
+    const qty = currentItem.quantity || 0;
+    const discountVal = currentItem.discount || 0;
+    const taxVal = currentItem.tax || 0;
+
+    const lineTotal = cost * qty;
+
+    // Calculate Discount Amount
+    let discountAmount = 0;
+    if (currentItem.discountType === 'PERCENTAGE') {
+        discountAmount = lineTotal * (discountVal / 100);
     } else { // FIXED
-        taxAmount = (currentItem.tax || 0);
+        discountAmount = discountVal;
     }
 
-    const itemTotal = taxableAmount + taxAmount;
+    const subtotalAfterDiscount = lineTotal - discountAmount;
+
+    // Calculate Tax Amount
+    let taxAmount = 0;
+    if (currentItem.taxType === 'PERCENTAGE') {
+        taxAmount = subtotalAfterDiscount * (taxVal / 100);
+    } else { // FIXED
+        taxAmount = taxVal;
+    }
     
-    const itemToValidate = {
+    const itemFinalTotal = subtotalAfterDiscount + taxAmount;
+    
+    const itemToValidate: GrnItemFormValues = {
+        ...initialItemState, // Provides default values for any potentially missing fields in currentItem
         ...currentItem,
-        total: itemTotal,
-    };
+        total: itemFinalTotal,
+    } as GrnItemFormValues; // Assert the type after merging
     
     const validationResult = grnItemSchema.safeParse(itemToValidate);
     
@@ -241,7 +253,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     
     append(validationResult.data);
     handleClearCurrentItem();
-  };
+};
+
   
   const handleRemoveItem = (index: number) => {
       remove(index);
@@ -609,7 +622,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                       <TableCell>{item.discount.toFixed(2)} ({item.discountType})</TableCell>
                                       <TableCell>{item.tax.toFixed(2)} ({item.taxType})</TableCell>
                                       <TableCell className="text-right font-semibold">
-                                          {item.total.toFixed(2)}
+                                          {(item.total ?? 0).toFixed(2)}
                                       </TableCell>
                                       <TableCell>
                                           <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isEditMode}>
