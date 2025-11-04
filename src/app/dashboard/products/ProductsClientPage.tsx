@@ -196,68 +196,6 @@ export function ProductsClientPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-
-       <Card className="mt-8 bg-muted/20">
-            <CardHeader>
-                <CardTitle>Inventory Summary</CardTitle>
-                <CardDescription>An advanced overview of your current inventory for decision management.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* General Stats */}
-                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
-                    <CardHeader>
-                        <CardTitle className="text-lg">General</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                        <SummaryRow icon={Package} label="Master Products" value={summary.totalMasterProducts} />
-                        <SummaryRow icon={Boxes} label="Total Batches" value={summary.totalBatches} />
-                        <SummaryRow icon={Archive} label="Total Stock Units" value={summary.totalStockQuantity.toLocaleString()} />
-                    </CardContent>
-                </Card>
-
-                {/* Financial Stats */}
-                <Card className="lg:col-span-2 bg-transparent border-none shadow-none">
-                     <CardHeader>
-                        <CardTitle className="text-lg">Financials</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                         <div>
-                            <p className="text-sm font-semibold text-muted-foreground pt-2 pb-1">ESTIMATED REVENUE</p>
-                            <SummaryRow 
-                                icon={Landmark} 
-                                label="Total Stock Value (Sell)" 
-                                value={`Rs. ${summary.totalStockSellingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                                description="Total revenue if all stock is sold"
-                            />
-                        </div>
-                        <div>
-                             <p className="text-sm font-semibold text-muted-foreground pt-4 pb-1">COST & PROFITABILITY</p>
-                            <SummaryRow 
-                                icon={Wallet} 
-                                label="Total Stock Value (Cost)" 
-                                value={`Rs. ${summary.totalStockCostValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                                description="Total investment in current stock"
-                            />
-                             <SummaryRow 
-                                icon={TrendingUp} 
-                                label="Potential Profit" 
-                                value={`Rs. ${summary.potentialProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                                description="Estimated gross profit from current stock"
-                                valueClassName={summary.potentialProfit >= 0 ? "text-green-600" : "text-red-600"}
-                            />
-                             <SummaryRow 
-                                icon={Coins} 
-                                label="Overall Margin" 
-                                value={`${summary.overallMargin.toFixed(2)}%`}
-                                description="Estimated return on investment"
-                                valueClassName={summary.overallMargin >= 0 ? "text-green-600" : "text-red-600"}
-                            />
-                        </div>
-                    </CardContent>
-                </Card>
-
-            </CardContent>
-        </Card>
     </>
   );
 }

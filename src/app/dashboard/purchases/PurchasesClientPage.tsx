@@ -190,55 +190,6 @@ export function PurchasesClientPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-
-         <Card className="mt-8 bg-muted/20">
-            <CardHeader>
-                <CardTitle>Purchase Summary</CardTitle>
-                <CardDescription>An overview of your goods received notes and supplier credit.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* General Stats */}
-                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
-                    <CardHeader>
-                        <CardTitle className="text-lg">General</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                        <SummaryRow icon={FileText} label="Total GRNs" value={summary.totalGrns} />
-                        <SummaryRow icon={Building} label="Unique Suppliers" value={summary.totalSuppliers} />
-                    </CardContent>
-                </Card>
-
-                {/* Financial Stats */}
-                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
-                     <CardHeader>
-                        <CardTitle className="text-lg">Financials</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                         <SummaryRow 
-                            icon={Landmark} 
-                            label="Total Purchase Value" 
-                            value={`Rs. ${summary.totalPurchaseValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            description="Total value of all recorded GRNs"
-                        />
-                         <SummaryRow 
-                            icon={Wallet} 
-                            label="Total Paid to Suppliers" 
-                            value={`Rs. ${summary.totalPaidValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            description="Total cash outflow for purchases"
-                            valueClassName="text-green-600"
-                        />
-                         <SummaryRow 
-                            icon={Banknote} 
-                            label="Total Outstanding (Credit)" 
-                            value={`Rs. ${summary.totalOutstandingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            description="Total amount owed to suppliers"
-                            valueClassName="text-red-600"
-                        />
-                    </CardContent>
-                </Card>
-
-            </CardContent>
-        </Card>
     </>
   );
 }

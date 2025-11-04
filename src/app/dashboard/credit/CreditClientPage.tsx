@@ -200,53 +200,6 @@ export function CreditClientPage() {
         columns={columns}
         data={grns}
       />
-      <Card className="mt-8 bg-muted/20">
-            <CardHeader>
-                <CardTitle>Creditors Summary</CardTitle>
-                <CardDescription>An overview of your outstanding payments to suppliers.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* General Stats */}
-                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
-                    <CardHeader>
-                        <CardTitle className="text-lg">General</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                        <SummaryRow icon={FileText} label="Total Outstanding GRNs" value={summary.totalOutstandingGrns} />
-                        <SummaryRow icon={Building} label="Unique Suppliers (Creditors)" value={summary.totalSuppliers} />
-                    </CardContent>
-                </Card>
-
-                {/* Financial Stats */}
-                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
-                     <CardHeader>
-                        <CardTitle className="text-lg">Financials</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                         <SummaryRow 
-                            icon={Landmark} 
-                            label="Total Debt Value" 
-                            value={`Rs. ${summary.totalDebtValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            description="Total value of all credit GRNs"
-                        />
-                         <SummaryRow 
-                            icon={Wallet} 
-                            label="Total Paid for these GRNs" 
-                            value={`Rs. ${summary.totalPaidValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            description="Total cash outflow for these credit purchases"
-                            valueClassName="text-green-600"
-                        />
-                         <SummaryRow 
-                            icon={Banknote} 
-                            label="Total Outstanding (Payable)" 
-                            value={`Rs. ${summary.totalOutstandingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            description="Total amount owed to suppliers"
-                            valueClassName="text-red-600"
-                        />
-                    </CardContent>
-                </Card>
-            </CardContent>
-        </Card>
     </>
   );
 }

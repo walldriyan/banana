@@ -192,53 +192,6 @@ export function DebtorsClientPage() {
         columns={columns}
         data={transactions}
       />
-      <Card className="mt-8 bg-muted/20">
-            <CardHeader>
-                <CardTitle>Debtors Summary</CardTitle>
-                <CardDescription>An overview of your outstanding customer credit.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* General Stats */}
-                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
-                    <CardHeader>
-                        <CardTitle className="text-lg">General</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                        <SummaryRow icon={FileText} label="Total Debt Transactions" value={summary.totalTransactions} />
-                        <SummaryRow icon={Users} label="Unique Customers (Debtors)" value={summary.totalCustomers} />
-                    </CardContent>
-                </Card>
-
-                {/* Financial Stats */}
-                <Card className="lg:col-span-1 bg-transparent border-none shadow-none">
-                     <CardHeader>
-                        <CardTitle className="text-lg">Financials</CardTitle>
-                    </CardHeader>
-                    <CardContent className="divide-y">
-                         <SummaryRow 
-                            icon={Landmark} 
-                            label="Total Debt Value" 
-                            value={`Rs. ${summary.totalDebtValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                            description="Total value of all credit sales"
-                        />
-                         <SummaryRow 
-                            icon={Wallet} 
-                            label="Total Received from Debtors" 
-                            value={`Rs. ${summary.totalReceivedValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            description="Total cash inflow from credit payments"
-                            valueClassName="text-green-600"
-                        />
-                         <SummaryRow 
-                            icon={Banknote} 
-                            label="Total Outstanding (Receivable)" 
-                            value={`Rs. ${summary.totalOutstandingValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                            description="Total amount owed by customers"
-                            valueClassName="text-red-600"
-                        />
-                    </CardContent>
-                </Card>
-            </CardContent>
-        </Card>
     </>
   );
 }
