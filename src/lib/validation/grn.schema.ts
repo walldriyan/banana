@@ -26,7 +26,9 @@ export const grnItemSchema = z.object({
   costPrice: z.coerce.number().min(0, "Cost price must be non-negative."),
   sellingPrice: z.coerce.number().min(0, "Selling price must be non-negative."),
   discount: z.coerce.number().min(0).default(0),
+  discountType: z.enum(['FIXED', 'PERCENTAGE']).default('FIXED'),
   tax: z.coerce.number().min(0).default(0),
+  taxType: z.enum(['FIXED', 'PERCENTAGE']).default('PERCENTAGE'),
   total: z.coerce.number().optional(), // This will be calculated, but optional in the form
 });
 
