@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import OrderSummary from '@/components/POSUI/OrderSummary';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 
 const initialDiscountResult = {
@@ -422,6 +423,7 @@ export default function MyNewEcommerceShop() {
                 </Button>
                 </Link>
             </AuthorizationGuard>
+            <ThemeToggle />
             <LogoutButton />
         </div>
       </header>

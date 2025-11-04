@@ -139,6 +139,7 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
       console.log('[AddProductForm.tsx] useEffect triggered in Edit Mode. Product prop received:', productBatch);
       const formData = {
         name: productBatch.product.name,
+        productId: productBatch.product.id, // Set the product ID for the master product
         description: productBatch.product.description || "",
         category: productBatch.product.category,
         brand: productBatch.product.brand,

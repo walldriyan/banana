@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Checkbox } from "@/components/ui/checkbox"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 import { Badge } from "@/components/ui/badge"
 
@@ -65,25 +64,6 @@ export const getColumns = (
   onDelete: (batchId: string) => void,
   onViewDetails: (batch: ProductBatch) => void,
 ): ColumnDef<ProductBatch>[] => [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected()}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
     {
         id: "product.name", // Give a stable ID
         accessorFn: (row) => row.product.name, // Use accessor function

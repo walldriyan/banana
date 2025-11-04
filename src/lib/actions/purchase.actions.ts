@@ -72,9 +72,9 @@ export async function addGrnAction(data: GrnFormValues) {
                         addedDate: new Date(),
                         // Add the missing discount and tax fields
                         discount: item.discount,
-                        discountType: 'FIXED', // Assuming fixed for GRN, can be changed if schema supports it
+                        discountType: item.discountType,
                         tax: item.tax,
-                        taxtype: 'PERCENTAGE', // Assuming percentage for GRN tax
+                        taxtype: item.taxType,
                     }
                 });
                 return {
@@ -84,6 +84,8 @@ export async function addGrnAction(data: GrnFormValues) {
                     discount: item.discount,
                     tax: item.tax,
                     total: item.total,
+                    discountType: item.discountType,
+                    taxType: item.taxType,
                 };
             }));
 

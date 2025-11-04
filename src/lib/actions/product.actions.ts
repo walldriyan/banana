@@ -98,6 +98,9 @@ export async function addProductAction(data: ProductFormValues) {
 }
 
 export async function updateProductBatchAction(id: string, data: ProductFormValues) {
+    console.log('[updateProductBatchAction] Received ID:', id);
+    console.log('[updateProductBatchAction] Received Data:', JSON.stringify(data, null, 2));
+
     const validationResult = productSchema.safeParse(data);
     if (!validationResult.success) {
         return {
@@ -162,6 +165,7 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
         revalidatePath('/dashboard/products');
         return { success: true, data: updatedBatch };
     } catch (error) {
+        console.error('[updateProductBatchAction] Error:', error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             return { success: false, error: `A batch with this Product ID and Batch Number already exists.` };
         }

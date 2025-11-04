@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { GlobalDrawerProvider } from '@/context/GlobalDrawerContext';
 import { GlobalDrawer } from '@/components/GlobalDrawer';
 import AuthProvider from '@/components/auth/AuthProvider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 // This forces the entire app to be dynamically rendered, which can help
 // with strange caching and fetch errors in certain environments.
@@ -25,13 +26,20 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="font-body antialiased">
-        <AuthProvider>
-          <GlobalDrawerProvider>
-            {children}
-            <GlobalDrawer />
-            <Toaster />
-          </GlobalDrawerProvider>
-        </AuthProvider>
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+            <AuthProvider>
+            <GlobalDrawerProvider>
+                {children}
+                <GlobalDrawer />
+                <Toaster />
+            </GlobalDrawerProvider>
+            </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

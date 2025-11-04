@@ -108,6 +108,7 @@ model ProductBatch {
   supplierId              String?
   goodsReceivedNoteItem   GoodsReceivedNoteItem?
 
+
   product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   supplier Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   lines    TransactionLine[]
@@ -159,6 +160,10 @@ model GoodsReceivedNoteItem {
   discount       Float
   tax            Float
   total          Float
+
+  
+  discountType String?
+  taxType      String?
 
   grn            GoodsReceivedNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
   productBatch   ProductBatch      @relation(fields: [productBatchId], references: [id], onDelete: Restrict)

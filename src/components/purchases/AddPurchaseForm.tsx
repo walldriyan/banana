@@ -52,7 +52,9 @@ const initialItemState: Partial<GrnItemFormValues> = {
     costPrice: 0,
     sellingPrice: 0,
     discount: 0,
+    discountType: 'FIXED',
     tax: 0,
+    taxType: 'PERCENTAGE',
     total: 0,
 };
 
@@ -160,7 +162,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                  brand: productBatch.product.brand,
                  units: productBatch.product.units,
                  sellingPrice: productBatch.sellingPrice,
-                 batchNumber: productBatch.batchNumber
+                 batchNumber: productBatch.batchNumber,
+                 // Ensure discount/tax types are loaded correctly
+                 discountType: item.discountType,
+                 taxType: item.taxType
              };
           });
           
@@ -191,7 +196,9 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
       costPrice: 0,
       sellingPrice: 0,
       discount: 0,
+      discountType: 'FIXED',
       tax: 0,
+      taxType: 'PERCENTAGE',
     });
   };
 
@@ -202,12 +209,39 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
   const handleAddItemToTable = () => {
     setItemError(null);
-    const itemTotal = ((currentItem.quantity || 0) * (currentItem.costPrice || 0)) - (currentItem.discount || 0) + ( ( ((currentItem.quantity || 0) * (currentItem.costPrice || 0)) - (currentItem.discount || 0) ) * ((currentItem.tax || 0) / 100) );
+
+    const cost = currentItem.costPrice || 0;
+    const qty = currentItem.quantity || 0;
+    const discountVal = currentItem.discount || 0;
+    const taxVal = currentItem.tax || 0;
+
+    const lineTotal = cost * qty;
+
+    // Calculate Discount Amount
+    let discountAmount = 0;
+    if (currentItem.discountType === 'PERCENTAGE') {
+        discountAmount = lineTotal * (discountVal / 100);
+    } else { // FIXED
+        discountAmount = discountVal;
+    }
+
+    const subtotalAfterDiscount = lineTotal - discountAmount;
+
+    // Calculate Tax Amount
+    let taxAmount = 0;
+    if (currentItem.taxType === 'PERCENTAGE') {
+        taxAmount = subtotalAfterDiscount * (taxVal / 100);
+    } else { // FIXED
+        taxAmount = taxVal;
+    }
     
-    const itemToValidate = {
+    const itemFinalTotal = subtotalAfterDiscount + taxAmount;
+    
+    const itemToValidate: GrnItemFormValues = {
+        ...initialItemState, // Provides default values for any potentially missing fields in currentItem
         ...currentItem,
-        total: itemTotal,
-    };
+        total: itemFinalTotal,
+    } as GrnItemFormValues; // Assert the type after merging
     
     const validationResult = grnItemSchema.safeParse(itemToValidate);
     
@@ -219,7 +253,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     
     append(validationResult.data);
     handleClearCurrentItem();
-  };
+};
+
   
   const handleRemoveItem = (index: number) => {
       remove(index);
@@ -509,16 +544,34 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                     <CardHeader className="p-4 pb-2"><CardTitle className='text-base'>Adjustments</CardTitle></CardHeader>
                                     <CardContent className="grid grid-cols-2 gap-4 p-4 pt-0">
                                         <FormItem>
-                                            <FormLabel>Discount (Fixed Total)</FormLabel>
-                                            <FormControl>
-                                            <Input className='h-9' type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
-                                            </FormControl>
+                                          <FormLabel>Discount</FormLabel>
+                                          <div className="flex gap-2">
+                                              <FormControl>
+                                                  <Input className='h-9' type="number" value={currentItem.discount} onChange={e => setCurrentItem(prev => ({...prev, discount: Number(e.target.value)}))} placeholder="e.g. 50" />
+                                              </FormControl>
+                                              <Select value={currentItem.discountType} onValueChange={(val: 'FIXED' | 'PERCENTAGE') => setCurrentItem(prev => ({...prev, discountType: val}))}>
+                                                  <SelectTrigger className="w-[120px] h-9"><SelectValue /></SelectTrigger>
+                                                  <SelectContent>
+                                                      <SelectItem value="FIXED">Rs.</SelectItem>
+                                                      <SelectItem value="PERCENTAGE">%</SelectItem>
+                                                  </SelectContent>
+                                              </Select>
+                                          </div>
                                         </FormItem>
                                         <FormItem>
-                                            <FormLabel>Tax (%)</FormLabel>
-                                            <FormControl>
-                                            <Input className='h-9' type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
-                                            </FormControl>
+                                          <FormLabel>Tax</FormLabel>
+                                           <div className="flex gap-2">
+                                              <FormControl>
+                                              <Input className='h-9' type="number" value={currentItem.tax} onChange={e => setCurrentItem(prev => ({...prev, tax: Number(e.target.value)}))} placeholder="e.g. 15" />
+                                              </FormControl>
+                                               <Select value={currentItem.taxType} onValueChange={(val: 'FIXED' | 'PERCENTAGE') => setCurrentItem(prev => ({...prev, taxType: val}))}>
+                                                  <SelectTrigger className="w-[120px] h-9"><SelectValue /></SelectTrigger>
+                                                  <SelectContent>
+                                                      <SelectItem value="PERCENTAGE">%</SelectItem>
+                                                      <SelectItem value="FIXED">Rs.</SelectItem>
+                                                  </SelectContent>
+                                              </Select>
+                                          </div>
                                         </FormItem>
                                     </CardContent>
                                 </Card>
@@ -554,7 +607,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                   <TableHead>Qty</TableHead>
                                   <TableHead>Cost Price</TableHead>
                                   <TableHead>Discount</TableHead>
-                                  <TableHead>Tax (%)</TableHead>
+                                  <TableHead>Tax</TableHead>
                                   <TableHead className="text-right">Total</TableHead>
                                   <TableHead>Actions</TableHead>
                               </TableRow>
@@ -566,10 +619,10 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                       <TableCell>{item.batchNumber}</TableCell>
                                       <TableCell>{item.quantity}</TableCell>
                                       <TableCell>{item.costPrice.toFixed(2)}</TableCell>
-                                      <TableCell>{item.discount.toFixed(2)}</TableCell>
-                                      <TableCell>{item.tax.toFixed(2)}</TableCell>
+                                      <TableCell>{item.discount.toFixed(2)} ({item.discountType})</TableCell>
+                                      <TableCell>{item.tax.toFixed(2)} ({item.taxType})</TableCell>
                                       <TableCell className="text-right font-semibold">
-                                          {item.total.toFixed(2)}
+                                          {(item.total ?? 0).toFixed(2)}
                                       </TableCell>
                                       <TableCell>
                                           <Button type="button" variant="ghost" size="icon" onClick={() => handleRemoveItem(index)} disabled={isEditMode}>
