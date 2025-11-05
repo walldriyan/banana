@@ -27,18 +27,25 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function(){
-                const theme = localStorage.getItem('theme') || 'system';
-                if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark');
-                }
-              })();
-            `,
-          }}
-        />
+      <script
+  dangerouslySetInnerHTML={{
+    __html: `
+      (function(){
+        try {
+          const theme = localStorage.getItem('theme') || 'system';
+          const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.backgroundColor = 'hsl(0 0% 10%)';
+          } else {
+            document.documentElement.style.backgroundColor = 'hsl(0 0% 100%)';
+          }
+        } catch (e) {}
+      })();
+    `,
+  }}
+/>
       </head>
       <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
         <ThemeProvider
