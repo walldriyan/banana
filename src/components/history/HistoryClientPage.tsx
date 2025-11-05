@@ -111,7 +111,7 @@ export function HistoryClientPage() {
 
   return (
     <>
-      <header className="bg-white shadow-sm sticky top-0 z-10 rounded-lg mb-6">
+      <header className="bg-card shadow-sm sticky top-0 z-10 rounded-lg mb-6">
         <div className="flex items-center justify-between gap-4 p-4">
             <div className="flex items-center gap-4">
                 <Link href="/" passHref>
@@ -119,7 +119,7 @@ export function HistoryClientPage() {
                     <ArrowLeft />
                 </Button>
                 </Link>
-                <h1 className="text-2xl font-bold text-gray-900 hidden sm:block">
+                <h1 className="text-2xl font-bold text-foreground hidden sm:block">
                 Transaction History
                 </h1>
             </div>

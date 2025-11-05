@@ -12,13 +12,58 @@ import { BatchSpecificRule } from './rules/batch-specific-rule';
 import { CustomItemDiscountRule } from './rules/custom-item-discount-rule';
 import type { DiscountSet } from '@/types';
 
+// Cache for compiled rule sets
+const engineCache = new Map<string, { rules: IDiscountRule[], timestamp: number }>();
+const CACHE_TTL = 300000; // 5 minutes
+
 export class DiscountEngine {
   private rules: IDiscountRule[] = [];
-  private appliedOneTimeRules: Set<string> = new Set(); // Track applied one-time rules
+  private appliedOneTimeRules: Set<string> = new Set();
+  private campaignId: string;
 
   constructor(campaign: DiscountSet) {
-    this.buildRulesFromCampaign(campaign);
+    this.campaignId = campaign.id;
+    
+    // Check cache first
+    const cached = this.getCachedRules(campaign.id);
+    if (cached) {
+      this.rules = cached;
+    } else {
+      this.buildRulesFromCampaign(campaign);
+      this.cacheRules(campaign.id, this.rules);
+    }
   }
+
+  private getCachedRules(campaignId: string): IDiscountRule[] | null {
+    const cached = engineCache.get(campaignId);
+    if (!cached) return null;
+    
+    // Check if cache is still valid
+    if (Date.now() - cached.timestamp > CACHE_TTL) {
+      engineCache.delete(campaignId);
+      return null;
+    }
+    
+    return cached.rules;
+  }
+
+  private cacheRules(campaignId: string, rules: IDiscountRule[]): void {
+    engineCache.set(campaignId, {
+      rules,
+      timestamp: Date.now()
+    });
+    
+    // Cleanup old cache entries
+    if (engineCache.size > 50) {
+      const now = Date.now();
+      for (const [key, value] of engineCache.entries()) {
+        if (now - value.timestamp > CACHE_TTL) {
+          engineCache.delete(key);
+        }
+      }
+    }
+  }
+
 
   /**
    * Dynamically builds the list of rule processors based on a campaign configuration.
@@ -29,25 +74,36 @@ export class DiscountEngine {
     this.rules.push(new CustomItemDiscountRule());
 
     // Priority 2: Batch-specific rules (highest priority for products with batches)
+    const batchIds = new Set<string>();
     if (campaign.batchConfigurations) {
-      campaign.batchConfigurations.forEach((config) => {
-        this.rules.push(new BatchSpecificRule(config));
-      });
+        for (const config of campaign.batchConfigurations) {
+            if (!batchIds.has(config.productBatchId)) {
+                this.rules.push(new BatchSpecificRule(config));
+                batchIds.add(config.productBatchId);
+            }
+        }
     }
 
     // Priority 3: Product-specific rules
+    const productIds = new Set<string>();
     if (campaign.productConfigurations) {
       // Sort by priority or order if needed
-      campaign.productConfigurations.forEach((config) => {
-        this.rules.push(new ProductLevelRule(config));
-      });
+        const sortedConfigs = [...campaign.productConfigurations]
+            .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+        
+        for (const config of sortedConfigs) {
+            if (!productIds.has(config.productId)) {
+                this.rules.push(new ProductLevelRule(config));
+                productIds.add(config.productId);
+            }
+        }
     }
 
     // Priority 4: "Buy X, Get Y" rules
-    if (campaign.buyGetRulesJson) {
-      campaign.buyGetRulesJson.forEach((ruleConfig) => {
-        this.rules.push(new BuyXGetYRule(ruleConfig, campaign.name));
-      });
+    if (campaign.buyGetRulesJson?.length) {
+        for (const ruleConfig of campaign.buyGetRulesJson) {
+            this.rules.push(new BuyXGetYRule(ruleConfig, campaign.name));
+        }
     }
 
     // Priority 5: Campaign's default item-level rules
@@ -104,5 +160,10 @@ export class DiscountEngine {
    */
   public getAppliedOneTimeRules(): string[] {
     return Array.from(this.appliedOneTimeRules);
+  }
+
+    // Static method to clear all cached engines (call on campaign updates)
+  public static clearCache(): void {
+    engineCache.clear();
   }
 }

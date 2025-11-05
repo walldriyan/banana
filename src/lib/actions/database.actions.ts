@@ -206,36 +206,100 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 /**
  * Fetches transactions from the database.
  */
-export async function getTransactionsFromDb() {
+export async function getTransactionsFromDb(options?: {
+  limit?: number;
+  skip?: number;
+  status?: 'completed' | 'refund' | 'pending';
+  dateFrom?: Date;
+  dateTo?: Date;
+}) {
   try {
-    const transactions = await prisma.transaction.findMany({
-      include: {
-        customer: true,
-        payment: true,
-        lines: {
-          include: {
-            productBatch: {
-              include: {
-                product: true
+    // Build where clause
+    const where: any = {};
+    if (options?.status) where.status = options.status;
+    if (options?.dateFrom || options?.dateTo) {
+      where.transactionDate = {};
+      if (options.dateFrom) where.transactionDate.gte = options.dateFrom;
+      if (options.dateTo) where.transactionDate.lte = options.dateTo;
+    }
+
+    // Use pagination and selective loading
+    const [transactions, totalCount] = await Promise.all([
+      prisma.transaction.findMany({
+        where,
+        include: {
+          customer: {
+            select: { id: true, name: true, phone: true, address: true }
+          },
+          payment: {
+            select: { 
+              paidAmount: true, 
+              paymentMethod: true, 
+              outstandingAmount: true, 
+              isInstallment: true 
+            }
+          },
+          lines: {
+            select: {
+              id: true,
+              productBatchId: true,
+              quantity: true,
+              displayUnit: true,
+              displayQuantity: true,
+              unitPrice: true,
+              lineTotalBeforeDiscount: true,
+              lineDiscount: true,
+              lineTotalAfterDiscount: true,
+              customDiscountValue: true,
+              customDiscountType: true,
+              customApplyFixedOnce: true,
+              productBatch: {
+                select: {
+                  id: true,
+                  batchNumber: true,
+                  productId: true,
+                  product: {
+                    select: {
+                      id: true,
+                      name: true,
+                      category: true,
+                      brand: true,
+                      units: true
+                    }
+                  }
+                }
               }
             }
+          },
+          appliedDiscounts: {
+            select: {
+              discountCampaignName: true,
+              sourceRuleName: true,
+              totalCalculatedDiscount: true,
+              ruleType: true,
+              productIdAffected: true,
+              batchIdAffected: true,
+              appliedOnce: true
+            }
+          },
+          originalTransaction: { 
+            select: { id: true }
+          },
+          refundTransactions: { 
+            select: { id: true }
           }
         },
-        appliedDiscounts: true,
-        originalTransaction: { 
-            select: { id: true }
+        orderBy: {
+          transactionDate: 'desc',
         },
-        refundTransactions: { 
-            select: { id: true }
-        }
-      },
-      orderBy: {
-        transactionDate: 'desc',
-      },
-    });
+        take: options?.limit || 50,
+        skip: options?.skip || 0,
+      }),
+      prisma.transaction.count({ where })
+    ]);
 
+    // Transform data (same as before)
     const formattedTransactions = transactions.map(tx => {
-      // Gracefully handle cases where the payment relation might be null
       const paymentDetails = tx.payment
         ? {
             paidAmount: tx.payment.paidAmount,
@@ -250,7 +314,7 @@ export async function getTransactionsFromDb() {
             isInstallment: false,
           };
 
-      const dbReadyTx: DatabaseReadyTransaction = {
+      return {
         transactionHeader: {
           transactionId: tx.id,
           transactionDate: tx.transactionDate.toISOString(),
@@ -266,10 +330,10 @@ export async function getTransactionsFromDb() {
         },
         transactionLines: tx.lines.map(line => ({
           ...line,
-          productName: line.productBatch.product.name, // Get name from master product
+          productName: line.productBatch.product.name,
           batchNumber: line.productBatch.batchNumber,
-          productId: line.productBatch.productId, // The general master product ID
-          batchId: line.productBatchId!, // The unique ID of the batch
+          productId: line.productBatch.productId,
+          batchId: line.productBatchId!,
           customDiscountType: line.customDiscountType as 'fixed' | 'percentage' | undefined,
         })),
         appliedDiscountsLog: tx.appliedDiscounts.map(log => ({
@@ -284,20 +348,24 @@ export async function getTransactionsFromDb() {
           phone: tx.customer.phone ?? '',
           address: tx.customer.address ?? '',
         },
-        paymentDetails, // Use the safely handled paymentDetails object
+        paymentDetails,
         companyDetails: { companyId: 'comp-001', companyName: 'My Company' },
         userDetails: { userId: 'user-001', userName: 'Default User' },
         isRefunded: !!tx.refundTransactions.length,
       };
-      return dbReadyTx;
     });
 
-    return { success: true, data: formattedTransactions };
+    return { 
+      success: true, 
+      data: formattedTransactions,
+      totalCount,
+      hasMore: (options?.skip || 0) + formattedTransactions.length < totalCount
+    };
   } catch (error) {
     console.error('[DB_GET_TRANSACTIONS_ERROR]', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown database error occurred while fetching transactions.',
+      error: error instanceof Error ? error.message : 'Database error',
     };
   }
 }

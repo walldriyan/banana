@@ -43,8 +43,8 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
   return (
     <TableRow>
       <TableCell className="font-medium">
-        <p className="font-semibold text-gray-900">{item.product.name}</p>
-        <p className="text-xs text-gray-500">Batch: {item.batchNumber}</p>
+        <p className="font-semibold text-foreground">{item.product.name}</p>
+        <p className="text-xs text-muted-foreground">Batch: {item.batchNumber}</p>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
@@ -87,13 +87,13 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
                 </SelectContent>
             </Select>
         ) : (
-             <span className="text-xs text-gray-500 ml-2">{units.baseUnit}</span>
+             <span className="text-xs text-muted-foreground ml-2">{units.baseUnit}</span>
         )}
         </div>
       </TableCell>
       <TableCell>
         <div className="text-sm">Rs. {item.price.toFixed(2)}</div>
-         <div className="text-xs text-gray-500 line-through">
+         <div className="text-xs text-muted-foreground line-through">
               {hasDiscounts ? `Rs. ${originalLineTotal.toFixed(2)}` : ''}
           </div>
       </TableCell>
@@ -103,17 +103,17 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
             {hasDiscounts && lineItemResult && (
               <div className="space-y-1 w-full">
                 {isCustomDiscount ? (
-                  <p className="flex items-center text-xs bg-yellow-50 text-yellow-800 p-1 rounded-md">
+                  <p className="flex items-center text-xs bg-yellow-100/20 text-yellow-700 dark:text-yellow-300 p-1 rounded-md">
                     <span className="font-bold truncate pr-1">Manual</span>
-                    <span className="font-semibold bg-yellow-200 px-1.5 py-0.5 rounded-full">
+                    <span className="font-semibold bg-yellow-200/30 px-1.5 py-0.5 rounded-full">
                       {item.customDiscountType === 'percentage' ? `${item.customDiscountValue}%` : `Rs. ${item.customDiscountValue}`}
                     </span>
                   </p>
                 ) : (
                   lineItemResult.appliedRules.map((rule: any, i: number) => (
-                    <p key={i} className="text-xs text-green-800">
+                    <p key={i} className="text-xs text-green-600">
                       -Rs. {rule.discountAmount.toFixed(2)}
-                      <span className="text-gray-500 ml-1">({rule.appliedRuleInfo.sourceRuleName})</span>
+                      <span className="text-muted-foreground ml-1">({rule.appliedRuleInfo.sourceRuleName})</span>
                     </p>
                   ))
                 )}
@@ -129,11 +129,11 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
       <TableCell className="text-right">
         {isCalculating ? <Skeleton className="h-7 w-20 ml-auto" /> : (
           <>
-            <p className="font-bold text-base text-gray-800">Rs. {finalLineTotal.toFixed(2)}</p>
+            <p className="font-bold text-base text-foreground">Rs. {finalLineTotal.toFixed(2)}</p>
             <Button
                 variant="ghost"
                 size="icon"
-                className="text-gray-400 hover:text-red-500 hover:bg-red-50 w-6 h-6 mt-1 ml-auto"
+                className="text-muted-foreground hover:text-red-500 hover:bg-red-50 w-6 h-6 mt-1 ml-auto"
                 onClick={() => onUpdateQuantity(item.saleItemId, 0)}
             >
                 <Trash2 className="h-3 w-3" />

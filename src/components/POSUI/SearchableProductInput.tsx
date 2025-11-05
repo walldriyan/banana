@@ -109,7 +109,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
         
         {inputValue.length > 0 && (
             <div className="relative mt-1">
-                <CommandList className="absolute w-full z-10 top-0 rounded-lg border bg-white shadow-lg">
+                <CommandList className="absolute w-full z-10 top-0 rounded-lg border bg-background shadow-lg">
                     <CommandEmpty>{emptyText}</CommandEmpty>
                     {Object.keys(filteredGroups).map(groupName => (
                       <CommandGroup key={groupName} heading={groupName}>
@@ -125,7 +125,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                               key={batch.id}
                               value={batch.id}
                               onSelect={() => handleSelect(batch.id)}
-                              className="cursor-pointer"
+                              className="cursor-pointer group"
                             >
                               <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-3">
@@ -134,12 +134,12 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                                     <p className="font-medium">
                                       Batch: <span className="text-primary">{batch.batchNumber}</span>
                                     </p>
-                                    <p className={`text-sm font-semibold ${stockColor}`}>
+                                    <p className={cn("text-sm font-semibold group-aria-selected:text-accent-foreground", stockColor)}>
                                       Stock: {batch.stock} {units.baseUnit}
                                     </p>
                                   </div>
                                 </div>
-                                <span className="font-bold text-lg">Rs. {batch.sellingPrice.toFixed(2)}</span>
+                                <span className={cn("font-bold text-lg group-aria-selected:text-accent-foreground")}>Rs. {batch.sellingPrice.toFixed(2)}</span>
                               </div>
                             </CommandItem>
                           );

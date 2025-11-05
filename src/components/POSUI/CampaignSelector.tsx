@@ -1,6 +1,8 @@
 // src/components/POSUI/CampaignSelector.tsx
 import React, { useMemo } from 'react';
 import type { DiscountSet } from '@/types';
+import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../ui/select';
 
 interface CampaignSelectorProps {
   activeCampaign: DiscountSet;
@@ -21,45 +23,44 @@ const CampaignSelector: React.FC<CampaignSelectorProps> = ({
     return { customCampaigns: custom, builtInCampaigns: builtIn };
   }, [allCampaigns]);
 
+  const handleValueChange = (value: string) => {
+    const selectedCampaign = allCampaigns.find((c) => c.id === value);
+    if (selectedCampaign) {
+      onCampaignChange(selectedCampaign);
+    }
+  };
+
   return (
-    <div className="mb-8">
-      <label htmlFor="campaign-selector" className="block text-sm font-medium text-gray-700 mb-2">
+    <div>
+      <label htmlFor="campaign-selector" className="block text-sm font-medium text-foreground mb-2">
         Active Discount Campaign
       </label>
-      <div className="relative">
-        <select
-          id="campaign-selector"
-          value={activeCampaign.id}
-          onChange={(e) => {
-            const selectedCampaign = allCampaigns.find((c) => c.id === e.target.value);
-            if (selectedCampaign) {
-              onCampaignChange(selectedCampaign);
-            }
-          }}
-          className="w-full appearance-none rounded-xl border-2 border-gray-300 bg-white px-4 py-3 text-base shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition"
-        >
-          {customCampaigns.length > 0 && (
-            <optgroup label="Custom Campaigns">
-              {customCampaigns.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          
-          <optgroup label="Built-in Campaigns">
-            {builtInCampaigns.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </optgroup>
-        </select>
-        <span className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-gray-400">
-          ▾
-        </span>
-      </div>
+      <Select value={activeCampaign.id} onValueChange={handleValueChange}>
+        <SelectTrigger id="campaign-selector" className="h-12 text-base">
+          <SelectValue placeholder="Select a campaign" />
+        </SelectTrigger>
+        <SelectContent>
+            {customCampaigns.length > 0 && (
+                <SelectGroup>
+                    <SelectLabel>Custom Campaigns</SelectLabel>
+                    {customCampaigns.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                        </SelectItem>
+                    ))}
+                </SelectGroup>
+            )}
+            
+            <SelectGroup>
+                <SelectLabel>Built-in Campaigns</SelectLabel>
+                {builtInCampaigns.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                    </SelectItem>
+                ))}
+            </SelectGroup>
+        </SelectContent>
+      </Select>
     </div>
   );
 };

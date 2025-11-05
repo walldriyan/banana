@@ -32,14 +32,14 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
             {cart.map(item => {
               const originalLine = originalTransactionLines.find(l => l.batchId === item.id);
               const originalQty = originalLine?.quantity || 0;
-              const lineItemResult = discountResult?.lineItems?.find((li: any) => li.lineId === item.saleItemId);
+              const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
               
               const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
               const originalLineTotal = item.price * item.quantity;
               const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
 
               return (
-                <div key={item.saleItemId} className="p-3 bg-gray-50 rounded-lg border">
+                <div key={item.saleItemId} className="p-3 rounded-lg bg-muted/50 border border-transparent">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold">{item.product.name} {item.batchNumber && `(${item.batchNumber})`}</p>
@@ -94,19 +94,19 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
       {cart.length > 0 && discountResult && (
         <>
           <Separator className="mt-auto" />
-          <CardFooter className="p-4 bg-gray-50">
+          <CardFooter className="p-4 bg-card">
             <div className="w-full space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-600">Subtotal:</span>
+                <span className="text-muted-foreground">Subtotal:</span>
                 <span className="font-medium">Rs. {discountResult.originalSubtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Discounts:</span>
+                <span className="text-muted-foreground">Total Discounts:</span>
                 <span className="font-medium text-green-600">-Rs. {discountResult.totalDiscount.toFixed(2)}</span>
               </div>
               <Separator className="my-1" />
               <div className="flex justify-between font-bold text-base">
-                <span className="text-gray-800">New Total:</span>
+                <span className="text-foreground">New Total:</span>
                 <span className="text-blue-700">Rs. {discountResult.finalTotal.toFixed(2)}</span>
               </div>
             </div>
