@@ -41,7 +41,7 @@ export default async function HistoryPage() {
   */
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* The main content area will now be managed by the client page */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {/* The AuthorizationGuard inside HistoryClientPage will now handle access based on the client-side dummy session */}
