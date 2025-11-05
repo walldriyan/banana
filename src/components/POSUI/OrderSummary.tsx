@@ -16,7 +16,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
     : [];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 flex flex-col h-full">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-foreground">Order Summary</h3>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onOpenAnalysis}>
@@ -60,7 +60,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
           </div>
         </div>
       )}
-      <div className="mt-4 pt-4 border-t-2 border-border flex justify-between items-baseline">
+      <div className="mt-auto pt-4 border-t-2 border-border flex justify-between items-baseline">
         <span className="text-lg font-semibold text-foreground">Final Total</span>
         <span className="text-3xl font-bold text-primary">Rs. {finalTotal.toFixed(2)}</span>
       </div>
