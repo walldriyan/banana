@@ -109,7 +109,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
         
         {inputValue.length > 0 && (
             <div className="relative mt-1">
-                <CommandList className="absolute w-full z-10 top-0 rounded-lg border bg-white shadow-lg">
+                <CommandList className="absolute w-full z-10 top-0 rounded-lg border bg-background shadow-lg">
                     <CommandEmpty>{emptyText}</CommandEmpty>
                     {Object.keys(filteredGroups).map(groupName => (
                       <CommandGroup key={groupName} heading={groupName}>
