@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 
 const initialDiscountResult = {
@@ -490,6 +491,8 @@ export default function MyNewEcommerceShop() {
     );
   }
 
+  const userInitials = user?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
+
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans">
       <TooltipProvider>
@@ -527,14 +530,23 @@ export default function MyNewEcommerceShop() {
         </aside>
       </TooltipProvider>
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+         <div className="absolute top-6 right-6 z-20">
+            <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
+                <Avatar>
+                    <AvatarFallback>{userInitials}</AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="text-sm font-semibold">{user?.name || 'User'}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+                </div>
+            </div>
+        </div>
+
         <div className="flex-grow overflow-y-auto">
           <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 lg:p-8 border-b">
             <div className="flex flex-col">
                 <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
-                <p className="text-base text-muted-foreground mt-2">
-                    Welcome, {user?.name || 'User'}! ({user?.role})
-                </p>
             </div>
           </header>
 
