@@ -31,7 +31,7 @@ export function LogoutButton() {
                 onClick={() => signOut({ callbackUrl: '/login' })}
             >
                 <LogOut />
-                <span className="text-sm font-medium">Logout</span>
+                <span className="sr-only">Logout</span>
             </SidebarMenuButton>
         );
     }
@@ -39,10 +39,12 @@ export function LogoutButton() {
     return (
         <Button
             variant="ghost"
-            className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
+            size="icon"
+            className="w-full justify-center text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={() => signOut({ callbackUrl: '/login' })}
         >
-            <span className="text-sm font-medium">Logout</span>
+            <LogOut />
+            <span className="sr-only">Logout</span>
         </Button>
     )
 }
