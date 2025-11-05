@@ -536,25 +536,29 @@ export default function MyNewEcommerceShop() {
                     Welcome, {user?.name || 'User'}! ({user?.role})
                 </p>
             </div>
-            <div className="flex-grow max-w-sm">
-              <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
-                  <CampaignSelector
-                    activeCampaign={activeCampaign}
-                    allCampaigns={allCampaigns}
-                    onCampaignChange={setActiveCampaign}
-                  />
-              </AuthorizationGuard>
-            </div>
           </header>
 
           <main className="p-4 sm:p-6 lg:p-8">
             <Card className="w-full">
                 <CardContent className="p-4 sm:p-6 space-y-6">
-                    <SearchableProductInput
-                        ref={productSearchRef}
-                        products={availableProducts}
-                        onProductSelect={addToCart}
-                    />
+                    <div className="flex items-start gap-4">
+                        <div className="flex-grow">
+                            <SearchableProductInput
+                                ref={productSearchRef}
+                                products={availableProducts}
+                                onProductSelect={addToCart}
+                            />
+                        </div>
+                        <div className="w-64">
+                            <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
+                                <CampaignSelector
+                                    activeCampaign={activeCampaign}
+                                    allCampaigns={allCampaigns}
+                                    onCampaignChange={setActiveCampaign}
+                                />
+                            </AuthorizationGuard>
+                        </div>
+                    </div>
                     
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2">
