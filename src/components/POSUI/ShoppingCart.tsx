@@ -17,11 +17,11 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
 
   return (
     <div className="w-full">
-      <h2 className="text-2xl font-semibold text-gray-900 mb-5">Shopping Cart</h2>
+      <h2 className="text-2xl font-semibold text-foreground mb-5">Shopping Cart</h2>
       
       <div className="w-full">
         {cart.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">Your cart is empty.</p>
+          <p className="text-center text-muted-foreground py-8">Your cart is empty.</p>
         ) : (
           <Table>
             <TableHeader>
