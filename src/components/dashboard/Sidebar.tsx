@@ -57,7 +57,7 @@ export function DashboardSidebar() {
       const IconComponent = iconMap[item.icon as IconName];
       
       const linkContent = (
-        <SidebarMenuItem key={item.href || item.label}>
+        <SidebarMenuItem key={item.href || item.label} data-active={isActive}>
              {item.subItems ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -90,7 +90,7 @@ export function DashboardSidebar() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Link href={item.href || '#'} passHref>
+                <Link href={item.href || '#'} passHref className='w-full'>
                     <SidebarMenuButton
                         isActive={isActive}
                         tooltip={item.label}
@@ -138,8 +138,8 @@ export function DashboardSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-             <SidebarMenuItem>
-                <Link href="/" passHref>
+             <SidebarMenuItem data-active={pathname === '/'}>
+                <Link href="/" passHref className='w-full'>
                     <SidebarMenuButton
                         isActive={pathname === '/'}
                         tooltip="POS View"
