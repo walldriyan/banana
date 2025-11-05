@@ -18,6 +18,7 @@ import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 import { LogoutButton } from '../auth/LogoutButton';
 import { Button } from '../ui/button';
 import { signOut } from 'next-auth/react';
+import { useSidebar } from '../ui/sidebar';
 
 const generalItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: null },
@@ -50,6 +51,8 @@ const settingsItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { state } = useSidebar();
+    const iconSize = state === 'collapsed' ? 'lg' : 'default';
 
   const renderLink = (item: typeof generalItems[0]) => {
       const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
@@ -61,6 +64,7 @@ export function DashboardSidebar() {
                     tooltip={item.label}
                     className="justify-start"
                     variant="ghost"
+                    size={iconSize}
                 >
                     <item.icon />
                     <span>{item.label}</span>
@@ -83,7 +87,7 @@ export function DashboardSidebar() {
     <>
       <SidebarHeader>
         <Link href="/">
-           <h2 className="text-2xl font-bold text-sidebar-foreground p-2 cursor-pointer">My Store</h2>
+           <h2 className="text-2xl font-bold text-sidebar-foreground p-2 cursor-pointer group-data-[collapsible=icon]:hidden">My Store</h2>
         </Link>
       </SidebarHeader>
 
@@ -127,7 +131,7 @@ export function DashboardSidebar() {
             <AuthorizationGuard permissionKey='pos.view'>
               <SidebarMenuItem>
                   <Link href="/" passHref>
-                    <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Point of Sale">
+                    <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Point of Sale" size={iconSize}>
                       <Home />
                       <span>POS View</span>
                     </SidebarMenuButton>
@@ -135,7 +139,7 @@ export function DashboardSidebar() {
               </SidebarMenuItem>
             </AuthorizationGuard>
             <SidebarMenuItem>
-                <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Logout" onClick={() => signOut({ callbackUrl: '/login' })}>
+                <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Logout" onClick={() => signOut({ callbackUrl: '/login' })} size={iconSize}>
                   <LogOut />
                   <span>Logout</span>
                 </SidebarMenuButton>
