@@ -33,7 +33,7 @@ export function RefundSummary({ originalTransaction, newDiscountResult, finalRef
       <CardContent className="space-y-4">
         
         {/* Original Bill Info */}
-        <div className="p-3 rounded-lg space-y-2 border">
+        <div className="p-3 rounded-lg space-y-2 border bg-muted/50 border-transparent">
             <h4 className="font-semibold text-foreground mb-1">Original Bill</h4>
             <div className="flex justify-between items-center text-sm">
                 <span className="text-muted-foreground">Original Bill Total:</span>

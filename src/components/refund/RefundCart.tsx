@@ -39,7 +39,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
               const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
 
               return (
-                <div key={item.saleItemId} className="p-3 rounded-lg border">
+                <div key={item.saleItemId} className="p-3 rounded-lg bg-muted/50 border border-transparent">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold">{item.product.name} {item.batchNumber && `(${item.batchNumber})`}</p>
