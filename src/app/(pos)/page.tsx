@@ -363,7 +363,7 @@ export default function MyNewEcommerceShop() {
     const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
     
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
-    const unitsData = useProductUnits(productBatch.product.units);
+    const unitsData = parseUnits(productBatch.product.units);
 
     if (existingItemIndex !== -1) {
         setCart(currentCart => currentCart.map((item, index) => {
