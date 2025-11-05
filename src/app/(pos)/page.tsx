@@ -32,6 +32,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useProductUnits } from '@/hooks/use-product-units';
 import { debounce } from 'lodash';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 
 const initialDiscountResult = {
@@ -485,142 +491,159 @@ export default function MyNewEcommerceShop() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground font-sans">
-      <header className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 lg:p-8 border-b">
-         <div className="flex flex-col">
-            <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
-            <p className="text-base text-muted-foreground mt-2">
-                Welcome, {user?.name || 'User'}! ({user?.role})
-            </p>
-         </div>
-        <div className="flex-grow max-w-sm">
-           <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
-              <CampaignSelector
-                activeCampaign={activeCampaign}
-                allCampaigns={allCampaigns}
-                onCampaignChange={setActiveCampaign}
-              />
-          </AuthorizationGuard>
-        </div>
-        <div className="flex items-center gap-2">
-            <AuthorizationGuard permissionKey='history.view'>
+    <div className="flex min-h-screen bg-background text-foreground font-sans">
+      <TooltipProvider>
+        <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background">
+          <AuthorizationGuard permissionKey='history.view'>
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Link href="/history" passHref>
-                <Button variant="outline">
-                    <History className="mr-2 h-4 w-4" />
-                    View History
-                </Button>
+                  <Button variant="ghost" size="icon">
+                    <History className="h-5 w-5" />
+                    <span className="sr-only">View History</span>
+                  </Button>
                 </Link>
-            </AuthorizationGuard>
-            <AuthorizationGuard permissionKey='products.view'>
+              </TooltipTrigger>
+              <TooltipContent side="right">View History</TooltipContent>
+            </Tooltip>
+          </AuthorizationGuard>
+          <AuthorizationGuard permissionKey='products.view'>
+             <Tooltip>
+              <TooltipTrigger asChild>
                 <Link href="/dashboard/products" passHref>
-                <Button variant="outline">
-                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
-                </Button>
+                  <Button variant="ghost" size="icon">
+                    <LayoutDashboard className="h-5 w-5" />
+                     <span className="sr-only">Dashboard</span>
+                  </Button>
                 </Link>
-            </AuthorizationGuard>
+              </TooltipTrigger>
+              <TooltipContent side="right">Dashboard</TooltipContent>
+            </Tooltip>
+          </AuthorizationGuard>
+          <div className="mt-auto flex flex-col items-center gap-4">
             <ThemeToggle />
             <LogoutButton />
-        </div>
-      </header>
+          </div>
+        </aside>
+      </TooltipProvider>
 
-      <main className="p-4 sm:p-6 lg:p-8">
-        <Card className="w-full">
-            <CardContent className="p-4 sm:p-6 space-y-6">
-                 <SearchableProductInput
-                    ref={productSearchRef}
-                    products={availableProducts}
-                    onProductSelect={addToCart}
+      <div className="flex-1 flex flex-col">
+        <header className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 lg:p-8 border-b">
+          <div className="flex flex-col">
+              <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
+              <p className="text-base text-muted-foreground mt-2">
+                  Welcome, {user?.name || 'User'}! ({user?.role})
+              </p>
+          </div>
+          <div className="flex-grow max-w-sm">
+            <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
+                <CampaignSelector
+                  activeCampaign={activeCampaign}
+                  allCampaigns={allCampaigns}
+                  onCampaignChange={setActiveCampaign}
                 />
-                
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                        <ShoppingCart
-                            cart={cart}
-                            isCalculating={isCalculating}
-                            discountResult={discountResult}
-                            onUpdateQuantity={handleCartUpdate}
-                            onOverrideDiscount={openCustomDiscountDrawer}
-                            />
-                    </div>
-                    <div className="lg:col-span-1 space-y-6">
-                        {isCalculating && cart.length > 0 ? (
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-1/3 mb-2" />
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-8 w-full mt-4" />
-                        </div>
-                        ) : (
-                        <OrderSummary
-                            originalTotal={originalTotal}
-                            finalTotal={finalTotal}
-                            discountResult={discountResult}
-                        />
-                        )}
+            </AuthorizationGuard>
+          </div>
+        </header>
 
-                        <AuthorizationGuard permissionKey='pos.create.transaction'>
-                          <div className="flex flex-col gap-3">
-                            {isCalculating ? (
-                              <Skeleton className="h-12 w-full" />
-                            ) : (
-                              <button
-                                onClick={openTransactionDrawer}
-                                disabled={cart.length === 0}
-                                className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
-                              >
-                                Complete Transaction
-                              </button>
-                            )}
-                            <button
-                              onClick={clearCart}
-                              className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                            >
-                              Clear Cart
-                            </button>
+        <main className="flex-grow p-4 sm:p-6 lg:p-8">
+          <Card className="w-full">
+              <CardContent className="p-4 sm:p-6 space-y-6">
+                  <SearchableProductInput
+                      ref={productSearchRef}
+                      products={availableProducts}
+                      onProductSelect={addToCart}
+                  />
+                  
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2">
+                          <ShoppingCart
+                              cart={cart}
+                              isCalculating={isCalculating}
+                              discountResult={discountResult}
+                              onUpdateQuantity={handleCartUpdate}
+                              onOverrideDiscount={openCustomDiscountDrawer}
+                              />
+                      </div>
+                      <div className="lg:col-span-1 space-y-6">
+                          {isCalculating && cart.length > 0 ? (
+                          <div className="space-y-4">
+                              <Skeleton className="h-6 w-1/3 mb-2" />
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-10 w-full" />
+                              <Skeleton className="h-8 w-full mt-4" />
                           </div>
-                        </AuthorizationGuard>
-                    </div>
-                </div>
+                          ) : (
+                          <OrderSummary
+                              originalTotal={originalTotal}
+                              finalTotal={finalTotal}
+                              discountResult={discountResult}
+                          />
+                          )}
 
-                <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg mt-6">
-                    <Switch 
-                    id="analysis-mode" 
-                    checked={showAnalysisPanel}
-                    onCheckedChange={setShowAnalysisPanel}
-                    />
-                    <Label htmlFor="analysis-mode" className="flex items-center gap-2">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Show Discount Analysis
-                    </Label>
-                </div>
-                
-                {showAnalysisPanel && (
-                <>
-                    <DiscountBehaviorPanel
-                        isCalculating={isCalculating}
-                        discountResult={discountResult}
-                        activeCampaign={activeCampaign}
-                        transactionId={transactionId}
-                    />
+                          <AuthorizationGuard permissionKey='pos.create.transaction'>
+                            <div className="flex flex-col gap-3">
+                              {isCalculating ? (
+                                <Skeleton className="h-12 w-full" />
+                              ) : (
+                                <button
+                                  onClick={openTransactionDrawer}
+                                  disabled={cart.length === 0}
+                                  className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                                >
+                                  Complete Transaction
+                                </button>
+                              )}
+                              <button
+                                onClick={clearCart}
+                                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                              >
+                                Clear Cart
+                              </button>
+                            </div>
+                          </AuthorizationGuard>
+                      </div>
+                  </div>
 
-                    {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
-                        <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
-                        <div className="space-y-1 text-blue-700">
-                        <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
-                        <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
-                        <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
-                        <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
-                        <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
-                        </div>
-                    </div>
-                    )}
-                </>
-                )}
-            </CardContent>
-        </Card>
-      </main>
+                  <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg mt-6">
+                      <Switch 
+                      id="analysis-mode" 
+                      checked={showAnalysisPanel}
+                      onCheckedChange={setShowAnalysisPanel}
+                      />
+                      <Label htmlFor="analysis-mode" className="flex items-center gap-2">
+                      <SlidersHorizontal className="h-4 w-4" />
+                      Show Discount Analysis
+                      </Label>
+                  </div>
+                  
+                  {showAnalysisPanel && (
+                  <>
+                      <DiscountBehaviorPanel
+                          isCalculating={isCalculating}
+                          discountResult={discountResult}
+                          activeCampaign={activeCampaign}
+                          transactionId={transactionId}
+                      />
+
+                      {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
+                          <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
+                          <div className="space-y-1 text-blue-700">
+                          <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
+                          <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
+                          <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
+                          <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
+                          <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
+                          </div>
+                      </div>
+                      )}
+                  </>
+                  )}
+              </CardContent>
+          </Card>
+        </main>
+      </div>
     </div>
   );
 }
