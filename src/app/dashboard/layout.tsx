@@ -9,10 +9,10 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon">
         <DashboardSidebar />
       </Sidebar>
-      <SidebarInset className="bg-gray-100 dark:bg-gray-900 min-h-screen">
+      <SidebarInset>
          <SidebarHeader className="border-b">
             <SidebarTrigger />
         </SidebarHeader>
