@@ -557,7 +557,7 @@ export default function MyNewEcommerceShop() {
             </div>
         </div>
         
-        <main className="flex-grow p-6">
+        <main className="flex-grow pt-6 px-6 pb-24">
             <Card className="w-full h-full flex flex-col">
                 <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col">
                     <div className="flex items-start gap-4">
