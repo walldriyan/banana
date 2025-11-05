@@ -105,22 +105,44 @@ export default function MyNewEcommerceShop() {
     setTransactionId(createNewTransactionId());
   }, []);
 
-  // Memoized cart transformation
-    const cartWithUnits = useMemo(() =>
-        cart.map(item => {
-            if (!item.displayUnit) {
-                const unitsData = typeof item.product.units === 'string'
-                    ? JSON.parse(item.product.units)
-                    : item.product.units;
-                return { ...item, displayUnit: unitsData.baseUnit };
-            }
-            return item;
-        }), [cart]
-    );
+  const unitsCache = useRef<Map<string, any>>(new Map());
+
+    const parseUnits = useCallback((units: any) => {
+        if (typeof units !== 'string') return units;
+        
+        const cached = unitsCache.current.get(units);
+        if (cached) return cached;
+        
+        try {
+            const parsed = JSON.parse(units);
+            unitsCache.current.set(units, parsed);
+            return parsed;
+        } catch (e) {
+            console.error('Failed to parse units:', e);
+            return { baseUnit: 'unit', derivedUnits: [] };
+        }
+    }, []);
+
+    // Memoized cart transformation
+    const cartWithUnits = useMemo(() => {
+        return cart.map(item => {
+            if (item.displayUnit) return item;
+            
+            const unitsData = parseUnits(item.product.units);
+            return { 
+                ...item, 
+                displayUnit: unitsData.baseUnit 
+            };
+        });
+    }, [cart, parseUnits]);
+
 
     // Debounced calculation function
-    const debouncedCalculate = useCallback(
-        debounce(async (cartData, campaign) => {
+    const debouncedCalculateRef = useRef<ReturnType<typeof debounce> | null>(null);
+
+    useEffect(() => {
+        // Create debounced function once
+        debouncedCalculateRef.current = debounce(async (cartData, campaign) => {
             if (cartData.length === 0) {
                 setDiscountResult(initialDiscountResult);
                 setIsCalculating(false);
@@ -136,19 +158,57 @@ export default function MyNewEcommerceShop() {
                     getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
                 });
             } else {
-                 setDiscountResult(initialDiscountResult);
+                setDiscountResult(initialDiscountResult);
             }
             setIsCalculating(false);
-        }, 300), // 300ms debounce
-        []
-    );
+        }, 300);
+
+        // Cleanup function to cancel pending debounced calls
+        return () => {
+            if (debouncedCalculateRef.current) {
+                debouncedCalculateRef.current.cancel();
+            }
+        };
+    }, []);
+
+    // Create a fingerprint to detect meaningful changes only
+    const cartFingerprint = useMemo(() => {
+        return cart.map(item => 
+            `${item.saleItemId}:${item.quantity}:${item.customDiscountValue || 0}`
+        ).join('|');
+    }, [cart]);
+
+    const campaignFingerprint = useMemo(() => activeCampaign.id, [activeCampaign]);
+
+    // Smart debouncing with fingerprint comparison
+    const prevFingerprintRef = useRef<string>('');
 
     useEffect(() => {
-        debouncedCalculate(cartWithUnits, activeCampaign);
-        return () => {
-            debouncedCalculate.cancel(); // Cleanup on unmount or dependency change
-        };
-    }, [cartWithUnits, activeCampaign, debouncedCalculate]);
+        const currentFingerprint = `${cartFingerprint}:${campaignFingerprint}`;
+        
+        // Skip calculation if nothing meaningful changed
+        if (prevFingerprintRef.current === currentFingerprint) {
+            return;
+        }
+        
+        prevFingerprintRef.current = currentFingerprint;
+        
+        if (debouncedCalculateRef.current) {
+            debouncedCalculateRef.current(cartWithUnits, activeCampaign);
+        }
+    }, [cartFingerprint, campaignFingerprint, cartWithUnits, activeCampaign]);
+
+
+    // Clear cache periodically to prevent memory growth
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (unitsCache.current.size > 100) {
+                unitsCache.current.clear();
+            }
+        }, 300000); // Every 5 minutes
+        
+        return () => clearInterval(interval);
+    }, []);
 
 
   const handleTransactionComplete = useCallback(() => {
@@ -178,8 +238,21 @@ export default function MyNewEcommerceShop() {
     });
   }, [drawer, cart, discountResult, transactionId, activeCampaign, handleTransactionComplete]);
 
+    // Use useRef to maintain stable reference
+    const cartLengthRef = useRef(0);
+    const openTransactionDrawerRef = useRef<(() => void) | null>(null);
 
-  const handleGlobalKeyDown = useCallback((event: KeyboardEvent) => {
+    // Update refs on changes
+    useEffect(() => {
+        cartLengthRef.current = cart.length;
+    }, [cart.length]);
+
+    useEffect(() => {
+        openTransactionDrawerRef.current = openTransactionDrawer;
+    }, [openTransactionDrawer]);
+
+    // Stable event handler that doesn't change
+    const handleGlobalKeyDown = useCallback((event: KeyboardEvent) => {
         const target = event.target as HTMLElement;
 
         const isTyping =
@@ -189,11 +262,10 @@ export default function MyNewEcommerceShop() {
         
         const isDrawerOpen = !!document.querySelector('[data-state="open"]');
 
-        // Handle Ctrl+Enter for completing transaction *only if drawer is closed*
         if (event.ctrlKey && event.key === 'Enter' && !isDrawerOpen) {
             event.preventDefault();
-            if (cart.length > 0) {
-                openTransactionDrawer();
+            if (cartLengthRef.current > 0 && openTransactionDrawerRef.current) {
+                openTransactionDrawerRef.current();
             }
             return;
         }
@@ -212,14 +284,14 @@ export default function MyNewEcommerceShop() {
                 productSearchRef.current.focusSearchInput();
             }
         }
-    }, [cart.length, openTransactionDrawer]);
+    }, []); // Empty deps - handler is now stable
 
     useEffect(() => {
         document.addEventListener('keydown', handleGlobalKeyDown);
         return () => {
             document.removeEventListener('keydown', handleGlobalKeyDown);
         };
-    }, [handleGlobalKeyDown]);
+    }, [handleGlobalKeyDown]); // Now handleGlobalKeyDown never changes
 
 
   const availableProducts = useMemo(() => {
