@@ -64,7 +64,7 @@ export function DashboardSidebar() {
                      <SidebarMenuButton
                         isActive={isActive}
                         tooltip={item.label}
-                        className="w-full justify-start"
+                        className="w-full"
                         variant="ghost"
                         size={iconSize}
                     >
@@ -94,7 +94,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton
                         isActive={isActive}
                         tooltip={item.label}
-                        className="w-full justify-start"
+                        className="w-full"
                         variant="ghost"
                         size={iconSize}
                     >
@@ -143,7 +143,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton
                         isActive={pathname === '/'}
                         tooltip="POS View"
-                        className="w-full justify-start"
+                        className="w-full"
                         variant="ghost"
                         size={iconSize}
                     >
