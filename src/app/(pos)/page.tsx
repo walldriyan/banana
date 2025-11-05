@@ -486,7 +486,7 @@ export default function MyNewEcommerceShop() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen  text-gray-900 font-sans p-4 sm:p-6 lg:p-8">
         <header className="flex justify-between items-center mb-6">
           <Skeleton className="h-10 w-64" />
           <div className="flex items-center gap-4">
@@ -508,7 +508,7 @@ export default function MyNewEcommerceShop() {
   const userInitials = user?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground font-sans">
+    <div className="flex min-h-screen overflow-hidden bg-background text-foreground font-sans">
       <TooltipProvider>
         <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background">
           <AuthorizationGuard permissionKey='history.view'>
@@ -557,10 +557,10 @@ export default function MyNewEcommerceShop() {
             </div>
         </div>
         
-        <main className="flex-grow pt-6 px-6 pb-24">
-            <Card className="w-full h-full flex flex-col">
-                <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col">
-                    <div className="flex items-start gap-4">
+        <main className="flex-grow pt-6  flex-grow flex flex-col px-6 pb-24 ">
+            <Card className="w-full  flex flex-col flex-grow overflow-hidden mb-[25px]">
+                <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col  overflow-hidden">
+                    <div className="flex items-start gap-4 ">
                         <div className="flex-grow">
                             <SearchableProductInput
                                 ref={productSearchRef}
@@ -579,8 +579,8 @@ export default function MyNewEcommerceShop() {
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow overflow-hidden">
-                        <div className="lg:col-span-2 flex flex-col">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow overflow-hidden ">
+                        <div className="lg:col-span-2 flex flex-col overflow-hidden h-[450px]  ">
                             <ShoppingCart
                                 cart={cart}
                                 isCalculating={isCalculating}
@@ -589,7 +589,8 @@ export default function MyNewEcommerceShop() {
                                 onOverrideDiscount={openCustomDiscountDrawer}
                                 />
                         </div>
-                        <div className="lg:col-span-1 space-y-6">
+                        <div className="lg:col-span-1 space-y-6 flex flex-col  overflow-hidden h-[450px] p-5 relative bg-blue-300 ">
+                           <div className="flex-grow overflow-y-auto">
                             {isCalculating && cart.length > 0 ? (
                             <div className="space-y-4">
                                 <Skeleton className="h-6 w-1/3 mb-2" />
@@ -605,16 +606,17 @@ export default function MyNewEcommerceShop() {
                                 onOpenAnalysis={openAnalysisDrawer}
                             />
                             )}
+                            </div>
 
                             <AuthorizationGuard permissionKey='pos.create.transaction'>
-                              <div className="flex flex-col gap-3">
+                              <div className="flex flex-col gap-3 mt-auto">
                                 {isCalculating ? (
                                   <Skeleton className="h-12 w-full" />
                                 ) : (
                                   <button
                                     onClick={openTransactionDrawer}
                                     disabled={cart.length === 0}
-                                    className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                                    className=" w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/30 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
                                   >
                                     Complete Transaction
                                   </button>

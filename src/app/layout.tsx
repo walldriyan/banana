@@ -52,7 +52,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
+      <body className={cn('min-h-screen overflow-hidden bg-background font-sans antialiased', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
