@@ -542,17 +542,10 @@ export default function MyNewEcommerceShop() {
                 </div>
             </div>
         </div>
-
-        <div className="flex flex-col flex-grow">
-          <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 lg:p-8 border-b">
-            <div className="flex flex-col">
-                <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
-            </div>
-          </header>
-
-          <main className="flex-grow p-4 sm:p-6 lg:p-8 overflow-y-auto">
-            <Card className="w-full">
-                <CardContent className="p-4 sm:p-6 space-y-6">
+        
+        <main className="flex-grow p-6 overflow-y-auto">
+            <Card className="w-full h-full flex flex-col">
+                <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col">
                     <div className="flex items-start gap-4">
                         <div className="flex-grow">
                             <SearchableProductInput
@@ -572,8 +565,8 @@ export default function MyNewEcommerceShop() {
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
+                        <div className="lg:col-span-2 flex flex-col">
                             <ShoppingCart
                                 cart={cart}
                                 isCalculating={isCalculating}
@@ -622,7 +615,7 @@ export default function MyNewEcommerceShop() {
                         </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg mt-6">
+                    <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg mt-auto">
                         <Switch 
                         id="analysis-mode" 
                         checked={showAnalysisPanel}
@@ -660,7 +653,6 @@ export default function MyNewEcommerceShop() {
                 </CardContent>
             </Card>
           </main>
-        </div>
       </div>
     </div>
   );
