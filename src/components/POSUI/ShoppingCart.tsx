@@ -37,7 +37,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
                 </TableHeader>
                 </Table>
             </div>
-            <div className="flex-grow overflow-y-auto">
+            <div className="flex-grow overflow-y-auto max-h-[500px]">
               <Table>
                 <TableBody>
                   {cart.map((item) => (
