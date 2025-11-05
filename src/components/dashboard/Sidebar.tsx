@@ -13,13 +13,12 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarHeader,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel
+  SidebarFooter
 } from '@/components/ui/sidebar';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 import { useSidebar } from '../ui/sidebar';
 import menuConfig from '@/lib/sidebar-menu.json';
+import { LogoutButton } from '../auth/LogoutButton';
 
 // A map to resolve icon names from the JSON config to actual components
 const iconMap = {
@@ -60,7 +59,7 @@ export function DashboardSidebar() {
                     size={iconSize}
                 >
                     {IconComponent && <IconComponent />}
-                    <span>{item.label}</span>
+                    <span className="text-sm font-medium">{item.label}</span>
                 </SidebarMenuButton>
             </Link>
         </SidebarMenuItem>
@@ -76,11 +75,6 @@ export function DashboardSidebar() {
       return linkContent;
   }
   
-  const footerItems = [
-    { href: '/', icon: 'Home', label: 'POS View', permission: 'pos.view' },
-    { href: '/login', icon: 'LogOut', label: 'Logout', permission: null, isLogout: true }
-  ];
-
   return (
     <>
       <SidebarHeader>
@@ -90,47 +84,37 @@ export function DashboardSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        {menuConfig.groups.map((group) => (
-            <AuthorizationGuard key={group.label} permissionKey={group.permission || ''}>
-                <SidebarGroup>
-                    <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
-                    <SidebarMenu>{group.items.map(renderLink)}</SidebarMenu>
-                </SidebarGroup>
-            </AuthorizationGuard>
-        ))}
+        <SidebarMenu>
+        {menuConfig.groups.flatMap(group => 
+            group.items.map(item => (
+                <AuthorizationGuard key={item.href} permissionKey={item.permission || ''}>
+                   {renderLink(item)}
+                </AuthorizationGuard>
+            ))
+        )}
+        </SidebarMenu>
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarGroup>
-          <SidebarMenu>
-            {footerItems.map(item => {
-              const IconComponent = iconMap[item.icon as IconName];
-              const button = (
-                 <SidebarMenuButton 
-                    variant="ghost" 
-                    className="w-full justify-start" 
-                    tooltip={item.label} 
-                    size={iconSize}
-                    onClick={item.isLogout ? () => (window.location.href = '/login') : undefined}
-                  >
-                    {IconComponent && <IconComponent />}
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-              );
-
-              const content = item.isLogout ? button : <Link href={item.href} passHref>{button}</Link>;
-              
-              if (item.permission) {
-                  return (
-                    <AuthorizationGuard key={item.href} permissionKey={item.permission}>
-                      <SidebarMenuItem>{content}</SidebarMenuItem>
-                    </AuthorizationGuard>
-                  )
-              }
-              return <SidebarMenuItem key={item.href}>{content}</SidebarMenuItem>;
-            })}
-          </SidebarMenu>
-        </SidebarGroup>
+        <SidebarMenu>
+             <SidebarMenuItem>
+                <Link href="/" passHref>
+                    <SidebarMenuButton
+                        isActive={pathname === '/'}
+                        tooltip="POS View"
+                        className="justify-start"
+                        variant="ghost"
+                        size={iconSize}
+                    >
+                        <Home />
+                        <span className="text-sm font-medium">POS View</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <LogoutButton />
+            </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </>
   );

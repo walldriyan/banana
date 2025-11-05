@@ -3,17 +3,22 @@
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
+import { SidebarMenuButton } from '../ui/sidebar';
+import { useSidebar } from '../ui/sidebar';
 
 export function LogoutButton() {
-    // This component is now simplified as its logic is integrated into the main sidebar.
-    // It can be kept for other potential uses or removed if no longer needed elsewhere.
+    const { state } = useSidebar();
+    const iconSize = state === 'collapsed' ? 'lg' : 'default';
     return (
-        <Button 
-            variant="outline"
+        <SidebarMenuButton 
+            variant="ghost"
+            size={iconSize}
+            className="w-full justify-start text-red-500 hover:bg-red-50 hover:text-red-600"
+            tooltip="Logout"
             onClick={() => signOut({ callbackUrl: '/login' })}
         >
-            <LogOut className="mr-2 h-4 w-4" />
-            Logout
-        </Button>
+            <LogOut />
+            <span className="text-sm font-medium">Logout</span>
+        </SidebarMenuButton>
     )
 }
