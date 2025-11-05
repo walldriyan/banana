@@ -11,9 +11,9 @@ import {
   SidebarContent,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
   SidebarHeader,
-  SidebarFooter
+  SidebarFooter,
+  SidebarMenuButton
 } from '@/components/ui/sidebar';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 import { useSidebar } from '../ui/sidebar';
@@ -119,8 +119,16 @@ export function DashboardSidebar() {
   return (
     <>
       <SidebarHeader>
-        <Link href="/">
-           <h2 className="text-2xl font-bold text-sidebar-foreground p-2 cursor-pointer group-data-[collapsible=icon]:hidden">My Store</h2>
+         <Link href="/" className="w-full">
+            <SidebarMenuButton
+                tooltip="My Store"
+                className="w-full"
+                variant="ghost"
+                size={iconSize}
+            >
+                <Package />
+                <span className="text-lg font-bold">My Store</span>
+            </SidebarMenuButton>
         </Link>
       </SidebarHeader>
 
