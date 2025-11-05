@@ -1,6 +1,6 @@
 // src/components/POSUI/CartTableRow.tsx
 'use client';
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { SaleItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tag, Trash2 } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Skeleton } from '../ui/skeleton';
+import { useProductUnits } from '@/hooks/use-product-units';
 
 interface CartTableRowProps {
   item: SaleItem;
@@ -24,8 +25,11 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
   const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
   const isCustomDiscount = item.customDiscountValue !== undefined && item.customDiscountValue > 0;
   
-  const units = typeof item.product.units === 'string' ? JSON.parse(item.product.units) : item.product.units;
-  const allUnits = [{ name: units.baseUnit, conversionFactor: 1 }, ...(units.derivedUnits || [])];
+  const units = useProductUnits(item.product.units);
+  const allUnits = useMemo(() => [
+    { name: units.baseUnit, conversionFactor: 1 }, 
+    ...(units.derivedUnits || [])
+  ], [units]);
   const hasDerivedUnits = allUnits.length > 1;
 
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

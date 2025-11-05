@@ -3,7 +3,7 @@
 
 import { ColumnDef } from "@tanstack/react-table"
 import type { ProductBatch } from "@/types"
-import { MoreHorizontal, ArrowUpDown, ChevronsRight, ChevronsDownUp } from "lucide-react"
+import { MoreHorizontal, ArrowUpDown, ChevronsRight, ChevronsDownUp, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,23 +11,21 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { Checkbox } from "@/components/ui/checkbox"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 import { Badge } from "@/components/ui/badge"
+import { useProductUnits } from "@/hooks/use-product-units"
 
 // Define a new interface for the component props
 interface CellActionsProps {
   batch: ProductBatch;
-  onEdit: (batch: ProductBatch) => void; // Callback to open the edit drawer
-  onDelete: (batchId: string) => void; // Callback to handle deletion
+  onEdit: (batch: ProductBatch) => void;
+  onDelete: (batchId: string) => void;
+  onViewDetails: (batch: ProductBatch) => void;
 }
 
-const CellActions = ({ batch, onEdit, onDelete }: CellActionsProps) => {
-    const handleEditClick = () => {
-        onEdit(batch);
-    }
-    
+const CellActions = ({ batch, onEdit, onDelete, onViewDetails }: CellActionsProps) => {
     return (
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -38,17 +36,22 @@ const CellActions = ({ batch, onEdit, onDelete }: CellActionsProps) => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => onViewDetails(batch)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    View Details
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(batch.id)}>
                     Copy Batch ID
                 </DropdownMenuItem>
+                 <DropdownMenuSeparator />
                  <AuthorizationGuard permissionKey="products.update">
-                    <DropdownMenuItem onClick={handleEditClick}>
+                    <DropdownMenuItem onClick={() => onEdit(batch)}>
                       Edit Batch
                     </DropdownMenuItem>
                 </AuthorizationGuard>
                  <AuthorizationGuard permissionKey="products.delete">
                     <DropdownMenuItem onClick={() => onDelete(batch.id)} className="text-red-500">
-                        Delete
+                        Delete Batch
                     </DropdownMenuItem>
                 </AuthorizationGuard>
             </DropdownMenuContent>
@@ -56,30 +59,20 @@ const CellActions = ({ batch, onEdit, onDelete }: CellActionsProps) => {
     )
 }
 
+// Define a separate component for the stock cell to use the hook
+const StockCell = ({ row }: { row: any }) => {
+    const batch = row.original as ProductBatch;
+    const units = useProductUnits(batch.product.units);
+    const stock = row.getValue("stock") as number;
+    return <div className="text-right">{stock} {units.baseUnit}</div>;
+};
+
 // Update the type definition for the columns factory
 export const getColumns = (
   onEdit: (batch: ProductBatch) => void,
-  onDelete: (batchId: string) => void
+  onDelete: (batchId: string) => void,
+  onViewDetails: (batch: ProductBatch) => void,
 ): ColumnDef<ProductBatch>[] => [
-    {
-        id: "select",
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected()}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox
-                checked={row.getIsSelected()}
-                onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
-            />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
     {
         id: "product.name", // Give a stable ID
         accessorFn: (row) => row.product.name, // Use accessor function
@@ -132,12 +125,7 @@ export const getColumns = (
     {
         accessorKey: "stock",
         header: () => <div className="text-right">Stock</div>,
-        cell: ({ row }) => {
-            const batch = row.original;
-            const stock = row.getValue("stock") as number;
-            const units = typeof batch.product.units === 'string' ? JSON.parse(batch.product.units) : batch.product.units;
-            return <div className="text-right">{stock} {units.baseUnit}</div>
-        }
+        cell: StockCell,
     },
      {
         accessorKey: "product.category",
@@ -162,7 +150,7 @@ export const getColumns = (
             if (row.getIsGrouped()) {
                 return null; // No actions on grouped rows
             }
-            return <CellActions batch={row.original} onEdit={onEdit} onDelete={onDelete} />
+            return <CellActions batch={row.original} onEdit={onEdit} onDelete={onDelete} onViewDetails={onViewDetails} />
         },
     },
 ]

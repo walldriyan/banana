@@ -4,6 +4,7 @@ import { Badge } from "../ui/badge";
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
+import { useProductUnits } from "@/hooks/use-product-units";
 
 interface ProductDetailsViewProps {
     batch: ProductBatch;
@@ -18,7 +19,7 @@ const DetailRow = ({ label, value }: { label: string, value: React.ReactNode }) 
 
 export function ProductDetailsView({ batch }: ProductDetailsViewProps) {
     const { product } = batch;
-    const units = typeof product.units === 'string' ? JSON.parse(product.units) : product.units;
+    const units = useProductUnits(product.units);
 
     const formatCurrency = (amount: number | null | undefined) => {
         if (amount == null) return "N/A";
