@@ -6,6 +6,7 @@ import { GlobalDrawerProvider } from '@/context/GlobalDrawerContext';
 import { GlobalDrawer } from '@/components/GlobalDrawer';
 import AuthProvider from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { cn } from '@/lib/utils';
 
 // This forces the entire app to be dynamically rendered, which can help
 // with strange caching and fetch errors in certain environments.
@@ -24,21 +25,47 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
-      <body className="font-body antialiased">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const theme = localStorage.getItem('theme') || 'system';
+                  const isDark = theme === 'dark' || 
+                    (theme === 'system' && 
+                     window.matchMedia('(prefers-color-scheme: dark)').matches);
+                  
+                  if (isDark) {
+                    document.documentElement.classList.add('dark');
+                    // Critical: Set background immediately
+                    document.documentElement.style.backgroundColor = 'hsl(0 0% 10%)';
+                  } else {
+                    document.documentElement.style.backgroundColor = 'hsl(0 0% 100%)';
+                  }
+                } catch (e) {
+                  // Silently fail - no console logs in inline scripts
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-            <AuthProvider>
+          <AuthProvider>
             <GlobalDrawerProvider>
-                {children}
-                <GlobalDrawer />
-                <Toaster />
+              {children}
+              <GlobalDrawer />
+              <Toaster />
             </GlobalDrawerProvider>
-            </AuthProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

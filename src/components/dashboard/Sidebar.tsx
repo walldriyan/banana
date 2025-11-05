@@ -3,145 +3,166 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp } from 'lucide-react';
+import { 
+    Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, 
+    CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp, ChevronRight
+} from 'lucide-react';
 import {
   SidebarContent,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
   SidebarHeader,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel
+  SidebarMenuButton
 } from '@/components/ui/sidebar';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
+import { useSidebar } from '../ui/sidebar';
+import menuConfig from '@/lib/sidebar-menu.json';
 import { LogoutButton } from '../auth/LogoutButton';
-import { Button } from '../ui/button';
-import { signOut } from 'next-auth/react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-const generalItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: null },
-];
+// A map to resolve icon names from the JSON config to actual components
+const iconMap = {
+    LayoutDashboard,
+    Package,
+    ShoppingCart,
+    Building,
+    Users,
+    CreditCard,
+    HandCoins,
+    TrendingUp,
+    Printer,
+    Briefcase,
+    Settings,
+    Home,
+    LogOut,
+};
 
-const inventoryItems = [
-  { href: '/dashboard/products', icon: Package, label: 'Products', permission: 'products.view' },
-  { href: '/dashboard/purchases', icon: ShoppingCart, label: 'Purchases (GRN)', permission: 'purchases.view' },
-  { href: '/dashboard/suppliers', icon: Building, label: 'Suppliers', permission: 'suppliers.view' },
-];
+type IconName = keyof typeof iconMap;
+type MenuItem = typeof menuConfig.groups[0]['items'][0] & { subItems?: typeof menuConfig.groups[0]['items'] };
 
-const peopleItems = [
-    { href: '/dashboard/customers', icon: Users, label: 'Customers', permission: 'customers.view' },
-]
-
-const financeItems = [
-  { href: '/dashboard/credit', icon: CreditCard, label: 'Creditors', permission: 'credit.view' },
-  { href: '/dashboard/debtors', icon: HandCoins, label: 'Debtors', permission: 'debtors.view' },
-  { href: '/dashboard/finance', icon: TrendingUp, label: 'Income/Expenses', permission: 'finance.view' },
-];
-
-const reportItems = [
-    { href: '/dashboard/reports', icon: Printer, label: 'Reports', permission: 'reports.view' },
-]
-
-const settingsItems = [
-  { href: '/dashboard/company', icon: Briefcase, label: 'Company', permission: 'company.manage' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Application Settings', permission: 'settings.view' },
-]
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { state } = useSidebar();
+  const iconSize = state === 'collapsed' ? 'lg' : 'default';
 
-  const renderLink = (item: typeof generalItems[0]) => {
-      const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
+  const renderLink = (item: MenuItem) => {
+      const isActive = item.href ? (item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)) : false;
+      const IconComponent = iconMap[item.icon as IconName];
+      
       const linkContent = (
-        <SidebarMenuItem key={item.href}>
-            <Link href={item.href} passHref>
-                <SidebarMenuButton
-                    isActive={isActive}
-                    tooltip={item.label}
-                    className="justify-start"
-                    variant="ghost"
-                >
-                    <item.icon />
-                    <span>{item.label}</span>
-                </SidebarMenuButton>
-            </Link>
+        <SidebarMenuItem key={item.href || item.label} data-active={isActive}>
+             {item.subItems ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                     <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={item.label}
+                        className="w-full"
+                        variant="ghost"
+                        size={iconSize}
+                    >
+                        {IconComponent && <IconComponent />}
+                         {state === 'expanded' && (
+                            <>
+                                <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
+                                <ChevronRight className="ml-auto h-4 w-4" />
+                            </>
+                         )}
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" sideOffset={10}>
+                    {item.subItems.map((subItem) => (
+                       <AuthorizationGuard key={subItem.href} permissionKey={subItem.permission || ''}>
+                          <DropdownMenuItem asChild>
+                              <Link href={subItem.href} passHref>
+                                {subItem.label}
+                              </Link>
+                          </DropdownMenuItem>
+                       </AuthorizationGuard>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link href={item.href || '#'} passHref className='w-full'>
+                    <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={item.label}
+                        className="w-full"
+                        variant="ghost"
+                        size={iconSize}
+                    >
+                        {IconComponent && <IconComponent />}
+                        <span className="text-sm font-medium">{item.label}</span>
+                    </SidebarMenuButton>
+                </Link>
+              )}
         </SidebarMenuItem>
       );
 
       if (item.permission) {
         return (
-            <AuthorizationGuard key={item.href} permissionKey={item.permission}>
+            <AuthorizationGuard key={item.href || item.label} permissionKey={item.permission}>
                 {linkContent}
             </AuthorizationGuard>
         )
       }
       return linkContent;
   }
-
+  
   return (
     <>
       <SidebarHeader>
-        <Link href="/">
-           <h2 className="text-2xl font-bold text-sidebar-foreground p-2 cursor-pointer">My Store</h2>
+         <Link href="/" className="w-full">
+            <SidebarMenuButton
+                tooltip="My Store"
+                className="w-full"
+                variant="ghost"
+                size={iconSize}
+            >
+                <Package />
+            </SidebarMenuButton>
         </Link>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-            <SidebarGroupLabel>GENERAL</SidebarGroupLabel>
-            <SidebarMenu>{generalItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-            <SidebarGroupLabel>INVENTORY</SidebarGroupLabel>
-            <SidebarMenu>{inventoryItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-            <SidebarGroupLabel>PEOPLE</SidebarGroupLabel>
-            <SidebarMenu>{peopleItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-            <SidebarGroupLabel>FINANCE</SidebarGroupLabel>
-            <SidebarMenu>{financeItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-            <SidebarGroupLabel>REPORTS & PRINTING</SidebarGroupLabel>
-            <SidebarMenu>{reportItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-
-        <AuthorizationGuard permissionKey='settings.view'>
-             <SidebarGroup>
-                <SidebarGroupLabel>SETTINGS</SidebarGroupLabel>
-                <SidebarMenu>{settingsItems.map(renderLink)}</SidebarMenu>
-            </SidebarGroup>
-        </AuthorizationGuard>
+        <SidebarMenu>
+        {menuConfig.groups.flatMap(group => 
+            group.items.map(item => (
+                <AuthorizationGuard key={item.href || item.label} permissionKey={item.permission || ''}>
+                   {renderLink(item as MenuItem)}
+                </AuthorizationGuard>
+            ))
+        )}
+        </SidebarMenu>
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarGroup>
-          <SidebarMenu>
-            <AuthorizationGuard permissionKey='pos.view'>
-              <SidebarMenuItem>
-                  <Link href="/" passHref>
-                    <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Point of Sale">
-                      <Home />
-                      <span>POS View</span>
+        <SidebarMenu>
+             <SidebarMenuItem data-active={pathname === '/'}>
+                <Link href="/" passHref className='w-full'>
+                    <SidebarMenuButton
+                        isActive={pathname === '/'}
+                        tooltip="POS View"
+                        className="w-full"
+                        variant="ghost"
+                        size={iconSize}
+                    >
+                        <Home />
+                        <span className="text-sm font-medium">POS View</span>
                     </SidebarMenuButton>
-                  </Link>
-              </SidebarMenuItem>
-            </AuthorizationGuard>
-            <SidebarMenuItem>
-                <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Logout" onClick={() => signOut({ callbackUrl: '/login' })}>
-                  <LogOut />
-                  <span>Logout</span>
-                </SidebarMenuButton>
+                </Link>
             </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
+            <SidebarMenuItem>
+                <LogoutButton />
+            </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </>
   );

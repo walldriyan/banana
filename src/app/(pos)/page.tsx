@@ -1,7 +1,7 @@
 // src/app/(pos)/page.tsx
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { allCampaigns as hardcodedCampaigns } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -30,6 +30,8 @@ import OrderSummary from '@/components/POSUI/OrderSummary';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { useProductUnits } from '@/hooks/use-product-units';
+import { debounce } from 'lodash';
 
 
 const initialDiscountResult = {
@@ -103,82 +105,122 @@ export default function MyNewEcommerceShop() {
     setTransactionId(createNewTransactionId());
   }, []);
 
-  // Recalculate discounts when cart or campaign changes
-  useEffect(() => {
-    const recalculate = async () => {
-      
-      const cartWithUnits = cart.map(item => {
-        if (!item.displayUnit) {
-          const unitsData = typeof item.product.units === 'string' 
-            ? JSON.parse(item.product.units) 
-            : item.product.units;
-          return { ...item, displayUnit: unitsData.baseUnit };
+  // Memoized cart transformation
+    const cartWithUnits = useMemo(() =>
+        cart.map(item => {
+            if (!item.displayUnit) {
+                const unitsData = typeof item.product.units === 'string'
+                    ? JSON.parse(item.product.units)
+                    : item.product.units;
+                return { ...item, displayUnit: unitsData.baseUnit };
+            }
+            return item;
+        }), [cart]
+    );
+
+    // Debounced calculation function
+    const debouncedCalculate = useCallback(
+        debounce(async (cartData, campaign) => {
+            if (cartData.length === 0) {
+                setDiscountResult(initialDiscountResult);
+                setIsCalculating(false);
+                return;
+            }
+            setIsCalculating(true);
+            const result = await calculateDiscountsAction(cartData, campaign);
+            if (result.success && result.data) {
+                setDiscountResult({
+                    ...result.data,
+                    getLineItem: (saleItemId: string) =>
+                        result.data.lineItems.find((li: any) => li.saleItemId === saleItemId),
+                    getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
+                });
+            } else {
+                 setDiscountResult(initialDiscountResult);
+            }
+            setIsCalculating(false);
+        }, 300), // 300ms debounce
+        []
+    );
+
+    useEffect(() => {
+        debouncedCalculate(cartWithUnits, activeCampaign);
+        return () => {
+            debouncedCalculate.cancel(); // Cleanup on unmount or dependency change
+        };
+    }, [cartWithUnits, activeCampaign, debouncedCalculate]);
+
+
+  const handleTransactionComplete = useCallback(() => {
+    drawer.closeDrawer();
+    clearCart();
+    toast({
+      title: "Transaction Complete!",
+      description: "The cart has been cleared and a new transaction is ready.",
+    });
+  }, [drawer, toast]); // clearCart is stable
+
+
+  const openTransactionDrawer = useCallback(() => {
+    drawer.openDrawer({
+      title: 'Complete Transaction',
+      content: (
+        <TransactionDialogContent
+          cart={cart}
+          discountResult={discountResult}
+          transactionId={transactionId}
+          activeCampaign={activeCampaign}
+          onTransactionComplete={handleTransactionComplete}
+        />
+      ),
+      closeOnOverlayClick: false,
+      drawerClassName: "sm:max-w-4xl"
+    });
+  }, [drawer, cart, discountResult, transactionId, activeCampaign, handleTransactionComplete]);
+
+
+  const handleGlobalKeyDown = useCallback((event: KeyboardEvent) => {
+        const target = event.target as HTMLElement;
+
+        const isTyping =
+            target.tagName === 'INPUT' ||
+            target.tagName === 'TEXTAREA' ||
+            target.isContentEditable;
+        
+        const isDrawerOpen = !!document.querySelector('[data-state="open"]');
+
+        // Handle Ctrl+Enter for completing transaction *only if drawer is closed*
+        if (event.ctrlKey && event.key === 'Enter' && !isDrawerOpen) {
+            event.preventDefault();
+            if (cart.length > 0) {
+                openTransactionDrawer();
+            }
+            return;
         }
-        return item;
-      });
+        
+        const isInteracting =
+            target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
 
-      if (cartWithUnits.length === 0) {
-        setDiscountResult(initialDiscountResult);
-        return;
-      }
-      setIsCalculating(true);
-      const result = await calculateDiscountsAction(cartWithUnits, activeCampaign);
-      if (result.success && result.data) {
-        // We receive a plain object from the server action, not a class instance.
-        // We need to re-attach any methods our components rely on.
-        setDiscountResult({
-          ...result.data,
-          // Recreate the getLineItem method on the client
-          getLineItem: (saleItemId: string) => result.data.lineItems.find((li: any) => li.saleItemId === saleItemId),
-          // Recreate the getAppliedRulesSummary method on the client
-          getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
-        });
-      } else {
-        // toast({
-        //   variant: "destructive",
-        //   title: "Discount Error",
-        //   description: result.error,
-        // });
-        setDiscountResult(initialDiscountResult);
-      }
-      setIsCalculating(false);
-    };
-
-    recalculate();
-  }, [cart, activeCampaign]);
-
-
-  useEffect(() => {
-    const handleGlobalKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement;
-
-      const isTyping =
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable;
-
-      const isInteracting =
-        target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
-
-      if (isTyping || isInteracting) {
-        return;
-      }
-
-      const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
-
-      if (isPrintableKey) {
-        if (productSearchRef.current) {
-          productSearchRef.current.focusSearchInput();
+        if (isTyping || isInteracting) {
+            return;
         }
-      }
-    };
 
-    document.addEventListener('keydown', handleGlobalKeyDown);
+        const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
 
-    return () => {
-      document.removeEventListener('keydown', handleGlobalKeyDown);
-    };
-  }, []);
+        if (isPrintableKey) {
+            if (productSearchRef.current) {
+                productSearchRef.current.focusSearchInput();
+            }
+        }
+    }, [cart.length, openTransactionDrawer]);
+
+    useEffect(() => {
+        document.addEventListener('keydown', handleGlobalKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleGlobalKeyDown);
+        };
+    }, [handleGlobalKeyDown]);
+
 
   const availableProducts = useMemo(() => {
     const cartQuantities: { [batchId: string]: number } = {};
@@ -225,6 +267,11 @@ export default function MyNewEcommerceShop() {
         const originalStock = originalProduct?.stock || 0;
 
         if (newBaseQuantity > originalStock) {
+            toast({
+                variant: "destructive",
+                title: "Stock Limit Exceeded",
+                description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+            });
             return currentCart; // Return original cart without changes
         }
 
@@ -244,16 +291,13 @@ export default function MyNewEcommerceShop() {
     const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
     
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
+    const unitsData = useProductUnits(productBatch.product.units);
 
     if (existingItemIndex !== -1) {
         setCart(currentCart => currentCart.map((item, index) => {
             if (index === existingItemIndex) {
                 const newDisplayQuantity = item.displayQuantity + 1;
                 
-                const unitsData = typeof item.product.units === 'string' 
-                    ? JSON.parse(item.product.units) 
-                    : item.product.units;
-
                 const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
                 const selectedUnitDefinition = allUnits.find(u => u.name === item.displayUnit);
                 const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
@@ -264,6 +308,11 @@ export default function MyNewEcommerceShop() {
                 const originalStock = originalProduct?.stock || 0;
 
                 if (newBaseQuantity > originalStock) {
+                     toast({
+                        variant: "destructive",
+                        title: "Stock Limit Exceeded",
+                        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+                    });
                     return item;
                 }
                 
@@ -277,12 +326,13 @@ export default function MyNewEcommerceShop() {
         }));
     } else {
         if (1 > availableStock) {
+            toast({
+                variant: "destructive",
+                title: "Out of Stock",
+                description: "This product batch is currently out of stock.",
+            });
             return;
         }
-        
-        const unitsData = typeof productBatch.product.units === 'string' 
-          ? JSON.parse(productBatch.product.units) 
-          : productBatch.product.units;
 
         const newSaleItem: SaleItem = {
             ...productBatch,
@@ -297,10 +347,10 @@ export default function MyNewEcommerceShop() {
     }
 };
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCart([]);
     setTransactionId(createNewTransactionId());
-  };
+  }, []);
 
   const handleApplyCustomDiscount = (
     saleItemId: string,
@@ -337,35 +387,9 @@ export default function MyNewEcommerceShop() {
     });
   };
 
-
-  const handleTransactionComplete = () => {
-    drawer.closeDrawer();
-    clearCart();
-    toast({
-      title: "Transaction Complete!",
-      description: "The cart has been cleared and a new transaction is ready.",
-    });
-  };
-
-  const openTransactionDrawer = () => {
-    drawer.openDrawer({
-      title: 'Complete Transaction',
-      content: (
-        <TransactionDialogContent
-          cart={cart}
-          discountResult={discountResult}
-          transactionId={transactionId}
-          activeCampaign={activeCampaign}
-          onTransactionComplete={handleTransactionComplete}
-        />
-      ),
-      closeOnOverlayClick: false,
-      drawerClassName: "sm:max-w-4xl"
-    });
-  };
   
-  const originalTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const finalTotal = discountResult?.finalTotal || originalTotal;
+  const originalTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
+  const finalTotal = discountResult?.finalTotal ?? originalTotal;
 
   if (isLoading) {
     return (

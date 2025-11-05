@@ -33,29 +33,21 @@ export async function getCreditorGrnsAction() {
         _count: {
           select: { payments: true },
         },
+         payments: {
+          select: { amount: true }
+        }
       },
       orderBy: {
         grnDate: 'asc',
       },
     });
 
-    // Calculate total paid for each GRN
-    const grnsWithPaidAmount = await Promise.all(
-      creditorGrns.map(async (grn) => {
-        const paymentAggr = await prisma.purchasePayment.aggregate({
-          _sum: {
-            amount: true,
-          },
-          where: {
-            goodsReceivedNoteId: grn.id,
-          },
-        });
-        return {
-          ...grn,
-          totalPaid: paymentAggr._sum.amount || 0,
-        };
-      })
-    );
+    // Calculate total paid for each GRN on the server
+    const grnsWithPaidAmount = creditorGrns.map(grn => ({
+      ...grn,
+      totalPaid: grn.payments.reduce((sum, p) => sum + p.amount, 0),
+    }));
+
 
     return { success: true, data: grnsWithPaidAmount };
   } catch (error) {

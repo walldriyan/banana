@@ -1,0 +1,59 @@
+
+{
+    "groups": [
+        {
+            "label": "GENERAL",
+            "permission": null,
+            "items": [
+                { "href": "/dashboard", "icon": "LayoutDashboard", "label": "Dashboard", "permission": null }
+            ]
+        },
+        {
+            "label": "INVENTORY",
+            "permission": "products.view",
+            "items": [
+                { "href": "/dashboard/products", "icon": "Package", "label": "Products", "permission": "products.view" },
+                { "href": "/dashboard/purchases", "icon": "ShoppingCart", "label": "Purchases (GRN)", "permission": "purchases.view" },
+                { "href": "/dashboard/suppliers", "icon": "Building", "label": "Suppliers", "permission": "suppliers.view" }
+            ]
+        },
+        {
+            "label": "PEOPLE",
+            "permission": "customers.view",
+            "items": [
+                { "href": "/dashboard/customers", "icon": "Users", "label": "Customers", "permission": "customers.view" }
+            ]
+        },
+        {
+            "label": "FINANCE",
+            "permission": "finance.view",
+            "items": [
+                { "href": "/dashboard/credit", "icon": "CreditCard", "label": "Creditors", "permission": "credit.view" },
+                { "href": "/dashboard/debtors", "icon": "HandCoins", "label": "Debtors", "permission": "debtors.view" },
+                { "href": "/dashboard/finance", "icon": "TrendingUp", "label": "Income/Expenses", "permission": "finance.view" }
+            ]
+        },
+        {
+            "label": "REPORTS & PRINTING",
+            "permission": "reports.view",
+            "items": [
+                { "href": "/dashboard/reports", "icon": "Printer", "label": "Reports", "permission": "reports.view" }
+            ]
+        },
+        {
+            "label": "SETTINGS",
+            "permission": "settings.view",
+            "items": [
+                 { 
+                    "icon": "Settings", 
+                    "label": "Settings", 
+                    "permission": "settings.view",
+                    "subItems": [
+                        { "href": "/dashboard/company", "icon": "Briefcase", "label": "Company Profile", "permission": "company.manage" },
+                        { "href": "/dashboard/settings", "icon": "Settings", "label": "Application Settings", "permission": "settings.view" }
+                    ]
+                }
+            ]
+        }
+    ]
+}

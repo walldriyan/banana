@@ -22,6 +22,9 @@ export async function getDebtorTransactionsAction() {
         _count: {
           select: { salePayments: true },
         },
+         salePayments: {
+          select: { amount: true }
+        }
       },
       orderBy: {
         transactionDate: 'asc',
@@ -29,22 +32,10 @@ export async function getDebtorTransactionsAction() {
     });
 
     // Calculate total paid for each transaction
-    const transactionsWithPaidAmount = await Promise.all(
-      debtorTransactions.map(async (tx) => {
-        const paymentAggr = await prisma.salePayment.aggregate({
-          _sum: {
-            amount: true,
-          },
-          where: {
-            transactionId: tx.id,
-          },
-        });
-        return {
-          ...tx,
-          totalPaid: paymentAggr._sum.amount || 0,
-        };
-      })
-    );
+    const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
+      ...tx,
+      totalPaid: tx.salePayments.reduce((sum, p) => sum + p.amount, 0),
+    }));
 
     return { success: true, data: transactionsWithPaidAmount };
   } catch (error) {
