@@ -70,9 +70,11 @@ export function DashboardSidebar() {
                     >
                         {IconComponent && <IconComponent />}
                          {state === 'expanded' && (
-                            <span className="text-sm font-medium">{item.label}</span>
+                            <>
+                                <span className="flex-1 text-left text-sm font-medium">{item.label}</span>
+                                <ChevronRight className="ml-auto h-4 w-4" />
+                            </>
                          )}
-                        {IconComponent && state === 'expanded' && <ChevronRight className="ml-auto h-4 w-4" />}
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="right" align="start" sideOffset={10}>
