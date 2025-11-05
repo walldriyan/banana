@@ -1,21 +1,29 @@
 // src/components/POSUI/OrderSummary.tsx
 import React from 'react';
-// import type { DiscountResult } from '@/discount-engine/core/result';
+import { Button } from '../ui/button';
+import { SlidersHorizontal } from 'lucide-react';
 
 interface OrderSummaryProps {
   originalTotal: number;
   finalTotal: number;
   discountResult: any; // Using any because it's a plain object from server, not a class instance
+  onOpenAnalysis: () => void;
 }
 
-const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, discountResult }) => {
+const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, discountResult, onOpenAnalysis }) => {
   const appliedRulesSummary = (discountResult && typeof discountResult.getAppliedRulesSummary === 'function')
     ? discountResult.getAppliedRulesSummary()
     : [];
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-foreground">Order Summary</h3>
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-foreground">Order Summary</h3>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onOpenAnalysis}>
+            <SlidersHorizontal className="h-4 w-4" />
+            <span className="sr-only">Open Discount Analysis</span>
+        </Button>
+      </div>
       <div className="text-sm space-y-2">
         <div className="flex justify-between">
           <span className="text-muted-foreground">Original Total:</span>

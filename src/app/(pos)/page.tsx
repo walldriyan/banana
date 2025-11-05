@@ -67,7 +67,6 @@ export default function MyNewEcommerceShop() {
 
   const [isCalculating, setIsCalculating] = useState(false);
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
-  const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
 
   const user = useSessionStore(state => state.user);
 
@@ -466,6 +465,21 @@ export default function MyNewEcommerceShop() {
     });
   };
 
+  const openAnalysisDrawer = useCallback(() => {
+    drawer.openDrawer({
+      title: 'Discount Behavior Analysis',
+      content: (
+         <DiscountBehaviorPanel
+            isCalculating={isCalculating}
+            discountResult={discountResult}
+            activeCampaign={activeCampaign}
+            transactionId={transactionId}
+        />
+      ),
+      drawerClassName: 'sm:max-w-lg',
+    });
+  }, [drawer, isCalculating, discountResult, activeCampaign, transactionId]);
+
   
   const originalTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
   const finalTotal = discountResult?.finalTotal ?? originalTotal;
@@ -588,6 +602,7 @@ export default function MyNewEcommerceShop() {
                                 originalTotal={originalTotal}
                                 finalTotal={finalTotal}
                                 discountResult={discountResult}
+                                onOpenAnalysis={openAnalysisDrawer}
                             />
                             )}
 
@@ -614,42 +629,6 @@ export default function MyNewEcommerceShop() {
                             </AuthorizationGuard>
                         </div>
                     </div>
-
-                    <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg mt-auto">
-                        <Switch 
-                        id="analysis-mode" 
-                        checked={showAnalysisPanel}
-                        onCheckedChange={setShowAnalysisPanel}
-                        />
-                        <Label htmlFor="analysis-mode" className="flex items-center gap-2">
-                        <SlidersHorizontal className="h-4 w-4" />
-                        Show Discount Analysis
-                        </Label>
-                    </div>
-                    
-                    {showAnalysisPanel && (
-                    <>
-                        <DiscountBehaviorPanel
-                            isCalculating={isCalculating}
-                            discountResult={discountResult}
-                            activeCampaign={activeCampaign}
-                            transactionId={transactionId}
-                        />
-
-                        {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
-                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
-                            <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
-                            <div className="space-y-1 text-blue-700">
-                            <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
-                            <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
-                            <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
-                            <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
-                            <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
-                            </div>
-                        </div>
-                        )}
-                    </>
-                    )}
                 </CardContent>
             </Card>
           </main>
