@@ -19,13 +19,13 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
     <div className="w-full">
       <h2 className="text-2xl font-semibold text-foreground mb-5">Shopping Cart</h2>
       
-      <div className="w-full">
+      <div className="rounded-lg border">
         {cart.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">Your cart is empty.</p>
         ) : (
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/50">
+              <TableRow className="bg-muted hover:bg-muted">
                 <TableHead className="w-[40%]">Product</TableHead>
                 <TableHead className="w-[25%]">Qty</TableHead>
                 <TableHead>Price</TableHead>
