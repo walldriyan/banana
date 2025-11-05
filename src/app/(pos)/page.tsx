@@ -579,7 +579,7 @@ export default function MyNewEcommerceShop() {
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow overflow-hidden">
                         <div className="lg:col-span-2 flex flex-col">
                             <ShoppingCart
                                 cart={cart}
