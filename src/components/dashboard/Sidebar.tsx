@@ -64,13 +64,17 @@ export function DashboardSidebar() {
                      <SidebarMenuButton
                         isActive={isActive}
                         tooltip={item.label}
-                        className="justify-start"
+                        className="w-full justify-start"
                         variant="ghost"
                         size={iconSize}
                     >
                         {IconComponent && <IconComponent />}
-                        <span className="text-sm font-medium">{item.label}</span>
-                         {state === 'expanded' && <ChevronRight className="ml-auto h-4 w-4" />}
+                        {state === 'expanded' && (
+                            <>
+                                <span className="text-sm font-medium">{item.label}</span>
+                                <ChevronRight className="ml-auto h-4 w-4" />
+                            </>
+                        )}
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent side="right" align="start" sideOffset={10}>
@@ -90,7 +94,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton
                         isActive={isActive}
                         tooltip={item.label}
-                        className="justify-start"
+                        className="w-full justify-start"
                         variant="ghost"
                         size={iconSize}
                     >
@@ -139,7 +143,7 @@ export function DashboardSidebar() {
                     <SidebarMenuButton
                         isActive={pathname === '/'}
                         tooltip="POS View"
-                        className="justify-start"
+                        className="w-full justify-start"
                         variant="ghost"
                         size={iconSize}
                     >
