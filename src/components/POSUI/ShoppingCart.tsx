@@ -23,9 +23,9 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
         {cart.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">Your cart is empty.</p>
         ) : (
-          <div className="max-h-[50vh] overflow-y-auto">
+          <div className="w-full">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10">
                 <TableRow className="bg-muted hover:bg-muted">
                   <TableHead className="w-[40%]">Product</TableHead>
                   <TableHead className="w-[25%]">Qty</TableHead>
@@ -34,19 +34,23 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
                   <TableHead className="text-right">Total</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
-                {cart.map((item) => (
-                  <CartTableRow
-                    key={item.saleItemId}
-                    item={item}
-                    isCalculating={isCalculating}
-                    discountResult={discountResult}
-                    onUpdateQuantity={onUpdateQuantity}
-                    onOverrideDiscount={onOverrideDiscount}
-                  />
-                ))}
-              </TableBody>
             </Table>
+            <div className="max-h-[calc(50vh-48px)] overflow-y-auto">
+              <Table>
+                <TableBody>
+                  {cart.map((item) => (
+                    <CartTableRow
+                      key={item.saleItemId}
+                      item={item}
+                      isCalculating={isCalculating}
+                      discountResult={discountResult}
+                      onUpdateQuantity={onUpdateQuantity}
+                      onOverrideDiscount={onOverrideDiscount}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </div>
