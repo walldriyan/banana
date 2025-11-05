@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: transparent;
+    --background: 0 0% 100%;
     --foreground: 282 28% 15%;
     --card: 0 0% 100%;
     --card-foreground: 282 28% 15%;
@@ -38,31 +38,32 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 10%;
---foreground: 0 0% 100%;
---card: 0 0% 5%;
---card-foreground: 0 0% 100%;
---popover: 0 0% 10%;
---popover-foreground: 0 0% 100%;
---primary: 207 89% 47%;
---primary-foreground: 0 0% 100%;
---secondary: 0 0% 16%;
---secondary-foreground: 0 0% 100%;
---muted: 0 0% 16%;
---muted-foreground: 0 0% 69%;
---accent: 207 90% 54%;
---accent-foreground: 0 0% 100%;
---destructive: 0 63% 31%;
---destructive-foreground: 0 0% 100%;
---border: 0 0% 20%;
---input: 0 0% 20%;
---ring: 207 89% 47%;
---chart-1: 207 89% 47%;
---chart-2: 207 70% 60%;
---chart-3: 207 60% 70%;
---chart-4: 207 50% 80%;
---chart-5: 207 40% 90%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 207 89% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 69%;
+    --accent: 207 90% 54%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 207 89% 47%;
+    --chart-1: 207 89% 47%;
+    --chart-2: 207 70% 60%;
+    --chart-3: 207 60% 70%;
+    --chart-4: 207 50% 80%;
+    --chart-5: 207 40% 90%;
     --sidebar-background: 0 0% 16%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 207 89% 47%;
@@ -78,6 +79,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -89,17 +91,18 @@
       size: auto;
       margin: 5px;
     }
-    
+
     body {
-        margin: 0;
-        padding: 0;
+      margin: 0;
+      padding: 0;
     }
 
     body * {
       visibility: hidden;
     }
 
-    .printable-area, .printable-area * {
+    .printable-area,
+    .printable-area * {
       visibility: visible;
     }
 
