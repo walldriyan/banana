@@ -42,7 +42,6 @@ export function LogoutButton() {
             className="w-full justify-start text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={() => signOut({ callbackUrl: '/login' })}
         >
-            <LogOut className="mr-2 h-4 w-4" />
             <span className="text-sm font-medium">Logout</span>
         </Button>
     )
