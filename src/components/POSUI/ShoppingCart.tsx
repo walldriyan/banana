@@ -19,7 +19,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
     <div className="w-full">
       <h2 className="text-2xl font-semibold text-foreground mb-5">Shopping Cart</h2>
       
-      <div className="rounded-lg border">
+      <div className="rounded-lg border overflow-hidden">
         {cart.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">Your cart is empty.</p>
         ) : (
