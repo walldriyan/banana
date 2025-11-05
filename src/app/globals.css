@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 0 10% 100%;
     --foreground: 282 28% 15%;
-    --card: 0 0% 100%;
+    --card: 10 20% 100%;
     --card-foreground: 282 28% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 282 28% 15%;
@@ -41,40 +41,64 @@
   }
 
   .dark {
-    --background: 0 0% 10%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 100%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 207 89% 47%;
+    /* 🩶 මුළු UI එකේ පසුබිම - deep charcoal gray */
+    --background: 0 0% 11%; /* #212121 වගේ, මෘදු අඳුරු look එකක් */
+    --foreground: 0 0% 90%; /* #F2F2F2 - අකුරු පැහැදිලිව දක්වන්න */
+  
+    /* 🪟 Card / Panel / Table section */
+    --card: 0 0% 13%; /* #2E2E2E - box එකේ අඳුරු bg එක */
+    --card-foreground: 0 0% 95%;
+  
+    /* 🧭 Popovers / tooltips වගේ overlays */
+    --popover: 0 0% 18%;
+    --popover-foreground: 0 0% 98%;
+  
+    /* 🔵 Accent blue color (header එකේ වගේ) */
+    --primary: 217 89% 56%; /* #1E90FF - Dodger Blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 16%;
-    --secondary-foreground: 0 0% 100%;
+  
+    /* 🔹 secondary grayish surface areas */
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 95%;
+  
+    /* muted / subtle text or background */
     --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 69%;
-    --accent: 207 90% 54%;
+    --muted-foreground: 0 0% 70%;
+  
+    /* hover blue tone */
+    --accent: 217 100% 63%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 63% 31%;
+  
+    /* 🔴 destructive (delete/error) */
+    --destructive: 0 72% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 207 89% 47%;
-    --chart-1: 207 89% 47%;
-    --chart-2: 207 70% 60%;
-    --chart-3: 207 60% 70%;
-    --chart-4: 207 50% 80%;
-    --chart-5: 207 40% 90%;
-    --sidebar-background: 0 0% 16%;
-    --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 207 89% 47%;
+  
+    /* 🩳 borders / outlines */
+    --border: 0 0% 18%;
+    --input: 0 0% 15%;
+    --ring: 217 89% 56%;
+  
+    /* 📊 charts (blue gradient tones) */
+    --chart-1: 217 89% 56%;
+    --chart-2: 217 80% 62%;
+    --chart-3: 217 70% 70%;
+    --chart-4: 217 60% 78%;
+    --chart-5: 217 50% 86%;
+  
+    /* 🧱 Sidebar section */
+    --sidebar-background: 0 0% 13%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 217 89% 56%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 20%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 207 89% 47%;
+    --sidebar-border: 0 0% 25%;
+    --sidebar-ring: 217 89% 56%;
+  
+    /* dark mode scheme */
     color-scheme: dark;
   }
+  
 
   /* Prevent flash of unstyled content */
   html {
