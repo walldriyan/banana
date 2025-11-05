@@ -589,7 +589,7 @@ export default function MyNewEcommerceShop() {
                                 onOverrideDiscount={openCustomDiscountDrawer}
                                 />
                         </div>
-                        <div className="lg:col-span-1 space-y-6 flex flex-col  overflow-hidden h-[450px] p-5 relative bg-blue-300 ">
+                        <div className="lg:col-span-1 space-y-6 flex flex-col  overflow-hidden h-[450px] p-5 relative ">
                            <div className="flex-grow overflow-y-auto">
                             {isCalculating && cart.length > 0 ? (
                             <div className="space-y-4">
