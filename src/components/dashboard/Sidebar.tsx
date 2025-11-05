@@ -3,7 +3,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp } from 'lucide-react';
+import { 
+    Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, 
+    CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp 
+} from 'lucide-react';
 import {
   SidebarContent,
   SidebarMenu,
@@ -15,47 +18,37 @@ import {
   SidebarGroupLabel
 } from '@/components/ui/sidebar';
 import { AuthorizationGuard } from '../auth/AuthorizationGuard';
-import { LogoutButton } from '../auth/LogoutButton';
-import { Button } from '../ui/button';
-import { signOut } from 'next-auth/react';
 import { useSidebar } from '../ui/sidebar';
+import menuConfig from '@/lib/sidebar-menu.json';
 
-const generalItems = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', permission: null },
-];
+// A map to resolve icon names from the JSON config to actual components
+const iconMap = {
+    LayoutDashboard,
+    Package,
+    ShoppingCart,
+    Building,
+    Users,
+    CreditCard,
+    HandCoins,
+    TrendingUp,
+    Printer,
+    Briefcase,
+    Settings,
+    Home,
+    LogOut,
+};
 
-const inventoryItems = [
-  { href: '/dashboard/products', icon: Package, label: 'Products', permission: 'products.view' },
-  { href: '/dashboard/purchases', icon: ShoppingCart, label: 'Purchases (GRN)', permission: 'purchases.view' },
-  { href: '/dashboard/suppliers', icon: Building, label: 'Suppliers', permission: 'suppliers.view' },
-];
-
-const peopleItems = [
-    { href: '/dashboard/customers', icon: Users, label: 'Customers', permission: 'customers.view' },
-]
-
-const financeItems = [
-  { href: '/dashboard/credit', icon: CreditCard, label: 'Creditors', permission: 'credit.view' },
-  { href: '/dashboard/debtors', icon: HandCoins, label: 'Debtors', permission: 'debtors.view' },
-  { href: '/dashboard/finance', icon: TrendingUp, label: 'Income/Expenses', permission: 'finance.view' },
-];
-
-const reportItems = [
-    { href: '/dashboard/reports', icon: Printer, label: 'Reports', permission: 'reports.view' },
-]
-
-const settingsItems = [
-  { href: '/dashboard/company', icon: Briefcase, label: 'Company', permission: 'company.manage' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Application Settings', permission: 'settings.view' },
-]
+type IconName = keyof typeof iconMap;
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { state } = useSidebar();
-    const iconSize = state === 'collapsed' ? 'lg' : 'default';
+  const iconSize = state === 'collapsed' ? 'lg' : 'default';
 
-  const renderLink = (item: typeof generalItems[0]) => {
+  const renderLink = (item: typeof menuConfig.groups[0]['items'][0]) => {
       const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
+      const IconComponent = iconMap[item.icon as IconName];
+      
       const linkContent = (
         <SidebarMenuItem key={item.href}>
             <Link href={item.href} passHref>
@@ -66,7 +59,7 @@ export function DashboardSidebar() {
                     variant="ghost"
                     size={iconSize}
                 >
-                    <item.icon />
+                    {IconComponent && <IconComponent />}
                     <span>{item.label}</span>
                 </SidebarMenuButton>
             </Link>
@@ -82,6 +75,11 @@ export function DashboardSidebar() {
       }
       return linkContent;
   }
+  
+  const footerItems = [
+    { href: '/', icon: 'Home', label: 'POS View', permission: 'pos.view' },
+    { href: '/login', icon: 'LogOut', label: 'Logout', permission: null, isLogout: true }
+  ];
 
   return (
     <>
@@ -92,58 +90,45 @@ export function DashboardSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-            <SidebarGroupLabel>GENERAL</SidebarGroupLabel>
-            <SidebarMenu>{generalItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-            <SidebarGroupLabel>INVENTORY</SidebarGroupLabel>
-            <SidebarMenu>{inventoryItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-            <SidebarGroupLabel>PEOPLE</SidebarGroupLabel>
-            <SidebarMenu>{peopleItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-        
-        <SidebarGroup>
-            <SidebarGroupLabel>FINANCE</SidebarGroupLabel>
-            <SidebarMenu>{financeItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarGroup>
-            <SidebarGroupLabel>REPORTS & PRINTING</SidebarGroupLabel>
-            <SidebarMenu>{reportItems.map(renderLink)}</SidebarMenu>
-        </SidebarGroup>
-
-        <AuthorizationGuard permissionKey='settings.view'>
-             <SidebarGroup>
-                <SidebarGroupLabel>SETTINGS</SidebarGroupLabel>
-                <SidebarMenu>{settingsItems.map(renderLink)}</SidebarMenu>
-            </SidebarGroup>
-        </AuthorizationGuard>
+        {menuConfig.groups.map((group) => (
+            <AuthorizationGuard key={group.label} permissionKey={group.permission || ''}>
+                <SidebarGroup>
+                    <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                    <SidebarMenu>{group.items.map(renderLink)}</SidebarMenu>
+                </SidebarGroup>
+            </AuthorizationGuard>
+        ))}
       </SidebarContent>
 
       <SidebarFooter>
         <SidebarGroup>
           <SidebarMenu>
-            <AuthorizationGuard permissionKey='pos.view'>
-              <SidebarMenuItem>
-                  <Link href="/" passHref>
-                    <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Point of Sale" size={iconSize}>
-                      <Home />
-                      <span>POS View</span>
-                    </SidebarMenuButton>
-                  </Link>
-              </SidebarMenuItem>
-            </AuthorizationGuard>
-            <SidebarMenuItem>
-                <SidebarMenuButton variant="ghost" className="w-full justify-start" tooltip="Logout" onClick={() => signOut({ callbackUrl: '/login' })} size={iconSize}>
-                  <LogOut />
-                  <span>Logout</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
+            {footerItems.map(item => {
+              const IconComponent = iconMap[item.icon as IconName];
+              const button = (
+                 <SidebarMenuButton 
+                    variant="ghost" 
+                    className="w-full justify-start" 
+                    tooltip={item.label} 
+                    size={iconSize}
+                    onClick={item.isLogout ? () => (window.location.href = '/login') : undefined}
+                  >
+                    {IconComponent && <IconComponent />}
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+              );
+
+              const content = item.isLogout ? button : <Link href={item.href} passHref>{button}</Link>;
+              
+              if (item.permission) {
+                  return (
+                    <AuthorizationGuard key={item.href} permissionKey={item.permission}>
+                      <SidebarMenuItem>{content}</SidebarMenuItem>
+                    </AuthorizationGuard>
+                  )
+              }
+              return <SidebarMenuItem key={item.href}>{content}</SidebarMenuItem>;
+            })}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarFooter>
