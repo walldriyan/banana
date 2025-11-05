@@ -44,8 +44,15 @@
             "label": "SETTINGS",
             "permission": "settings.view",
             "items": [
-                { "href": "/dashboard/company", "icon": "Briefcase", "label": "Company", "permission": "company.manage" },
-                { "href": "/dashboard/settings", "icon": "Settings", "label": "Application Settings", "permission": "settings.view" }
+                 { 
+                    "icon": "Settings", 
+                    "label": "Settings", 
+                    "permission": "settings.view",
+                    "subItems": [
+                        { "href": "/dashboard/company", "icon": "Briefcase", "label": "Company Profile", "permission": "company.manage" },
+                        { "href": "/dashboard/settings", "icon": "Settings", "label": "Application Settings", "permission": "settings.view" }
+                    ]
+                }
             ]
         }
     ]

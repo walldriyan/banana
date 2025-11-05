@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
     Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, 
-    CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp 
+    CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp, ChevronRight
 } from 'lucide-react';
 import {
   SidebarContent,
@@ -19,6 +19,12 @@ import { AuthorizationGuard } from '../auth/AuthorizationGuard';
 import { useSidebar } from '../ui/sidebar';
 import menuConfig from '@/lib/sidebar-menu.json';
 import { LogoutButton } from '../auth/LogoutButton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // A map to resolve icon names from the JSON config to actual components
 const iconMap = {
@@ -38,36 +44,67 @@ const iconMap = {
 };
 
 type IconName = keyof typeof iconMap;
+type MenuItem = typeof menuConfig.groups[0]['items'][0] & { subItems?: typeof menuConfig.groups[0]['items'] };
+
 
 export function DashboardSidebar() {
   const pathname = usePathname();
   const { state } = useSidebar();
   const iconSize = state === 'collapsed' ? 'lg' : 'default';
 
-  const renderLink = (item: typeof menuConfig.groups[0]['items'][0]) => {
-      const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href);
+  const renderLink = (item: MenuItem) => {
+      const isActive = item.href ? (item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)) : false;
       const IconComponent = iconMap[item.icon as IconName];
       
       const linkContent = (
-        <SidebarMenuItem key={item.href}>
-            <Link href={item.href} passHref>
-                <SidebarMenuButton
-                    isActive={isActive}
-                    tooltip={item.label}
-                    className="justify-start"
-                    variant="ghost"
-                    size={iconSize}
-                >
-                    {IconComponent && <IconComponent />}
-                    <span className="text-sm font-medium">{item.label}</span>
-                </SidebarMenuButton>
-            </Link>
+        <SidebarMenuItem key={item.href || item.label}>
+             {item.subItems ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                     <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={item.label}
+                        className="justify-start"
+                        variant="ghost"
+                        size={iconSize}
+                    >
+                        {IconComponent && <IconComponent />}
+                        <span className="text-sm font-medium">{item.label}</span>
+                         {state === 'expanded' && <ChevronRight className="ml-auto h-4 w-4" />}
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" sideOffset={10}>
+                    {item.subItems.map((subItem) => (
+                       <AuthorizationGuard key={subItem.href} permissionKey={subItem.permission || ''}>
+                          <DropdownMenuItem asChild>
+                              <Link href={subItem.href} passHref>
+                                {subItem.label}
+                              </Link>
+                          </DropdownMenuItem>
+                       </AuthorizationGuard>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link href={item.href || '#'} passHref>
+                    <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={item.label}
+                        className="justify-start"
+                        variant="ghost"
+                        size={iconSize}
+                    >
+                        {IconComponent && <IconComponent />}
+                        <span className="text-sm font-medium">{item.label}</span>
+                    </SidebarMenuButton>
+                </Link>
+              )}
         </SidebarMenuItem>
       );
 
       if (item.permission) {
         return (
-            <AuthorizationGuard key={item.href} permissionKey={item.permission}>
+            <AuthorizationGuard key={item.href || item.label} permissionKey={item.permission}>
                 {linkContent}
             </AuthorizationGuard>
         )
@@ -87,8 +124,8 @@ export function DashboardSidebar() {
         <SidebarMenu>
         {menuConfig.groups.flatMap(group => 
             group.items.map(item => (
-                <AuthorizationGuard key={item.href} permissionKey={item.permission || ''}>
-                   {renderLink(item)}
+                <AuthorizationGuard key={item.href || item.label} permissionKey={item.permission || ''}>
+                   {renderLink(item as MenuItem)}
                 </AuthorizationGuard>
             ))
         )}
