@@ -127,7 +127,6 @@ export function DashboardSidebar() {
                 size={iconSize}
             >
                 <Package />
-                <span className="text-lg font-bold">My Store</span>
             </SidebarMenuButton>
         </Link>
       </SidebarHeader>
