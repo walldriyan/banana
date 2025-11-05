@@ -543,14 +543,14 @@ export default function MyNewEcommerceShop() {
             </div>
         </div>
 
-        <div className="flex-grow overflow-y-auto">
+        <div className="flex flex-col flex-grow">
           <header className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 lg:p-8 border-b">
             <div className="flex flex-col">
                 <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
             </div>
           </header>
 
-          <main className="p-4 sm:p-6 lg:p-8">
+          <main className="flex-grow p-4 sm:p-6 lg:p-8 overflow-y-auto">
             <Card className="w-full">
                 <CardContent className="p-4 sm:p-6 space-y-6">
                     <div className="flex items-start gap-4">
