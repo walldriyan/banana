@@ -544,7 +544,7 @@ export default function MyNewEcommerceShop() {
         </aside>
       </TooltipProvider>
 
-      <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
          <div className="absolute top-6 right-6 z-20">
             <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
                 <Avatar>
