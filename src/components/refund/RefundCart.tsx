@@ -94,7 +94,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
       {cart.length > 0 && discountResult && (
         <>
           <Separator className="mt-auto" />
-          <CardFooter className="p-4 bg-muted">
+          <CardFooter className="p-4">
             <div className="w-full space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Subtotal:</span>
