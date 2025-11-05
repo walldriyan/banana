@@ -25,7 +25,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/50">
                 <TableHead className="w-[40%]">Product</TableHead>
                 <TableHead className="w-[25%]">Qty</TableHead>
                 <TableHead>Price</TableHead>
