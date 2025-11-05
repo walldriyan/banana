@@ -26,20 +26,34 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                const theme = localStorage.getItem('theme') || 'system';
+                if (theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className={cn('min-h-screen bg-background font-sans antialiased', inter.variable)}>
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
         >
-            <AuthProvider>
+          <AuthProvider>
             <GlobalDrawerProvider>
-                {children}
-                <GlobalDrawer />
-                <Toaster />
+              {children}
+              <GlobalDrawer />
+              <Toaster />
             </GlobalDrawerProvider>
-            </AuthProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
