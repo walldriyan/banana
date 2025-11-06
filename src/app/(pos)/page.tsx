@@ -508,82 +508,91 @@ export default function MyNewEcommerceShop() {
   const userInitials = user?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
 
   return (
-    <div className="flex min-h-screen overflow-hidden bg-background text-foreground font-sans">
-      <TooltipProvider>
-        <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background">
-          <AuthorizationGuard permissionKey='history.view'>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/history" passHref>
-                  <Button variant="ghost" size="icon">
-                    <History className="h-5 w-5" />
-                    <span className="sr-only">View History</span>
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">View History</TooltipContent>
-            </Tooltip>
-          </AuthorizationGuard>
-          <AuthorizationGuard permissionKey='products.view'>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link href="/dashboard/products" passHref>
-                  <Button variant="ghost" size="icon">
-                    <LayoutDashboard className="h-5 w-5" />
-                    <span className="sr-only">Dashboard</span>
-                  </Button>
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">Dashboard</TooltipContent>
-            </Tooltip>
-          </AuthorizationGuard>
-          <div className="mt-auto flex flex-col items-center gap-4">
-            <ThemeToggle />
-            <LogoutButton />
-          </div>
-        </aside>
-      </TooltipProvider>
-
-      <div className="flex-1 flex flex-col overflow-hidden relative">
-        <div className="absolute top-6 right-6 z-20">
-          <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
-            <Avatar>
-              <AvatarFallback>{userInitials}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-semibold">{user?.name || 'User'}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
-            </div>
+    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
+    {/* Sidebar */}
+    <TooltipProvider>
+      <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background flex-shrink-0">
+        <AuthorizationGuard permissionKey="history.view">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/history" passHref>
+                <Button variant="ghost" size="icon">
+                  <History className="h-5 w-5" />
+                  <span className="sr-only">View History</span>
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">View History</TooltipContent>
+          </Tooltip>
+        </AuthorizationGuard>
+  
+        <AuthorizationGuard permissionKey="products.view">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href="/dashboard/products" passHref>
+                <Button variant="ghost" size="icon">
+                  <LayoutDashboard className="h-5 w-5" />
+                  <span className="sr-only">Dashboard</span>
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">Dashboard</TooltipContent>
+          </Tooltip>
+        </AuthorizationGuard>
+  
+        <div className="mt-auto flex flex-col items-center gap-4">
+          <ThemeToggle />
+          <LogoutButton />
+        </div>
+      </aside>
+    </TooltipProvider>
+  
+    {/* MAIN CONTENT AREA */}
+    <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      {/* Header Avatar */}
+      <div className="absolute top-6 right-6 z-20">
+        <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
+          <Avatar>
+            <AvatarFallback>{userInitials}</AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="text-sm font-semibold">{user?.name || 'User'}</p>
+            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
           </div>
         </div>
-
-        <main className="flex-grow pt-2  flex-grow flex flex-col px-6 pb-2  p-3">
-          <Card className="w-full  flex flex-col flex-grow   p-3 ">
-            <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col  p-3 h-[125px]  overflow-hidden">
-              <div className="flex items-start gap-4 ">
-                <div className="flex-grow">
-                  <SearchableProductInput
-                    ref={productSearchRef}
-                    products={availableProducts}
-                    onProductSelect={addToCart}
-                  />
-                </div>
-                <div className="w-64">
-                  <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
-                    <CampaignSelector
-                      activeCampaign={activeCampaign}
-                      allCampaigns={allCampaigns}
-                      onCampaignChange={setActiveCampaign}
-                    />
-                  </AuthorizationGuard>
-                </div>
+      </div>
+  
+      {/* MAIN */}
+      <main className="flex flex-1 px-4 py-2 overflow-hidden">
+        <Card className="flex flex-col w-full shadow-md overflow-hidden">
+          <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 overflow-hidden">
+  
+            {/* 🔍 Search Row */}
+            <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
+              <div className="flex-grow min-w-0">
+                <SearchableProductInput
+                  ref={productSearchRef}
+                  products={availableProducts}
+                  onProductSelect={addToCart}
+                />
               </div>
-
-              <div className="flex flex-col lg:flex-row gap-6 xs:min-h-[400px] xs:overflow-y-auto xs:bg-green-600 xs:overflow-y-auto flex-grow bg-green-700 md:bg-green-700 sm:bg-green-900 p-3 lg:overflow-hidden md:overflow-y-auto sm:overflow-y-auto">
-
-              <div className="flex-grow flex flex-col bg-gray-500 xs:min-h-[200px] xs:max-h-[500px] xs:overflow-y-auto xs:bg-blue-800 md:bg-blue-500 p-3 overflow-y-auto min-h-0">
-
-
+              <div className="w-full sm:w-64 flex-shrink-0">
+                <AuthorizationGuard permissionKey="pos.view">
+                  <CampaignSelector
+                    activeCampaign={activeCampaign}
+                    allCampaigns={allCampaigns}
+                    onCampaignChange={setActiveCampaign}
+                  />
+                </AuthorizationGuard>
+              </div>
+            </div>
+  
+            {/* 🧩 Main Grid Area */}
+            <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0 overflow-hidden">
+  
+              {/* 🛒 Left - Cart */}
+              <div className="flex flex-col flex-1 min-w-0 bg-gray-500 rounded-lg overflow-hidden">
+                <div className="p-3 h-full overflow-y-auto">
                   <ShoppingCart
                     cart={cart}
                     isCalculating={isCalculating}
@@ -592,10 +601,12 @@ export default function MyNewEcommerceShop() {
                     onOverrideDiscount={openCustomDiscountDrawer}
                   />
                 </div>
-
-
-                <div className="lg:col-span-1 space-y-3 flex flex-col overflow-hidden lg:w-[28%]  bg-pink-900  p-5 relative">
-                  <div className="flex-grow overflow-y-auto">
+              </div>
+  
+              {/* 📊 Right - Summary */}
+              <div className="flex flex-col lg:w-[28%] flex-shrink-0 bg-pink-900 rounded-lg overflow-hidden">
+                <div className="flex flex-col h-full p-5">
+                  <div className="flex-1 overflow-y-auto min-h-0">
                     {isCalculating && cart.length > 0 ? (
                       <div className="space-y-4">
                         <Skeleton className="h-6 w-1/3 mb-2" />
@@ -612,24 +623,29 @@ export default function MyNewEcommerceShop() {
                       />
                     )}
                   </div>
-
-                  <AuthorizationGuard permissionKey='pos.create.transaction'>
-                    <div className="flex flex-col gap-3 mt-auto xs:min-h-[400px] xs:bg-pink-400">
-                      <div className="mt-auto pt-4 border-t-2 border-border flex justify-between items-baseline">
-                        <span className="text-lg font-semibold text-foreground">Final Total</span>
-                        <span className="text-3xl font-bold text-primary">Rs. {finalTotal.toFixed(2)}</span>
+  
+                  {/* 🧾 Bottom Buttons */}
+                  <AuthorizationGuard permissionKey="pos.create.transaction">
+                    <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border flex-shrink-0">
+                      <div className="flex justify-between items-baseline">
+                        <span className="text-lg font-semibold">Final Total</span>
+                        <span className="text-3xl font-bold text-primary">
+                          Rs. {finalTotal.toFixed(2)}
+                        </span>
                       </div>
+  
                       {isCalculating ? (
                         <Skeleton className="h-12 w-full" />
                       ) : (
                         <button
                           onClick={openTransactionDrawer}
                           disabled={cart.length === 0}
-                          className=" w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/30 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                          className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/30 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
                         >
                           Complete Transaction
                         </button>
                       )}
+  
                       <button
                         onClick={clearCart}
                         className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
@@ -640,10 +656,11 @@ export default function MyNewEcommerceShop() {
                   </AuthorizationGuard>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
+            </div>
+          </CardContent>
+        </Card>
+      </main>
     </div>
+  </div>
   );
 }
