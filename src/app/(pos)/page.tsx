@@ -26,7 +26,6 @@ import { getProductBatchesAction } from '@/lib/actions/product.actions';
 import { getDiscountSetsAction } from '@/lib/actions/discount.actions';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import OrderSummary from '@/components/POSUI/OrderSummary';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -47,6 +46,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import OrderSummary from '@/components/POSUI/OrderSummary';
 
 
 const initialDiscountResult = {
@@ -337,25 +337,22 @@ export default function MyNewEcommerceShop() {
     const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
 
     const newBaseQuantity = newDisplayQuantity * conversionFactor;
-
     const originalProduct = products.find(p => p.id === currentItem.id);
     const originalStock = originalProduct?.stock || 0;
 
     if (newBaseQuantity > originalStock) {
-      toast({
-        variant: "destructive",
-        title: "Stock Limit Exceeded",
-        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-      });
-      return; // Exit without changing state
+        toast({
+            variant: "destructive",
+            title: "Stock Limit Exceeded",
+            description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+        });
+        return;
     }
 
     setCart(currentCart => {
-      // Find the index again inside the updater function
-      const idx = currentCart.findIndex(item => item.saleItemId === saleItemId);
-      if (idx === -1) return currentCart;
-
       const updatedCart = [...currentCart];
+      const idx = updatedCart.findIndex(item => item.saleItemId === saleItemId);
+      if (idx === -1) return currentCart;
 
       if (newDisplayQuantity <= 0) {
         return updatedCart.filter(item => item.saleItemId !== saleItemId);
@@ -373,21 +370,16 @@ export default function MyNewEcommerceShop() {
 
 
   const addToCart = (productBatch: ProductBatch) => {
-    const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
     const unitsData = parseUnits(productBatch.product.units);
     const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
       const currentItem = cart[existingItemIndex];
       const newDisplayQuantity = currentItem.displayQuantity + 1;
-
       const selectedUnitDefinition = allUnits.find(u => u.name === currentItem.displayUnit);
       const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-
       const newBaseQuantity = newDisplayQuantity * conversionFactor;
-
       const originalProduct = products.find(p => p.id === currentItem.id);
       const originalStock = originalProduct?.stock || 0;
 
@@ -410,8 +402,8 @@ export default function MyNewEcommerceShop() {
         }
         return item;
       }));
-
     } else {
+      const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
       if (1 > availableStock) {
         toast({
           variant: "destructive",
@@ -665,24 +657,19 @@ export default function MyNewEcommerceShop() {
 
                     {/* 🧾 Bottom Buttons */}
                     <AuthorizationGuard permissionKey="pos.create.transaction">
-                      <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-border rounded-lg flex-shrink-0">
-
+                      <div className="mt-auto pt-4 border-t border-border rounded-lg flex-shrink-0">
                         <div className="  bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
                           <span className="text-foreground">Total All Discounts:</span>
                           <span className="text-green-600">
                             -Rs. {(discountResult.totalItemDiscount + discountResult.totalCartDiscount).toFixed(2)}
                           </span>
                         </div>
-
-                        <div className="flex justify-between items-baseline">
-                          <span className="text-lg font-semibold">Final Total</span>
-                          <span className="text-3xl font-bold text-primary">
-                            Rs. {finalTotal.toFixed(2)}
-                          </span>
+                        <div className="flex justify-between items-baseline py-2">
+                            <span className="text-lg font-semibold">Final Total</span>
+                            <span className="text-3xl font-bold text-primary">
+                                Rs. {finalTotal.toFixed(2)}
+                            </span>
                         </div>
-
-
-
                         {isCalculating ? (
                           <Skeleton className="h-12 w-full" />
                         ) : (

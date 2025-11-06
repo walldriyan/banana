@@ -17,6 +17,7 @@ import { saveTransactionToDb } from '@/lib/actions/database.actions';
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import { LanguageToggle } from '../LanguageToggle';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
@@ -276,6 +277,7 @@ export function TransactionDialogContent({
             </div>
             <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
                 <div className="flex items-center gap-4">
+                    <LanguageToggle />
                      <div className="flex items-center space-x-2">
                         <Switch
                             id="billing-mode"

@@ -7,6 +7,7 @@ import { GlobalDrawer } from '@/components/GlobalDrawer';
 import AuthProvider from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 // This forces the entire app to be dynamically rendered, which can help
 // with strange caching and fetch errors in certain environments.
@@ -60,11 +61,13 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <GlobalDrawerProvider>
-              {children}
-              <GlobalDrawer />
-              <Toaster />
-            </GlobalDrawerProvider>
+            <LanguageProvider>
+              <GlobalDrawerProvider>
+                {children}
+                <GlobalDrawer />
+                <Toaster />
+              </GlobalDrawerProvider>
+            </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
