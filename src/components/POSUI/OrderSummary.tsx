@@ -52,7 +52,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
               </div>
             ))}
           </div>
-          <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
+          <div className="fixed bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
             <span className="text-foreground">Total All Discounts:</span>
             <span className="text-green-600">
               -Rs. {(discountResult.totalItemDiscount + discountResult.totalCartDiscount).toFixed(2)}
