@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileText, Building, Landmark, Wallet, Banknote, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { GrnReceipt } from '@/components/credit/GrnReceipt';
+import { useLanguage, LanguageProvider } from '@/context/LanguageContext';
 
 
 export type CreditorGrn = GoodsReceivedNote & {
@@ -70,6 +71,7 @@ const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: {
 export function CreditClientPage() {
   const [grns, setGrns] = useState<CreditorGrn[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { language } = useLanguage();
 
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -123,7 +125,9 @@ export function CreditClientPage() {
     // 3. Dynamically render the receipt component to an HTML string.
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      <GrnReceipt grn={latestGrn} payments={paymentsResult.data} company={companyResult.data} />
+      <LanguageProvider initialLanguage={language}>
+        <GrnReceipt grn={latestGrn} payments={paymentsResult.data} company={companyResult.data} />
+      </LanguageProvider>
     );
 
     // 4. Create and configure the iframe for printing.
@@ -155,7 +159,7 @@ export function CreditClientPage() {
     setTimeout(() => {
       document.body.removeChild(iframe);
     }, 500);
-  }, [toast]);
+  }, [toast, language]);
 
 
   const openManagePaymentsDrawer = useCallback((grn: CreditorGrn) => {

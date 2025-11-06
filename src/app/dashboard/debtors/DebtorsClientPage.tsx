@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileText, Users, Landmark, Wallet, Banknote, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SaleReceipt } from '@/components/debtors/SaleReceipt';
+import { useLanguage, LanguageProvider } from '@/context/LanguageContext';
 
 
 export type DebtorTransaction = Transaction & {
@@ -69,6 +70,7 @@ const receiptStyles = `
 export function DebtorsClientPage() {
   const [transactions, setTransactions] = useState<DebtorTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { language } = useLanguage();
 
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -118,7 +120,9 @@ export function DebtorsClientPage() {
 
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      <SaleReceipt transaction={latestTransaction} payments={paymentsResult.data} company={companyResult.data} />
+      <LanguageProvider initialLanguage={language}>
+        <SaleReceipt transaction={latestTransaction} payments={paymentsResult.data} company={companyResult.data} />
+      </LanguageProvider>
     );
 
     const iframe = document.createElement('iframe');
@@ -147,7 +151,7 @@ export function DebtorsClientPage() {
     setTimeout(() => {
       document.body.removeChild(iframe);
     }, 500);
-  }, [toast]);
+  }, [toast, language]);
 
 
   const openManagePaymentsDrawer = useCallback((transaction: DebtorTransaction) => {
