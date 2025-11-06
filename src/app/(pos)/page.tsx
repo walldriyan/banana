@@ -341,12 +341,12 @@ export default function MyNewEcommerceShop() {
     const originalStock = originalProduct?.stock || 0;
 
     if (newBaseQuantity > originalStock) {
-        toast({
-            variant: "destructive",
-            title: "Stock Limit Exceeded",
-            description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "Stock Limit Exceeded",
+        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+      });
+      return;
     }
 
     setCart(currentCart => {
@@ -664,11 +664,11 @@ export default function MyNewEcommerceShop() {
                             -Rs. {(discountResult.totalItemDiscount + discountResult.totalCartDiscount).toFixed(2)}
                           </span>
                         </div>
-                        <div className="flex justify-between items-baseline py-2">
-                            <span className="text-lg font-semibold">Final Total</span>
-                            <span className="text-3xl font-bold text-primary">
-                                Rs. {finalTotal.toFixed(2)}
-                            </span>
+                        <div className="flex  justify-between items-baseline py-2">
+                          <span className="text-lg font-semibold">Final Total</span>
+                          <span className="text-3xl font-bold text-primary">
+                            Rs. {finalTotal.toFixed(2)}
+                          </span>
                         </div>
                         {isCalculating ? (
                           <Skeleton className="h-12 w-full" />
@@ -676,7 +676,7 @@ export default function MyNewEcommerceShop() {
                           <button
                             onClick={openTransactionDrawer}
                             disabled={cart.length === 0}
-                            className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/30 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                            className="w-full mb-2 px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/10 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
                           >
                             Complete Transaction
                           </button>

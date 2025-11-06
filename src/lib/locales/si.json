@@ -7,6 +7,7 @@
   "refundForLabel": "ආපසු ගෙවීම",
   "customerLabel": "පාරිභෝගික",
   "phoneLabel": "දුරකථන",
+  "walkInCustomer": "Walk-in Customer",
   "itemHeader": "භාණ්ඩය",
   "qtyHeader": "ප්‍රමාණය",
   "priceHeader": "මිල",
@@ -27,6 +28,9 @@
   "paidLabel": "ගෙවූ",
   "outstandingLabel": "හිඟ",
   "changeLabel": "ඉතිරි",
+  "paymentMethodCash": "මුදල්",
+  "paymentMethodCard": "කාඩ්පත",
+  "paymentMethodOnline": "ඔන්ලයින්",
   "thankYouMessage": "අප සමග ගනුදෙනු කිරීම ගැන ස්තූතියි!",
   "comeAgainMessage": "නැවත එන්න!"
 }

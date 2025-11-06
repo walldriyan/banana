@@ -29,6 +29,19 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
 
   const shouldShowPaymentDetails = !showAsGiftReceipt || (showAsGiftReceipt && paymentDetails.isInstallment);
 
+  const getPaymentMethodTranslation = (method: 'cash' | 'card' | 'online'): string => {
+    switch (method) {
+      case 'cash':
+        return t('paymentMethodCash');
+      case 'card':
+        return t('paymentMethodCard');
+      case 'online':
+        return t('paymentMethodOnline');
+      default:
+        return method;
+    }
+  }
+
 
   return (
     <div id="thermal-receipt-container" className="thermal-receipt-container">
@@ -46,7 +59,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
       <Line />
 
       <section className="my-1">
-        <p><span className="font-bold">{t('customerLabel')}:</span> {customerDetails.name}</p>
+        <p><span className="font-bold">{t('customerLabel')}:</span> {customerDetails.name === 'Walk-in Customer' ? t('walkInCustomer') : customerDetails.name}</p>
         {customerDetails.phone && <p><span className="font-bold">{t('phoneLabel')}:</span> {customerDetails.phone}</p>}
       </section>
 
@@ -190,7 +203,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span>{t('paidLabel')} ({paymentDetails.paymentMethod}):</span>
+                  <span>{t('paidLabel')} ({getPaymentMethodTranslation(paymentDetails.paymentMethod)}):</span>
                   <span>{paymentDetails.paidAmount.toFixed(2)}</span>
                 </div>
 

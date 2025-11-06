@@ -7,6 +7,7 @@
   "refundForLabel": "REFUND for",
   "customerLabel": "Customer",
   "phoneLabel": "Phone",
+  "walkInCustomer": "Walk-in Customer",
   "itemHeader": "Item",
   "qtyHeader": "Qty",
   "priceHeader": "Price",
@@ -27,6 +28,9 @@
   "paidLabel": "Paid",
   "outstandingLabel": "Outstanding",
   "changeLabel": "Change",
+  "paymentMethodCash": "Cash",
+  "paymentMethodCard": "Card",
+  "paymentMethodOnline": "Online",
   "thankYouMessage": "Thank You For Shopping With Us!",
   "comeAgainMessage": "Come Again!"
 }
