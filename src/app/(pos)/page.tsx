@@ -511,7 +511,7 @@ export default function MyNewEcommerceShop() {
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
       {/* Sidebar */}
       <TooltipProvider>
-        <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background flex-shrink-0">
+        <aside className="flex flex-col items-center gap-1 p-2 border-r bg-background  flex-shrink-0">
           <AuthorizationGuard permissionKey="history.view">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -548,7 +548,7 @@ export default function MyNewEcommerceShop() {
       </TooltipProvider>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex flex-col flex-1 min-w-0  overflow-hidden ">
+      <div className="flex flex-col flex-1 min-w-0   overflow-hidden ">
         {/* Header Avatar */}
         <div className="absolute top-6 right-6 z-20 ">
           <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
@@ -564,8 +564,8 @@ export default function MyNewEcommerceShop() {
 
         {/* MAIN */}
         <main className="flex flex-1 px-4 py-2  lg:overflow-hidden overflow-hidden  p-2 ">
-          <Card className="flex flex-col w-full shadow-md overflow-y-auto lg:overflow-hidden  p-2">
-            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden">
+          <Card className="flex flex-col w-full shadow-md overflow-y-auto lg:overflow-hidden  p-2  ">
+            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden ">
 
               {/* 🔍 Search Row */}
               <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
@@ -634,7 +634,7 @@ export default function MyNewEcommerceShop() {
                             -Rs. {(discountResult.totalItemDiscount + discountResult.totalCartDiscount).toFixed(2)}
                           </span>
                         </div>
-                        
+
                         <div className="flex justify-between items-baseline">
                           <span className="text-lg font-semibold">Final Total</span>
                           <span className="text-3xl font-bold text-primary">
