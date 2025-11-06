@@ -548,9 +548,9 @@ export default function MyNewEcommerceShop() {
     </TooltipProvider>
   
     {/* MAIN CONTENT AREA */}
-    <div className="flex flex-col flex-1 min-w-0 overflow-hidden lg:overflow-hidden">
+    <div className="flex flex-col flex-1 min-w-0  overflow-hidden bg-red-400">
       {/* Header Avatar */}
-      <div className="absolute top-6 right-6 z-20">
+      <div className="absolute top-6 right-6 z-20 ">
         <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
           <Avatar>
             <AvatarFallback>{userInitials}</AvatarFallback>
@@ -563,8 +563,8 @@ export default function MyNewEcommerceShop() {
       </div>
   
       {/* MAIN */}
-      <main className="flex flex-1 px-4 py-2 overflow-y-auto lg:overflow-hidden">
-        <Card className="flex flex-col w-full shadow-md lg:overflow-hidden">
+      <main className="flex flex-1 px-4 py-2  lg:overflow-hidden overflow-hidden bg-green-400 p-2 ">
+        <Card className="flex flex-col w-full shadow-md overflow-y-auto lg:overflow-hidden bg-green-700 p-2">
           <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden">
   
             {/* 🔍 Search Row */}
