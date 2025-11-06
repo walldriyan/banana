@@ -512,7 +512,7 @@ export default function MyNewEcommerceShop() {
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
       {/* Sidebar */}
       <TooltipProvider>
-        <aside className="flex flex-col items-center gap-1 p-2 border-r bg-background  flex-shrink-0 lg:flex md:flex hidden hidden xs:hidden bg-red-400">
+        <aside className="flex flex-col items-center gap-1 p-2 border-r bg-background  flex-shrink-0 lg:flex md:flex hidden hidden xs:hidden ">
           <AuthorizationGuard permissionKey="history.view">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -659,7 +659,7 @@ export default function MyNewEcommerceShop() {
 
                         <button
                           onClick={clearCart}
-                          className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                          className="w-full px-4 mb-5 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
                         >
                           Clear Cart
                         </button>
