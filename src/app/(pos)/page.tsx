@@ -39,6 +39,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 
 const initialDiscountResult = {
@@ -552,15 +560,45 @@ export default function MyNewEcommerceShop() {
       <div className="flex flex-col flex-1 min-w-0   overflow-hidden ">
         {/* Header Avatar */}
         <div className="absolute top-6 right-6 z-20 ">
-          <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
-            <Avatar>
-              <AvatarFallback>{userInitials}</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-sm font-semibold">{user?.name || 'User'}</p>
-              <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex cursor-pointer items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md hover:bg-muted transition-colors">
+                <Avatar>
+                  <AvatarFallback>{userInitials}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-semibold">{user?.name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+                </div>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="md:hidden">
+                <AuthorizationGuard permissionKey="history.view">
+                  <DropdownMenuItem asChild>
+                    <Link href="/history">
+                      <History className="mr-2 h-4 w-4" />
+                      <span>History</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </AuthorizationGuard>
+                <AuthorizationGuard permissionKey="products.view">
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/products">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </Link>
+                  </DropdownMenuItem>
+                </AuthorizationGuard>
+                <DropdownMenuSeparator />
+              </div>
+              <DropdownMenuItem>
+                <LogoutButton />
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* MAIN */}
