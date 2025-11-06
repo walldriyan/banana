@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Transaction, Customer, SalePayment } from '@prisma/client';
 import { getDebtorTransactionsAction, getPaymentsForSaleAction } from '@/lib/actions/debtor.actions';
+import { getCompanyForReceiptAction } from '@/lib/actions/company.actions';
 import { DebtorsDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -96,9 +97,17 @@ export function DebtorsClientPage() {
   }, [fetchDebtorTransactions]);
 
   const handlePrint = useCallback(async (transaction: DebtorTransaction) => {
-    const paymentsResult = await getPaymentsForSaleAction(transaction.id);
+     const [paymentsResult, companyResult] = await Promise.all([
+      getPaymentsForSaleAction(transaction.id),
+      getCompanyForReceiptAction()
+    ]);
+    
     if (!paymentsResult.success || !paymentsResult.data) {
         toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch payment history for printing.'});
+        return;
+    }
+     if (!companyResult.success || !companyResult.data) {
+        toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch company details for printing.'});
         return;
     }
     
@@ -109,7 +118,7 @@ export function DebtorsClientPage() {
 
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      <SaleReceipt transaction={latestTransaction} payments={paymentsResult.data} />
+      <SaleReceipt transaction={latestTransaction} payments={paymentsResult.data} company={companyResult.data} />
     );
 
     const iframe = document.createElement('iframe');

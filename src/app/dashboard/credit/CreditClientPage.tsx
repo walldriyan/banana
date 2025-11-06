@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { GoodsReceivedNote, Supplier, PurchasePayment } from '@prisma/client';
 import { getCreditorGrnsAction, getPaymentsForGrnAction } from '@/lib/actions/credit.actions';
+import { getCompanyForReceiptAction } from '@/lib/actions/company.actions';
 import { CreditDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -97,10 +98,18 @@ export function CreditClientPage() {
   }, [fetchCreditorGrns]);
 
   const handlePrint = useCallback(async (grn: CreditorGrn) => {
-    // 1. Fetch the LATEST payment history just before printing.
-    const paymentsResult = await getPaymentsForGrnAction(grn.id);
+    // 1. Fetch the LATEST payment history and company details just before printing.
+    const [paymentsResult, companyResult] = await Promise.all([
+      getPaymentsForGrnAction(grn.id),
+      getCompanyForReceiptAction()
+    ]);
+    
     if (!paymentsResult.success || !paymentsResult.data) {
         toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch latest payment history for printing.'});
+        return;
+    }
+     if (!companyResult.success || !companyResult.data) {
+        toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch company details for printing.'});
         return;
     }
     
@@ -114,7 +123,7 @@ export function CreditClientPage() {
     // 3. Dynamically render the receipt component to an HTML string.
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      <GrnReceipt grn={latestGrn} payments={paymentsResult.data} />
+      <GrnReceipt grn={latestGrn} payments={paymentsResult.data} company={companyResult.data} />
     );
 
     // 4. Create and configure the iframe for printing.

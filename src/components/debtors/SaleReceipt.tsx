@@ -2,24 +2,31 @@
 import React from 'react';
 import { format } from 'date-fns';
 import type { DebtorTransaction } from '@/app/dashboard/debtors/DebtorsClientPage';
-import type { SalePayment } from '@prisma/client';
+import type { Company, SalePayment } from '@prisma/client';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface SaleReceiptProps {
   transaction: DebtorTransaction;
   payments: SalePayment[];
+  company: Company | null;
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function SaleReceipt({ transaction, payments }: SaleReceiptProps) {
+export function SaleReceipt({ transaction, payments, company }: SaleReceiptProps) {
+  const { t } = useLanguage();
   const balance = transaction.finalTotal - transaction.totalPaid;
+
+  const companyName = company?.name || t('shopName');
+  const companyAddress = company?.address || t('shopAddress');
+  const companyPhone = company?.phone || '';
 
   return (
     <div id="sale-receipt-container" className="thermal-receipt-container">
       <header className="text-center space-y-1">
-        <h1 className="text-lg font-bold">My New Shop</h1>
-        <p>123, Galle Road, Colombo 03</p>
-        <p>Tel: 011-2345678</p>
+        <h1 className="text-lg font-bold">{companyName}</h1>
+        <p>{companyAddress}</p>
+        {companyPhone && <p>{t('shopTel')}: {companyPhone}</p>}
       </header>
 
       <Line />
@@ -28,11 +35,11 @@ export function SaleReceipt({ transaction, payments }: SaleReceiptProps) {
 
       <section className="my-1 space-y-1 text-xs">
         <div className="flex justify-between">
-          <span className="font-bold">Date:</span>
+          <span className="font-bold">{t('dateLabel')}:</span>
           <span>{new Date().toLocaleString()}</span>
         </div>
         <div className="flex justify-between">
-          <span className="font-bold">Transaction ID:</span>
+          <span className="font-bold">{t('receiptNoLabel')}:</span>
           <span>{transaction.id}</span>
         </div>
          <div className="flex justify-between">
@@ -40,7 +47,7 @@ export function SaleReceipt({ transaction, payments }: SaleReceiptProps) {
           <span>{format(new Date(transaction.transactionDate), 'PP')}</span>
         </div>
         <div className="flex justify-between">
-          <span className="font-bold">Customer:</span>
+          <span className="font-bold">{t('customerLabel')}:</span>
           <span>{transaction.customer.name}</span>
         </div>
       </section>
