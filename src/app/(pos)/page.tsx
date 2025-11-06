@@ -334,19 +334,19 @@ export default function MyNewEcommerceShop() {
     const originalStock = originalProduct?.stock || 0;
 
     if (newBaseQuantity > originalStock) {
-        toast({
-            variant: "destructive",
-            title: "Stock Limit Exceeded",
-            description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-        });
-        return; // Exit without changing state
+      toast({
+        variant: "destructive",
+        title: "Stock Limit Exceeded",
+        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+      });
+      return; // Exit without changing state
     }
-    
+
     setCart(currentCart => {
       // Find the index again inside the updater function
       const idx = currentCart.findIndex(item => item.saleItemId === saleItemId);
       if (idx === -1) return currentCart;
-      
+
       const updatedCart = [...currentCart];
 
       if (newDisplayQuantity <= 0) {
@@ -372,57 +372,57 @@ export default function MyNewEcommerceShop() {
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
-        const currentItem = cart[existingItemIndex];
-        const newDisplayQuantity = currentItem.displayQuantity + 1;
+      const currentItem = cart[existingItemIndex];
+      const newDisplayQuantity = currentItem.displayQuantity + 1;
 
-        const selectedUnitDefinition = allUnits.find(u => u.name === currentItem.displayUnit);
-        const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+      const selectedUnitDefinition = allUnits.find(u => u.name === currentItem.displayUnit);
+      const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
 
-        const newBaseQuantity = newDisplayQuantity * conversionFactor;
+      const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
-        const originalProduct = products.find(p => p.id === currentItem.id);
-        const originalStock = originalProduct?.stock || 0;
-        
-        if (newBaseQuantity > originalStock) {
-            toast({
-                variant: "destructive",
-                title: "Stock Limit Exceeded",
-                description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-            });
-            return;
+      const originalProduct = products.find(p => p.id === currentItem.id);
+      const originalStock = originalProduct?.stock || 0;
+
+      if (newBaseQuantity > originalStock) {
+        toast({
+          variant: "destructive",
+          title: "Stock Limit Exceeded",
+          description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+        });
+        return;
+      }
+
+      setCart(currentCart => currentCart.map((item, index) => {
+        if (index === existingItemIndex) {
+          return {
+            ...item,
+            quantity: newBaseQuantity,
+            displayQuantity: newDisplayQuantity,
+          };
         }
-        
-        setCart(currentCart => currentCart.map((item, index) => {
-            if (index === existingItemIndex) {
-                 return {
-                    ...item,
-                    quantity: newBaseQuantity,
-                    displayQuantity: newDisplayQuantity,
-                };
-            }
-            return item;
-        }));
+        return item;
+      }));
 
     } else {
-        if (1 > availableStock) {
-            toast({
-                variant: "destructive",
-                title: "Out of Stock",
-                description: "This product batch is currently out of stock.",
-            });
-            return;
-        }
+      if (1 > availableStock) {
+        toast({
+          variant: "destructive",
+          title: "Out of Stock",
+          description: "This product batch is currently out of stock.",
+        });
+        return;
+      }
 
-        const newSaleItem: SaleItem = {
-            ...productBatch,
-            saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            quantity: 1,
-            displayQuantity: 1,
-            displayUnit: unitsData.baseUnit,
-            price: productBatch.sellingPrice,
-        };
+      const newSaleItem: SaleItem = {
+        ...productBatch,
+        saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        quantity: 1,
+        displayQuantity: 1,
+        displayUnit: unitsData.baseUnit,
+        price: productBatch.sellingPrice,
+      };
 
-        setCart(currentCart => [...currentCart, newSaleItem]);
+      setCart(currentCart => [...currentCart, newSaleItem]);
     }
   };
 
@@ -512,7 +512,7 @@ export default function MyNewEcommerceShop() {
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
       {/* Sidebar */}
       <TooltipProvider>
-        <aside className="flex flex-col items-center gap-1 p-2 border-r bg-background  flex-shrink-0">
+        <aside className="flex flex-col items-center gap-1 p-2 border-r bg-background  flex-shrink-0 lg:flex md:flex hidden hidden xs:hidden bg-red-400">
           <AuthorizationGuard permissionKey="history.view">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -629,7 +629,7 @@ export default function MyNewEcommerceShop() {
                     <AuthorizationGuard permissionKey="pos.create.transaction">
                       <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-border flex-shrink-0">
 
-                      <div className="  bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
+                        <div className="  bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
                           <span className="text-foreground">Total All Discounts:</span>
                           <span className="text-green-600">
                             -Rs. {(discountResult.totalItemDiscount + discountResult.totalCartDiscount).toFixed(2)}
@@ -643,7 +643,7 @@ export default function MyNewEcommerceShop() {
                           </span>
                         </div>
 
-                  
+
 
                         {isCalculating ? (
                           <Skeleton className="h-12 w-full" />
