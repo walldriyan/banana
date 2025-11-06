@@ -2,24 +2,31 @@
 import React from 'react';
 import { format } from 'date-fns';
 import type { CreditorGrn } from '@/app/dashboard/credit/CreditClientPage';
-import type { PurchasePayment } from '@prisma/client';
+import type { Company, PurchasePayment } from '@prisma/client';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface GrnReceiptProps {
   grn: CreditorGrn;
   payments: PurchasePayment[];
+  company: Company | null;
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function GrnReceipt({ grn, payments }: GrnReceiptProps) {
+export function GrnReceipt({ grn, payments, company }: GrnReceiptProps) {
+  const { t } = useLanguage();
   const balance = grn.totalAmount - grn.totalPaid;
+
+  const companyName = company?.name || t('shopName');
+  const companyAddress = company?.address || t('shopAddress');
+  const companyPhone = company?.phone || '';
 
   return (
     <div id="grn-receipt-container" className="thermal-receipt-container">
       <header className="text-center space-y-1">
-        <h1 className="text-lg font-bold">My New Shop</h1>
-        <p>123, Galle Road, Colombo 03</p>
-        <p>Tel: 011-2345678</p>
+        <h1 className="text-lg font-bold">{companyName}</h1>
+        <p>{companyAddress}</p>
+        {companyPhone && <p>{t('shopTel')}: {companyPhone}</p>}
       </header>
 
       <Line />
@@ -28,7 +35,7 @@ export function GrnReceipt({ grn, payments }: GrnReceiptProps) {
 
       <section className="my-1 space-y-1 text-xs">
         <div className="flex justify-between">
-          <span className="font-bold">Date:</span>
+          <span className="font-bold">{t('dateLabel')}:</span>
           <span>{new Date().toLocaleString()}</span>
         </div>
         <div className="flex justify-between">

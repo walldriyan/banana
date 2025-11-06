@@ -1,5 +1,6 @@
 // src/lib/pos-data-transformer.ts
 import type { SaleItem, AppliedRuleInfo, Product, DiscountSet, ProductBatch } from '@/types';
+import type { Company } from '@prisma/client';
 
 // Define types for the data we'll collect from the UI
 export interface CustomerData {
@@ -78,6 +79,7 @@ interface TransformerInput {
   customerData: CustomerData;
   paymentData: PaymentData;
   activeCampaign: DiscountSet;
+  company: Company | null; // Add company details to the input
   isGiftReceipt?: boolean;
   status?: 'completed' | 'refund' | 'pending';
   originalTransactionId?: string;
@@ -98,6 +100,7 @@ export function transformTransactionDataForDb(
     customerData, 
     paymentData,
     activeCampaign,
+    company,
     isGiftReceipt,
     status = 'completed',
     originalTransactionId
@@ -150,8 +153,8 @@ export function transformTransactionDataForDb(
   const appliedDiscountsLog = discountResult.appliedRulesSummary || [];
 
   const companyDetails: CompanyDetails = {
-    companyId: 'comp-001',
-    companyName: 'Default Company'
+    companyId: company?.id || 'comp-001',
+    companyName: company?.name ||'Default Company'
   };
 
   const userDetails: UserDetails = {

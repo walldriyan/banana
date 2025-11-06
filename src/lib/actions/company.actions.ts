@@ -46,6 +46,26 @@ export async function getCompaniesAction() {
   }
 }
 
+/**
+ * Fetches the first active company profile to be used for receipt details.
+ */
+export async function getCompanyForReceiptAction() {
+  try {
+    const company = await prisma.company.findFirst({
+      where: { isActive: true },
+      orderBy: {
+        createdAt: 'asc'
+      },
+    });
+    if (!company) {
+       return { success: false, error: "No active company found. Please add a company profile first." };
+    }
+    return { success: true, data: company };
+  } catch (error) {
+    return { success: false, error: "Failed to fetch company details for receipt." };
+  }
+}
+
 export async function updateCompanyAction(id: string, data: CompanyFormValues) {
   const validationResult = companySchema.safeParse(data);
   if (!validationResult.success) {
@@ -66,6 +86,7 @@ export async function updateCompanyAction(id: string, data: CompanyFormValues) {
       },
     });
     revalidatePath('/dashboard/company');
+    revalidatePath('/dashboard/settings'); // Revalidate settings page as well
     return { success: true, data: updatedCompany };
   } catch (error) {
      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -75,6 +96,27 @@ export async function updateCompanyAction(id: string, data: CompanyFormValues) {
     return { success: false, error: "Failed to update company." };
   }
 }
+
+/**
+ * Specifically updates only the fields relevant to the receipt header.
+ */
+export async function updateCompanyReceiptDetailsAction(id: string, data: { name: string; address: string; phone: string; }) {
+  try {
+    const updatedCompany = await prisma.company.update({
+      where: { id },
+      data: {
+        name: data.name,
+        address: data.address,
+        phone: data.phone,
+      },
+    });
+    revalidatePath('/dashboard/settings');
+    return { success: true, data: updatedCompany };
+  } catch (error) {
+    return { success: false, error: "Failed to update company receipt details." };
+  }
+}
+
 
 export async function deleteCompanyAction(id: string) {
   try {

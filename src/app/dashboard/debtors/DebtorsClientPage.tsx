@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Transaction, Customer, SalePayment } from '@prisma/client';
 import { getDebtorTransactionsAction, getPaymentsForSaleAction } from '@/lib/actions/debtor.actions';
+import { getCompanyForReceiptAction } from '@/lib/actions/company.actions';
 import { DebtorsDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileText, Users, Landmark, Wallet, Banknote, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SaleReceipt } from '@/components/debtors/SaleReceipt';
+import { useLanguage, LanguageProvider } from '@/context/LanguageContext';
 
 
 export type DebtorTransaction = Transaction & {
@@ -68,6 +70,7 @@ const receiptStyles = `
 export function DebtorsClientPage() {
   const [transactions, setTransactions] = useState<DebtorTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { language } = useLanguage();
 
   const { toast } = useToast();
   const drawer = useDrawer();
@@ -96,9 +99,17 @@ export function DebtorsClientPage() {
   }, [fetchDebtorTransactions]);
 
   const handlePrint = useCallback(async (transaction: DebtorTransaction) => {
-    const paymentsResult = await getPaymentsForSaleAction(transaction.id);
+     const [paymentsResult, companyResult] = await Promise.all([
+      getPaymentsForSaleAction(transaction.id),
+      getCompanyForReceiptAction()
+    ]);
+    
     if (!paymentsResult.success || !paymentsResult.data) {
         toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch payment history for printing.'});
+        return;
+    }
+     if (!companyResult.success || !companyResult.data) {
+        toast({ variant: 'destructive', title: 'Print Error', description: 'Could not fetch company details for printing.'});
         return;
     }
     
@@ -109,7 +120,9 @@ export function DebtorsClientPage() {
 
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      <SaleReceipt transaction={latestTransaction} payments={paymentsResult.data} />
+      <LanguageProvider initialLanguage={language}>
+        <SaleReceipt transaction={latestTransaction} payments={paymentsResult.data} company={companyResult.data} />
+      </LanguageProvider>
     );
 
     const iframe = document.createElement('iframe');
@@ -138,7 +151,7 @@ export function DebtorsClientPage() {
     setTimeout(() => {
       document.body.removeChild(iframe);
     }, 500);
-  }, [toast]);
+  }, [toast, language]);
 
 
   const openManagePaymentsDrawer = useCallback((transaction: DebtorTransaction) => {

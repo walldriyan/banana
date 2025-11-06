@@ -1,51 +1,63 @@
 // src/components/transaction/receipt-templates/ThermalReceipt.tsx
 import React from 'react';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
+import { useLanguage } from '@/context/LanguageContext';
+import type { Company } from '@prisma/client';
 
 interface ThermalReceiptProps {
   data: DatabaseReadyTransaction;
+  company?: Company | null;
   originalTransaction?: DatabaseReadyTransaction | null;
-  showAsGiftReceipt?: boolean; // Now optional
+  showAsGiftReceipt?: boolean; 
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: showAsGiftReceiptProp }: ThermalReceiptProps) {
+export function ThermalReceipt({ data, company, originalTransaction, showAsGiftReceipt: showAsGiftReceiptProp }: ThermalReceiptProps) {
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
+  const { t } = useLanguage();
 
-  // Determine if the receipt is a gift receipt based on the prop or the transaction data.
   const showAsGiftReceipt = showAsGiftReceiptProp !== undefined
     ? showAsGiftReceiptProp
     : (transactionHeader.isGiftReceipt ?? false);
 
   const finalTotalToShow = transactionHeader.finalTotal;
   const isRefund = transactionHeader.status === 'refund';
-
   const finalCashChange = paymentDetails.paidAmount - finalTotalToShow;
-
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
-
   const shouldShowPaymentDetails = !showAsGiftReceipt || (showAsGiftReceipt && paymentDetails.isInstallment);
 
+  const getPaymentMethodTranslation = (method: 'cash' | 'card' | 'online'): string => {
+    switch (method) {
+      case 'cash': return t('paymentMethodCash');
+      case 'card': return t('paymentMethodCard');
+      case 'online': return t('paymentMethodOnline');
+      default: return method;
+    }
+  }
+
+  const companyName = company?.name || t('shopName');
+  const companyAddress = company?.address || t('shopAddress');
+  const companyPhone = company?.phone || '';
 
   return (
     <div id="thermal-receipt-container" className="thermal-receipt-container">
       <header className="text-center space-y-1">
-        <h1 className="text-lg font-bold">My New Shop</h1>
-        <p>123, Galle Road, Colombo 03</p>
-        <p>Tel: 011-2345678</p>
-        <p>Date: {new Date(transactionHeader.transactionDate).toLocaleString()}</p>
-        <p>Receipt No: {transactionHeader.transactionId}</p>
+        <h1 className="text-lg font-bold">{companyName}</h1>
+        <p>{companyAddress}</p>
+        {companyPhone && <p>{t('shopTel')}: {companyPhone}</p>}
+        <p>{t('dateLabel')}: {new Date(transactionHeader.transactionDate).toLocaleString()}</p>
+        <p>{t('receiptNoLabel')}: {transactionHeader.transactionId}</p>
         {isRefund && transactionHeader.originalTransactionId && (
-          <p className='font-bold'>(REFUND for: {transactionHeader.originalTransactionId})</p>
+          <p className='font-bold'>({t('refundForLabel')}: {transactionHeader.originalTransactionId})</p>
         )}
       </header>
 
       <Line />
 
       <section className="my-1">
-        <p><span className="font-bold">Customer:</span> {customerDetails.name}</p>
-        {customerDetails.phone && <p><span className="font-bold">Phone:</span> {customerDetails.phone}</p>}
+        <p><span className="font-bold">{t('customerLabel')}:</span> {customerDetails.name === 'Walk-in Customer' ? t('walkInCustomer') : customerDetails.name}</p>
+        {customerDetails.phone && <p><span className="font-bold">{t('phoneLabel')}:</span> {customerDetails.phone}</p>}
       </section>
 
       <Line />
@@ -53,11 +65,11 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
       <table className="w-full">
         <thead>
           <tr className="font-bold">
-            <th className="text-left">Item</th>
-            <th className="text-center">Qty</th>
-            <th className="text-right">Price</th>
-            <th className="text-right">Total</th>
-            <th className="text-right">Our Price</th>
+            <th className="text-left">{t('itemHeader')}</th>
+            <th className="text-center">{t('qtyHeader')}</th>
+            <th className="text-right">{t('priceHeader')}</th>
+            <th className="text-right">{t('totalHeader')}</th>
+            <th className="text-right">{t('ourPriceHeader')}</th>
           </tr>
         </thead>
         <tbody>
@@ -76,7 +88,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
               {!showAsGiftReceipt && item.lineDiscount > 0 && (
                 <tr>
                   <td colSpan={3} className="text-right italic text-gray-600">
-                    (Discount)
+                    ({t('discountLabel')})
                   </td>
                   <td className="text-right italic text-gray-600">
                     - {item.lineDiscount.toFixed(2)}
@@ -94,46 +106,30 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
         {!showAsGiftReceipt && (
           <>
             <div className="flex justify-between">
-              <span>Subtotal:</span>
+              <span>{t('subtotalLabel')}:</span>
               <span>{transactionHeader.subtotal.toFixed(2)}</span>
             </div>
 
             {transactionHeader.totalDiscountAmount > 0 && (
               <div className="flex justify-between font-bold text-green-700">
-                <span>Total Discounts:</span>
+                <span>{t('totalDiscountsLabel')}:</span>
                 <span>({transactionHeader.totalDiscountAmount.toFixed(2)})</span>
               </div>
             )}
           </>
         )}
 
-
-
-
-
-        {/* {!showAsGiftReceipt && (
-
-
-        <div className="flex justify-between font-bold text-base">
-          <span>TOTAL:</span>
-          <span>Rs. {finalTotalToShow.toFixed(2)}</span>
-        </div>
-        
-)} */}
-
         {!showAsGiftReceipt && (
           <div className="flex justify-between font-bold text-base">
-            <span>TOTAL:</span>
+            <span>{t('totalFinalLabel')}:</span>
             <span>Rs.{finalTotalToShow.toFixed(2)}</span>
           </div>
         )}
 
         {showAsGiftReceipt && (
           <div className="flex justify-between font-bold text-base">
-            <span>TOTAL:</span>
-            {/* <span>Rs.{finalTotalToShow.toFixed(2)}</span> */}
+            <span>{t('totalFinalLabel')}:</span>
             <span>Rs.{transactionHeader.subtotal.toFixed(2)}</span>
-
           </div>
         )}
 
@@ -141,7 +137,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
           <>
             <Line />
             <div className="flex justify-between font-bold text-blue-700">
-              <span>Your Savings:</span>
+              <span>{t('savingsLabel')}:</span>
               <span>Rs. {transactionHeader.totalDiscountAmount.toFixed(2)}</span>
             </div>
           </>
@@ -152,7 +148,7 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
         <>
           <Line />
           <section className="my-1">
-            <h2 className="font-bold text-center">APPLIED DISCOUNTS</h2>
+            <h2 className="font-bold text-center">{t('appliedDiscountsHeader')}</h2>
             {appliedDiscountsLog.map((discount, index) => (
               <div key={index} className="text-left">
                 - {discount.sourceRuleName} ({discount.totalCalculatedDiscount.toFixed(2)})
@@ -169,34 +165,34 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             {isRefund ? (
               <>
                 <div className="flex justify-between font-bold">
-                  <span>Original Bill Paid:</span>
+                  <span>{t('originalBillPaidLabel')}:</span>
                   <span>{originalPaidAmountForRefundContext?.toFixed(2) ?? 'N/A'}</span>
                 </div>
                 <div className="flex justify-between font-bold">
-                  <span>New Bill Total:</span>
+                  <span>{t('newBillTotalLabel')}:</span>
                   <span>{finalTotalToShow.toFixed(2)}</span>
                 </div>
                 <Line />
                 {(paymentDetails.paidAmount > 0) ? (
                   <div className="flex justify-between font-bold text-red-600">
-                    <span>Amount Collected from Customer:</span>
+                    <span>{t('amountCollectedLabel')}:</span>
                     <span>{paymentDetails.paidAmount.toFixed(2)}</span>
                   </div>
                 ) : (paymentDetails.paidAmount < 0) ? (
                   <div className="flex justify-between font-bold text-green-700">
-                    <span>Amount Returned to Customer:</span>
+                    <span>{t('amountReturnedLabel')}:</span>
                     <span>{(-paymentDetails.paidAmount).toFixed(2)}</span>
                   </div>
                 ) : (
                   <div className="flex justify-between font-bold">
-                    <span>Net Change:</span>
+                    <span>{t('netChangeLabel')}:</span>
                     <span>0.00</span>
                   </div>
                 )}
 
                 {paymentDetails.outstandingAmount > 0 && (
                   <div className="flex justify-between font-bold">
-                    <span>New Outstanding:</span>
+                    <span>{t('newOutstandingLabel')}:</span>
                     <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
                   </div>
                 )}
@@ -204,18 +200,18 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
             ) : (
               <>
                 <div className="flex justify-between">
-                  <span>Paid ({paymentDetails.paymentMethod}):</span>
+                  <span>{t('paidLabel')} ({getPaymentMethodTranslation(paymentDetails.paymentMethod)}):</span>
                   <span>{paymentDetails.paidAmount.toFixed(2)}</span>
                 </div>
 
                 {paymentDetails.outstandingAmount > 0 ? (
                   <div className="flex justify-between font-bold text-red-600">
-                    <span>Outstanding:</span>
+                    <span>{t('outstandingLabel')}:</span>
                     <span>{paymentDetails.outstandingAmount.toFixed(2)}</span>
                   </div>
                 ) : (
                   <div className="flex justify-between">
-                    <span>Change:</span>
+                    <span>{t('changeLabel')}:</span>
                     <span>{finalCashChange.toFixed(2)}</span>
                   </div>
                 )}
@@ -228,8 +224,8 @@ export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: s
       <Line />
 
       <footer className="text-center mt-2">
-        <p>Thank You For Shopping With Us!</p>
-        <p>Come Again!</p>
+        <p>{t('thankYouMessage')}</p>
+        <p>{t('comeAgainMessage')}</p>
       </footer>
     </div>
   );

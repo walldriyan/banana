@@ -8,12 +8,15 @@
 import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import { transformTransactionDataForDb } from '../pos-data-transformer';
 import type { SaleItem, DiscountSet } from '@/types';
+import type { Company } from '@prisma/client';
+
 
 interface RefundProcessingInput {
     originalTransaction: DatabaseReadyTransaction;
     refundCart: SaleItem[]; // The items the customer is KEEPING
     refundDiscountResult: any; // The recalculated discount result for kept items, passed as a plain object
     activeCampaign: DiscountSet; // The campaign used for the original transaction
+    company: Company | null;
 }
 
 /**
@@ -24,7 +27,7 @@ interface RefundProcessingInput {
  * @returns A new DatabaseReadyTransaction object with status 'refund'.
  */
 export function processRefund(payload: RefundProcessingInput): DatabaseReadyTransaction {
-  const { originalTransaction, refundCart, refundDiscountResult, activeCampaign } = payload;
+  const { originalTransaction, refundCart, refundDiscountResult, activeCampaign, company } = payload;
   
   const originalPaidAmount = originalTransaction.paymentDetails.paidAmount;
   const newTotalForKeptItems = refundDiscountResult.finalTotal;
@@ -56,6 +59,7 @@ export function processRefund(payload: RefundProcessingInput): DatabaseReadyTran
     status: 'refund',
     originalTransactionId: originalTransaction.transactionHeader.transactionId,
     activeCampaign: activeCampaign,
+    company: company,
     isGiftReceipt: false, // Refunds are financial documents, never gift receipts.
   });
 

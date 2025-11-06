@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Percent, Printer, Bell, Users, Palette } from "lucide-react";
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
 import { DiscountSettings } from "@/components/settings/discounts/DiscountSettings";
+import { PrintSettings } from "@/components/settings/printing/PrintSettings";
 
 const settingsNav = [
     {
@@ -51,7 +52,7 @@ export function SettingsClientPage() {
             permissionKey="settings.view" 
             fallback={<p className="text-destructive">You do not have permission to view settings.</p>}
         >
-            <Tabs defaultValue="discounts" orientation="vertical" className="flex flex-col md:flex-row">
+            <Tabs defaultValue="discounts" orientation="vertical" className="flex flex-col md:flex-row md:h-[calc(100vh-12rem)] gap-8">
                 <TabsList className="h-auto flex-shrink-0 bg-transparent p-0 flex flex-col items-stretch md:w-1/3 lg:w-1/4 md:border-r md:pr-8">
                     {settingsNav.map(nav => (
                          <AuthorizationGuard key={nav.value} permissionKey={nav.permission}>
@@ -67,20 +68,12 @@ export function SettingsClientPage() {
                     ))}
                 </TabsList>
 
-                <div className="flex-1 mt-6 md:mt-0 md:pl-8">
+                <div className="flex-1 mt-6 md:mt-0 md:min-h-0 md:overflow-y-auto">
                     <TabsContent value="discounts">
                        <DiscountSettings />
                     </TabsContent>
                     <TabsContent value="printing">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Print Settings</CardTitle>
-                                <CardDescription>Manage how receipts and reports are printed.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p>Printing settings will be configured here.</p>
-                            </CardContent>
-                        </Card>
+                        <PrintSettings />
                     </TabsContent>
                     <TabsContent value="notifications">
                         <Card>
