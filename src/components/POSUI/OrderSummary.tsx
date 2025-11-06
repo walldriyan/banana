@@ -34,9 +34,9 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
       </div>
 
       {appliedRulesSummary.length > 0 && (
-        <div className="space-y-3 rounded-xl border  h-full p-4 overflow-y-auto relative">
-          <h5 className="text-sm font-semibold text-foreground">Applied Discounts Breakdown:</h5>
-          <div className="space-y-1 h-full overflow-y-auto">
+        <div className="space-y-3 rounded-xl border  h-full p-4  relative">
+          <h5 className="  w-full text-sm font-semibold text-foreground">Applied Discounts Breakdown:</h5>
+          <div className="space-y-1 h-full ">
             {discountResult.lineItems
               .flatMap((li: any) => li.appliedRules.map((rule: any) => ({ ...rule, lineItem: li })))
               .map((rule: any, i: number) => (
