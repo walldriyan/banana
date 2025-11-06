@@ -18,6 +18,7 @@ import { transactionFormSchema, type TransactionFormValues } from '@/lib/validat
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { LanguageToggle } from '../LanguageToggle';
+import { LanguageProvider } from '@/context/LanguageContext';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
@@ -140,7 +141,9 @@ export function TransactionDialogContent({
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
       // Pass the final isGiftReceipt state to the receipt for printing
-      <ThermalReceipt data={dataToSave} showAsGiftReceipt={isGiftReceipt} />
+      <LanguageProvider>
+        <ThermalReceipt data={dataToSave} showAsGiftReceipt={isGiftReceipt} />
+      </LanguageProvider>
     );
 
     const iframe = document.createElement('iframe');
