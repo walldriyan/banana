@@ -566,7 +566,7 @@ export default function MyNewEcommerceShop() {
         {/* MAIN */}
         <main className="flex flex-1 flex-col px-4 py-2 lg:overflow-hidden overflow-hidden p-2">
           <Card className="flex flex-col flex-1 w-full shadow-md overflow-hidden p-2">
-            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden">
+            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden overflow-y-auto">
 
               {/* 🔍 Search Row */}
               <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
