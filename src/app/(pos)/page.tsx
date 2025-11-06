@@ -579,9 +579,11 @@ export default function MyNewEcommerceShop() {
                 </div>
               </div>
 
-              <div className="flex flex-col lg:flex-row gap-6 xs:min-h-[400px] xs:bg-green-400 xs:overflow-y-auto flex-grow bg-pink-700 md:bg-green-700 sm:bg-yellow-900 p-3 lg:overflow-hidden md:overflow-y-auto sm:overflow-y-auto">
+              <div className="flex flex-col lg:flex-row gap-6 xs:min-h-[400px] xs:overflow-y-auto xs:bg-green-600 xs:overflow-y-auto flex-grow bg-green-700 md:bg-green-700 sm:bg-green-900 p-3 lg:overflow-hidden md:overflow-y-auto sm:overflow-y-auto">
 
-                <div className="flex-grow  flex flex-col bg-gray-500 xs:min-h-[400px] xs:overflow-y-auto xs:bg-blue-800 md:bg-blue-500 p-3 md:overflow-y-auto sm:overflow-y-auto">
+              <div className="flex-grow flex flex-col bg-gray-500 xs:min-h-[200px] xs:max-h-[500px] xs:overflow-y-auto xs:bg-blue-800 md:bg-blue-500 p-3 overflow-y-auto min-h-0">
+
+
                   <ShoppingCart
                     cart={cart}
                     isCalculating={isCalculating}
