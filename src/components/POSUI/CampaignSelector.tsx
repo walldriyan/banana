@@ -32,12 +32,9 @@ const CampaignSelector: React.FC<CampaignSelectorProps> = ({
 
   return (
     <div>
-      <label htmlFor="campaign-selector" className="block text-sm font-medium text-foreground mb-2">
-        Active Discount Campaign
-      </label>
       <Select value={activeCampaign.id} onValueChange={handleValueChange}>
         <SelectTrigger id="campaign-selector" className="h-12 text-base">
-          <SelectValue placeholder="Select a campaign" />
+          <SelectValue placeholder="Select Campaign..." />
         </SelectTrigger>
         <SelectContent>
             {customCampaigns.length > 0 && (

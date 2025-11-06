@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 
 const initialDiscountResult = {
@@ -66,7 +67,6 @@ export default function MyNewEcommerceShop() {
 
   const [isCalculating, setIsCalculating] = useState(false);
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
-  const [showAnalysisPanel, setShowAnalysisPanel] = useState(false);
 
   const user = useSessionStore(state => state.user);
 
@@ -76,7 +76,7 @@ export default function MyNewEcommerceShop() {
   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
-      
+
       const [productsResult, campaignsResult] = await Promise.all([
         getProductBatchesAction(),
         getDiscountSetsAction()
@@ -113,108 +113,108 @@ export default function MyNewEcommerceShop() {
 
   const unitsCache = useRef<Map<string, any>>(new Map());
 
-    const parseUnits = useCallback((units: any) => {
-        if (typeof units !== 'string') return units;
-        
-        const cached = unitsCache.current.get(units);
-        if (cached) return cached;
-        
-        try {
-            const parsed = JSON.parse(units);
-            unitsCache.current.set(units, parsed);
-            return parsed;
-        } catch (e) {
-            console.error('Failed to parse units:', e);
-            return { baseUnit: 'unit', derivedUnits: [] };
-        }
-    }, []);
+  const parseUnits = useCallback((units: any) => {
+    if (typeof units !== 'string') return units;
 
-    // Memoized cart transformation
-    const cartWithUnits = useMemo(() => {
-        return cart.map(item => {
-            if (item.displayUnit) return item;
-            
-            const unitsData = parseUnits(item.product.units);
-            return { 
-                ...item, 
-                displayUnit: unitsData.baseUnit 
-            };
+    const cached = unitsCache.current.get(units);
+    if (cached) return cached;
+
+    try {
+      const parsed = JSON.parse(units);
+      unitsCache.current.set(units, parsed);
+      return parsed;
+    } catch (e) {
+      console.error('Failed to parse units:', e);
+      return { baseUnit: 'unit', derivedUnits: [] };
+    }
+  }, []);
+
+  // Memoized cart transformation
+  const cartWithUnits = useMemo(() => {
+    return cart.map(item => {
+      if (item.displayUnit) return item;
+
+      const unitsData = parseUnits(item.product.units);
+      return {
+        ...item,
+        displayUnit: unitsData.baseUnit
+      };
+    });
+  }, [cart, parseUnits]);
+
+
+  // Debounced calculation function
+  const debouncedCalculateRef = useRef<ReturnType<typeof debounce> | null>(null);
+
+  useEffect(() => {
+    // Create debounced function once
+    debouncedCalculateRef.current = debounce(async (cartData, campaign) => {
+      if (cartData.length === 0) {
+        setDiscountResult(initialDiscountResult);
+        setIsCalculating(false);
+        return;
+      }
+      setIsCalculating(true);
+      const result = await calculateDiscountsAction(cartData, campaign);
+      if (result.success && result.data) {
+        setDiscountResult({
+          ...result.data,
+          getLineItem: (saleItemId: string) =>
+            result.data.lineItems.find((li: any) => li.saleItemId === saleItemId),
+          getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
         });
-    }, [cart, parseUnits]);
+      } else {
+        setDiscountResult(initialDiscountResult);
+      }
+      setIsCalculating(false);
+    }, 300);
+
+    // Cleanup function to cancel pending debounced calls
+    return () => {
+      if (debouncedCalculateRef.current) {
+        debouncedCalculateRef.current.cancel();
+      }
+    };
+  }, []);
+
+  // Create a fingerprint to detect meaningful changes only
+  const cartFingerprint = useMemo(() => {
+    return cart.map(item =>
+      `${item.saleItemId}:${item.quantity}:${item.customDiscountValue || 0}`
+    ).join('|');
+  }, [cart]);
+
+  const campaignFingerprint = useMemo(() => activeCampaign.id, [activeCampaign]);
+
+  // Smart debouncing with fingerprint comparison
+  const prevFingerprintRef = useRef<string>('');
+
+  useEffect(() => {
+    const currentFingerprint = `${cartFingerprint}:${campaignFingerprint}`;
+
+    // Skip calculation if nothing meaningful changed
+    if (prevFingerprintRef.current === currentFingerprint) {
+      return;
+    }
+
+    prevFingerprintRef.current = currentFingerprint;
+
+    if (debouncedCalculateRef.current) {
+      debouncedCalculateRef.current(cartWithUnits, activeCampaign);
+    }
+  }, [cartFingerprint, campaignFingerprint, cartWithUnits, activeCampaign]);
 
 
-    // Debounced calculation function
-    const debouncedCalculateRef = useRef<ReturnType<typeof debounce> | null>(null);
+  // Clear cache periodically to prevent memory growth
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (unitsCache.current.size > 100) {
+        unitsCache.current.clear();
+      }
+    }, 300000); // Every 5 minutes
 
-    useEffect(() => {
-        // Create debounced function once
-        debouncedCalculateRef.current = debounce(async (cartData, campaign) => {
-            if (cartData.length === 0) {
-                setDiscountResult(initialDiscountResult);
-                setIsCalculating(false);
-                return;
-            }
-            setIsCalculating(true);
-            const result = await calculateDiscountsAction(cartData, campaign);
-            if (result.success && result.data) {
-                setDiscountResult({
-                    ...result.data,
-                    getLineItem: (saleItemId: string) =>
-                        result.data.lineItems.find((li: any) => li.saleItemId === saleItemId),
-                    getAppliedRulesSummary: () => result.data.appliedRulesSummary || []
-                });
-            } else {
-                setDiscountResult(initialDiscountResult);
-            }
-            setIsCalculating(false);
-        }, 300);
-
-        // Cleanup function to cancel pending debounced calls
-        return () => {
-            if (debouncedCalculateRef.current) {
-                debouncedCalculateRef.current.cancel();
-            }
-        };
-    }, []);
-
-    // Create a fingerprint to detect meaningful changes only
-    const cartFingerprint = useMemo(() => {
-        return cart.map(item => 
-            `${item.saleItemId}:${item.quantity}:${item.customDiscountValue || 0}`
-        ).join('|');
-    }, [cart]);
-
-    const campaignFingerprint = useMemo(() => activeCampaign.id, [activeCampaign]);
-
-    // Smart debouncing with fingerprint comparison
-    const prevFingerprintRef = useRef<string>('');
-
-    useEffect(() => {
-        const currentFingerprint = `${cartFingerprint}:${campaignFingerprint}`;
-        
-        // Skip calculation if nothing meaningful changed
-        if (prevFingerprintRef.current === currentFingerprint) {
-            return;
-        }
-        
-        prevFingerprintRef.current = currentFingerprint;
-        
-        if (debouncedCalculateRef.current) {
-            debouncedCalculateRef.current(cartWithUnits, activeCampaign);
-        }
-    }, [cartFingerprint, campaignFingerprint, cartWithUnits, activeCampaign]);
-
-
-    // Clear cache periodically to prevent memory growth
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (unitsCache.current.size > 100) {
-                unitsCache.current.clear();
-            }
-        }, 300000); // Every 5 minutes
-        
-        return () => clearInterval(interval);
-    }, []);
+    return () => clearInterval(interval);
+  }, []);
 
 
   const handleTransactionComplete = useCallback(() => {
@@ -244,186 +244,187 @@ export default function MyNewEcommerceShop() {
     });
   }, [drawer, cart, discountResult, transactionId, activeCampaign, handleTransactionComplete]);
 
-    // Use useRef to maintain stable reference
-    const cartLengthRef = useRef(0);
-    const openTransactionDrawerRef = useRef<(() => void) | null>(null);
+  // Use useRef to maintain stable reference
+  const cartLengthRef = useRef(0);
+  const openTransactionDrawerRef = useRef<(() => void) | null>(null);
 
-    // Update refs on changes
-    useEffect(() => {
-        cartLengthRef.current = cart.length;
-    }, [cart.length]);
+  // Update refs on changes
+  useEffect(() => {
+    cartLengthRef.current = cart.length;
+  }, [cart.length]);
 
-    useEffect(() => {
-        openTransactionDrawerRef.current = openTransactionDrawer;
-    }, [openTransactionDrawer]);
+  useEffect(() => {
+    openTransactionDrawerRef.current = openTransactionDrawer;
+  }, [openTransactionDrawer]);
 
-    // Stable event handler that doesn't change
-    const handleGlobalKeyDown = useCallback((event: KeyboardEvent) => {
-        const target = event.target as HTMLElement;
+  // Stable event handler that doesn't change
+  const handleGlobalKeyDown = useCallback((event: KeyboardEvent) => {
+    const target = event.target as HTMLElement;
 
-        const isTyping =
-            target.tagName === 'INPUT' ||
-            target.tagName === 'TEXTAREA' ||
-            target.isContentEditable;
-        
-        const isDrawerOpen = !!document.querySelector('[data-state="open"]');
+    const isTyping =
+      target.tagName === 'INPUT' ||
+      target.tagName === 'TEXTAREA' ||
+      target.isContentEditable;
 
-        if (event.ctrlKey && event.key === 'Enter' && !isDrawerOpen) {
-            event.preventDefault();
-            if (cartLengthRef.current > 0 && openTransactionDrawerRef.current) {
-                openTransactionDrawerRef.current();
-            }
-            return;
-        }
-        
-        const isInteracting =
-            target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
+    const isDrawerOpen = !!document.querySelector('[data-state="open"]');
 
-        if (isTyping || isInteracting) {
-            return;
-        }
+    if (event.ctrlKey && event.key === 'Enter' && !isDrawerOpen) {
+      event.preventDefault();
+      if (cartLengthRef.current > 0 && openTransactionDrawerRef.current) {
+        openTransactionDrawerRef.current();
+      }
+      return;
+    }
 
-        const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+    const isInteracting =
+      target.closest('[role="dialog"], [role="menu"], [data-radix-popper-content-wrapper]') !== null;
 
-        if (isPrintableKey) {
-            if (productSearchRef.current) {
-                productSearchRef.current.focusSearchInput();
-            }
-        }
-    }, []); // Empty deps - handler is now stable
+    if (isTyping || isInteracting) {
+      return;
+    }
 
-    useEffect(() => {
-        document.addEventListener('keydown', handleGlobalKeyDown);
-        return () => {
-            document.removeEventListener('keydown', handleGlobalKeyDown);
-        };
-    }, [handleGlobalKeyDown]); // Now handleGlobalKeyDown never changes
+    const isPrintableKey = event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+
+    if (isPrintableKey) {
+      if (productSearchRef.current) {
+        productSearchRef.current.focusSearchInput();
+      }
+    }
+  }, []); // Empty deps - handler is now stable
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [handleGlobalKeyDown]); // Now handleGlobalKeyDown never changes
 
 
   const availableProducts = useMemo(() => {
     const cartQuantities: { [batchId: string]: number } = {};
     for (const item of cart) {
-        cartQuantities[item.id] = (cartQuantities[item.id] || 0) + item.quantity;
+      cartQuantities[item.id] = (cartQuantities[item.id] || 0) + item.quantity;
     }
 
     return products.map(p => {
-        const quantityInCart = cartQuantities[p.id] || 0;
-        return {
-            ...p,
-            stock: p.stock - quantityInCart
-        };
+      const quantityInCart = cartQuantities[p.id] || 0;
+      return {
+        ...p,
+        stock: p.stock - quantityInCart
+      };
     });
-}, [products, cart]);
+  }, [products, cart]);
 
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
+    const itemIndex = cart.findIndex(item => item.saleItemId === saleItemId);
+    if (itemIndex === -1) return;
+
+    const currentItem = cart[itemIndex];
+    const unitsData = parseUnits(currentItem.product.units);
+    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+
+    const unitToUse = newDisplayUnit || currentItem.displayUnit;
+    const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+    const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+
+    const newBaseQuantity = newDisplayQuantity * conversionFactor;
+
+    const originalProduct = products.find(p => p.id === currentItem.id);
+    const originalStock = originalProduct?.stock || 0;
+
+    if (newBaseQuantity > originalStock) {
+      toast({
+        variant: "destructive",
+        title: "Stock Limit Exceeded",
+        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+      });
+      return; // Exit without changing state
+    }
+
     setCart(currentCart => {
-        const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
-        if (itemIndex === -1) return currentCart;
+      // Find the index again inside the updater function
+      const idx = currentCart.findIndex(item => item.saleItemId === saleItemId);
+      if (idx === -1) return currentCart;
 
-        const currentItem = currentCart[itemIndex];
+      const updatedCart = [...currentCart];
 
-        if (newDisplayQuantity <= 0) {
-            return currentCart.filter(item => item.saleItemId !== saleItemId);
-        }
+      if (newDisplayQuantity <= 0) {
+        return updatedCart.filter(item => item.saleItemId !== saleItemId);
+      }
 
-        const unitsData = typeof currentItem.product.units === 'string' 
-          ? JSON.parse(currentItem.product.units) 
-          : currentItem.product.units;
-          
-        const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-        
-        // Determine the unit to use. If a new one is provided, use it, otherwise stick with the current one.
-        const unitToUse = newDisplayUnit || currentItem.displayUnit;
-        const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
-        const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-
-        const newBaseQuantity = newDisplayQuantity * conversionFactor;
-        
-        // Check against the original stock of the product, not the calculated available stock
-        const originalProduct = products.find(p => p.id === currentItem.id);
-        const originalStock = originalProduct?.stock || 0;
-
-        if (newBaseQuantity > originalStock) {
-            toast({
-                variant: "destructive",
-                title: "Stock Limit Exceeded",
-                description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-            });
-            return currentCart; // Return original cart without changes
-        }
-
-        const updatedCart = [...currentCart];
-        updatedCart[itemIndex] = {
-            ...currentItem,
-            quantity: newBaseQuantity,
-            displayQuantity: newDisplayQuantity,
-            displayUnit: unitToUse, // Explicitly set the correct unit
-        };
-        return updatedCart;
+      updatedCart[idx] = {
+        ...updatedCart[idx],
+        quantity: newBaseQuantity,
+        displayQuantity: newDisplayQuantity,
+        displayUnit: unitToUse,
+      };
+      return updatedCart;
     });
   };
 
 
- const addToCart = (productBatch: ProductBatch) => {
+  const addToCart = (productBatch: ProductBatch) => {
     const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
-    
-    const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
     const unitsData = parseUnits(productBatch.product.units);
+    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+
+    const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
 
     if (existingItemIndex !== -1) {
-        setCart(currentCart => currentCart.map((item, index) => {
-            if (index === existingItemIndex) {
-                const newDisplayQuantity = item.displayQuantity + 1;
-                
-                const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-                const selectedUnitDefinition = allUnits.find(u => u.name === item.displayUnit);
-                const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+      const currentItem = cart[existingItemIndex];
+      const newDisplayQuantity = currentItem.displayQuantity + 1;
 
-                const newBaseQuantity = newDisplayQuantity * conversionFactor;
+      const selectedUnitDefinition = allUnits.find(u => u.name === currentItem.displayUnit);
+      const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
 
-                const originalProduct = products.find(p => p.id === item.id);
-                const originalStock = originalProduct?.stock || 0;
+      const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
-                if (newBaseQuantity > originalStock) {
-                     toast({
-                        variant: "destructive",
-                        title: "Stock Limit Exceeded",
-                        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-                    });
-                    return item;
-                }
-                
-                return {
-                    ...item,
-                    quantity: newBaseQuantity,
-                    displayQuantity: newDisplayQuantity,
-                };
-            }
-            return item;
-        }));
-    } else {
-        if (1 > availableStock) {
-            toast({
-                variant: "destructive",
-                title: "Out of Stock",
-                description: "This product batch is currently out of stock.",
-            });
-            return;
+      const originalProduct = products.find(p => p.id === currentItem.id);
+      const originalStock = originalProduct?.stock || 0;
+
+      if (newBaseQuantity > originalStock) {
+        toast({
+          variant: "destructive",
+          title: "Stock Limit Exceeded",
+          description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+        });
+        return;
+      }
+
+      setCart(currentCart => currentCart.map((item, index) => {
+        if (index === existingItemIndex) {
+          return {
+            ...item,
+            quantity: newBaseQuantity,
+            displayQuantity: newDisplayQuantity,
+          };
         }
+        return item;
+      }));
 
-        const newSaleItem: SaleItem = {
-            ...productBatch,
-            saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            quantity: 1, 
-            displayQuantity: 1, 
-            displayUnit: unitsData.baseUnit,
-            price: productBatch.sellingPrice,
-        };
-        
-        setCart(currentCart => [...currentCart, newSaleItem]);
+    } else {
+      if (1 > availableStock) {
+        toast({
+          variant: "destructive",
+          title: "Out of Stock",
+          description: "This product batch is currently out of stock.",
+        });
+        return;
+      }
+
+      const newSaleItem: SaleItem = {
+        ...productBatch,
+        saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        quantity: 1,
+        displayQuantity: 1,
+        displayUnit: unitsData.baseUnit,
+        price: productBatch.sellingPrice,
+      };
+
+      setCart(currentCart => [...currentCart, newSaleItem]);
     }
-};
+  };
 
   const clearCart = useCallback(() => {
     setCart([]);
@@ -465,13 +466,28 @@ export default function MyNewEcommerceShop() {
     });
   };
 
-  
+  const openAnalysisDrawer = useCallback(() => {
+    drawer.openDrawer({
+      title: 'Discount Behavior Analysis',
+      content: (
+        <DiscountBehaviorPanel
+          isCalculating={isCalculating}
+          discountResult={discountResult}
+          activeCampaign={activeCampaign}
+          transactionId={transactionId}
+        />
+      ),
+      drawerClassName: 'sm:max-w-lg',
+    });
+  }, [drawer, isCalculating, discountResult, activeCampaign, transactionId]);
+
+
   const originalTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
   const finalTotal = discountResult?.finalTotal ?? originalTotal;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 text-gray-900 font-sans p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen  text-gray-900 font-sans p-4 sm:p-6 lg:p-8">
         <header className="flex justify-between items-center mb-6">
           <Skeleton className="h-10 w-64" />
           <div className="flex items-center gap-4">
@@ -481,20 +497,23 @@ export default function MyNewEcommerceShop() {
           </div>
         </header>
         <Card>
-            <CardContent className="p-4 sm:p-6 space-y-6">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-64 w-full" />
-            </CardContent>
+          <CardContent className="p-4 sm:p-6 space-y-6">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </CardContent>
         </Card>
       </div>
     );
   }
 
+  const userInitials = user?.name?.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'AD';
+
   return (
-    <div className="flex min-h-screen bg-background text-foreground font-sans">
+    <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
+      {/* Sidebar */}
       <TooltipProvider>
-        <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background">
-          <AuthorizationGuard permissionKey='history.view'>
+        <aside className="flex flex-col items-center gap-1 p-2 border-r bg-background  flex-shrink-0 lg:flex md:flex hidden hidden xs:hidden ">
+          <AuthorizationGuard permissionKey="history.view">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Link href="/history" passHref>
@@ -507,19 +526,21 @@ export default function MyNewEcommerceShop() {
               <TooltipContent side="right">View History</TooltipContent>
             </Tooltip>
           </AuthorizationGuard>
-          <AuthorizationGuard permissionKey='products.view'>
-             <Tooltip>
+
+          <AuthorizationGuard permissionKey="products.view">
+            <Tooltip>
               <TooltipTrigger asChild>
                 <Link href="/dashboard/products" passHref>
                   <Button variant="ghost" size="icon">
                     <LayoutDashboard className="h-5 w-5" />
-                     <span className="sr-only">Dashboard</span>
+                    <span className="sr-only">Dashboard</span>
                   </Button>
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">Dashboard</TooltipContent>
             </Tooltip>
           </AuthorizationGuard>
+
           <div className="mt-auto flex flex-col items-center gap-4">
             <ThemeToggle />
             <LogoutButton />
@@ -527,120 +548,127 @@ export default function MyNewEcommerceShop() {
         </aside>
       </TooltipProvider>
 
-      <div className="flex-1 flex flex-col">
-        <header className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6 lg:p-8 border-b">
-          <div className="flex flex-col">
-              <h1 className="text-4xl font-bold tracking-tight">My New Shop</h1>
-              <p className="text-base text-muted-foreground mt-2">
-                  Welcome, {user?.name || 'User'}! ({user?.role})
-              </p>
+      {/* MAIN CONTENT AREA */}
+      <div className="flex flex-col flex-1 min-w-0   overflow-hidden ">
+        {/* Header Avatar */}
+        <div className="absolute top-6 right-6 z-20 ">
+          <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
+            <Avatar>
+              <AvatarFallback>{userInitials}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-semibold">{user?.name || 'User'}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+            </div>
           </div>
-          <div className="flex-grow max-w-sm">
-            <AuthorizationGuard permissionKey='pos.view' fallback={<p>You do not have permission to view the POS.</p>}>
-                <CampaignSelector
-                  activeCampaign={activeCampaign}
-                  allCampaigns={allCampaigns}
-                  onCampaignChange={setActiveCampaign}
-                />
-            </AuthorizationGuard>
-          </div>
-        </header>
+        </div>
 
-        <main className="flex-grow p-4 sm:p-6 lg:p-8">
-          <Card className="w-full">
-              <CardContent className="p-4 sm:p-6 space-y-6">
+        {/* MAIN */}
+        <main className="flex flex-1 flex-col px-4 py-2 lg:overflow-hidden overflow-hidden p-2 mb-2">
+          <Card className="flex flex-col flex-1 w-full shadow-md overflow-hidden p-2">
+            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden overflow-y-auto">
+
+              {/* 🔍 Search Row */}
+              <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
+                <div className="flex-grow min-w-0">
                   <SearchableProductInput
-                      ref={productSearchRef}
-                      products={availableProducts}
-                      onProductSelect={addToCart}
+                    ref={productSearchRef}
+                    products={availableProducts}
+                    onProductSelect={addToCart}
                   />
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      <div className="lg:col-span-2">
-                          <ShoppingCart
-                              cart={cart}
-                              isCalculating={isCalculating}
-                              discountResult={discountResult}
-                              onUpdateQuantity={handleCartUpdate}
-                              onOverrideDiscount={openCustomDiscountDrawer}
-                              />
-                      </div>
-                      <div className="lg:col-span-1 space-y-6">
-                          {isCalculating && cart.length > 0 ? (
-                          <div className="space-y-4">
-                              <Skeleton className="h-6 w-1/3 mb-2" />
-                              <Skeleton className="h-4 w-full" />
-                              <Skeleton className="h-10 w-full" />
-                              <Skeleton className="h-8 w-full mt-4" />
-                          </div>
-                          ) : (
-                          <OrderSummary
-                              originalTotal={originalTotal}
-                              finalTotal={finalTotal}
-                              discountResult={discountResult}
-                          />
-                          )}
+                </div>
+                <div className="w-full sm:w-64 flex-shrink-0">
+                  <AuthorizationGuard permissionKey="pos.view">
+                    <CampaignSelector
+                      activeCampaign={activeCampaign}
+                      allCampaigns={allCampaigns}
+                      onCampaignChange={setActiveCampaign}
+                    />
+                  </AuthorizationGuard>
+                </div>
+              </div>
 
-                          <AuthorizationGuard permissionKey='pos.create.transaction'>
-                            <div className="flex flex-col gap-3">
-                              {isCalculating ? (
-                                <Skeleton className="h-12 w-full" />
-                              ) : (
-                                <button
-                                  onClick={openTransactionDrawer}
-                                  disabled={cart.length === 0}
-                                  className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
-                                >
-                                  Complete Transaction
-                                </button>
-                              )}
-                              <button
-                                onClick={clearCart}
-                                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                              >
-                                Clear Cart
-                              </button>
-                            </div>
-                          </AuthorizationGuard>
-                      </div>
-                  </div>
+              {/* 🧩 Main Grid Area */}
+              <div className="flex flex-col lg:flex-row gap-6 flex-1 lg:min-h-0 lg:overflow-hidden">
 
-                  <div className="flex items-center space-x-2 p-4 bg-muted/50 rounded-lg mt-6">
-                      <Switch 
-                      id="analysis-mode" 
-                      checked={showAnalysisPanel}
-                      onCheckedChange={setShowAnalysisPanel}
-                      />
-                      <Label htmlFor="analysis-mode" className="flex items-center gap-2">
-                      <SlidersHorizontal className="h-4 w-4" />
-                      Show Discount Analysis
-                      </Label>
+                {/* 🛒 Left - Cart */}
+                <div className="flex flex-col flex-1 min-w-0 rounded-lg lg:overflow-hidden">
+                  <div className="flex-1 lg:overflow-y-auto">
+                    <ShoppingCart
+                      cart={cart}
+                      isCalculating={isCalculating}
+                      discountResult={discountResult}
+                      onUpdateQuantity={handleCartUpdate}
+                      onOverrideDiscount={openCustomDiscountDrawer}
+                    />
                   </div>
-                  
-                  {showAnalysisPanel && (
-                  <>
-                      <DiscountBehaviorPanel
-                          isCalculating={isCalculating}
+                </div>
+
+                {/* 📊 Right - Summary */}
+                <div className="flex flex-col lg:w-[28%] flex-shrink-0 rounded-lg lg:overflow-hidden">
+                  <div className="flex flex-col h-full p-5">
+                    <div className="flex-grow overflow-y-auto min-h-0">
+                      {isCalculating && cart.length > 0 ? (
+                        <div className="space-y-4">
+                          <Skeleton className="h-6 w-1/3 mb-2" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-8 w-full mt-4" />
+                        </div>
+                      ) : (
+                        <OrderSummary
+                          originalTotal={originalTotal}
+                          finalTotal={finalTotal}
                           discountResult={discountResult}
-                          activeCampaign={activeCampaign}
-                          transactionId={transactionId}
-                      />
-
-                      {process.env.NODE_ENV === 'development' && discountResult.finalTotal > 0 && (
-                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-xs">
-                          <h4 className="font-semibold text-blue-800 mb-2">Debug Info:</h4>
-                          <div className="space-y-1 text-blue-700">
-                          <div>Original Subtotal: Rs.{discountResult.originalSubtotal.toFixed(2)}</div>
-                          <div>Item Discounts: Rs.{discountResult.totalItemDiscount.toFixed(2)}</div>
-                          <div>Cart Discounts: Rs.{discountResult.totalCartDiscount.toFixed(2)}</div>
-                          <div>Final Total: Rs.{discountResult.finalTotal.toFixed(2)}</div>
-                          <div>Applied Rules: {discountResult.getAppliedRulesSummary().length}</div>
-                          </div>
-                      </div>
+                          onOpenAnalysis={openAnalysisDrawer}
+                        />
                       )}
-                  </>
-                  )}
-              </CardContent>
+                    </div>
+
+                    {/* 🧾 Bottom Buttons */}
+                    <AuthorizationGuard permissionKey="pos.create.transaction">
+                      <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-border rounded-lg flex-shrink-0">
+
+                        <div className="  bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
+                          <span className="text-foreground">Total All Discounts:</span>
+                          <span className="text-green-600">
+                            -Rs. {(discountResult.totalItemDiscount + discountResult.totalCartDiscount).toFixed(2)}
+                          </span>
+                        </div>
+
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-lg font-semibold">Final Total</span>
+                          <span className="text-3xl font-bold text-primary">
+                            Rs. {finalTotal.toFixed(2)}
+                          </span>
+                        </div>
+
+
+
+                        {isCalculating ? (
+                          <Skeleton className="h-12 w-full" />
+                        ) : (
+                          <button
+                            onClick={openTransactionDrawer}
+                            disabled={cart.length === 0}
+                            className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/30 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                          >
+                            Complete Transaction
+                          </button>
+                        )}
+
+                        <button
+                          onClick={clearCart}
+                          className="w-full px-4 mb-5 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                          Clear Cart
+                        </button>
+                      </div>
+                    </AuthorizationGuard>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
           </Card>
         </main>
       </div>
