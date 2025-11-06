@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Percent, Printer, Bell, Users, Palette } from "lucide-react";
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
 import { DiscountSettings } from "@/components/settings/discounts/DiscountSettings";
+import { PrintSettings } from "@/components/settings/printing/PrintSettings";
 
 const settingsNav = [
     {
@@ -72,15 +73,7 @@ export function SettingsClientPage() {
                        <DiscountSettings />
                     </TabsContent>
                     <TabsContent value="printing">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Print Settings</CardTitle>
-                                <CardDescription>Manage how receipts and reports are printed.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p>Printing settings will be configured here.</p>
-                            </CardContent>
-                        </Card>
+                        <PrintSettings />
                     </TabsContent>
                     <TabsContent value="notifications">
                         <Card>
