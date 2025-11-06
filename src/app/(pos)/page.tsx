@@ -557,9 +557,9 @@ export default function MyNewEcommerceShop() {
           </div>
         </div>
 
-        <main className="flex-grow pt-2  flex-grow flex flex-col px-6 pb-2 bg-green-600 p-3">
-          <Card className="w-full  flex flex-col flex-grow  bg-blue-600 p-3 ">
-            <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col bg-pink-600 p-3 h-[125px]  overflow-hidden">
+        <main className="flex-grow pt-2  flex-grow flex flex-col px-6 pb-2  p-3">
+          <Card className="w-full  flex flex-col flex-grow   p-3 ">
+            <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col  p-3 h-[125px]  overflow-hidden">
               <div className="flex items-start gap-4 ">
                 <div className="flex-grow">
                   <SearchableProductInput
@@ -579,9 +579,9 @@ export default function MyNewEcommerceShop() {
                 </div>
               </div>
 
-              <div className="flex flex-col lg:flex-row gap-6 flex-grow bg-red-600 p-3 overflow-hidden">
+              <div className="flex flex-col lg:flex-row gap-6 xs:min-h-[400px] xs:bg-green-400 xs:overflow-y-auto flex-grow bg-pink-700 md:bg-green-700 sm:bg-yellow-900 p-3 lg:overflow-hidden md:overflow-y-auto sm:overflow-y-auto">
 
-                <div className="flex-grow flex flex-col bg-red-900">
+                <div className="flex-grow  flex flex-col bg-gray-500 xs:min-h-[400px] xs:overflow-y-auto xs:bg-blue-800 md:bg-blue-500 p-3 md:overflow-y-auto sm:overflow-y-auto">
                   <ShoppingCart
                     cart={cart}
                     isCalculating={isCalculating}
@@ -592,8 +592,8 @@ export default function MyNewEcommerceShop() {
                 </div>
 
 
-                <div className="lg:col-span-1 space-y-3 flex flex-col overflow-hidden w-[28%]  bg-red-900  p-5 relative">
-                <div className="flex-grow overflow-y-auto">
+                <div className="lg:col-span-1 space-y-3 flex flex-col overflow-hidden lg:w-[28%]  bg-pink-900  p-5 relative">
+                  <div className="flex-grow overflow-y-auto">
                     {isCalculating && cart.length > 0 ? (
                       <div className="space-y-4">
                         <Skeleton className="h-6 w-1/3 mb-2" />
@@ -612,7 +612,11 @@ export default function MyNewEcommerceShop() {
                   </div>
 
                   <AuthorizationGuard permissionKey='pos.create.transaction'>
-                    <div className="flex flex-col gap-3 mt-auto">
+                    <div className="flex flex-col gap-3 mt-auto xs:min-h-[400px] xs:bg-pink-400">
+                      <div className="mt-auto pt-4 border-t-2 border-border flex justify-between items-baseline">
+                        <span className="text-lg font-semibold text-foreground">Final Total</span>
+                        <span className="text-3xl font-bold text-primary">Rs. {finalTotal.toFixed(2)}</span>
+                      </div>
                       {isCalculating ? (
                         <Skeleton className="h-12 w-full" />
                       ) : (
