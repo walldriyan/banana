@@ -2,53 +2,50 @@
 import React from 'react';
 import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { useLanguage } from '@/context/LanguageContext';
+import type { Company } from '@prisma/client';
 
 interface ThermalReceiptProps {
   data: DatabaseReadyTransaction;
+  company?: Company | null;
   originalTransaction?: DatabaseReadyTransaction | null;
-  showAsGiftReceipt?: boolean; // Now optional
+  showAsGiftReceipt?: boolean; 
 }
 
 const Line = () => <div className="border-t border-dashed border-black my-1"></div>;
 
-export function ThermalReceipt({ data, originalTransaction, showAsGiftReceipt: showAsGiftReceiptProp }: ThermalReceiptProps) {
+export function ThermalReceipt({ data, company, originalTransaction, showAsGiftReceipt: showAsGiftReceiptProp }: ThermalReceiptProps) {
   const { transactionHeader, transactionLines, appliedDiscountsLog, customerDetails, paymentDetails } = data;
   const { t } = useLanguage();
 
-  // Determine if the receipt is a gift receipt based on the prop or the transaction data.
   const showAsGiftReceipt = showAsGiftReceiptProp !== undefined
     ? showAsGiftReceiptProp
     : (transactionHeader.isGiftReceipt ?? false);
 
   const finalTotalToShow = transactionHeader.finalTotal;
   const isRefund = transactionHeader.status === 'refund';
-
   const finalCashChange = paymentDetails.paidAmount - finalTotalToShow;
-
   const originalPaidAmountForRefundContext = originalTransaction?.paymentDetails.paidAmount;
-
   const shouldShowPaymentDetails = !showAsGiftReceipt || (showAsGiftReceipt && paymentDetails.isInstallment);
 
   const getPaymentMethodTranslation = (method: 'cash' | 'card' | 'online'): string => {
     switch (method) {
-      case 'cash':
-        return t('paymentMethodCash');
-      case 'card':
-        return t('paymentMethodCard');
-      case 'online':
-        return t('paymentMethodOnline');
-      default:
-        return method;
+      case 'cash': return t('paymentMethodCash');
+      case 'card': return t('paymentMethodCard');
+      case 'online': return t('paymentMethodOnline');
+      default: return method;
     }
   }
 
+  const companyName = company?.name || t('shopName');
+  const companyAddress = company?.address || t('shopAddress');
+  const companyPhone = company?.phone || '';
 
   return (
     <div id="thermal-receipt-container" className="thermal-receipt-container">
       <header className="text-center space-y-1">
-        <h1 className="text-lg font-bold">{t('shopName')}</h1>
-        <p>{t('shopAddress')}</p>
-        <p>{t('shopTel')}: 011-2345678</p>
+        <h1 className="text-lg font-bold">{companyName}</h1>
+        <p>{companyAddress}</p>
+        {companyPhone && <p>{t('shopTel')}: {companyPhone}</p>}
         <p>{t('dateLabel')}: {new Date(transactionHeader.transactionDate).toLocaleString()}</p>
         <p>{t('receiptNoLabel')}: {transactionHeader.transactionId}</p>
         {isRefund && transactionHeader.originalTransactionId && (

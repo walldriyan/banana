@@ -14,11 +14,13 @@ import type { DatabaseReadyTransaction } from '@/lib/pos-data-transformer';
 import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
 import { saveTransactionToDb } from '@/lib/actions/database.actions';
+import { getCompanyForReceiptAction } from '@/lib/actions/company.actions';
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { LanguageToggle } from '../LanguageToggle';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
+import type { Company } from '@prisma/client';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
@@ -53,7 +55,7 @@ const receiptStyles = `
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
-  discountResult: any; // Received as a plain object, not a class instance
+  discountResult: any; 
   transactionId: string;
   activeCampaign: DiscountSet;
   onTransactionComplete: () => void;
@@ -72,6 +74,7 @@ export function TransactionDialogContent({
   const [shouldPrintBill, setShouldPrintBill] = useState(true);
   const [isGiftReceipt, setIsGiftReceipt] = useState(false);
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
+  const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -84,7 +87,15 @@ export function TransactionDialogContent({
     if (savedPreference !== null) {
       setShouldPrintBill(JSON.parse(savedPreference));
     }
-  }, []);
+    // Fetch company details when the dialog opens
+    getCompanyForReceiptAction().then(result => {
+        if (result.success && result.data) {
+            setCompanyDetails(result.data);
+        } else {
+            toast({ variant: 'destructive', title: 'Company Info Missing', description: result.error });
+        }
+    });
+  }, [toast]);
 
   const handleShouldPrintChange = (checked: boolean) => {
     setShouldPrintBill(checked);
@@ -132,7 +143,8 @@ export function TransactionDialogContent({
       customerData: data.customer,
       paymentData: data.payment,
       activeCampaign: activeCampaign,
-      isGiftReceipt: isGiftReceipt, // Pass the current state of isGiftReceipt
+      isGiftReceipt: isGiftReceipt, 
+      company: companyDetails,
     });
     setFinalTransactionData(preparedData);
     setStep('print');
@@ -142,7 +154,7 @@ export function TransactionDialogContent({
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
       <LanguageProvider initialLanguage={language}>
-        <ThermalReceipt data={dataToSave} showAsGiftReceipt={isGiftReceipt} />
+        <ThermalReceipt data={dataToSave} company={companyDetails} showAsGiftReceipt={isGiftReceipt} />
       </LanguageProvider>
     );
 
@@ -188,9 +200,9 @@ export function TransactionDialogContent({
           paymentData: finalTransactionData.paymentDetails,
           activeCampaign,
           isGiftReceipt,
+          company: companyDetails,
         });
 
-        // Use the new server action to save to the database
         const result = await saveTransactionToDb(dataToSave);
         
         if (!result.success) {
@@ -224,7 +236,6 @@ export function TransactionDialogContent({
     const handleDrawerKeyDown = (event: KeyboardEvent) => {
         if (!drawer.isOpen) return;
 
-        // Next Step: Ctrl + Enter
         if (event.ctrlKey && event.key === 'Enter') {
             event.preventDefault();
             if (step === 'details' && confirmButtonRef.current) {
@@ -234,7 +245,6 @@ export function TransactionDialogContent({
             }
         }
 
-        // Previous Step / Close: Ctrl + Left Arrow
         if (event.ctrlKey && event.key === 'ArrowLeft') {
             event.preventDefault();
             if (step === 'print') {
@@ -275,7 +285,7 @@ export function TransactionDialogContent({
           <div className='py-4'>
             <div className="bg-muted p-4 rounded-lg overflow-y-auto max-h-[60vh] printable-area">
               <div style={{ maxWidth: '300px', margin: '0 auto' }}>
-                <ThermalReceipt data={finalTransactionData} showAsGiftReceipt={isGiftReceipt} />
+                <ThermalReceipt data={finalTransactionData} company={companyDetails} showAsGiftReceipt={isGiftReceipt} />
               </div>
             </div>
             <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">

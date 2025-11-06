@@ -5,6 +5,7 @@ import type { DatabaseReadyTransaction } from '../pos-data-transformer';
 import type { SaleItem, DiscountSet } from '@/types';
 import { processRefund } from '../services/refund.service';
 import { calculateDiscounts } from '../services/discount.service';
+import { getCompanyForReceiptAction } from './company.actions';
 
 
 interface ProcessRefundPayload {
@@ -28,6 +29,12 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
     try {
         const { originalTransaction, refundCart, activeCampaign } = payload;
 
+        // 0. Fetch company details
+        const companyResult = await getCompanyForReceiptAction();
+        if (!companyResult.success) {
+            throw new Error(companyResult.error);
+        }
+
         // 1. Recalculate discounts for the items being kept on the server.
         const refundDiscountResult = calculateDiscounts(refundCart, activeCampaign);
 
@@ -37,6 +44,7 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
             refundCart,
             refundDiscountResult,
             activeCampaign,
+            company: companyResult.data,
         });
         
         // 3. Return the prepared data to the client to be saved.
