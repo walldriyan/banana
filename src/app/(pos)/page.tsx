@@ -317,48 +317,47 @@ export default function MyNewEcommerceShop() {
 
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
-    setCart(currentCart => {
-      const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
-      if (itemIndex === -1) return currentCart;
+    const itemIndex = cart.findIndex(item => item.saleItemId === saleItemId);
+    if (itemIndex === -1) return;
 
-      const currentItem = currentCart[itemIndex];
+    const currentItem = cart[itemIndex];
+    const unitsData = parseUnits(currentItem.product.units);
+    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+
+    const unitToUse = newDisplayUnit || currentItem.displayUnit;
+    const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+    const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+
+    const newBaseQuantity = newDisplayQuantity * conversionFactor;
+
+    const originalProduct = products.find(p => p.id === currentItem.id);
+    const originalStock = originalProduct?.stock || 0;
+
+    if (newBaseQuantity > originalStock) {
+        toast({
+            variant: "destructive",
+            title: "Stock Limit Exceeded",
+            description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+        });
+        return; // Exit without changing state
+    }
+    
+    setCart(currentCart => {
+      // Find the index again inside the updater function
+      const idx = currentCart.findIndex(item => item.saleItemId === saleItemId);
+      if (idx === -1) return currentCart;
+      
+      const updatedCart = [...currentCart];
 
       if (newDisplayQuantity <= 0) {
-        return currentCart.filter(item => item.saleItemId !== saleItemId);
+        return updatedCart.filter(item => item.saleItemId !== saleItemId);
       }
 
-      const unitsData = typeof currentItem.product.units === 'string'
-        ? JSON.parse(currentItem.product.units)
-        : currentItem.product.units;
-
-      const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-
-      // Determine the unit to use. If a new one is provided, use it, otherwise stick with the current one.
-      const unitToUse = newDisplayUnit || currentItem.displayUnit;
-      const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
-      const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-
-      const newBaseQuantity = newDisplayQuantity * conversionFactor;
-
-      // Check against the original stock of the product, not the calculated available stock
-      const originalProduct = products.find(p => p.id === currentItem.id);
-      const originalStock = originalProduct?.stock || 0;
-
-      if (newBaseQuantity > originalStock) {
-        toast({
-          variant: "destructive",
-          title: "Stock Limit Exceeded",
-          description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-        });
-        return currentCart; // Return original cart without changes
-      }
-
-      const updatedCart = [...currentCart];
-      updatedCart[itemIndex] = {
-        ...currentItem,
+      updatedCart[idx] = {
+        ...updatedCart[idx],
         quantity: newBaseQuantity,
         displayQuantity: newDisplayQuantity,
-        displayUnit: unitToUse, // Explicitly set the correct unit
+        displayUnit: unitToUse,
       };
       return updatedCart;
     });
@@ -367,61 +366,63 @@ export default function MyNewEcommerceShop() {
 
   const addToCart = (productBatch: ProductBatch) => {
     const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
+    const unitsData = parseUnits(productBatch.product.units);
+    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
 
     const existingItemIndex = cart.findIndex(item => item.id === productBatch.id);
-    const unitsData = parseUnits(productBatch.product.units);
 
     if (existingItemIndex !== -1) {
-      setCart(currentCart => currentCart.map((item, index) => {
-        if (index === existingItemIndex) {
-          const newDisplayQuantity = item.displayQuantity + 1;
+        const currentItem = cart[existingItemIndex];
+        const newDisplayQuantity = currentItem.displayQuantity + 1;
 
-          const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-          const selectedUnitDefinition = allUnits.find(u => u.name === item.displayUnit);
-          const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
+        const selectedUnitDefinition = allUnits.find(u => u.name === currentItem.displayUnit);
+        const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
 
-          const newBaseQuantity = newDisplayQuantity * conversionFactor;
+        const newBaseQuantity = newDisplayQuantity * conversionFactor;
 
-          const originalProduct = products.find(p => p.id === item.id);
-          const originalStock = originalProduct?.stock || 0;
-
-          if (newBaseQuantity > originalStock) {
+        const originalProduct = products.find(p => p.id === currentItem.id);
+        const originalStock = originalProduct?.stock || 0;
+        
+        if (newBaseQuantity > originalStock) {
             toast({
-              variant: "destructive",
-              title: "Stock Limit Exceeded",
-              description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+                variant: "destructive",
+                title: "Stock Limit Exceeded",
+                description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
             });
-            return item;
-          }
-
-          return {
-            ...item,
-            quantity: newBaseQuantity,
-            displayQuantity: newDisplayQuantity,
-          };
+            return;
         }
-        return item;
-      }));
+        
+        setCart(currentCart => currentCart.map((item, index) => {
+            if (index === existingItemIndex) {
+                 return {
+                    ...item,
+                    quantity: newBaseQuantity,
+                    displayQuantity: newDisplayQuantity,
+                };
+            }
+            return item;
+        }));
+
     } else {
-      if (1 > availableStock) {
-        toast({
-          variant: "destructive",
-          title: "Out of Stock",
-          description: "This product batch is currently out of stock.",
-        });
-        return;
-      }
+        if (1 > availableStock) {
+            toast({
+                variant: "destructive",
+                title: "Out of Stock",
+                description: "This product batch is currently out of stock.",
+            });
+            return;
+        }
 
-      const newSaleItem: SaleItem = {
-        ...productBatch,
-        saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        quantity: 1,
-        displayQuantity: 1,
-        displayUnit: unitsData.baseUnit,
-        price: productBatch.sellingPrice,
-      };
+        const newSaleItem: SaleItem = {
+            ...productBatch,
+            saleItemId: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            quantity: 1,
+            displayQuantity: 1,
+            displayUnit: unitsData.baseUnit,
+            price: productBatch.sellingPrice,
+        };
 
-      setCart(currentCart => [...currentCart, newSaleItem]);
+        setCart(currentCart => [...currentCart, newSaleItem]);
     }
   };
 
@@ -563,9 +564,9 @@ export default function MyNewEcommerceShop() {
         </div>
 
         {/* MAIN */}
-        <main className="flex flex-1 px-4 py-2  lg:overflow-hidden overflow-hidden  p-2 ">
-          <Card className="flex flex-col w-full shadow-md overflow-y-auto lg:overflow-hidden  p-2  ">
-            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden ">
+        <main className="flex flex-1 flex-col px-4 py-2 lg:overflow-hidden overflow-hidden p-2">
+          <Card className="flex flex-col flex-1 w-full shadow-md overflow-hidden p-2">
+            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden">
 
               {/* 🔍 Search Row */}
               <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
@@ -591,8 +592,8 @@ export default function MyNewEcommerceShop() {
               <div className="flex flex-col lg:flex-row gap-6 flex-1 lg:min-h-0 lg:overflow-hidden">
 
                 {/* 🛒 Left - Cart */}
-                <div className="flex flex-col flex-1 min-w-0  rounded-lg lg:overflow-hidden">
-                  <div className="p-3 lg:h-full lg:overflow-y-auto">
+                <div className="flex flex-col flex-1 min-w-0 rounded-lg lg:overflow-hidden">
+                  <div className="flex-1 lg:overflow-y-auto">
                     <ShoppingCart
                       cart={cart}
                       isCalculating={isCalculating}
@@ -605,8 +606,8 @@ export default function MyNewEcommerceShop() {
 
                 {/* 📊 Right - Summary */}
                 <div className="flex flex-col lg:w-[28%] flex-shrink-0 rounded-lg lg:overflow-hidden">
-                  <div className="flex flex-col lg:h-full p-5">
-                    <div className="flex-1 lg:overflow-y-auto lg:min-h-0">
+                  <div className="flex flex-col h-full p-5">
+                    <div className="flex-grow overflow-y-auto min-h-0">
                       {isCalculating && cart.length > 0 ? (
                         <div className="space-y-4">
                           <Skeleton className="h-6 w-1/3 mb-2" />
@@ -626,7 +627,7 @@ export default function MyNewEcommerceShop() {
 
                     {/* 🧾 Bottom Buttons */}
                     <AuthorizationGuard permissionKey="pos.create.transaction">
-                      <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border flex-shrink-0">
+                      <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-border flex-shrink-0">
 
                       <div className="  bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
                           <span className="text-foreground">Total All Discounts:</span>
