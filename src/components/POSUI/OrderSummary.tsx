@@ -34,7 +34,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
       </div>
 
       {appliedRulesSummary.length > 0 && (
-        <div className="space-y-3 rounded-xl border bg-background p-4 overflow-y-auto relative">
+        <div className="space-y-3 rounded-xl border  h-full p-4 overflow-y-auto relative">
           <h5 className="text-sm font-semibold text-foreground">Applied Discounts Breakdown:</h5>
           <div className="space-y-1 max-h-24 overflow-y-auto">
             {discountResult.lineItems

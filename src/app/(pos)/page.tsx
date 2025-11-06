@@ -564,7 +564,7 @@ export default function MyNewEcommerceShop() {
         </div>
 
         {/* MAIN */}
-        <main className="flex flex-1 flex-col px-4 py-2 lg:overflow-hidden overflow-hidden p-2">
+        <main className="flex flex-1 flex-col px-4 py-2 lg:overflow-hidden overflow-hidden p-2 mb-2">
           <Card className="flex flex-col flex-1 w-full shadow-md overflow-hidden p-2">
             <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden overflow-y-auto">
 
@@ -627,7 +627,7 @@ export default function MyNewEcommerceShop() {
 
                     {/* 🧾 Bottom Buttons */}
                     <AuthorizationGuard permissionKey="pos.create.transaction">
-                      <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-border flex-shrink-0">
+                      <div className="flex flex-col gap-3 mt-auto pt-4 border-t border-border rounded-lg flex-shrink-0">
 
                         <div className="  bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
                           <span className="text-foreground">Total All Discounts:</span>
