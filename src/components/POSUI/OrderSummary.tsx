@@ -16,8 +16,8 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
     : [];
 
   return (
-    <div className="space-y-4 flex flex-col h-full overflow-hidden">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 flex flex-col h-full overflow-hidden  ">
+      <div className="flex justify-between items-center relative">
         <h3 className="text-lg font-semibold text-foreground">Order Summary</h3>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onOpenAnalysis}>
             <SlidersHorizontal className="h-4 w-4" />
@@ -34,7 +34,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
       </div>
 
       {appliedRulesSummary.length > 0 && (
-        <div className="space-y-3 rounded-xl border bg-background p-4 overflow-y-auto">
+        <div className="space-y-3 rounded-xl border bg-background p-4 overflow-y-auto relative">
           <h5 className="text-sm font-semibold text-foreground">Applied Discounts Breakdown:</h5>
           <div className="space-y-1 max-h-24 overflow-y-auto">
             {discountResult.lineItems
@@ -52,12 +52,12 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
               </div>
             ))}
           </div>
-          <div className="fixed bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
+          {/* <div className=" bg-red-400 bottom-0 w-full border-t border-border pt-2 mt-2 flex justify-between font-semibold text-sm">
             <span className="text-foreground">Total All Discounts:</span>
             <span className="text-green-600">
               -Rs. {(discountResult.totalItemDiscount + discountResult.totalCartDiscount).toFixed(2)}
             </span>
-          </div>
+          </div> */}
         </div>
       )}
       {/* <div className="mt-auto pt-4 border-t-2 border-border flex justify-between items-baseline">
