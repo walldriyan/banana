@@ -17,19 +17,28 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
+interface LanguageProviderProps {
+  children: React.ReactNode;
+  initialLanguage?: Language;
+}
+
+export function LanguageProvider({ children, initialLanguage }: LanguageProviderProps) {
+  const [language, setLanguageState] = useState<Language>(initialLanguage || 'en');
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('language') as Language | null;
-    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'si')) {
-      setLanguageState(savedLanguage);
+    if (!initialLanguage) {
+      const savedLanguage = localStorage.getItem('language') as Language | null;
+      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'si')) {
+        setLanguageState(savedLanguage);
+      }
     }
-  }, []);
+  }, [initialLanguage]);
 
   const setLanguage = useCallback((lang: Language) => {
     setLanguageState(lang);
-    localStorage.setItem('language', lang);
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('language', lang);
+    }
   }, []);
 
   const t = useCallback((key: keyof typeof en): string => {

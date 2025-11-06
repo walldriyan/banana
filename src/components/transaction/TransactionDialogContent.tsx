@@ -18,7 +18,7 @@ import { transactionFormSchema, type TransactionFormValues } from '@/lib/validat
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { LanguageToggle } from '../LanguageToggle';
-import { LanguageProvider } from '@/context/LanguageContext';
+import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
@@ -74,6 +74,7 @@ export function TransactionDialogContent({
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const drawer = useDrawer();
   const { toast } = useToast();
+  const { language } = useLanguage();
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const finishButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -140,8 +141,7 @@ export function TransactionDialogContent({
   const handlePrintAndFinish = async (dataToSave: DatabaseReadyTransaction) => {
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
-      // Pass the final isGiftReceipt state to the receipt for printing
-      <LanguageProvider>
+      <LanguageProvider initialLanguage={language}>
         <ThermalReceipt data={dataToSave} showAsGiftReceipt={isGiftReceipt} />
       </LanguageProvider>
     );
