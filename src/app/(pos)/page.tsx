@@ -592,8 +592,8 @@ export default function MyNewEcommerceShop() {
                 </div>
 
 
-                <div className="lg:col-span-1 space-y-6 flex flex-col  overflow-hidden h-[450px] p-5 relative ">
-                  <div className="flex-grow overflow-y-auto">
+                <div className="lg:col-span-1 space-y-3 flex flex-col overflow-hidden w-[28%]  bg-red-900  p-5 relative">
+                <div className="flex-grow overflow-y-auto">
                     {isCalculating && cart.length > 0 ? (
                       <div className="space-y-4">
                         <Skeleton className="h-6 w-1/3 mb-2" />
