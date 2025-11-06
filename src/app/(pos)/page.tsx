@@ -509,158 +509,158 @@ export default function MyNewEcommerceShop() {
 
   return (
     <div className="flex h-screen bg-background text-foreground font-sans overflow-hidden">
-    {/* Sidebar */}
-    <TooltipProvider>
-      <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background flex-shrink-0">
-        <AuthorizationGuard permissionKey="history.view">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href="/history" passHref>
-                <Button variant="ghost" size="icon">
-                  <History className="h-5 w-5" />
-                  <span className="sr-only">View History</span>
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">View History</TooltipContent>
-          </Tooltip>
-        </AuthorizationGuard>
-  
-        <AuthorizationGuard permissionKey="products.view">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href="/dashboard/products" passHref>
-                <Button variant="ghost" size="icon">
-                  <LayoutDashboard className="h-5 w-5" />
-                  <span className="sr-only">Dashboard</span>
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Dashboard</TooltipContent>
-          </Tooltip>
-        </AuthorizationGuard>
-  
-        <div className="mt-auto flex flex-col items-center gap-4">
-          <ThemeToggle />
-          <LogoutButton />
-        </div>
-      </aside>
-    </TooltipProvider>
-  
-    {/* MAIN CONTENT AREA */}
-    <div className="flex flex-col flex-1 min-w-0  overflow-hidden bg-red-400">
-      {/* Header Avatar */}
-      <div className="absolute top-6 right-6 z-20 ">
-        <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
-          <Avatar>
-            <AvatarFallback>{userInitials}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="text-sm font-semibold">{user?.name || 'User'}</p>
-            <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+      {/* Sidebar */}
+      <TooltipProvider>
+        <aside className="flex flex-col items-center gap-4 p-2 border-r bg-background flex-shrink-0">
+          <AuthorizationGuard permissionKey="history.view">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/history" passHref>
+                  <Button variant="ghost" size="icon">
+                    <History className="h-5 w-5" />
+                    <span className="sr-only">View History</span>
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">View History</TooltipContent>
+            </Tooltip>
+          </AuthorizationGuard>
+
+          <AuthorizationGuard permissionKey="products.view">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link href="/dashboard/products" passHref>
+                  <Button variant="ghost" size="icon">
+                    <LayoutDashboard className="h-5 w-5" />
+                    <span className="sr-only">Dashboard</span>
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">Dashboard</TooltipContent>
+            </Tooltip>
+          </AuthorizationGuard>
+
+          <div className="mt-auto flex flex-col items-center gap-4">
+            <ThemeToggle />
+            <LogoutButton />
+          </div>
+        </aside>
+      </TooltipProvider>
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex flex-col flex-1 min-w-0  overflow-hidden ">
+        {/* Header Avatar */}
+        <div className="absolute top-6 right-6 z-20 ">
+          <div className="flex items-center gap-3 p-2 border rounded-full bg-background/80 backdrop-blur-sm shadow-md">
+            <Avatar>
+              <AvatarFallback>{userInitials}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-semibold">{user?.name || 'User'}</p>
+              <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
+            </div>
           </div>
         </div>
-      </div>
-  
-      {/* MAIN */}
-      <main className="flex flex-1 px-4 py-2  lg:overflow-hidden overflow-hidden bg-green-400 p-2 ">
-        <Card className="flex flex-col w-full shadow-md overflow-y-auto lg:overflow-hidden bg-green-700 p-2">
-          <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden">
-  
-            {/* 🔍 Search Row */}
-            <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
-              <div className="flex-grow min-w-0">
-                <SearchableProductInput
-                  ref={productSearchRef}
-                  products={availableProducts}
-                  onProductSelect={addToCart}
-                />
-              </div>
-              <div className="w-full sm:w-64 flex-shrink-0">
-                <AuthorizationGuard permissionKey="pos.view">
-                  <CampaignSelector
-                    activeCampaign={activeCampaign}
-                    allCampaigns={allCampaigns}
-                    onCampaignChange={setActiveCampaign}
-                  />
-                </AuthorizationGuard>
-              </div>
-            </div>
-  
-            {/* 🧩 Main Grid Area */}
-            <div className="flex flex-col lg:flex-row gap-6 flex-1 lg:min-h-0 lg:overflow-hidden">
-  
-              {/* 🛒 Left - Cart */}
-              <div className="flex flex-col flex-1 min-w-0 bg-gray-500 rounded-lg lg:overflow-hidden">
-                <div className="p-3 lg:h-full lg:overflow-y-auto">
-                  <ShoppingCart
-                    cart={cart}
-                    isCalculating={isCalculating}
-                    discountResult={discountResult}
-                    onUpdateQuantity={handleCartUpdate}
-                    onOverrideDiscount={openCustomDiscountDrawer}
+
+        {/* MAIN */}
+        <main className="flex flex-1 px-4 py-2  lg:overflow-hidden overflow-hidden  p-2 ">
+          <Card className="flex flex-col w-full shadow-md overflow-y-auto lg:overflow-hidden  p-2">
+            <CardContent className="flex flex-col flex-1 p-4 sm:p-6 gap-6 lg:overflow-hidden">
+
+              {/* 🔍 Search Row */}
+              <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
+                <div className="flex-grow min-w-0">
+                  <SearchableProductInput
+                    ref={productSearchRef}
+                    products={availableProducts}
+                    onProductSelect={addToCart}
                   />
                 </div>
-              </div>
-  
-              {/* 📊 Right - Summary */}
-              <div className="flex flex-col lg:w-[28%] flex-shrink-0 bg-pink-900 rounded-lg lg:overflow-hidden">
-                <div className="flex flex-col lg:h-full p-5">
-                  <div className="flex-1 lg:overflow-y-auto lg:min-h-0">
-                    {isCalculating && cart.length > 0 ? (
-                      <div className="space-y-4">
-                        <Skeleton className="h-6 w-1/3 mb-2" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-8 w-full mt-4" />
-                      </div>
-                    ) : (
-                      <OrderSummary
-                        originalTotal={originalTotal}
-                        finalTotal={finalTotal}
-                        discountResult={discountResult}
-                        onOpenAnalysis={openAnalysisDrawer}
-                      />
-                    )}
-                  </div>
-  
-                  {/* 🧾 Bottom Buttons */}
-                  <AuthorizationGuard permissionKey="pos.create.transaction">
-                    <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border flex-shrink-0">
-                      <div className="flex justify-between items-baseline">
-                        <span className="text-lg font-semibold">Final Total</span>
-                        <span className="text-3xl font-bold text-primary">
-                          Rs. {finalTotal.toFixed(2)}
-                        </span>
-                      </div>
-  
-                      {isCalculating ? (
-                        <Skeleton className="h-12 w-full" />
-                      ) : (
-                        <button
-                          onClick={openTransactionDrawer}
-                          disabled={cart.length === 0}
-                          className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/30 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
-                        >
-                          Complete Transaction
-                        </button>
-                      )}
-  
-                      <button
-                        onClick={clearCart}
-                        className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                      >
-                        Clear Cart
-                      </button>
-                    </div>
+                <div className="w-full sm:w-64 flex-shrink-0">
+                  <AuthorizationGuard permissionKey="pos.view">
+                    <CampaignSelector
+                      activeCampaign={activeCampaign}
+                      allCampaigns={allCampaigns}
+                      onCampaignChange={setActiveCampaign}
+                    />
                   </AuthorizationGuard>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </main>
+
+              {/* 🧩 Main Grid Area */}
+              <div className="flex flex-col lg:flex-row gap-6 flex-1 lg:min-h-0 lg:overflow-hidden">
+
+                {/* 🛒 Left - Cart */}
+                <div className="flex flex-col flex-1 min-w-0  rounded-lg lg:overflow-hidden">
+                  <div className="p-3 lg:h-full lg:overflow-y-auto">
+                    <ShoppingCart
+                      cart={cart}
+                      isCalculating={isCalculating}
+                      discountResult={discountResult}
+                      onUpdateQuantity={handleCartUpdate}
+                      onOverrideDiscount={openCustomDiscountDrawer}
+                    />
+                  </div>
+                </div>
+
+                {/* 📊 Right - Summary */}
+                <div className="flex flex-col lg:w-[28%] flex-shrink-0 rounded-lg lg:overflow-hidden">
+                  <div className="flex flex-col lg:h-full p-5">
+                    <div className="flex-1 lg:overflow-y-auto lg:min-h-0">
+                      {isCalculating && cart.length > 0 ? (
+                        <div className="space-y-4">
+                          <Skeleton className="h-6 w-1/3 mb-2" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-10 w-full" />
+                          <Skeleton className="h-8 w-full mt-4" />
+                        </div>
+                      ) : (
+                        <OrderSummary
+                          originalTotal={originalTotal}
+                          finalTotal={finalTotal}
+                          discountResult={discountResult}
+                          onOpenAnalysis={openAnalysisDrawer}
+                        />
+                      )}
+                    </div>
+
+                    {/* 🧾 Bottom Buttons */}
+                    <AuthorizationGuard permissionKey="pos.create.transaction">
+                      <div className="flex flex-col gap-3 mt-4 pt-4 border-t border-border flex-shrink-0">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-lg font-semibold">Final Total</span>
+                          <span className="text-3xl font-bold text-primary">
+                            Rs. {finalTotal.toFixed(2)}
+                          </span>
+                        </div>
+
+                        {isCalculating ? (
+                          <Skeleton className="h-12 w-full" />
+                        ) : (
+                          <button
+                            onClick={openTransactionDrawer}
+                            disabled={cart.length === 0}
+                            className="w-full px-4 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-slate-900/30 disabled:cursor-not-allowed transition-colors text-lg font-semibold"
+                          >
+                            Complete Transaction
+                          </button>
+                        )}
+
+                        <button
+                          onClick={clearCart}
+                          className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                        >
+                          Clear Cart
+                        </button>
+                      </div>
+                    </AuthorizationGuard>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
     </div>
-  </div>
   );
 }
