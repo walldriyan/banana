@@ -557,9 +557,9 @@ export default function MyNewEcommerceShop() {
             </div>
         </div>
         
-        <main className="flex-grow pt-6  flex-grow flex flex-col px-6 pb-24 ">
-            <Card className="w-full  flex flex-col flex-grow overflow-hidden mb-[25px]">
-                <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col  overflow-hidden">
+        <main className="flex-grow pt-2  flex-grow flex flex-col px-6 pb-2 bg-green-600 p-3">
+            <Card className="w-full  flex flex-col flex-grow  bg-blue-600 p-3 ">
+                <CardContent className="flex-grow p-4 sm:p-6 space-y-6 flex flex-col bg-pink-600 p-3 h-[125px]  overflow-hidden">
                     <div className="flex items-start gap-4 ">
                         <div className="flex-grow">
                             <SearchableProductInput
@@ -579,8 +579,8 @@ export default function MyNewEcommerceShop() {
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow overflow-hidden ">
-                        <div className="lg:col-span-2 flex flex-col overflow-hidden h-[450px]  ">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-grow bg-red-600 p-3 overflow-hidden ">
+                        <div className="lg:col-span-2 flex flex-col overflow-hidden bg-red-500 p-3 h-[450px]  ">
                             <ShoppingCart
                                 cart={cart}
                                 isCalculating={isCalculating}
