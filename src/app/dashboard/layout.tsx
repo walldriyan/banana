@@ -17,7 +17,7 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       {/* 🔹 Full-screen flex container */}
-      <div className="flex w-screen h-screen overflow-hidden">
+      <div className="flex w-screen h-screen overflow-hidden bg-background">
         {/* 🔹 Sidebar */}
         <Sidebar collapsible="icon">
           <DashboardSidebar />
@@ -29,17 +29,14 @@ export default function DashboardLayout({
             <SidebarTrigger />
           </SidebarHeader>
 
-          {/* 🔹 Content area */}
-          <main
-            className={cn(
-              "flex flex-col flex-1 min-h-0 min-w-0 p-4 sm:p-6 lg:p-8 overflow-hidden"
-            )}
-          >
-            {/* 🔹 Scrollable children container */}
-            <div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden">
-              {children}
-            </div>
-          </main>
+          {/* 🔹 Scrollable content wrapper */}
+          <div className="flex-1 overflow-y-auto">
+            {/* 🔹 Content area with padding */}
+            <main className={cn("p-4 sm:p-6 lg:p-8")}>
+                {children}
+            </main>
+          </div>
+          
         </SidebarInset>
       </div>
     </SidebarProvider>

@@ -182,46 +182,40 @@ export function FinanceClientPage() {
 
   return (
     <>
-      {/* මේ div එක parent (layout.tsx) එකේ ඉඩම ගන්න 'flex-1' වෙන්න ඕනේ.
-        'h-screen' test එක අයින් කළා.
-      */}
-  
 
-        <Card className="flex flex-col flex-grow overflow-y-auto">
+      <Card className="flex flex-col flex-grow overflow-y-auto">
+        <CardHeader>
+          <CardTitle>Financial Overview</CardTitle>
+          <CardDescription>A summary of your total income, expenses, and net balance.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row gap-4">
+            <SummaryCard icon={TrendingUp} label="Total Income" value={formatCurrency(summary.totalIncome)} valueClassName="text-green-600" />
+            <SummaryCard icon={TrendingDown} label="Total Expenses" value={formatCurrency(summary.totalExpense)} valueClassName="text-red-600" />
+            <SummaryCard icon={Landmark} label="Net Balance" value={formatCurrency(summary.netBalance)} valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} />
+          </div>
+        </CardContent>
+        <Separator />
 
-          {/* Financial Overview කොටස (වෙනසක් නෑ) */}
-          <CardHeader>
-            <CardTitle>Financial Overview</CardTitle>
-            <CardDescription>A summary of your total income, expenses, and net balance.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
-              <SummaryCard icon={TrendingUp} label="Total Income" value={formatCurrency(summary.totalIncome)} valueClassName="text-green-600" />
-              <SummaryCard icon={TrendingDown} label="Total Expenses" value={formatCurrency(summary.totalExpense)} valueClassName="text-red-600" />
-              <SummaryCard icon={Landmark} label="Net Balance" value={formatCurrency(summary.netBalance)} valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} />
-            </div>
-          </CardContent>
-          <Separator />
+        {/* Transaction History Header (වෙනසක් නෑ) */}
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+          <CardDescription>View, add, edit, and manage all your financial transactions.</CardDescription>
+        </CardHeader>
 
-          {/* Transaction History Header (වෙනසක් නෑ) */}
-          <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
-            <CardDescription>View, add, edit, and manage all your financial transactions.</CardDescription>
-          </CardHeader>
 
-  
-          <CardContent className="flex flex-col flex-1 min-h-0">
+        <CardContent className="flex flex-col flex-1 min-h-0">
 
-         
-            <FinanceDataTable
-              columns={columns}
-              data={transactions}
-              onAddTransaction={openAddDrawer}
-            />
-          </CardContent>
 
-        </Card>
-  
+          <FinanceDataTable
+            columns={columns}
+            data={transactions}
+            onAddTransaction={openAddDrawer}
+          />
+        </CardContent>
+
+      </Card>
+
 
       {/* AlertDialog (වෙනසක් නෑ) */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
