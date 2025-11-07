@@ -38,8 +38,8 @@ export function FinanceDataTable<TData, TValue>({
   data,
   onAddTransaction
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const table = useReactTable({
     data,
@@ -57,89 +57,96 @@ export function FinanceDataTable<TData, TValue>({
   })
 
   return (
-    <div className="flex flex-col flex-1 min-h-0">
-    
-    <div className="flex items-center justify-between py-4 flex-shrink-0">
-      <Input
-        placeholder="Filter by description or category..."
-        value={(table.getColumn("description")?.getFilterValue() as string) ?? ""}
-        onChange={(event) =>
-          table.getColumn("description")?.setFilterValue(event.target.value)
-        }
-        className="max-w-sm"
-      />
-      <AuthorizationGuard permissionKey="finance.manage">
-        <Button onClick={onAddTransaction}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Transaction
-        </Button>
-      </AuthorizationGuard>
-    </div>
- 
-    <div className="flex-grow overflow-y-auto rounded-md border">
-    <Table
-  className="overflow-hidden"
-  style={{ tableLayout: "fixed" }}
->
-      <TableHeader>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map((header) => (
-              <TableHead key={header.id}>
-                {header.isPlaceholder
-                  ? null
-                  : flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-              </TableHead>
+    /* **** අනෙක් වැදගත් වෙනස ****
+      'overflow-hidden' අයින් කරලා 'flex-1' එකතු කළා.
+      මේකෙන් component එක parent (CardContent) එකේ සම්පූර්ණ ඉඩම ගන්නවා.
+    */
+    <div className="flex flex-col min-h-0 flex-1">
+
+      {/* Header section (වෙනසක් නෑ) */}
+      <div className="flex items-center justify-between py-4 flex-shrink-0">
+        <Input
+          placeholder="Filter by description or category..."
+          value={(table.getColumn("description")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("description")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+        <AuthorizationGuard permissionKey="finance.manage">
+          <Button onClick={onAddTransaction}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Transaction
+          </Button>
+        </AuthorizationGuard>
+      </div>
+
+      {/* Table section (වෙනසක් නෑ - මේක තමයි scroll වෙන්න ඕනේ) */}
+      <div className="flex-grow overflow-y-auto rounded-md border">
+        <Table
+          className="overflow-hidden"
+          style={{ tableLayout: "fixed" }}
+        >
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
+                  </TableHead>
+                ))}
+              </TableRow>
             ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows?.length ? (
-          table.getRowModel().rows.map((row) => (
-            <TableRow
-              key={row.id}
-              data-state={row.getIsSelected() && "selected"}
-            >
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
                 </TableCell>
-              ))}
-            </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={columns.length} className="h-24 text-center">
-              No results.
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination section (වෙනසක් නෑ) */}
+      <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.previousPage()}
+          disabled={!table.getCanPreviousPage()}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => table.nextPage()}
+          disabled={!table.getCanNextPage()}
+        >
+          Next
+        </Button>
+      </div>
     </div>
- 
-    <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => table.previousPage()}
-        disabled={!table.getCanPreviousPage()}
-      >
-        Previous
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => table.nextPage()}
-        disabled={!table.getCanNextPage()}
-      >
-        Next
-      </Button>
-    </div>
-  </div>
   )
 }
