@@ -57,8 +57,8 @@ export function FinanceDataTable<TData, TValue>({
   })
 
   return (
-    <div>
-        <div className="flex items-center justify-between py-4">
+    <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between py-4 flex-shrink-0">
             <Input
                 placeholder="Filter by description or category..."
                 value={(table.getColumn("description")?.getFilterValue() as string) ?? ""}
@@ -74,7 +74,7 @@ export function FinanceDataTable<TData, TValue>({
                 </Button>
             </AuthorizationGuard>
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border flex-grow overflow-y-auto">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -118,7 +118,7 @@ export function FinanceDataTable<TData, TValue>({
                 </TableBody>
             </Table>
         </div>
-         <div className="flex items-center justify-end space-x-2 py-4">
+         <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
             <Button
                 variant="outline"
                 size="sm"
