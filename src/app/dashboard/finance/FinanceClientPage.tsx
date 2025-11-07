@@ -185,9 +185,9 @@ export function FinanceClientPage() {
       {/* මේ div එක parent (layout.tsx) එකේ ඉඩම ගන්න 'flex-1' වෙන්න ඕනේ.
         'h-screen' test එක අයින් කළා.
       */}
-      <div className="flex flex-col min-h-0 flex-1">
+  
 
-        <Card className="flex flex-col w-full flex-1 min-h-0">
+        <Card className="flex flex-col flex-grow overflow-y-auto">
 
           {/* Financial Overview කොටස (වෙනසක් නෑ) */}
           <CardHeader>
@@ -209,11 +209,10 @@ export function FinanceClientPage() {
             <CardDescription>View, add, edit, and manage all your financial transactions.</CardDescription>
           </CardHeader>
 
-          {/* **** වැදගත්ම වෙනස මෙතන ****
-            'overflow-y-auto' අයින් කරලා 'flex flex-col' එකතු කළා.
-            මේක දැන් scroll වෙන්නේ නෑ. මේක 'FinanceDataTable' එකට grow වෙන්න ඉඩ දෙනවා.
-          */}
+  
           <CardContent className="flex flex-col flex-1 min-h-0">
+
+         
             <FinanceDataTable
               columns={columns}
               data={transactions}
@@ -222,7 +221,7 @@ export function FinanceClientPage() {
           </CardContent>
 
         </Card>
-      </div>
+  
 
       {/* AlertDialog (වෙනසක් නෑ) */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
