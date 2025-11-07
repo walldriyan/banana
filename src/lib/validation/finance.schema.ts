@@ -5,8 +5,8 @@ export const financialTransactionSchema = z.object({
   date: z.date(),
   type: z.enum(['INCOME', 'EXPENSE']),
   amount: z.coerce.number().min(0, "Amount must be a non-negative number."),
-  description: z.string().min(3, "Description must be at least 3 characters."),
-  category: z.string().min(1, "Category is required."),
+  description: z.string(),
+  category: z.string(),
   companyId: z.string().optional(), // Make optional as it's auto-assigned on server
   
   // Optional linked entities
