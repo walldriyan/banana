@@ -19,9 +19,9 @@ export default function DiscountBehaviorPanel({
 
   if (isCalculating) {
       return (
-          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg space-y-4">
+          <div className="mt-4 p-4 bg-muted/50 border rounded-lg space-y-4">
               <Skeleton className="h-6 w-3/4" />
-              <div className="p-3 bg-white rounded-md shadow-sm space-y-2">
+              <div className="p-3 bg-background/80 rounded-md shadow-sm space-y-2">
                   <Skeleton className="h-5 w-1/2" />
                   <Skeleton className="h-4 w-full" />
               </div>
@@ -30,7 +30,7 @@ export default function DiscountBehaviorPanel({
                   <Skeleton className="h-12 w-full" />
                   <Skeleton className="h-12 w-full" />
               </div>
-              <div className="p-3 bg-gray-100 rounded-md">
+              <div className="p-3 bg-muted rounded-md">
                    <Skeleton className="h-16 w-full" />
               </div>
           </div>
@@ -43,26 +43,26 @@ export default function DiscountBehaviorPanel({
     : [];
   
   return (
-    <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
-      <h4 className="font-bold text-blue-900 mb-3 flex items-center">
+    <div className="mt-4 p-4 bg-muted/50 border rounded-lg">
+      <h4 className="font-bold text-foreground mb-3 flex items-center">
         <span className="mr-2">🔍</span>
         Discount Behavior Analysis
       </h4>
       
       {/* Campaign Info */}
-      <div className="mb-4 p-3 bg-white rounded-md shadow-sm">
+      <div className="mb-4 p-3 bg-background rounded-md shadow-sm">
         <div className="text-sm">
-          <div className="font-semibold text-gray-800">Active Campaign: {activeCampaign.name}</div>
-          <div className="text-gray-600 text-xs mt-1">{activeCampaign.description}</div>
+          <div className="font-semibold text-foreground">Active Campaign: {activeCampaign.name}</div>
+          <div className="text-muted-foreground text-xs mt-1">{activeCampaign.description}</div>
           <div className="flex items-center gap-4 mt-2 text-xs">
             <span className={`px-2 py-1 rounded-full ${
               activeCampaign.isOneTimePerTransaction 
-                ? 'bg-orange-100 text-orange-800' 
-                : 'bg-green-100 text-green-800'
+                ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300' 
+                : 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300'
             }`}>
               {activeCampaign.isOneTimePerTransaction ? 'One-Time Rules' : 'Repeatable Rules'}
             </span>
-            <span className="text-gray-500">Transaction: {transactionId.slice(-8)}...</span>
+            <span className="text-muted-foreground">Transaction: {transactionId.slice(-8)}...</span>
           </div>
         </div>
       </div>
@@ -70,13 +70,13 @@ export default function DiscountBehaviorPanel({
       {/* Applied Rules Breakdown */}
       {appliedRules.length > 0 ? (
         <div className="space-y-2">
-          <div className="font-semibold text-gray-800 text-sm">Applied Rules:</div>
+          <div className="font-semibold text-foreground text-sm">Applied Rules:</div>
           {appliedRules.map((rule, index) => (
-            <div key={index} className="p-2 bg-white rounded border-l-4 border-blue-400">
+            <div key={index} className="p-2 bg-background/80 rounded border-l-4 border-blue-500">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <div className="font-medium text-sm text-gray-800">{rule.sourceRuleName}</div>
-                  <div className="text-xs text-gray-600 mt-1">
+                  <div className="font-medium text-sm text-foreground">{rule.sourceRuleName}</div>
+                  <div className="text-xs text-muted-foreground mt-1">
                     Type: {rule.ruleType.replace(/_/g, ' ')}
                     {rule.productIdAffected && ` | Product: ${rule.productIdAffected}`}
                     {rule.appliedOnce && <span className="ml-2 text-orange-600">(One-time)</span>}
@@ -90,34 +90,34 @@ export default function DiscountBehaviorPanel({
           ))}
         </div>
       ) : (
-        <div className="text-sm text-gray-500 italic">No discount rules applied</div>
+        <div className="text-sm text-muted-foreground italic">No discount rules applied</div>
       )}
 
       {/* Calculation Summary */}
-      <div className="mt-4 p-3 bg-gray-100 rounded-md">
+      <div className="mt-4 p-3 bg-muted/80 rounded-md">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <div className="text-gray-600">Original Subtotal:</div>
+            <div className="text-muted-foreground">Original Subtotal:</div>
             <div className="font-semibold">Rs.{(discountResult?.originalSubtotal || 0).toFixed(2)}</div>
           </div>
           <div>
-            <div className="text-gray-600">Total Discount:</div>
+            <div className="text-muted-foreground">Total Discount:</div>
             <div className="font-semibold text-green-600">-Rs.{(discountResult?.totalDiscount || 0).toFixed(2)}</div>
           </div>
           <div>
-            <div className="text-gray-600">Item Discounts:</div>
+            <div className="text-muted-foreground">Item Discounts:</div>
             <div className="font-medium">-Rs.{(discountResult?.totalItemDiscount || 0).toFixed(2)}</div>
           </div>
           <div>
-            <div className="text-gray-600">Cart Discounts:</div>
+            <div className="text-muted-foreground">Cart Discounts:</div>
             <div className="font-medium">-Rs.{(discountResult?.totalCartDiscount || 0).toFixed(2)}</div>
           </div>
         </div>
       </div>
 
       {/* Behavior Explanation */}
-      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-        <div className="text-sm text-yellow-800">
+      <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-md">
+        <div className="text-sm text-amber-800 dark:text-amber-300">
           <div className="font-semibold mb-2">💡 Understanding Discount Behavior:</div>
           <div className="space-y-1 text-xs">
             <div><strong>applyFixedOnce: true</strong> = Fixed amount applied once per line item (quantity නොබලා)</div>

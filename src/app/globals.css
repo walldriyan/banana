@@ -46,7 +46,7 @@
     --foreground: 0 0% 90%; /* #F2F2F2 - අකුරු පැහැදිලිව දක්වන්න */
   
     /* 🪟 Card / Panel / Table section */
-    --card: 0 0% 13%; /* #2E2E2E - box එකේ අඳුරු bg එක */
+    --card: 200 6% 10%; /* #2E2E2E - box එකේ අඳුරු bg එක */
     --card-foreground: 0 0% 95%;
   
     /* 🧭 Popovers / tooltips වගේ overlays */
@@ -74,7 +74,7 @@
     --destructive-foreground: 0 0% 100%;
   
     /* 🩳 borders / outlines */
-    --border: 0 0% 18%;
+    --border: 0 0% 12%;
     --input: 0 0% 15%;
     --ring: 217 89% 56%;
   
@@ -86,7 +86,7 @@
     --chart-5: 217 50% 86%;
   
     /* 🧱 Sidebar section */
-    --sidebar-background: 0 0% 13%;
+    --sidebar-background: 0 0% 13%; 
     --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 217 89% 56%;
     --sidebar-primary-foreground: 0 0% 100%;

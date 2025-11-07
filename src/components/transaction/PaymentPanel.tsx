@@ -43,7 +43,7 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
         <CardTitle>Payment Details</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-4xl font-bold text-blue-600 text-center p-4 bg-blue-50 rounded-lg">
+        <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <div>Total to Pay</div>
           <div>Rs. {finalTotal.toFixed(2)}</div>
         </div>
@@ -94,7 +94,7 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
         </FormItem>
         
         <FormItem>
-            <div className="text-2xl font-bold text-red-600 text-center p-3 bg-red-50 rounded-lg">
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400 text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
             <div>Outstanding</div>
             <div>Rs. {watch('payment.outstandingAmount').toFixed(2)}</div>
             </div>
