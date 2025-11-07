@@ -1,4 +1,6 @@
 // src/app/dashboard/layout.tsx
+// ✅ Main එක overflow hidden - Card එක විතරක් scroll වෙනවා
+
 import {
   Sidebar,
   SidebarProvider,
@@ -16,26 +18,26 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      {/* 🔹 Full-screen flex container */}
-      <div className="flex w-screen h-screen overflow-hidden bg-background">
-        {/* 🔹 Sidebar */}
+      {/* 🔹 Full viewport container - no overflow */}
+      <div className="flex w-screen h-screen overflow-hidden">
+        
+        {/* 🔹 Sidebar - fixed width */}
         <Sidebar collapsible="icon">
           <DashboardSidebar />
         </Sidebar>
 
-        {/* 🔹 Main Area */}
-        <SidebarInset className="flex flex-col flex-1 min-h-0 min-w-0">
+        {/* 🔹 Main content area - flex grow */}
+        <SidebarInset className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          
+          {/* Header - fixed height */}
           <SidebarHeader className="border-b flex-shrink-0">
             <SidebarTrigger />
           </SidebarHeader>
 
-          {/* 🔹 Scrollable content wrapper */}
-          <div className="flex-1 overflow-y-auto">
-            {/* 🔹 Content area with padding */}
-            <main className={cn("p-4 sm:p-6 lg:p-8")}>
-                {children}
-            </main>
-          </div>
+          {/* ⚠️ Main එක overflow hidden - scroll කරන්නේ නැහැ */}
+          <main className="flex-1 min-h-0 overflow-hidden p-4 sm:p-6 lg:p-8">
+            {children}
+          </main>
           
         </SidebarInset>
       </div>

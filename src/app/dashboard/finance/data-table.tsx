@@ -1,4 +1,3 @@
-// src/app/dashboard/finance/data-table.tsx
 "use client"
 
 import {
@@ -57,14 +56,11 @@ export function FinanceDataTable<TData, TValue>({
   })
 
   return (
-    /* **** අනෙක් වැදගත් වෙනස ****
-      'overflow-hidden' අයින් කරලා 'flex-1' එකතු කළා.
-      මේකෙන් component එක parent (CardContent) එකේ සම්පූර්ණ ඉඩම ගන්නවා.
-    */
-    <div className="flex flex-col min-h-0 flex-1">
+    // 🎯 DataTable එක එහෙම එහෙමයි - scroll parent එකේ (CardContent)
+    <div className="flex flex-col space-y-4">
 
-      {/* Header section (වෙනසක් නෑ) */}
-      <div className="flex items-center justify-between py-4 flex-shrink-0">
+      {/* Fixed filter section */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <Input
           placeholder="Filter by description or category..."
           value={(table.getColumn("description")?.getFilterValue() as string) ?? ""}
@@ -74,19 +70,16 @@ export function FinanceDataTable<TData, TValue>({
           className="max-w-sm"
         />
         <AuthorizationGuard permissionKey="finance.manage">
-          <Button onClick={onAddTransaction}>
+          <Button onClick={onAddTransaction} className="w-full sm:w-auto">
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Transaction
           </Button>
         </AuthorizationGuard>
       </div>
 
-      {/* Table section (වෙනසක් නෑ - මේක තමයි scroll වෙන්න ඕනේ) */}
-      <div className="flex-grow overflow-y-auto rounded-md border">
-        <Table
-          className="overflow-hidden"
-          style={{ tableLayout: "fixed" }}
-        >
+      {/* Table - scroll නැති border එකක් විතරයි */}
+      <div className="rounded-md border">
+        <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -128,24 +121,29 @@ export function FinanceDataTable<TData, TValue>({
         </Table>
       </div>
 
-      {/* Pagination section (වෙනසක් නෑ) */}
-      <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Next
-        </Button>
+      {/* Fixed pagination section */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="text-sm text-muted-foreground">
+          Showing {table.getRowModel().rows.length} of {data.length} transaction(s)
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   )

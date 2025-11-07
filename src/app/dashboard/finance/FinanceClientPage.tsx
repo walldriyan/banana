@@ -1,4 +1,7 @@
 // src/app/dashboard/finance/FinanceClientPage.tsx
+// ✅ Card එකේ inside විතරක් scroll - Mobile responsive
+// -------------------------------------------------------------------
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -35,7 +38,12 @@ type TransactionWithRelations = FinancialTransaction & {
   supplier: Supplier | null;
 };
 
-const SummaryCard = ({ icon: Icon, label, value, valueClassName }: { icon: React.ElementType, label: string, value: string, valueClassName?: string }) => (
+const SummaryCard = ({ icon: Icon, label, value, valueClassName }: { 
+  icon: React.ElementType, 
+  label: string, 
+  value: string, 
+  valueClassName?: string 
+}) => (
   <Card className="flex-1">
     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
       <CardTitle className="text-sm font-medium">{label}</CardTitle>
@@ -74,7 +82,11 @@ export function FinanceClientPage() {
       if (transactionsRes.success && transactionsRes.data) {
         setTransactions(transactionsRes.data as TransactionWithRelations[]);
       } else {
-        toast({ variant: 'destructive', title: 'Error', description: transactionsRes.error || 'Could not fetch transactions.' });
+        toast({ 
+          variant: 'destructive', 
+          title: 'Error', 
+          description: transactionsRes.error || 'Could not fetch transactions.' 
+        });
       }
 
       setData({
@@ -83,7 +95,11 @@ export function FinanceClientPage() {
         suppliers: suppliersRes.success ? suppliersRes.data || [] : [],
       });
     } catch (e) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch initial data.' });
+      toast({ 
+        variant: 'destructive', 
+        title: 'Error', 
+        description: 'Failed to fetch initial data.' 
+      });
     }
     setIsLoading(false);
   }, [toast]);
@@ -94,9 +110,7 @@ export function FinanceClientPage() {
 
   const handleFormSuccess = () => {
     drawer.closeDrawer();
-
     fetchData();
-
   };
 
   const openAddDrawer = () => {
@@ -110,7 +124,11 @@ export function FinanceClientPage() {
   const openEditDrawer = useCallback((transaction: TransactionWithRelations) => {
     drawer.openDrawer({
       title: 'Edit Transaction',
-      content: <AddTransactionForm transaction={transaction} onSuccess={handleFormSuccess} {...data} />,
+      content: <AddTransactionForm 
+        transaction={transaction} 
+        onSuccess={handleFormSuccess} 
+        {...data} 
+      />,
       drawerClassName: 'sm:max-w-2xl'
     });
   }, [drawer, handleFormSuccess, data]);
@@ -136,29 +154,40 @@ export function FinanceClientPage() {
   };
 
   const summary = useMemo(() => {
-    const totalIncome = transactions.filter(t => t.type === 'INCOME').reduce((sum, t) => sum + t.amount, 0);
-    const totalExpense = transactions.filter(t => t.type === 'EXPENSE').reduce((sum, t) => sum + t.amount, 0);
+    const totalIncome = transactions
+      .filter(t => t.type === 'INCOME')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const totalExpense = transactions
+      .filter(t => t.type === 'EXPENSE')
+      .reduce((sum, t) => sum + t.amount, 0);
     const netBalance = totalIncome - totalExpense;
     return { totalIncome, totalExpense, netBalance };
   }, [transactions]);
 
-  const columns = useMemo(() => getColumns(openEditDrawer, handleDeleteRequest), [openEditDrawer, handleDeleteRequest]);
+  const columns = useMemo(() => 
+    getColumns(openEditDrawer, handleDeleteRequest), 
+    [openEditDrawer, handleDeleteRequest]
+  );
 
-  const formatCurrency = (value: number) => `Rs. ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatCurrency = (value: number) => 
+    `Rs. ${value.toLocaleString(undefined, { 
+      minimumFractionDigits: 2, 
+      maximumFractionDigits: 2 
+    })}`;
 
   if (isLoading) {
     return (
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-3">
-          <Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" /><Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
         </div>
-        <div className="flex justify-between"><Skeleton className="h-10 w-64" /><Skeleton className="h-10 w-32" /></div>
         <Skeleton className="h-96 w-full" />
       </div>
     );
   }
 
-  // If no companies are set up, prompt the user to create one first.
   if (data.companies.length === 0) {
     return (
       <Card className="text-center">
@@ -182,31 +211,52 @@ export function FinanceClientPage() {
 
   return (
     <>
-
-      <Card className="flex flex-col flex-grow overflow-y-auto">
-        <CardHeader>
+      {/* 🎯 Card එක full height - Desktop & Mobile responsive */}
+      <Card className="flex flex-col h-full overflow-hidden">
+        
+        {/* Fixed summary section - Mobile වලත් scroll වෙන්නේ නැහැ */}
+        <CardHeader className="flex-shrink-0">
           <CardTitle>Financial Overview</CardTitle>
-          <CardDescription>A summary of your total income, expenses, and net balance.</CardDescription>
+          <CardDescription>
+            A summary of your total income, expenses, and net balance.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col md:flex-row gap-4">
-            <SummaryCard icon={TrendingUp} label="Total Income" value={formatCurrency(summary.totalIncome)} valueClassName="text-green-600" />
-            <SummaryCard icon={TrendingDown} label="Total Expenses" value={formatCurrency(summary.totalExpense)} valueClassName="text-red-600" />
-            <SummaryCard icon={Landmark} label="Net Balance" value={formatCurrency(summary.netBalance)} valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} />
+        
+        <CardContent className="flex-shrink-0 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <SummaryCard 
+              icon={TrendingUp} 
+              label="Total Income" 
+              value={formatCurrency(summary.totalIncome)} 
+              valueClassName="text-green-600" 
+            />
+            <SummaryCard 
+              icon={TrendingDown} 
+              label="Total Expenses" 
+              value={formatCurrency(summary.totalExpense)} 
+              valueClassName="text-red-600" 
+            />
+            <SummaryCard 
+              icon={Landmark} 
+              label="Net Balance" 
+              value={formatCurrency(summary.netBalance)} 
+              valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} 
+            />
           </div>
         </CardContent>
-        <Separator />
+        
+        <Separator className="flex-shrink-0" />
 
-        {/* Transaction History Header (වෙනසක් නෑ) */}
-        <CardHeader>
+        {/* Fixed header - Mobile වලත් scroll වෙන්නේ නැහැ */}
+        <CardHeader className="flex-shrink-0">
           <CardTitle>Transaction History</CardTitle>
-          <CardDescription>View, add, edit, and manage all your financial transactions.</CardDescription>
+          <CardDescription>
+            View, add, edit, and manage all your financial transactions.
+          </CardDescription>
         </CardHeader>
 
-
-        <CardContent className="flex flex-col flex-1 min-h-0">
-
-
+        {/* 🎯 මෙතන විතරක් scroll - Card inside, Mobile & Desktop */}
+        <CardContent className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6">
           <FinanceDataTable
             columns={columns}
             data={transactions}
@@ -216,17 +266,23 @@ export function FinanceClientPage() {
 
       </Card>
 
-
-      {/* AlertDialog (වෙනසක් නෑ) */}
+      {/* Delete confirmation dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete the transaction.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This will permanently delete the transaction.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+            <AlertDialogAction 
+              onClick={confirmDelete} 
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
