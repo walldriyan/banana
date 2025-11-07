@@ -180,7 +180,7 @@ export function FinanceClientPage() {
 
   return (
     <>
-      <Card className='flex flex-col flex-1 min-h-0'>
+      <Card className='flex-1 flex flex-col min-h-0'>
           <CardHeader>
             <CardTitle>Financial Overview</CardTitle>
             <CardDescription>A summary of your total income, expenses, and net balance.</CardDescription>
