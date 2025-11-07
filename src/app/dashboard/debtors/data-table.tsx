@@ -64,7 +64,7 @@ export function DebtorsDataTable<TData, TValue>({
                 className="max-w-sm"
             />
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-y-auto max-h-[calc(100vh-22rem)]">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
