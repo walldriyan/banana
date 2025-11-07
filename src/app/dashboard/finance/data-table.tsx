@@ -74,7 +74,7 @@ export function FinanceDataTable<TData, TValue>({
                 </Button>
             </AuthorizationGuard>
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border overflow-y-auto max-h-[calc(100vh-28rem)]">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
