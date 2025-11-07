@@ -197,8 +197,8 @@ export function FinanceClientPage() {
               <CardTitle>Transaction History</CardTitle>
               <CardDescription>View, add, edit, and manage all your financial transactions.</CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 flex flex-col min-h-0">
-             <FinanceDataTable
+         <CardContent className="flex-1 flex flex-col min-h-0">
+            <FinanceDataTable
                 columns={columns}
                 data={transactions}
                 onAddTransaction={openAddDrawer}
@@ -221,3 +221,4 @@ export function FinanceClientPage() {
     </>
   );
 }
+ 
