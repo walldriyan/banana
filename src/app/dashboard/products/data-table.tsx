@@ -138,7 +138,7 @@ export function ProductsDataTable<TData, TValue>({
                         data-state={row.getIsSelected() && "selected"}
                     >
                         {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} style={{ paddingLeft: cell.getIsGrouped() ? `${row.depth * 2}rem` : (row.depth + 1) * 2 + 'rem' }}>
+                        <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 1.5 + (cell.getIsGrouped() ? 0 : 1.5)}rem` }}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                         ))}
