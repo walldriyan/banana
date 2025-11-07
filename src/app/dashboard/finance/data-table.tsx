@@ -57,8 +57,8 @@ export function FinanceDataTable<TData, TValue>({
   })
 
   return (
-    <div className="flex flex-col min-h-0  overflow-hidden">
-    {/* Header section */}
+    <div className="flex flex-col flex-1 min-h-0">
+    
     <div className="flex items-center justify-between py-4 flex-shrink-0">
       <Input
         placeholder="Filter by description or category..."
@@ -75,55 +75,53 @@ export function FinanceDataTable<TData, TValue>({
         </Button>
       </AuthorizationGuard>
     </div>
-  
-    {/* Table section */}
+ 
     <div className="flex-grow overflow-y-auto rounded-md border">
     <Table
   className="overflow-hidden"
   style={{ tableLayout: "fixed" }}
 >
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
+      <TableHeader>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            {headerGroup.headers.map((header) => (
+              <TableHead key={header.id}>
+                {header.isPlaceholder
+                  ? null
+                  : flexRender(
+                      header.column.columnDef.header,
+                      header.getContext()
+                    )}
+              </TableHead>
+            ))}
+          </TableRow>
+        ))}
+      </TableHeader>
+      <TableBody>
+        {table.getRowModel().rows?.length ? (
+          table.getRowModel().rows.map((row) => (
+            <TableRow
+              key={row.id}
+              data-state={row.getIsSelected() && "selected"}
+            >
+              {row.getVisibleCells().map((cell) => (
+                <TableCell key={cell.id}>
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </TableCell>
               ))}
             </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+          ))
+        ) : (
+          <TableRow>
+            <TableCell colSpan={columns.length} className="h-24 text-center">
+              No results.
+            </TableCell>
+          </TableRow>
+        )}
+      </TableBody>
+    </Table>
     </div>
-  
-    {/* Pagination section */}
+ 
     <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
       <Button
         variant="outline"
@@ -143,6 +141,5 @@ export function FinanceDataTable<TData, TValue>({
       </Button>
     </div>
   </div>
-  
   )
 }
