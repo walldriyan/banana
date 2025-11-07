@@ -180,8 +180,8 @@ export function FinanceClientPage() {
 
   return (
     <>
-      <Card className='flex-1 flex flex-col min-h-0'>
-          <CardHeader>
+      <Card className='flex flex-col h-full overflow-y-auto'>
+          <CardHeader >
             <CardTitle>Financial Overview</CardTitle>
             <CardDescription>A summary of your total income, expenses, and net balance.</CardDescription>
           </CardHeader>
