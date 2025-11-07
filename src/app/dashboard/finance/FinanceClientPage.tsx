@@ -180,7 +180,7 @@ export function FinanceClientPage() {
 
   return (
     <>
-      <Card>
+      <Card className='flex flex-col h-full'>
           <CardHeader>
             <CardTitle>Financial Overview</CardTitle>
             <CardDescription>A summary of your total income, expenses, and net balance.</CardDescription>
@@ -197,7 +197,7 @@ export function FinanceClientPage() {
               <CardTitle>Transaction History</CardTitle>
               <CardDescription>View, add, edit, and manage all your financial transactions.</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-y-auto max-h-[calc(100vh-30rem)]">
              <FinanceDataTable
                 columns={columns}
                 data={transactions}
