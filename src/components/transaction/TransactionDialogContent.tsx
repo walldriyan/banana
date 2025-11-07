@@ -283,7 +283,10 @@ export function TransactionDialogContent({
 
         {step === 'print' && finalTransactionData && (
           <div className='py-4'>
-            <div className="bg-muted p-4 rounded-lg overflow-y-auto max-h-[60vh] printable-area focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0">
+            <div 
+                className="bg-muted p-4 rounded-lg overflow-y-auto max-h-[60vh] printable-area focus:outline-none"
+                style={{ boxShadow: 'none' }}
+            >
               <div style={{ maxWidth: '300px', margin: '0 auto' }}>
                 <ThermalReceipt data={finalTransactionData} company={companyDetails} showAsGiftReceipt={isGiftReceipt} />
               </div>
