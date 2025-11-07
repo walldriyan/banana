@@ -114,7 +114,7 @@ export function ManageSalePaymentsDrawer({ transaction: initialTransaction, onPa
                 <CardHeader>
                     <CardTitle>Payment History</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="max-h-[500px] overflow-y-auto">
                     {isLoading ? (
                         <div className="space-y-4">
                             <Skeleton className="h-12 w-full" />
