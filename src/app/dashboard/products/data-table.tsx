@@ -172,7 +172,7 @@ export function ProductsDataTable<TData, TValue>({
                 Next
             </Button>
         </div>
-        <div className="flex-1 text-sm text-muted-foreground flex-shrink-0">
+        <div className="text-sm text-muted-foreground flex-shrink-0">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
