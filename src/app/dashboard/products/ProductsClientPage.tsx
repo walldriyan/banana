@@ -171,15 +171,19 @@ export function ProductsClientPage() {
   }
 
   return (
-    <>
-      <ProductsDataTable
-        columns={columns}
-        data={filteredBatches}
-        onAddProduct={openAddProductDrawer}
-        hideZeroStock={hideZeroStock}
-        onHideZeroStockChange={setHideZeroStock}
-      />
-       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+    <div className="flex-1 flex flex-col min-h-0">
+      <Card className="flex flex-col flex-1">
+        <CardContent className="flex flex-col flex-1 p-6">
+          <ProductsDataTable
+            columns={columns}
+            data={filteredBatches}
+            onAddProduct={openAddProductDrawer}
+            hideZeroStock={hideZeroStock}
+            onHideZeroStockChange={setHideZeroStock}
+          />
+        </CardContent>
+      </Card>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -196,6 +200,6 @@ export function ProductsClientPage() {
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
-    </>
+    </div>
   );
 }

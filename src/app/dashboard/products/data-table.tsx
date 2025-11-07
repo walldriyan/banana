@@ -80,8 +80,8 @@ export function ProductsDataTable<TData, TValue>({
   })
 
   return (
-    <div>
-        <div className="flex items-center justify-between py-4 gap-4">
+    <div className="flex flex-col min-h-0 flex-1">
+        <div className="flex items-center justify-between py-4 gap-4 flex-shrink-0">
             <Input
                 placeholder="Filter by product name..."
                 value={(table.getColumn("product.name")?.getFilterValue() as string) ?? ""}
@@ -110,7 +110,7 @@ export function ProductsDataTable<TData, TValue>({
                 </AuthorizationGuard>
             </div>
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border flex-grow overflow-y-auto">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -138,7 +138,7 @@ export function ProductsDataTable<TData, TValue>({
                         data-state={row.getIsSelected() && "selected"}
                     >
                         {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} style={{ paddingLeft: cell.getIsGrouped() ? `${row.depth * 2}rem` : (row.depth + 1) * 2 + 'rem' }}>
+                        <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 1.5 + (cell.getIsGrouped() ? 0 : 1.5)}rem` }}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                         ))}
@@ -154,7 +154,7 @@ export function ProductsDataTable<TData, TValue>({
                 </TableBody>
             </Table>
         </div>
-         <div className="flex items-center justify-end space-x-2 py-4">
+         <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
             <Button
                 variant="outline"
                 size="sm"
@@ -172,7 +172,7 @@ export function ProductsDataTable<TData, TValue>({
                 Next
             </Button>
         </div>
-        <div className="flex-1 text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground flex-shrink-0">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
