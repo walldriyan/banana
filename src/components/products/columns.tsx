@@ -68,8 +68,14 @@ const StockCell = ({ row }: { row: any }) => {
     const stockAsString = row.original.stock as string;
     const stock = parseFloat(stockAsString);
 
-    // Format to 3 decimal places if it's not a whole number, otherwise show as is.
-    const displayStock = Number.isInteger(stock) ? stock : stock.toFixed(3);
+    // Check if the ORIGINAL string has a decimal point
+    // This preserves the decimal representation from the database
+    const hasDecimalInOriginal = stockAsString.includes('.');
+    
+    // If original had decimals OR current value is not integer, show 3 decimal places
+    const displayStock = hasDecimalInOriginal || !Number.isInteger(stock) 
+        ? stock.toFixed(3) 
+        : stock.toString();
     
     return <div className="text-right">{displayStock} {units.baseUnit}</div>;
 };
