@@ -32,12 +32,16 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
   const preview = useMemo(() => {
     const selectedUnitDef = allUnitDefs.find((u) => u.name === selectedUnit);
     if (!selectedUnitDef) return { convertedQty: 0, newPrice: 0 };
-
+    
+    // Corrected Logic:
+    // Base Qty = Display Qty * Conversion Factor of the selected unit
+    // Price = Base Qty * Price of one Base Unit
     const baseQty = quantity * selectedUnitDef.conversionFactor;
-    const newPrice = baseQty * item.price;
+    const baseUnitPrice = item.price / item.quantity * baseQty;
 
-    return { convertedQty: baseQty, newPrice };
-  }, [quantity, selectedUnit, allUnitDefs, item.price]);
+
+    return { convertedQty: baseQty, newPrice: baseUnitPrice };
+  }, [quantity, selectedUnit, allUnitDefs, item]);
 
   // 🧩 unit එක change කිරීමේ function එක
   const handleUnitSelect = (unitName: string) => {
