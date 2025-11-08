@@ -145,19 +145,18 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
-            const batch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
-            if (!batch) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
+            const batchBeforeUpdate = await tx.productBatch.findUnique({ where: { id: line.batchId } });
+            if (!batchBeforeUpdate) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
             
-            const currentStock = new Prisma.Decimal(batch.stock);
-            const quantityToDecrement = new Prisma.Decimal(line.quantity);
-            const newStock = currentStock.minus(quantityToDecrement);
+            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${batchBeforeUpdate.stock.toString()} | අඩු කරන ප්‍රමාණය: ${line.quantity}`);
 
-            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${currentStock.toString()} | අඩු කරන ප්‍රමාණය: ${quantityToDecrement.toString()} | ගණනය කළ නව තොගය: ${newStock.toString()}`);
-
+            // Use Prisma's atomic decrement operation
             await tx.productBatch.update({
                 where: { id: line.batchId }, 
                 data: { 
-                    stock: newStock
+                    stock: {
+                        decrement: line.quantity
+                    }
                 }
             });
 
@@ -181,18 +180,18 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
              const returnedQty = originalQty.minus(keptQty);
 
              if (returnedQty.greaterThan(0)) {
-                 const batch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
-                 if (!batch) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
+                 const batchBeforeUpdate = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
+                 if (!batchBeforeUpdate) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
                  
-                 const currentStock = new Prisma.Decimal(batch.stock);
-                 const newStock = currentStock.plus(returnedQty);
-
-                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${currentStock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()} | ගණනය කළ නව තොගය: ${newStock.toString()}`);
-
+                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${batchBeforeUpdate.stock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()}`);
+                 
+                 // Use Prisma's atomic increment operation
                  await tx.productBatch.update({
                      where: { id: originalLine.productBatchId! },
                      data: { 
-                        stock: newStock
+                        stock: {
+                            increment: returnedQty.toNumber() // Convert Decimal back to number for increment
+                        }
                     }
                  });
 
