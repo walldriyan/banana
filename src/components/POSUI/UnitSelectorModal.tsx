@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 interface UnitSelectorModalProps {
   item: SaleItem;
@@ -38,33 +39,31 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
     return { convertedQty: baseQty, newPrice };
   }, [quantity, selectedUnit, allUnitDefs, item.price]);
 
+  // 🧩 unit එක change කිරීමේ function එක
   const handleUnitSelect = (unitName: string) => {
     console.log("--- Unit Conversion Calculation (සිංහලෙන්) ---");
-  
     const newUnitDef = allUnitDefs.find(u => u.name === unitName);
-    const currentUnitDef = allUnitDefs.find(u => u.name === item.displayUnit);
-  
+    const currentUnitDef = allUnitDefs.find(u => u.name === selectedUnit);
+
     if (!newUnitDef || !currentUnitDef) {
       console.error("Unit එක සොයාගන්න බැරි වුණා");
       return;
     }
-  
-    // 1️⃣ Base quantity එක ගණනය කිරීම
-    const baseQuantity = item.displayQuantity * currentUnitDef.conversionFactor;
-    console.log(`   - දැනට ඇති Base Quantity: ${baseQuantity} ${allUnits.baseUnit}`);
-  
-    // 2️⃣ අලුත් unit එකේ conversion factor එකෙන් බෙදීම
-    const newDisplayQuantity = baseQuantity / newUnitDef.conversionFactor;
-    console.log(`   - ගණනය: ${baseQuantity} / ${newUnitDef.conversionFactor} = ${newDisplayQuantity}`);
-  
-    // 3️⃣ Update modal values
-    setSelectedUnit(unitName);
-    setQuantity(newDisplayQuantity);
-  
-    console.log(`   ✅ නව Display Unit: ${unitName}, Quantity: ${newDisplayQuantity}`);
-    console.log("-------------------------------------------------");
-  };
 
+    // 1️⃣ දැනට ඇති quantity එකෙන් base quantity එක ගන්නවා
+    const baseQuantity = quantity * currentUnitDef.conversionFactor;
+    console.log(`   🔹 Base Quantity: ${baseQuantity} ${allUnits.baseUnit}`);
+
+    // 2️⃣ අලුත් unit එකට base quantity එක convert කිරීම
+    const newDisplayQuantity = baseQuantity / newUnitDef.conversionFactor;
+    console.log(`   🔹 Convert: ${baseQuantity} / ${newUnitDef.conversionFactor} = ${newDisplayQuantity}`);
+
+    setSelectedUnit(unitName);
+    setQuantity(Number(newDisplayQuantity.toFixed(4)));
+
+    console.log(`   ✅ නව Unit: ${unitName}, Qty: ${newDisplayQuantity}`);
+    console.log("--------------------------------------------");
+  };
 
   // ✅ Update item function
   const handleUpdate = () => {
@@ -73,51 +72,45 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
 
   return (
     <div className="space-y-6 pt-4">
-      {/* 🔹 Unit Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Select Unit</CardTitle>
-          <CardDescription>Choose the unit you want to count in.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {allUnitDefs.map((unit) => (
-            <Button
-              key={unit.name}
-              variant={selectedUnit === unit.name ? 'secondary' : 'outline'}
-              onClick={() => handleUnitSelect(unit.name)}
-              className="h-12 text-base flex items-center justify-center gap-2"
-            >
-              {selectedUnit === unit.name && <CheckCircle className="h-4 w-4" />}
-              {unit.name}
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
+      
+      <div className="grid grid-cols-2 gap-4">
+        {/* 🔹 Unit Selection Dropdown */}
+        <div className="flex flex-col space-y-2">
+            <Label htmlFor="unit-select">Select Unit</Label>
+            <Select onValueChange={handleUnitSelect} value={selectedUnit}>
+                <SelectTrigger id="unit-select" className="w-full">
+                    <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                    {allUnitDefs.map(unit => (
+                        <SelectItem key={unit.name} value={unit.name}>
+                            {unit.name}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </div>
 
-      {/* 🔹 Quantity Input */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Set Quantity</CardTitle>
-          <CardDescription>Enter the quantity for {selectedUnit}.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Label htmlFor="quantity-input" className="sr-only">Quantity</Label>
+        {/* 🔹 Quantity Input */}
+        <div className="flex flex-col space-y-2">
+          <Label htmlFor="quantity-input">Set Quantity</Label>
           <Input
             id="quantity-input"
             type="number"
             value={quantity}
             onChange={(e) => setQuantity(Number(e.target.value))}
-            className="h-14 text-center text-2xl font-bold"
+            className="h-10 text-center text-lg font-bold"
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+     
 
       {/* 🔹 Summary */}
       <Card className="bg-muted/50">
-        <CardHeader>
+        <CardHeader className="p-4">
           <CardTitle className="text-base">Summary</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="p-4 pt-0 space-y-2">
           <div className="flex items-center justify-between font-mono text-sm">
             <span className="text-muted-foreground">Base Qty ({allUnits.baseUnit}):</span>
             <span className="font-bold">{preview.convertedQty.toFixed(2)}</span>
