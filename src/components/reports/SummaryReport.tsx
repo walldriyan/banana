@@ -45,8 +45,10 @@ interface SummaryReportProps {
 
 export function SummaryReport({ data }: SummaryReportProps) {
   const { t, language } = useLanguage();
-  const totalIncome = (data.sales.totalRevenue || 0) + (data.income.otherIncome || 0);
+  
+  const totalRevenueWithDiscounts = (data.sales.totalRevenue || 0) + (data.sales.totalDiscount || 0);
   const totalExpenses = (data.purchases.totalCost || 0) + (data.expenses.otherExpenses || 0) + (data.sales.totalDiscount || 0);
+  const totalIncome = totalRevenueWithDiscounts + (data.income.otherIncome || 0);
 
   return (
     <div className="report-container p-4 bg-white rounded-lg text-sm text-black">
@@ -72,16 +74,17 @@ export function SummaryReport({ data }: SummaryReportProps) {
             </div>
             <div>
                 <ReportRow label="incomeTitle" value="" isBold />
-                <ReportRow label="salesRevenue" value={data.sales.totalRevenue + data.sales.totalDiscount} isSubtle />
+                <ReportRow label="salesRevenue" value={totalRevenueWithDiscounts} isSubtle />
                 <ReportRow label="otherIncome" value={data.income.otherIncome} isSubtle />
-                 <div className="py-2 px-3 h-[52px]"></div> {/* Spacer */}
+                 {/* This spacer div ensures the "Total Income" aligns with "Total Expenses" if there are more expense lines */}
+                 <div className="py-2 px-3 h-[44px]"></div>
                 <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
             </div>
           </div>
           
-            <div className="col-span-2 border-t bg-gray-50 p-4 space-y-2">
+            <div className="col-span-2 border-t bg-blue-50 p-4 space-y-2">
                 <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
-                <div className="flex justify-between items-center text-base">
+                 <div className="flex justify-between items-center text-base">
                     <span className="text-gray-600">{t('totalIncome')}</span>
                     <span className="font-semibold">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
                 </div>
