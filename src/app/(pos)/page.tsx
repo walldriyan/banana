@@ -341,57 +341,74 @@ export default function MyNewEcommerceShop() {
 
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
+    console.log("🛒 handleCartUpdate called:", { saleItemId, newDisplayQuantity, newDisplayUnit });
     setCart(currentCart => {
-      const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
-      if (itemIndex === -1) return currentCart;
-  
-      // If quantity is zero or less, remove the item
-      if (newDisplayQuantity <= 0) {
-        return currentCart.filter(item => item.saleItemId !== saleItemId);
-      }
-  
-      const currentItem = currentCart[itemIndex];
-      const unitsData = parseUnits(currentItem.product.units);
-      const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-      
-      // Determine the unit to use for conversion
-      const unitToUse = newDisplayUnit || currentItem.displayUnit;
-      const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
-      
-      if (!selectedUnitDefinition) {
-        console.error(`Unit definition for '${unitToUse}' not found.`);
-        return currentCart;
-      }
-  
-      // Calculate the new base quantity based on the new display quantity and its unit
-      const newBaseQuantity = newDisplayQuantity * selectedUnitDefinition.conversionFactor;
-      
-      const originalProduct = products.find(p => p.id === currentItem.id);
-      const originalStock = originalProduct?.stock || 0;
-  
-      if (newBaseQuantity > originalStock) {
-        setTimeout(() => {
-        toast({
-          variant: "destructive",
-          title: "Stock Limit Exceeded",
-          description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-        });
-        }, 0);
-        return currentCart; // Return original cart if stock limit is exceeded
-      }
-  
-      const updatedCart = [...currentCart];
-      updatedCart[itemIndex] = {
-        ...updatedCart[itemIndex],
-        quantity: newBaseQuantity,
-        displayQuantity: newDisplayQuantity,
-        displayUnit: unitToUse,
-      };
-      
-      return updatedCart;
+        const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
+        if (itemIndex === -1) return currentCart;
+
+        const currentItem = currentCart[itemIndex];
+        const unitsData = parseUnits(currentItem.product.units);
+        const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+        
+        // If quantity is zero or less, remove the item
+        if (newDisplayQuantity <= 0) {
+            return currentCart.filter(item => item.saleItemId !== saleItemId);
+        }
+
+        const unitToUse = newDisplayUnit || currentItem.displayUnit;
+        const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+
+        if (!selectedUnitDefinition) {
+            console.error(`Unit definition for '${unitToUse}' not found.`);
+            return currentCart;
+        }
+
+        // --- NEW LOGIC ---
+        console.log(`--- Unit Conversion & Cart Update (සිංහලෙන්) ---`);
+        console.log(`1. පියවර: නව Base Quantity එක ගණනය කිරීම.`);
+        console.log(`   - Display Quantity: ${newDisplayQuantity} ${unitToUse}`);
+        console.log(`   - Conversion Factor (${unitToUse} to ${unitsData.baseUnit}): ${selectedUnitDefinition.conversionFactor}`);
+        
+        const newBaseQuantity = newDisplayQuantity * selectedUnitDefinition.conversionFactor;
+        
+        console.log(`   - ගණනය: ${newDisplayQuantity} * ${selectedUnitDefinition.conversionFactor} = ${newBaseQuantity.toFixed(4)} ${unitsData.baseUnit}`);
+
+
+        const originalProduct = products.find(p => p.id === currentItem.id);
+        const originalStock = originalProduct?.stock || 0;
+        
+        console.log(`2. පියවර: Stock එක පරීක්ෂා කිරීම.`);
+        console.log(`   - ඉල්ලූ ප්‍රමාණය (Base): ${newBaseQuantity.toFixed(4)}`);
+        console.log(`   - තොගයේ ඇති ප්‍රමාණය: ${originalStock}`);
+
+        if (newBaseQuantity > originalStock) {
+            console.log(`   - ❌ දෝෂය: Stock එක සීමාව ඉක්මවා ඇත.`);
+            setTimeout(() => {
+                toast({
+                    variant: "destructive",
+                    title: "Stock Limit Exceeded",
+                    description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+                });
+            }, 0);
+            return currentCart; // Return original cart if stock limit is exceeded
+        }
+
+        const updatedCart = [...currentCart];
+        updatedCart[itemIndex] = {
+            ...currentItem,
+            quantity: newBaseQuantity, // This is the new BASE quantity
+            displayQuantity: newDisplayQuantity, // This is the new DISPLAY quantity
+            displayUnit: unitToUse, // This is the new DISPLAY unit
+        };
+
+        console.log(`3. පියවර: Cart එක යාවත්කාලීන කිරීම.`);
+        console.log(`   - ✅ සාර්ථකයි! නව අගයන්:`, updatedCart[itemIndex]);
+        console.log(`-------------------------------------------------`);
+        
+        return updatedCart;
     });
   };
-  
+
   const openUnitSelectorModal = useCallback((item: SaleItem) => {
     setUnitModalState({ isOpen: true, item: item });
   }, []);
