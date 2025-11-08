@@ -3,14 +3,14 @@ import { DebtorsClientPage } from "./DebtorsClientPage";
 
 export default async function DebtorsPage() {
   return (
-    <div className="container mx-auto py-10">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-            <h1 className="text-3xl font-bold">Customer Credit (Debtors)</h1>
-            <p className="text-muted-foreground">Track and manage outstanding payments for sales transactions.</p>
-        </div>
+    <div className="flex flex-col h-full">
+      <div className="flex-shrink-0 mb-6">
+        <h1 className="text-3xl font-bold">Customer Credit (Debtors)</h1>
+        <p className="text-muted-foreground">Track and manage outstanding payments for sales transactions.</p>
       </div>
-      <DebtorsClientPage />
+      <div className="flex-1 min-h-0">
+        <DebtorsClientPage />
+      </div>
     </div>
   );
 }
