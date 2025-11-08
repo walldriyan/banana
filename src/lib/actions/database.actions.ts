@@ -18,6 +18,8 @@ import { revalidatePath } from 'next/cache';
  * @returns The newly created transaction object from the database.
  */
 export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
+  console.log("💾 1. saveTransactionToDb ක්‍රියාවලිය ආරම්භ විය. ලැබුණු දත්ත:", JSON.stringify(data, null, 2));
+
   const {
     transactionHeader,
     transactionLines,
@@ -28,7 +30,8 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 
   try {
     const newTransaction = await prisma.$transaction(async (tx) => {
-      
+      console.log(" transactional block එකට ඇතුළු විය.");
+
       let customer;
       const phoneToUse = customerDetails.phone || null;
       const isWalkIn = customerDetails.name === 'Walk-in Customer' && !phoneToUse;
@@ -53,6 +56,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           },
         });
       }
+      console.log(`👤 2. Customer සකස් කරන ලදී: ID - ${customer.id}`);
 
       // Determine initial payment status
       let initialPaymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
@@ -120,6 +124,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           },
         },
       });
+      console.log(`🧾 3. ප්‍රධාන ගනුදෙනු වාර්තාව සාදන ලදී: ID - ${createdTransaction.id}`);
 
       // Record initial payment in the new SalePayment table if it's a credit sale
       if (initialPaymentStatus === 'partial' || initialPaymentStatus === 'pending') {
@@ -136,17 +141,23 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           }
       }
 
-
       // STOCK MANAGEMENT LOGIC
+      console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
-            await tx.productBatch.update({ // Changed from Product to ProductBatch
+            const batch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
+            if (!batch) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
+            
+            const newStock = batch.stock - line.quantity;
+            console.log(`   - Batch ID: ${line.batchId} | Current Stock: ${batch.stock} | Quantity to Decrement: ${line.quantity} | New Stock: ${newStock}`);
+
+            if (newStock < 0) {
+                 throw new Error(`Stock update failed for batch ${line.batchId}: Cannot have negative stock.`);
+            }
+
+            await tx.productBatch.update({
                 where: { id: line.batchId }, 
-                data: {
-                    stock: {
-                       decrement: line.quantity
-                    }
-                }
+                data: { stock: newStock }
             });
         }
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
@@ -160,24 +171,26 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
          }
 
          for (const originalLine of originalTx.lines) {
-             const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); // Changed to batchId
+             const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); 
              const originalQty = originalLine.quantity;
              const keptQty = keptLine ? keptLine.quantity : 0;
              const returnedQty = originalQty - keptQty;
 
              if (returnedQty > 0) {
-                 await tx.productBatch.update({ // Changed from Product to ProductBatch
-                     where: { id: originalLine.productBatchId! }, // Use the correct ID from the original line
-                     data: {
-                         stock: {
-                             increment: returnedQty
-                         }
-                     }
+                 const batch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
+                 if (!batch) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
+                 
+                 const newStock = batch.stock + returnedQty;
+                 console.log(`   - REFUND: Batch ID: ${originalLine.productBatchId} | Current Stock: ${batch.stock} | Quantity to Increment: ${returnedQty} | New Stock: ${newStock}`);
+
+                 await tx.productBatch.update({
+                     where: { id: originalLine.productBatchId! },
+                     data: { stock: newStock }
                  });
              }
          }
       }
-
+      console.log("✅ 5. Stock Management සාර්ථකව අවසන් විය.");
 
       return createdTransaction;
     });
@@ -189,16 +202,16 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
     return { success: true, data: newTransaction };
 
   } catch (error) {
-    console.error('[DB_SAVE_ERROR]', error);
+    console.error('[DB_SAVE_ERROR] සම්පූර්ණ දෝෂය:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if(error.code === 'P2002' && (error.meta?.target as string[])?.includes('originalTransactionId')) {
-           return { success: false, error: `The original transaction has already been refunded.` };
+           return { success: false, error: `දෝෂය: මෙම ගනුදෙනුව සඳහා දැනටමත් refund එකක් නිකුත් කර ඇත.` };
       }
-      return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
+      return { success: false, error: `Prisma දෝෂය (${error.code}): ${error.message}` };
     }
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown database error occurred.',
+      error: error instanceof Error ? error.message : 'දත්ත ගබඩාවේ නොදන්නා දෝෂයක් ඇතිවිය.',
     };
   }
 }
