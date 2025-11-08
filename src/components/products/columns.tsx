@@ -63,8 +63,14 @@ const CellActions = ({ batch, onEdit, onDelete, onViewDetails }: CellActionsProp
 const StockCell = ({ row }: { row: any }) => {
     const batch = row.original as ProductBatch;
     const units = useProductUnits(batch.product.units);
-    const stock = row.getValue("stock") as number;
-    return <div className="text-right">{stock} {units.baseUnit}</div>;
+    const stock = parseFloat(row.getValue("stock"));
+
+    console.log(`[StockCell] Rendering for batch ${batch.id}. Raw stock value from getValue:`, row.getValue("stock"), "Parsed as float:", stock);
+
+    // Format to 3 decimal places if it's not a whole number, otherwise show as is.
+    const displayStock = Number.isInteger(stock) ? stock : stock.toFixed(3);
+    
+    return <div className="text-right">{displayStock} {units.baseUnit}</div>;
 };
 
 // Update the type definition for the columns factory
