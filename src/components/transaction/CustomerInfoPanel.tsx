@@ -1,14 +1,43 @@
 // src/components/transaction/CustomerInfoPanel.tsx
 'use client';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { FormItem, FormMessage } from '@/components/ui/form';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../ui/command';
+import { ChevronsUpDown, Check } from 'lucide-react';
+import type { Customer } from '@prisma/client';
 
-export function CustomerInfoPanel() {
-  const { register, formState: { errors } } = useFormContext();
+interface CustomerInfoPanelProps {
+  customers: Customer[];
+}
+
+export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
+  const { register, formState: { errors }, setValue, watch } = useFormContext();
+  const [open, setOpen] = useState(false);
+  const customerName = watch('customer.name');
+
+  useEffect(() => {
+     // If the name is cleared or doesn't match any customer, reset to walk-in
+    if (customerName === '') {
+       setValue('customer.name', 'Walk-in Customer');
+       setValue('customer.phone', '');
+       setValue('customer.address', '');
+    }
+  }, [customerName, setValue]);
+
+
+  const handleSelectCustomer = (customer: Customer) => {
+    setValue('customer.name', customer.name);
+    setValue('customer.phone', customer.phone || '');
+    setValue('customer.address', customer.address || '');
+    setOpen(false);
+  }
 
   return (
     <Card>
@@ -18,10 +47,56 @@ export function CustomerInfoPanel() {
       <CardContent className="space-y-4">
         <FormItem>
           <Label htmlFor="customerName">Customer Name</Label>
+           <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between"
+                  >
+                    <span className="truncate">{customerName || "Select customer..."}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                  <Command>
+                      <CommandInput placeholder="Search customer..." />
+                      <CommandList>
+                        <CommandEmpty>No customer found.</CommandEmpty>
+                        <CommandGroup>
+                           <CommandItem
+                                key="walk-in"
+                                value="Walk-in Customer"
+                                onSelect={() => {
+                                    setValue('customer.name', 'Walk-in Customer');
+                                    setValue('customer.phone', '');
+                                    setValue('customer.address', '');
+                                    setOpen(false);
+                                }}
+                            >
+                                <Check className={cn("mr-2 h-4 w-4", customerName === 'Walk-in Customer' ? "opacity-100" : "opacity-0")} />
+                                Walk-in Customer
+                            </CommandItem>
+                            {customers.map((customer) => (
+                            <CommandItem
+                                key={customer.id}
+                                value={customer.name}
+                                onSelect={() => handleSelectCustomer(customer)}
+                            >
+                                <Check className={cn("mr-2 h-4 w-4", customer.name === customerName ? "opacity-100" : "opacity-0" )} />
+                                {customer.name}
+                            </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      </CommandList>
+                  </Command>
+              </PopoverContent>
+          </Popover>
           <Input
             id="customerName"
             {...register('customer.name')}
-            placeholder="e.g., John Doe"
+            className="hidden" // Hide the original input, we only use it for form state
           />
           {errors.customer?.name && (
             <FormMessage>{errors.customer.name.message?.toString()}</FormMessage>
