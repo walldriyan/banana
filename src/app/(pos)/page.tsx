@@ -48,6 +48,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import OrderSummary from '@/components/POSUI/OrderSummary';
 import { HelpClientPage } from '@/app/dashboard/help/HelpClientPage';
+import { UnitSelectorModal } from '@/components/POSUI/UnitSelectorModal';
 
 
 const initialDiscountResult = {
@@ -94,11 +95,13 @@ export default function MyNewEcommerceShop() {
       if (productsResult.success && productsResult.data) {
         setProducts(productsResult.data);
       } else {
+        setTimeout(() => {
         toast({
           variant: 'destructive',
           title: 'Error fetching products',
           description: productsResult.error,
         });
+        }, 0);
       }
 
       if (campaignsResult.success && campaignsResult.data) {
@@ -326,48 +329,73 @@ export default function MyNewEcommerceShop() {
 
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
-    const itemIndex = cart.findIndex(item => item.saleItemId === saleItemId);
-    if (itemIndex === -1) return;
-
-    const currentItem = cart[itemIndex];
-    const unitsData = parseUnits(currentItem.product.units);
-    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-
-    const unitToUse = newDisplayUnit || currentItem.displayUnit;
-    const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
-    const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-
-    const newBaseQuantity = newDisplayQuantity * conversionFactor;
-    const originalProduct = products.find(p => p.id === currentItem.id);
-    const originalStock = originalProduct?.stock || 0;
-
-    if (newBaseQuantity > originalStock) {
-      toast({
-        variant: "destructive",
-        title: "Stock Limit Exceeded",
-        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-      });
-      return;
-    }
-
     setCart(currentCart => {
-      const updatedCart = [...currentCart];
-      const idx = updatedCart.findIndex(item => item.saleItemId === saleItemId);
-      if (idx === -1) return currentCart;
-
+      const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
+      if (itemIndex === -1) return currentCart;
+  
+      // If quantity is zero or less, remove the item
       if (newDisplayQuantity <= 0) {
-        return updatedCart.filter(item => item.saleItemId !== saleItemId);
+        return currentCart.filter(item => item.saleItemId !== saleItemId);
       }
-
-      updatedCart[idx] = {
-        ...updatedCart[idx],
+  
+      const currentItem = currentCart[itemIndex];
+      const unitsData = parseUnits(currentItem.product.units);
+      const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+      
+      // Determine the unit to use for conversion
+      const unitToUse = newDisplayUnit || currentItem.displayUnit;
+      const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+      
+      if (!selectedUnitDefinition) {
+        console.error(`Unit definition for '${unitToUse}' not found.`);
+        return currentCart;
+      }
+  
+      // Calculate the new base quantity based on the new display quantity and its unit
+      const newBaseQuantity = newDisplayQuantity * selectedUnitDefinition.conversionFactor;
+      
+      const originalProduct = products.find(p => p.id === currentItem.id);
+      const originalStock = originalProduct?.stock || 0;
+  
+      if (newBaseQuantity > originalStock) {
+        setTimeout(() => {
+        toast({
+          variant: "destructive",
+          title: "Stock Limit Exceeded",
+          description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+        });
+        }, 0);
+        return currentCart; // Return original cart if stock limit is exceeded
+      }
+  
+      const updatedCart = [...currentCart];
+      updatedCart[itemIndex] = {
+        ...updatedCart[itemIndex],
         quantity: newBaseQuantity,
         displayQuantity: newDisplayQuantity,
         displayUnit: unitToUse,
       };
+      
       return updatedCart;
     });
   };
+  
+  const openUnitSelectorModal = useCallback((item: SaleItem) => {
+    drawer.openDrawer({
+      title: `Change Units for ${item.product.name}`,
+      description: 'Select a new unit and quantity for this item.',
+      content: (
+        <UnitSelectorModal 
+          item={item} 
+          onUpdate={(saleItemId, newQty, newUnit) => {
+            handleCartUpdate(saleItemId, newQty, newUnit);
+            drawer.closeDrawer();
+          }} 
+        />
+      ),
+      drawerClassName: 'sm:max-w-md'
+    });
+  }, [drawer, handleCartUpdate]);
 
 
   const addToCart = (productBatch: ProductBatch) => {
@@ -385,11 +413,13 @@ export default function MyNewEcommerceShop() {
       const originalStock = originalProduct?.stock || 0;
 
       if (newBaseQuantity > originalStock) {
+        setTimeout(() => {
         toast({
           variant: "destructive",
           title: "Stock Limit Exceeded",
           description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
         });
+        }, 0);
         return;
       }
 
@@ -406,11 +436,13 @@ export default function MyNewEcommerceShop() {
     } else {
       const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
       if (1 > availableStock) {
+        setTimeout(() => {
         toast({
           variant: "destructive",
           title: "Out of Stock",
           description: "This product batch is currently out of stock.",
         });
+        }, 0);
         return;
       }
 
@@ -653,6 +685,7 @@ export default function MyNewEcommerceShop() {
                       discountResult={discountResult}
                       onUpdateQuantity={handleCartUpdate}
                       onOverrideDiscount={openCustomDiscountDrawer}
+                      onSelectUnit={openUnitSelectorModal}
                     />
                   </div>
                 </div>

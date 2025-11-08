@@ -11,9 +11,10 @@ interface ShoppingCartProps {
   discountResult: any; // Using any because it's a plain object from server, not a class instance
   onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
   onOverrideDiscount: (item: SaleItem) => void;
+  onSelectUnit: (item: SaleItem) => void;
 }
 
-const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount }) => {
+const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount, onSelectUnit }) => {
 
   return (
     <div className="w-full flex flex-col h-full">
@@ -48,6 +49,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
                       discountResult={discountResult}
                       onUpdateQuantity={onUpdateQuantity}
                       onOverrideDiscount={onOverrideDiscount}
+                      onSelectUnit={onSelectUnit}
                     />
                   ))}
                 </TableBody>
