@@ -65,10 +65,8 @@ const StockCell = ({ row }: { row: any }) => {
     const units = useProductUnits(batch.product.units);
     
     // The value from the server is now a string to preserve decimals.
-    const stockAsString = row.getValue("stock") as string;
+    const stockAsString = row.original.stock as string;
     const stock = parseFloat(stockAsString);
-
-    console.log(`[StockCell] Rendering for batch ${batch.id}. Raw stock value from getValue:`, stockAsString, "Parsed as float:", stock);
 
     // Format to 3 decimal places if it's not a whole number, otherwise show as is.
     const displayStock = Number.isInteger(stock) ? stock : stock.toFixed(3);
@@ -133,7 +131,8 @@ export const getColumns = (
         },
     },
     {
-        accessorKey: "stock",
+        id: "stock",
+        accessorFn: (row) => row.stock,
         header: () => <div className="text-right">Stock</div>,
         cell: StockCell,
     },
