@@ -154,10 +154,6 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             
             console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${currentStock.toString()} | අඩු කරන ප්‍රමාණය: ${quantityToDecrement.toString()}`);
 
-            if (newStock.isNegative()) {
-                 throw new Error(`Stock update failed for batch ${line.batchId}: Cannot have negative stock.`);
-            }
-
             await tx.productBatch.update({
                 where: { id: line.batchId }, 
                 data: { stock: newStock }
