@@ -15,7 +15,7 @@ import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { History, LayoutDashboard, SlidersHorizontal } from 'lucide-react';
+import { History, LayoutDashboard, SlidersHorizontal, LifeBuoy } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
@@ -47,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import OrderSummary from '@/components/POSUI/OrderSummary';
+import { HelpClientPage } from '@/app/dashboard/help/HelpClientPage';
 
 
 const initialDiscountResult = {
@@ -480,6 +481,15 @@ export default function MyNewEcommerceShop() {
       drawerClassName: 'sm:max-w-lg',
     });
   }, [drawer, isCalculating, discountResult, activeCampaign, transactionId]);
+  
+  const openHelpDrawer = useCallback(() => {
+    drawer.openDrawer({
+      title: 'Help & Support',
+      description: 'Find answers and guides for using the application.',
+      content: <HelpClientPage />,
+      drawerClassName: 'sm:max-w-4xl'
+    });
+  }, [drawer]);
 
 
   const originalTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
@@ -542,6 +552,15 @@ export default function MyNewEcommerceShop() {
           </AuthorizationGuard>
 
           <div className="mt-auto flex flex-col items-center gap-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={openHelpDrawer}>
+                  <LifeBuoy className="h-5 w-5" />
+                   <span className="sr-only">Help & Support</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Help & Support</TooltipContent>
+            </Tooltip>
             <ThemeToggle />
             <LogoutButton />
           </div>
@@ -584,6 +603,10 @@ export default function MyNewEcommerceShop() {
                     </Link>
                   </DropdownMenuItem>
                 </AuthorizationGuard>
+                 <DropdownMenuItem onClick={openHelpDrawer}>
+                  <LifeBuoy className="mr-2 h-4 w-4" />
+                  <span>Help & Support</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
               </div>
               <DropdownMenuItem>
