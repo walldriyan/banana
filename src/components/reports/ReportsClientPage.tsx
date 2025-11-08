@@ -36,13 +36,9 @@ const reportPrintStyles = `
       display: none;
     }
   }
-  html.dark body {
-    background-color: transparent !important;
+  html.dark body, html.dark .report-container {
+    background-color: #111827 !important; /* gray-900 */
     color: white !important;
-  }
-  html.dark .report-container {
-    background-color: #111827; /* gray-900 */
-    color: white;
   }
   html.dark .text-black { color: white !important; }
   html.dark .text-gray-800 { color: #e5e7eb !important; } /* gray-200 */
