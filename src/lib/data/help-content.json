@@ -1,0 +1,219 @@
+
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "en": {
+      "summary": "The main landing page after logging in. It provides a quick overview and navigation to other key sections of the application.",
+      "features": [
+        "Provides quick links to essential modules like Products.",
+        "Acts as the central hub for navigation."
+      ]
+    },
+    "si": {
+      "summary": "ලොග් වූ පසු මුලින්ම පෙනෙන ප්‍රධාන පිටුව. යෙදුමේ අනෙකුත් ප්‍රධාන කොටස් වෙත පහසුවෙන් පිවිසීමට සහ tổng quanයක් ලබා ගැනීමට මෙය උපකාරී වේ.",
+      "features": [
+        "නිෂ්පාදන වැනි අත්‍යවශ්‍ය මොඩියුල වෙත ඉක්මන් සබැඳි සපයයි.",
+        "ප්‍රධාන මෙනුව ලෙස ක්‍රියා කරයි."
+      ]
+    }
+  },
+  "products": {
+    "title": "Products",
+    "en": {
+      "summary": "Manage your entire product catalog. This includes adding new master products and viewing all available product batches with their stock levels.",
+      "features": [
+        "View all products grouped by master product name.",
+        "Add new master products with details like name, category, and brand.",
+        "Edit existing product batches.",
+        "View detailed information for each batch, including stock, prices, and dates.",
+        "Delete product batches (if they are not part of any transaction)."
+      ]
+    },
+    "si": {
+      "summary": "ඔබගේ සියලුම නිෂ්පාදන කළමනාකරණය කරන්න. මෙයට නව මව් නිෂ්පාදන එකතු කිරීම සහ පවතින සියලුම නිෂ්පාදන කාණ්ඩ ඒවායේ තොග මට්ටම් සමඟ බැලීම ඇතුළත් වේ.",
+      "features": [
+        "සියලුම නිෂ්පාදන මව් නිෂ්පාදන නාමය අනුව කාණ්ඩ කර බලන්න.",
+        "නම, කාණ්ඩය, සහ වෙළඳ නාමය වැනි විස්තර සහිතව නව මව් නිෂ්පාදන එක් කරන්න.",
+        "පවතින නිෂ්පාදන කාණ්ඩ සංස්කරණය කරන්න.",
+        "එක් එක් කාණ්ඩය සඳහා තොග, මිල ගණන්, සහ දින වැනි සවිස්තරාත්මක තොරතුරු බලන්න.",
+        "නිෂ්පාදන කාණ්ඩ මකා දමන්න (ඒවා කිසිදු ගනුදෙනුවක කොටසක් නොවේ නම්)."
+      ]
+    }
+  },
+  "purchases": {
+    "title": "Purchases (GRN)",
+    "en": {
+      "summary": "Record all incoming stock from your suppliers using Goods Received Notes (GRN). This process creates new product batches and updates your inventory.",
+      "features": [
+        "Create new GRNs to record purchases from suppliers.",
+        "Add multiple items to a single GRN, creating a new batch for each.",
+        "Specify cost price, selling price, and quantity for each new batch.",
+        "Manage payments to suppliers (full payment, credit, etc.).",
+        "View a history of all past purchases."
+      ]
+    },
+    "si": {
+      "summary": "Goods Received Notes (GRN) භාවිතයෙන් ඔබගේ සැපයුම්කරුවන්ගෙන් ලැබෙන සියලුම තොග සටහන් කරන්න. මෙම ක්‍රියාවලිය මගින් නව නිෂ්පාදන කාණ්ඩ නිර්මාණය වී ඔබගේ තොග යාවත්කාලීන වේ.",
+      "features": [
+        "සැපයුම්කරුවන්ගෙන් මිලදී ගැනීම් සටහන් කිරීමට නව GRN සාදන්න.",
+        "එක් GRN එකකට අයිතම කිහිපයක් එකතු කර, එක් එක් අයිතමය සඳහා නව කාණ්ඩයක් සාදන්න.",
+        "එක් එක් නව කාණ්ඩය සඳහා පිරිවැය, විකුණුම් මිල, සහ ප්‍රමාණය නියම කරන්න.",
+        "සැපයුම්කරුවන්ට ගෙවීම් කළමනාකරණය කරන්න (සම්පූර්ණ ගෙවීම, ණය, ආදිය).",
+        "පසුගිය සියලුම මිලදී ගැනීම් වල ඉතිහාසය බලන්න."
+      ]
+    }
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "en": {
+      "summary": "Manage the list of all your suppliers. Keep contact information and other details organized in one place.",
+      "features": [
+        "View a list of all suppliers.",
+        "Add new suppliers with their contact details.",
+        "Edit existing supplier information.",
+        "Delete suppliers who are no longer active."
+      ]
+    },
+    "si": {
+      "summary": "ඔබගේ සියලුම සැපයුම්කරුවන්ගේ ලැයිස්තුව කළමනාකරණය කරන්න. සම්බන්ධතා තොරතුරු සහ අනෙකුත් විස්තර එක තැනක සංවිධානය කර තබා ගන්න.",
+      "features": [
+        "සියලුම සැපයුම්කරුවන්ගේ ලැයිස්තුවක් බලන්න.",
+        "නව සැපයුම්කරුවන් ඔවුන්ගේ සම්බන්ධතා විස්තර සමඟ එක් කරන්න.",
+        "පවතින සැපයුම්කරුවන්ගේ තොරතුරු සංස්කරණය කරන්න.",
+        "තවදුරටත් ක්‍රියාකාරී නොවන සැපයුම්කරුවන් මකා දමන්න."
+      ]
+    }
+  },
+  "customers": {
+    "title": "Customers",
+    "en": {
+      "summary": "Maintain a database of your customers. This is useful for tracking sales history and managing credit sales (debtors).",
+      "features": [
+        "View a list of all registered customers.",
+        "Add new customers with their contact information.",
+        "Edit existing customer details.",
+        "Delete customers (if they have no transaction history)."
+      ]
+    },
+    "si": {
+      "summary": "ඔබගේ පාරිභෝගිකයින්ගේ දත්ත ගබඩාවක් පවත්වාගෙන යන්න. විකුණුම් ඉතිහාසය නිරීක්ෂණය කිරීමට සහ ණයට විකිණුම් (ණයගැතියන්) කළමනාකරණය කිරීමට මෙය ප්‍රයෝජනවත් වේ.",
+      "features": [
+        "ලියාපදිංචි සියලුම පාරිභෝගිකයින්ගේ ලැයිස්තුවක් බලන්න.",
+        "ඔවුන්ගේ සම්බන්ධතා තොරතුරු සමඟ නව පාරිභෝගිකයින් එක් කරන්න.",
+        "පවතින පාරිභෝගික විස්තර සංස්කරණය කරන්න.",
+        "පාරිභෝගිකයින් මකා දමන්න (ඔවුන්ට ගනුදෙනු ඉතිහාසයක් නොමැති නම්)."
+      ]
+    }
+  },
+  "creditors": {
+    "title": "Creditors",
+    "en": {
+      "summary": "Manage money you owe to suppliers. This page lists all GRNs that have not been fully paid for.",
+      "features": [
+        "View all outstanding GRNs with a balance due.",
+        "Record new payments (installments) against a specific GRN.",
+        "See the payment history for each GRN.",
+        "Delete incorrect payment entries.",
+        "Print a payment statement for a GRN."
+      ]
+    },
+    "si": {
+      "summary": "ඔබ සැපයුම්කරුවන්ට ගෙවිය යුතු මුදල් කළමනාකරණය කරන්න. මෙම පිටුවෙහි සම්පූර්ණයෙන්ම ගෙවා නොමැති සියලුම GRN ලැයිස්තුගත කර ඇත.",
+      "features": [
+        "හිඟ ශේෂයක් සහිත සියලුම ගෙවිය යුතු GRN බලන්න.",
+        "නිශ්චිත GRN එකකට එරෙහිව නව ගෙවීම් (වාරික) සටහන් කරන්න.",
+        "එක් එක් GRN සඳහා ගෙවීම් ඉතිහාසය බලන්න.",
+        "වැරදි ගෙවීම් ඇතුළත් කිරීම් මකා දමන්න.",
+        "GRN එකක් සඳහා ගෙවීම් ප්‍රකාශයක් මුද්‍රණය කරන්න."
+      ]
+    }
+  },
+  "debtors": {
+    "title": "Debtors",
+    "en": {
+      "summary": "Manage money owed to you by customers. This page lists all sales transactions that were made on credit and have not been fully paid.",
+      "features": [
+        "View all outstanding sales transactions with a balance due.",
+        "Record new payments (installments) received from a customer for a specific sale.",
+        "See the payment history for each credit sale.",
+        "Delete incorrect payment entries.",
+        "Print a payment statement for a customer's transaction."
+      ]
+    },
+    "si": {
+      "summary": "පාරිභෝගිකයින්ගෙන් ඔබට ලැබිය යුතු මුදල් කළමනාකරණය කරන්න. මෙම පිටුවෙහි ණයට සිදු කරන ලද සහ සම්පූර්ණයෙන්ම ගෙවා නොමැති සියලුම විකුණුම් ගනුදෙනු ලැයිස්තුගත කර ඇත.",
+      "features": [
+        "හිඟ ශේෂයක් සහිත සියලුම ගෙවිය යුතු විකුණුම් ගනුදෙනු බලන්න.",
+        "නිශ්චිත විකිණීමක් සඳහා පාරිභෝගිකයෙකුගෙන් ලැබුණු නව ගෙවීම් (වාරික) සටහන් කරන්න.",
+        "එක් එක් ණය විකිණීම සඳහා ගෙවීම් ඉතිහාසය බලන්න.",
+        "වැරදි ගෙවීම් ඇතුළත් කිරීම් මකා දමන්න.",
+        "පාරිභෝගිකයෙකුගේ ගනුදෙනුවක් සඳහා ගෙවීම් ප්‍රකාශයක් මුද්‍රණය කරන්න."
+      ]
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "en": {
+      "summary": "Generate and print financial summary reports for your business. Select a date range to see a breakdown of income, expenses, and profit.",
+      "features": [
+        "Generate a summary report for any custom date range.",
+        "Use presets like 'Today', 'This Week', 'This Month'.",
+        "View a detailed breakdown of income and expenses.",
+        "See key metrics like Gross Profit and Net Profit.",
+        "Print the generated report in a clean, paper-friendly format.",
+        "Toggle report language between English and Sinhala."
+      ]
+    },
+    "si": {
+      "summary": "ඔබගේ ව්‍යාපාරය සඳහා මූල්‍ය සාරාංශ වාර්තා සාදා මුද්‍රණය කරන්න. ආදායම්, වියදම්, සහ ලාභ පිළිබඳ විස්තරයක් බැලීමට දින පරාසයක් තෝරන්න.",
+      "features": [
+        "ඕනෑම දින පරාසයක් සඳහා සාරාංශ වාර්තාවක් සාදන්න.",
+        "'අද', 'මෙම සතිය', 'මෙම මාසය' වැනි පෙරසිටුවම් භාවිතා කරන්න.",
+        "ආදායම් සහ වියදම් පිළිබඳ සවිස්තරාත්මක විස්තරයක් බලන්න.",
+        "දළ ලාභය සහ ශුද්ධ ලාභය වැනි ප්‍රධාන දර්ශක බලන්න.",
+        "සෑදූ වාර්තාව කඩදාසියට හිතකාමී, පිරිසිදු ආකෘතියකින් මුද්‍රණය කරන්න.",
+        "වාර්තාවේ භාෂාව ඉංග්‍රීසි සහ සිංහල අතර මාරු කරන්න."
+      ]
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "en": {
+      "summary": "Configure global settings for the application. This includes managing company profiles, discount campaigns, and receipt printing options.",
+      "features": [
+        "Manage company profiles that appear on receipts.",
+        "Create, edit, and delete discount campaigns.",
+        "Define complex discount rules (e.g., cart total, item quantity).",
+        "Customize receipt labels for different languages (English/Sinhala)."
+      ]
+    },
+    "si": {
+      "summary": "යෙදුම සඳහා ගෝලීය සැකසුම් වින්‍යාස කරන්න. සමාගම් පැතිකඩ, වට්ටම් ව්‍යාපාර, සහ ලදුපත් මුද්‍රණ විකල්ප කළමනාකරණය කිරීම මෙයට ඇතුළත් වේ.",
+      "features": [
+        "ලදුපත් වල දිස්වන සමාගම් පැතිකඩ කළමනාකරණය කරන්න.",
+        "වට්ටම් ව්‍යාපාර සාදන්න, සංස්කරණය කරන්න, සහ මකා දමන්න.",
+        "සංකීර්ණ වට්ටම් නීති (උදා: cart total, item quantity) නිර්වචනය කරන්න.",
+        "විවිධ භාෂා (ඉංග්‍රීසි/සිංහල) සඳහා ලදුපත් ලේබල අභිරුචිකරණය කරන්න."
+      ]
+    }
+  },
+  "help": {
+    "title": "Help & Support",
+    "en": {
+        "summary": "This section provides guides and explanations for all the major features of the application.",
+        "features": [
+            "Navigate through different sections to understand their purpose.",
+            "Read descriptions in both English and Sinhala.",
+            "Use this as a reference when you are unsure about a feature."
+        ]
+    },
+    "si": {
+        "summary": "මෙම කොටස යෙදුමේ සියලුම ප්‍රධාන අංග සඳහා මාර්ගෝපදේශ සහ පැහැදිලි කිරීම් සපයයි.",
+        "features": [
+            "විවිධ කොටස් හරහා ගොස් ඒවායේ අරමුණ තේරුම් ගන්න.",
+            "ඉංග්‍රීසි සහ සිංහල යන භාෂා දෙකෙන්ම විස්තර කියවන්න.",
+            "යම් අංගයක් ගැන අවිනිශ්චිත වූ විට මෙය විමර්ශනයක් ලෙස භාවිතා කරන්න."
+        ]
+    }
+  }
+}

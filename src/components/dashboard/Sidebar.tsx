@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { 
     Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, 
     CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp, ChevronRight,
-    ArchiveX
+    ArchiveX,
+    LifeBuoy
 } from 'lucide-react';
 import {
   SidebarContent,
@@ -42,7 +43,8 @@ const iconMap = {
     Settings,
     Home,
     LogOut,
-    ArchiveX
+    ArchiveX,
+    LifeBuoy
 };
 
 type IconName = keyof typeof iconMap;

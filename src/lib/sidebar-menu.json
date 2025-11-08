@@ -55,6 +55,13 @@
                     ]
                 }
             ]
+        },
+        {
+            "label": "SUPPORT",
+            "permission": null,
+            "items": [
+                { "href": "/dashboard/help", "icon": "LifeBuoy", "label": "Help & Support", "permission": null }
+            ]
         }
     ]
 }
