@@ -57,6 +57,7 @@ export function ProductsClientPage() {
     setIsLoading(true);
     const result = await getProductBatchesAction();
     if (result.success && result.data) {
+      console.log("[ProductsClientPage] Fetched data from DB:", JSON.stringify(result.data, null, 2));
       setBatches(result.data);
     } else {
       toast({

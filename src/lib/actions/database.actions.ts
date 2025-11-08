@@ -195,7 +195,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       return createdTransaction;
     });
 
-    console.log(`[DB] Transaction ${newTransaction.id} saved successfully to database.`);
+    console.log("✅✅✅ FINAL SUCCESS: Transaction object saved to DB:", JSON.stringify(newTransaction, null, 2));
     revalidatePath('/history');
     revalidatePath('/dashboard/products');
     revalidatePath('/dashboard/debtors');

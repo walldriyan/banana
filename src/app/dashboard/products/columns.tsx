@@ -64,8 +64,12 @@ const StockCell = ({ row }: { row: any }) => {
     const batch = row.original as ProductBatch;
     const units = useProductUnits(batch.product.units);
     const stock = row.getValue("stock") as number;
-    // Format to 2 decimal places if it's not a whole number
+
+    console.log(`[StockCell] Rendering for batch ${batch.id}. Raw stock value:`, stock);
+
+    // Format to 3 decimal places if it's not a whole number, otherwise show as is.
     const displayStock = Number.isInteger(stock) ? stock : stock.toFixed(3);
+    
     return <div className="text-right">{displayStock} {units.baseUnit}</div>;
 };
 
