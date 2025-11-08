@@ -15,12 +15,13 @@ import { useDrawer } from '@/hooks/use-drawer';
 import { useToast } from '@/hooks/use-toast';
 import { saveTransactionToDb } from '@/lib/actions/database.actions';
 import { getCompanyForReceiptAction } from '@/lib/actions/company.actions';
+import { getCustomersAction } from '@/lib/actions/customer.actions';
 import { transactionFormSchema, type TransactionFormValues } from '@/lib/validation/transaction.schema';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { LanguageToggle } from '../LanguageToggle';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
-import type { Company } from '@prisma/client';
+import type { Company, Customer } from '@prisma/client';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
@@ -75,6 +76,7 @@ export function TransactionDialogContent({
   const [isGiftReceipt, setIsGiftReceipt] = useState(false);
   const [finalTransactionData, setFinalTransactionData] = useState<DatabaseReadyTransaction | null>(null);
   const [companyDetails, setCompanyDetails] = useState<Company | null>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const drawer = useDrawer();
   const { toast } = useToast();
   const { language } = useLanguage();
@@ -87,14 +89,27 @@ export function TransactionDialogContent({
     if (savedPreference !== null) {
       setShouldPrintBill(JSON.parse(savedPreference));
     }
-    // Fetch company details when the dialog opens
-    getCompanyForReceiptAction().then(result => {
-        if (result.success && result.data) {
-            setCompanyDetails(result.data);
+    // Fetch company and customer details when the dialog opens
+    async function fetchInitialData() {
+        const [companyResult, customersResult] = await Promise.all([
+            getCompanyForReceiptAction(),
+            getCustomersAction()
+        ]);
+        
+        if (companyResult.success && companyResult.data) {
+            setCompanyDetails(companyResult.data);
         } else {
-            toast({ variant: 'destructive', title: 'Company Info Missing', description: result.error });
+            toast({ variant: 'destructive', title: 'Company Info Missing', description: companyResult.error });
         }
-    });
+
+        if(customersResult.success && customersResult.data) {
+            setCustomers(customersResult.data);
+        } else {
+            toast({ variant: 'destructive', title: 'Customer List Error', description: customersResult.error });
+        }
+    }
+
+    fetchInitialData();
   }, [toast]);
 
   const handleShouldPrintChange = (checked: boolean) => {
@@ -267,7 +282,7 @@ export function TransactionDialogContent({
         {step === 'details' && (
           <form onSubmit={handleSubmit(handlePreview)}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-              <CustomerInfoPanel />
+              <CustomerInfoPanel customers={customers} />
               <PaymentPanel finalTotal={discountResult.finalTotal} />
             </div>
             <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-end">

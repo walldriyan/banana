@@ -53,8 +53,8 @@ export function DebtorsDataTable<TData, TValue>({
   })
 
   return (
-    <div>
-        <div className="flex items-center justify-between py-4">
+    <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between py-4 flex-shrink-0">
             <Input
                 placeholder="Filter by Transaction ID or Customer name..."
                  onChange={(event) => {
@@ -64,7 +64,7 @@ export function DebtorsDataTable<TData, TValue>({
                 className="max-w-sm"
             />
         </div>
-        <div className="rounded-md border overflow-y-auto max-h-[calc(100vh-22rem)]">
+        <div className="rounded-md border flex-grow min-h-0 overflow-y-auto">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -108,7 +108,7 @@ export function DebtorsDataTable<TData, TValue>({
                 </TableBody>
             </Table>
         </div>
-         <div className="flex items-center justify-end space-x-2 py-4">
+         <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
             <Button
                 variant="outline"
                 size="sm"
