@@ -35,21 +35,21 @@ type TransactionWithRelations = FinancialTransaction & {
   supplier: Supplier | null;
 };
 
-const SummaryCard = ({ icon: Icon, label, value, valueClassName }: { 
-  icon: React.ElementType, 
-  label: string, 
-  value: string, 
-  valueClassName?: string 
+const SummaryCard = ({ icon: Icon, label, value, valueClassName }: {
+  icon: React.ElementType,
+  label: string,
+  value: string,
+  valueClassName?: string
 }) => (
   <div className="flex-1 p-4 rounded-lg bg-background flex items-center gap-4">
-      <div className={`p-3 rounded-full ${valueClassName} bg-opacity-10`}>
-        <Icon className={`h-6 w-6 ${valueClassName}`} />
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">{label}</p>
-        <p className={`text-2xl font-bold ${valueClassName}`}>{value}</p>
-      </div>
+    <div className={`p-3 rounded-full ${valueClassName} bg-opacity-10`}>
+      <Icon className={`h-6 w-6 ${valueClassName}`} />
     </div>
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className={`text-2xl font-bold ${valueClassName}`}>{value}</p>
+    </div>
+  </div>
 );
 
 export function FinanceClientPage() {
@@ -79,10 +79,10 @@ export function FinanceClientPage() {
       if (transactionsRes.success && transactionsRes.data) {
         setTransactions(transactionsRes.data as TransactionWithRelations[]);
       } else {
-        toast({ 
-          variant: 'destructive', 
-          title: 'Error', 
-          description: transactionsRes.error || 'Could not fetch transactions.' 
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: transactionsRes.error || 'Could not fetch transactions.'
         });
       }
 
@@ -92,10 +92,10 @@ export function FinanceClientPage() {
         suppliers: suppliersRes.success ? suppliersRes.data || [] : [],
       });
     } catch (e) {
-      toast({ 
-        variant: 'destructive', 
-        title: 'Error', 
-        description: 'Failed to fetch initial data.' 
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to fetch initial data.'
       });
     }
     setIsLoading(false);
@@ -121,10 +121,10 @@ export function FinanceClientPage() {
   const openEditDrawer = useCallback((transaction: TransactionWithRelations) => {
     drawer.openDrawer({
       title: 'Edit Transaction',
-      content: <AddTransactionForm 
-        transaction={transaction} 
-        onSuccess={handleFormSuccess} 
-        {...data} 
+      content: <AddTransactionForm
+        transaction={transaction}
+        onSuccess={handleFormSuccess}
+        {...data}
       />,
       drawerClassName: 'sm:max-w-2xl'
     });
@@ -161,15 +161,15 @@ export function FinanceClientPage() {
     return { totalIncome, totalExpense, netBalance };
   }, [transactions]);
 
-  const columns = useMemo(() => 
-    getColumns(openEditDrawer, handleDeleteRequest), 
+  const columns = useMemo(() =>
+    getColumns(openEditDrawer, handleDeleteRequest),
     [openEditDrawer]
   );
 
-  const formatCurrency = (value: number) => 
-    `Rs. ${value.toLocaleString(undefined, { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
+  const formatCurrency = (value: number) =>
+    `Rs. ${value.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     })}`;
 
   if (isLoading) {
@@ -207,53 +207,55 @@ export function FinanceClientPage() {
   }
 
   return (
-    <div className="flex flex-col h-full gap-6">
+    <div className="flex flex-col overflow-y-auto gap-6 pb-5 ">
 
       {/* Main Content: Transaction History */}
-      <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          <CardHeader>
-              <CardTitle>Transaction History</CardTitle>
-              <CardDescription>
-              View, add, edit, and manage all your financial transactions.
-              </CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0 flex flex-col overflow-y-auto">
-              <FinanceDataTable
-                  columns={columns}
-                  data={transactions}
-                  onAddTransaction={openAddDrawer}
-              />
-          </CardContent>
+      <Card className="flex flex-col flex-1 min-h-[350px] overflow-y-auto ">
+
+        <CardHeader>
+          <CardTitle>Transaction History</CardTitle>
+          <CardDescription>
+            View, add, edit, and manage all your financial transactions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 min-h-0 flex flex-col overflow-y-auto">
+
+          <FinanceDataTable
+            columns={columns}
+            data={transactions}
+            onAddTransaction={openAddDrawer}
+          />
+        </CardContent>
       </Card>
-      
+
       {/* Bottom Row: Financial Overview */}
       <Card className="flex-shrink-0">
-          <CardHeader>
-              <CardTitle>Financial Overview</CardTitle>
-              <CardDescription>
-              A summary of your total income, expenses, and net balance.
-              </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col md:flex-row gap-4">
-              <SummaryCard 
-                icon={TrendingUp} 
-                label="Total Income" 
-                value={formatCurrency(summary.totalIncome)} 
-                valueClassName="text-green-600" 
-              />
-              <SummaryCard 
-                icon={TrendingDown} 
-                label="Total Expenses" 
-                value={formatCurrency(summary.totalExpense)} 
-                valueClassName="text-red-600" 
-              />
-              <SummaryCard 
-                icon={Landmark} 
-                label="Net Balance" 
-                value={formatCurrency(summary.netBalance)} 
-                valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} 
-              />
-          </CardContent>
+        <CardHeader>
+          <CardTitle>Financial Overview</CardTitle>
+          <CardDescription>
+            A summary of your total income, expenses, and net balance.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col md:flex-row gap-4">
+          <SummaryCard
+            icon={TrendingUp}
+            label="Total Income"
+            value={formatCurrency(summary.totalIncome)}
+            valueClassName="text-green-600"
+          />
+          <SummaryCard
+            icon={TrendingDown}
+            label="Total Expenses"
+            value={formatCurrency(summary.totalExpense)}
+            valueClassName="text-red-600"
+          />
+          <SummaryCard
+            icon={Landmark}
+            label="Net Balance"
+            value={formatCurrency(summary.netBalance)}
+            valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"}
+          />
+        </CardContent>
       </Card>
 
       {/* Delete confirmation dialog */}
@@ -267,8 +269,8 @@ export function FinanceClientPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete} 
+            <AlertDialogAction
+              onClick={confirmDelete}
               className="bg-red-600 hover:bg-red-700"
             >
               Delete
