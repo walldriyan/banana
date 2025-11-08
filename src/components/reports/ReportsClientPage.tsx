@@ -1,7 +1,7 @@
 // src/components/reports/ReportsClientPage.tsx
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useCallback } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, startOfYear, startOfWeek } from 'date-fns';
 import { getSummaryReportDataAction, type SummaryReportData } from '@/lib/actions/report.actions';
@@ -47,8 +47,9 @@ const ReportGenerator = () => {
     const [isPending, startTransition] = useTransition();
     const { language } = useLanguage();
 
-    const handleGenerateReport = () => {
-        if (!dateRange || !dateRange.from || !dateRange.to) {
+    const handleGenerateReport = useCallback((range?: DateRange) => {
+        const targetRange = range || dateRange;
+        if (!targetRange || !targetRange.from || !targetRange.to) {
             setError("Please select a valid date range.");
             return;
         }
@@ -56,13 +57,18 @@ const ReportGenerator = () => {
         startTransition(async () => {
             setError(null);
             setReportData(null);
-            const result = await getSummaryReportDataAction({ from: dateRange.from!, to: dateRange.to! });
+            const result = await getSummaryReportDataAction({ from: targetRange.from!, to: targetRange.to! });
             if (result.success) {
                 setReportData(result.data!);
             } else {
                 setError(result.error!);
             }
         });
+    }, [dateRange]);
+    
+    const handlePresetClick = (range: DateRange) => {
+        setDateRange(range);
+        handleGenerateReport(range);
     };
     
     const handlePrint = async () => {
@@ -70,7 +76,6 @@ const ReportGenerator = () => {
 
         const ReactDOMServer = (await import('react-dom/server')).default;
         const reportHTML = ReactDOMServer.renderToString(
-          // Wrap with provider to ensure the correct language is used for printing
           <LanguageProvider initialLanguage={language}>
             <SummaryReport data={reportData} />
           </LanguageProvider>
@@ -99,7 +104,6 @@ const ReportGenerator = () => {
             `);
             iframeDoc.close();
             
-            // Wait for tailwind to process styles
              setTimeout(() => {
                 iframe.contentWindow?.focus();
                 iframe.contentWindow?.print();
@@ -124,12 +128,12 @@ const ReportGenerator = () => {
                 <CardContent className="flex flex-wrap items-center gap-4">
                     <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
                      <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setDateRange({ from: today, to: today })}>Today</Button>
-                        <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfWeek(today), to: today })}>This Week</Button>
-                        <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfMonth(today), to: today })}>This Month</Button>
-                        <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfYear(today), to: today })}>This Year</Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: today, to: today })}>Today</Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: startOfWeek(today), to: today })}>This Week</Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: startOfMonth(today), to: today })}>This Month</Button>
+                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: startOfYear(today), to: today })}>This Year</Button>
                      </div>
-                     <Button onClick={handleGenerateReport} disabled={isPending}>
+                     <Button onClick={() => handleGenerateReport()} disabled={isPending}>
                         {isPending ? "Generating..." : "Generate Report"}
                     </Button>
                 </CardContent>
@@ -173,7 +177,6 @@ const ReportGenerator = () => {
 
 export function ReportsClientPage() {
   return (
-    // The provider ensures that all children can access the language context.
     <LanguageProvider>
       <ReportGenerator />
     </LanguageProvider>
