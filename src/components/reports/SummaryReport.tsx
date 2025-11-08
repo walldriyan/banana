@@ -47,17 +47,17 @@ interface SummaryReportProps {
 export function SummaryReport({ data }: SummaryReportProps) {
   const { t, language } = useLanguage();
   
-  const totalRevenueWithDiscounts = (data.sales.totalRevenue || 0) + (data.sales.totalDiscount || 0);
-  
   const expenseItems = [
     { label: 'purchasesCost', value: data.purchases.totalCost },
     { label: 'otherExpenses', value: data.expenses.otherExpenses },
     { label: 'totalDiscountsGiven', value: data.sales.totalDiscount },
+    { label: 'lostAndDamageValue', value: data.inventory.lostAndDamageValue },
   ];
 
   const incomeItems = [
-      { label: 'salesRevenue', value: totalRevenueWithDiscounts },
+      { label: 'salesRevenue', value: data.income.salesIncome },
       { label: 'otherIncome', value: data.income.otherIncome },
+      { label: 'totalRefundsIssued', value: -data.sales.totalRefunds, valueClassName: 'text-red-600' }, // Show as negative
   ];
   
   const totalExpenses = expenseItems.reduce((sum, item) => sum + item.value, 0);
@@ -102,7 +102,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
             </React.Fragment>
           ))}
         </div>
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3 border-t border-gray-200">
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3 pt-2 mt-2 border-t border-gray-200">
           <ReportRow label="totalExpenses" value={totalExpenses} isTotal isBold />
           <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
         </div>

@@ -58,5 +58,7 @@
   "totalGrns": "මුළු GRN",
   "totalDiscounts": "මුළු වට්ටම්",
   "generatedOn": "සකස් කළේ:",
-  "computerGeneratedReport": "මෙය පරිගණක ගත වාර්තාවකි."
+  "computerGeneratedReport": "මෙය පරිගණක ගත වාර්තාවකි.",
+  "lostAndDamageValue": "නැතිවූ/අලාභ වූ අගය",
+  "totalRefundsIssued": "ආපසු ගෙවූ මුළු මුදල"
 }

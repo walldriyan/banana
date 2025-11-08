@@ -15,10 +15,14 @@ export interface SummaryReportData {
         totalRevenue: number;
         totalTransactions: number;
         totalDiscount: number;
+        totalRefunds: number; // New field
     };
     purchases: {
         totalCost: number;
         totalGrns: number;
+    };
+    inventory: { // New section
+        lostAndDamageValue: number;
     };
     income: {
         totalIncome: number;
@@ -51,7 +55,15 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         
         const adjustedTo = endOfDay(to);
 
-        const [salesData, purchaseData, financialTxData, debtorsData, creditorsData] = await Promise.all([
+        const [
+            salesData, 
+            purchaseData, 
+            financialTxData, 
+            debtorsData, 
+            creditorsData,
+            lostAndDamageData,
+            refundData
+        ] = await Promise.all([
             // Sales Data
             prisma.transaction.aggregate({
                 where: {
@@ -83,6 +95,19 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 where: { paymentStatus: { in: ['pending', 'partial'] } },
                 _sum: { totalAmount: true, paidAmount: true },
             }),
+            // Lost & Damage Data
+            prisma.lostAndDamage.findMany({
+                where: { date: { gte: from, lte: adjustedTo } },
+                include: { productBatch: { select: { costPrice: true }}}
+            }),
+            // Refund Data
+            prisma.transaction.aggregate({
+                 where: {
+                    status: 'refund',
+                    transactionDate: { gte: from, lte: adjustedTo },
+                },
+                _sum: { finalTotal: true } // sum of what customers kept
+            })
         ]);
         
         const otherIncome = financialTxData.find(d => d.type === 'INCOME')?._sum.amount || 0;
@@ -90,12 +115,22 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
 
         const totalRevenue = salesData._sum.finalTotal || 0;
         const totalPurchaseCost = purchaseData._sum.totalAmount || 0;
+        
+        const lostAndDamageValue = lostAndDamageData.reduce((sum, record) => {
+            return sum + (record.quantity * (record.productBatch?.costPrice || 0));
+        }, 0);
+        
+        const totalRefundsValue = Math.abs(refundData._sum.finalTotal || 0);
 
-        // Gross Profit = Sales Revenue - Cost of Goods (approximated by purchases in the period)
-        const grossProfit = totalRevenue - totalPurchaseCost;
+        // Revenue is sales minus refunds
+        const netRevenue = totalRevenue - totalRefundsValue;
 
-        // Net Profit = Gross Profit + Other Income - Other Expenses
-        const netProfit = grossProfit + otherIncome - otherExpenses;
+        // Gross Profit = Net Sales Revenue - Cost of Goods (approximated by purchases in the period)
+        const grossProfit = netRevenue - totalPurchaseCost;
+
+        // Net Profit = Gross Profit + Other Income - Other Expenses - Lost&Damage - Discounts
+        const totalDiscountsGiven = salesData._sum.totalDiscountAmount || 0;
+        const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue - totalDiscountsGiven;
         
         const totalCreditors = (creditorsData._sum.totalAmount || 0) - (creditorsData._sum.paidAmount || 0);
 
@@ -105,13 +140,17 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 to: to.toISOString(),
             },
             sales: {
-                totalRevenue: totalRevenue,
+                totalRevenue: totalRevenue, // Gross Revenue before refunds
                 totalTransactions: salesData._count.id || 0,
-                totalDiscount: salesData._sum.totalDiscountAmount || 0,
+                totalDiscount: totalDiscountsGiven,
+                totalRefunds: totalRefundsValue,
             },
             purchases: {
                 totalCost: totalPurchaseCost,
                 totalGrns: purchaseData._count.id || 0,
+            },
+            inventory: {
+                lostAndDamageValue: lostAndDamageValue,
             },
             income: {
                 totalIncome: totalRevenue + otherIncome,
@@ -119,7 +158,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 otherIncome: otherIncome,
             },
             expenses: {
-                totalExpenses: totalPurchaseCost + otherExpenses,
+                totalExpenses: totalPurchaseCost + otherExpenses + totalDiscountsGiven + lostAndDamageValue + totalRefundsValue,
                 purchaseExpenses: totalPurchaseCost,
                 otherExpenses: otherExpenses,
             },

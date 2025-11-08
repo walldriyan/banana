@@ -58,5 +58,7 @@
   "totalGrns": "Total GRNs",
   "totalDiscounts": "Total Discounts",
   "generatedOn": "Generated on:",
-  "computerGeneratedReport": "This is a computer-generated report."
+  "computerGeneratedReport": "This is a computer-generated report.",
+  "lostAndDamageValue": "Lost & Damage Value",
+  "totalRefundsIssued": "Total Refunds Issued"
 }
