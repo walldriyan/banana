@@ -101,8 +101,8 @@ model ProductBatch {
   id              String    @id @default(cuid())
   productId       String
   batchNumber     String
-  stock           Int
-  quantity        Int
+  stock           Float
+  quantity        Float
   costPrice       Float?
   sellingPrice    Float
   barcode         String?   @unique
