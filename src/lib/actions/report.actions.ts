@@ -34,6 +34,14 @@ export interface SummaryReportData {
         netProfit: number;
         grossProfit: number;
     };
+    balanceSheet: {
+        assets: {
+            debtors: number; // Money owed by customers
+        };
+        liabilities: {
+            creditors: number; // Money owed to suppliers
+        };
+    };
 }
 
 
@@ -41,41 +49,39 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
     try {
         const { from, to } = dateRange;
         
-        // Ensure the 'to' date includes the entire day
         const adjustedTo = endOfDay(to);
 
-        const [salesData, purchaseData, financialTxData] = await Promise.all([
-            // Sales Data from Transactions
+        const [salesData, purchaseData, financialTxData, debtorsData, creditorsData] = await Promise.all([
+            // Sales Data
             prisma.transaction.aggregate({
                 where: {
                     status: 'completed',
                     transactionDate: { gte: from, lte: adjustedTo },
                 },
-                _sum: {
-                    finalTotal: true,
-                    totalDiscountAmount: true,
-                },
+                _sum: { finalTotal: true, totalDiscountAmount: true },
                 _count: { id: true },
             }),
-            // Purchase Data from GRNs
+            // Purchase Data
             prisma.goodsReceivedNote.aggregate({
-                where: {
-                    grnDate: { gte: from, lte: adjustedTo },
-                },
-                _sum: {
-                    totalAmount: true,
-                },
+                where: { grnDate: { gte: from, lte: adjustedTo } },
+                _sum: { totalAmount: true },
                 _count: { id: true },
             }),
-            // Other Income/Expenses from FinancialTransactions
+            // Other Income/Expenses
             prisma.financialTransaction.groupBy({
                 by: ['type'],
-                where: {
-                    date: { gte: from, lte: adjustedTo },
-                },
-                _sum: {
-                    amount: true,
-                },
+                where: { date: { gte: from, lte: adjustedTo } },
+                _sum: { amount: true },
+            }),
+            // Debtors (Outstanding customer payments)
+            prisma.transaction.aggregate({
+                where: { paymentStatus: { in: ['pending', 'partial'] } },
+                _sum: { finalTotal: true },
+            }),
+             // Creditors (Outstanding supplier payments)
+            prisma.goodsReceivedNote.aggregate({
+                where: { paymentStatus: { in: ['pending', 'partial'] } },
+                _sum: { totalAmount: true, paidAmount: true },
             }),
         ]);
         
@@ -85,11 +91,13 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const totalRevenue = salesData._sum.finalTotal || 0;
         const totalPurchaseCost = purchaseData._sum.totalAmount || 0;
 
-        // Gross Profit = Total Sales Revenue - Cost of Goods Sold (approximated by total purchases in the period)
+        // Gross Profit = Sales Revenue - Cost of Goods (approximated by purchases in the period)
         const grossProfit = totalRevenue - totalPurchaseCost;
 
         // Net Profit = Gross Profit + Other Income - Other Expenses
         const netProfit = grossProfit + otherIncome - otherExpenses;
+        
+        const totalCreditors = (creditorsData._sum.totalAmount || 0) - (creditorsData._sum.paidAmount || 0);
 
         const reportData: SummaryReportData = {
             dateRange: {
@@ -118,6 +126,14 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             profit: {
                 netProfit: netProfit,
                 grossProfit: grossProfit,
+            },
+            balanceSheet: {
+                assets: {
+                    debtors: debtorsData._sum.finalTotal || 0,
+                },
+                liabilities: {
+                    creditors: totalCreditors,
+                },
             },
         };
 
