@@ -152,7 +152,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             const quantityToDecrement = new Prisma.Decimal(line.quantity);
             const newStock = currentStock.minus(quantityToDecrement);
             
-            console.log(`   - Batch ID: ${line.batchId} | Current Stock: ${currentStock.toString()} | Quantity to Decrement: ${quantityToDecrement.toString()} | New Stock: ${newStock.toString()}`);
+            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${currentStock.toString()} | අඩු කරන ප්‍රමාණය: ${quantityToDecrement.toString()}`);
 
             if (newStock.isNegative()) {
                  throw new Error(`Stock update failed for batch ${line.batchId}: Cannot have negative stock.`);
@@ -162,6 +162,9 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                 where: { id: line.batchId }, 
                 data: { stock: newStock }
             });
+
+            const updatedBatch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
+            console.log(`   - ✅ යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${line.batchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
         }
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
          const originalTx = await tx.transaction.findUnique({
@@ -186,12 +189,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                  const currentStock = new Prisma.Decimal(batch.stock);
                  const newStock = currentStock.plus(returnedQty);
 
-                 console.log(`   - REFUND: Batch ID: ${originalLine.productBatchId} | Current Stock: ${currentStock.toString()} | Quantity to Increment: ${returnedQty.toString()} | New Stock: ${newStock.toString()}`);
+                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${currentStock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()}`);
 
                  await tx.productBatch.update({
                      where: { id: originalLine.productBatchId! },
                      data: { stock: newStock }
                  });
+
+                 const updatedBatch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
+                 console.log(`   - ✅ REFUND: යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${originalLine.productBatchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
              }
          }
       }
