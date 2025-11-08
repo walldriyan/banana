@@ -148,14 +148,16 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             const batch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
             if (!batch) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
             
-            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${batch.stock.toString()} | අඩු කරන ප්‍රමාණය: ${line.quantity}`);
+            const currentStock = new Prisma.Decimal(batch.stock);
+            const quantityToDecrement = new Prisma.Decimal(line.quantity);
+            const newStock = currentStock.minus(quantityToDecrement);
+
+            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${currentStock.toString()} | අඩු කරන ප්‍රමාණය: ${quantityToDecrement.toString()} | ගණනය කළ නව තොගය: ${newStock.toString()}`);
 
             await tx.productBatch.update({
                 where: { id: line.batchId }, 
                 data: { 
-                    stock: {
-                        decrement: new Prisma.Decimal(line.quantity)
-                    }
+                    stock: newStock
                 }
             });
 
@@ -182,14 +184,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                  const batch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
                  if (!batch) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
                  
-                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${batch.stock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()}`);
+                 const currentStock = new Prisma.Decimal(batch.stock);
+                 const newStock = currentStock.plus(returnedQty);
+
+                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${currentStock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()} | ගණනය කළ නව තොගය: ${newStock.toString()}`);
 
                  await tx.productBatch.update({
                      where: { id: originalLine.productBatchId! },
                      data: { 
-                        stock: {
-                            increment: new Prisma.Decimal(returnedQty)
-                        } 
+                        stock: newStock
                     }
                  });
 
