@@ -22,32 +22,37 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
   const baseUnitDef = { name: allUnits.baseUnit, conversionFactor: 1 };
   const derivedUnits = allUnits.derivedUnits || [];
   
-  // State for the new selection
+  const allUnitDefs = [baseUnitDef, ...derivedUnits];
+  
   const [selectedUnit, setSelectedUnit] = useState<string>(item.displayUnit || allUnits.baseUnit);
   const [quantity, setQuantity] = useState<number>(item.displayQuantity || 1);
 
-  const allUnitDefs = [baseUnitDef, ...derivedUnits];
-  const currentUnitDef = allUnitDefs.find(u => u.name === selectedUnit);
-
-  // --- Calculations for Display ---
-  const baseQuantity = useMemo(() => {
-    if (!currentUnitDef) return 0;
-    // Base Qty = Current Display Qty * Current Unit's Conversion Factor
-    return quantity * currentUnitDef.conversionFactor;
-  }, [quantity, selectedUnit, currentUnitDef]);
-
+  // CORRECT LOGIC: Calculate the price of a single base unit.
   const unitPrice = useMemo(() => {
-    // Price of one BASE unit
+    // If original quantity is zero, price must be zero to avoid division by zero.
     if (item.quantity === 0) return 0;
+    // item.price is the total line price, item.quantity is the total base quantity.
+    // So, price of one base unit = total price / total base quantity.
     return item.price / item.quantity;
   }, [item.price, item.quantity]);
 
-  const newPrice = useMemo(() => {
-    // New Total Price = Calculated Base Qty * Price of one Base Unit
-    return baseQuantity * unitPrice;
-  }, [baseQuantity, unitPrice]);
+  // CORRECT LOGIC: This preview calculation is now accurate.
+  const preview = useMemo(() => {
+    const selectedUnitDef = allUnitDefs.find((u) => u.name === selectedUnit);
+    if (!selectedUnitDef) return { convertedQty: 0, newPrice: 0 };
+    
+    // 1. Calculate the total base quantity based on the CURRENT user input.
+    // e.g., User types '300' for 'G'. Base Qty = 300 / 1000 = 0.3 KG.
+    const baseQty = quantity / selectedUnitDef.conversionFactor;
+
+    // 2. Calculate the new total price based on the ACCURATE base quantity and ACCURATE unit price.
+    // e.g., New Price = 0.3 KG * (Rs. 260 / 1 KG) = Rs. 78.00
+    const newPrice = baseQty * unitPrice;
+
+    return { convertedQty: baseQty, newPrice };
+  }, [quantity, selectedUnit, allUnitDefs, unitPrice]);
   
-  // Update item function
+
   const handleUpdate = () => {
     onUpdate(item.saleItemId, quantity, selectedUnit);
   };
@@ -77,12 +82,10 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
                     <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value={baseUnitDef.name}>
-                       {baseUnitDef.name} (Base)
-                    </SelectItem>
-                    {derivedUnits.map(unit => (
+                    {allUnitDefs.map(unit => (
                         <SelectItem key={unit.name} value={unit.name}>
-                           {unit.name} (1 {allUnits.baseUnit} = {unit.conversionFactor} {unit.name})
+                           {unit.name} 
+                           {unit.name !== allUnits.baseUnit && ` (1 ${allUnits.baseUnit} = ${unit.conversionFactor} ${unit.name})`}
                         </SelectItem>
                     ))}
                 </SelectContent>
@@ -115,11 +118,11 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
            </div>
            <div className="flex justify-between">
               <span className="text-muted-foreground">Base Quantity ({allUnits.baseUnit}):</span>
-              <span className="font-bold">{baseQuantity.toFixed(3)}</span>
+              <span className="font-bold">{preview.convertedQty.toFixed(3)}</span>
            </div>
            <div className="flex justify-between">
               <span className="text-muted-foreground">Line Total:</span>
-              <span className="font-bold">Rs. {newPrice.toFixed(2)}</span>
+              <span className="font-bold">Rs. {preview.newPrice.toFixed(2)}</span>
            </div>
         </CardContent>
       </Card>
