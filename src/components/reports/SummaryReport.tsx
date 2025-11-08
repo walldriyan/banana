@@ -1,74 +1,98 @@
 // src/components/reports/SummaryReport.tsx
 import React from 'react';
 import type { SummaryReportData } from '@/lib/actions/report.actions';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Separator } from '../ui/separator';
 
 interface SummaryReportProps {
   data: SummaryReportData;
 }
 
-const DetailRow = ({ label, value, className = '' }: { label: string, value: string | number, className?: string }) => (
-    <div className={`flex-between py-2 border-b border-dashed ${className}`}>
-        <p className="text-sm">{label}</p>
-        <p className="text-sm font-bold">{typeof value === 'number' ? `Rs. ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}</p>
-    </div>
+const DetailRow = ({ label, value, isSubtle = false, isHeader = false }: { 
+    label: string, 
+    value: string | number, 
+    isSubtle?: boolean,
+    isHeader?: boolean
+}) => (
+    <>
+        <div className={`py-3 ${isSubtle ? 'text-gray-600' : 'text-black'} ${isHeader ? 'font-bold' : ''}`}>
+            {label}
+        </div>
+        <div className={`py-3 text-right ${isSubtle ? 'text-gray-600' : 'text-black'} ${isHeader ? 'font-bold' : ''}`}>
+            {typeof value === 'number' ? `Rs. ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}
+        </div>
+    </>
 );
 
 export function SummaryReport({ data }: SummaryReportProps) {
   return (
-    <div className="thermal-receipt-container">
-      <header className="text-center mb-4">
-        <h1>Financial Summary Report</h1>
-        <p>
-            {new Date(data.dateRange.from).toLocaleDateString()} - {new Date(data.dateRange.to).toLocaleDateString()}
+    <div className="report-container p-4 bg-white rounded-lg">
+      <header className="text-center mb-8">
+        <h1 className="text-2xl font-bold text-gray-800">Financial Summary Report</h1>
+        <p className="text-sm text-gray-500">
+            For the period of {new Date(data.dateRange.from).toLocaleDateString()} to {new Date(data.dateRange.to).toLocaleDateString()}
         </p>
       </header>
 
-      <section>
-        <h2>Overall Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            <DetailRow label="Net Profit" value={data.profit.netProfit} className="text-blue-600 font-bold text-lg" />
-            <DetailRow label="Gross Profit (Sales - Purchases)" value={data.profit.grossProfit} className="font-semibold"/>
-        </div>
-      </section>
+      <div className="space-y-8">
+        <Card className="shadow-md">
+            <CardHeader>
+                <CardTitle>Overall Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <div className="grid grid-cols-2 gap-x-4 border-t">
+                    <DetailRow label="Gross Profit (Sales - Purchases)" value={data.profit.grossProfit} isSubtle />
+                    <DetailRow label="Other Income" value={data.income.otherIncome} isSubtle />
+                    <DetailRow label="Other Expenses" value={-data.expenses.otherExpenses} isSubtle />
+                 </div>
+                 <div className="grid grid-cols-2 gap-x-4 border-t-2 border-b-2 border-black font-bold text-lg">
+                    <DetailRow label="Net Profit" value={data.profit.netProfit} isHeader />
+                 </div>
+            </CardContent>
+        </Card>
 
-      <section>
-        <h2>Income Details</h2>
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            <DetailRow label="Total Income (Sales + Other)" value={data.income.totalIncome} className="text-green-600 font-bold" />
-            <DetailRow label="From Sales" value={data.income.salesIncome} />
-            <DetailRow label="Other Income" value={data.income.otherIncome} />
-        </div>
-      </section>
+        <Card className="shadow-md">
+            <CardHeader>
+                <CardTitle>Income & Revenue</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <div className="grid grid-cols-2 gap-x-4 border-t">
+                    <DetailRow label="From Sales (After Discounts)" value={data.sales.totalRevenue} isSubtle />
+                    <DetailRow label="Other Income Sources" value={data.income.otherIncome} isSubtle />
+                 </div>
+                 <div className="grid grid-cols-2 gap-x-4 border-t-2 border-b-2 border-black font-semibold">
+                    <DetailRow label="Total Income" value={data.income.totalIncome} isHeader />
+                 </div>
+                 <div className="grid grid-cols-2 gap-x-4 border-t pt-2 mt-4">
+                    <DetailRow label="Total Transactions" value={data.sales.totalTransactions} isSubtle />
+                    <DetailRow label="Total Discounts Given" value={-data.sales.totalDiscount} isSubtle />
+                 </div>
+            </CardContent>
+        </Card>
+        
+        <Card className="shadow-md">
+            <CardHeader>
+                <CardTitle>Expenses & Costs</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <div className="grid grid-cols-2 gap-x-4 border-t">
+                    <DetailRow label="From Purchases (GRN)" value={data.purchases.totalCost} isSubtle />
+                    <DetailRow label="Other Expenses" value={data.expenses.otherExpenses} isSubtle />
+                 </div>
+                 <div className="grid grid-cols-2 gap-x-4 border-t-2 border-b-2 border-black font-semibold">
+                    <DetailRow label="Total Expenses" value={data.expenses.totalExpenses} isHeader />
+                 </div>
+                 <div className="grid grid-cols-2 gap-x-4 border-t pt-2 mt-4">
+                    <DetailRow label="Total GRNs" value={data.purchases.totalGrns} isSubtle />
+                 </div>
+            </CardContent>
+        </Card>
 
-      <section>
-        <h2>Expense Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            <DetailRow label="Total Expenses (Purchases + Other)" value={data.expenses.totalExpenses} className="text-red-600 font-bold" />
-            <DetailRow label="From Purchases (GRN)" value={data.expenses.purchaseExpenses} />
-            <DetailRow label="Other Expenses" value={data.expenses.otherExpenses} />
-        </div>
-      </section>
+      </div>
 
-      <section>
-        <h2>Sales Metrics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            <DetailRow label="Total Sales Revenue" value={data.sales.totalRevenue} />
-            <DetailRow label="Number of Transactions" value={data.sales.totalTransactions} />
-            <DetailRow label="Total Discounts Given" value={data.sales.totalDiscount} />
-        </div>
-      </section>
-      
-      <section>
-        <h2>Purchase Metrics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
-            <DetailRow label="Total Purchase Cost" value={data.purchases.totalCost} />
-            <DetailRow label="Number of GRNs" value={data.purchases.totalGrns} />
-        </div>
-      </section>
-
-      <footer className="text-center mt-6 text-xs text-gray-500">
-        <p>Generated on: {new Date().toLocaleString()}</p>
-        <p>This is a computer-generated report.</p>
+      <footer className="text-center mt-8 pt-4 border-t">
+        <p className="text-xs text-gray-500">Generated on: {new Date().toLocaleString()}</p>
+        <p className="text-xs text-gray-500">This is a computer-generated report.</p>
       </footer>
     </div>
   );

@@ -13,19 +13,25 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Printer, RotateCcw } from 'lucide-react';
 import { SummaryReport } from './SummaryReport';
 
-const receiptStyles = `
-  @page { size: auto; margin: 10px; }
-  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 0; }
-  .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 12px; width: 100%; max-width: 800px; margin: 0 auto; padding: 15px; }
-  .text-center { text-align: center; }
-  h1 { font-size: 1.5rem; font-weight: bold; }
-  h2 { font-size: 1.2rem; font-weight: bold; margin-top: 1rem; border-bottom: 1px dashed black; padding-bottom: 0.25rem; margin-bottom: 0.5rem; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-  .flex-between { display: flex; justify-content: space-between; }
-  .font-bold { font-weight: bold; }
-  .text-green-600 { color: #059669; }
-  .text-red-600 { color: #E53E3E; }
-  .text-blue-600 { color: #2563EB; }
+const reportPrintStyles = `
+  @page { 
+    size: A4; 
+    margin: 20mm; 
+  }
+  @media print {
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .report-container {
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+      color: black;
+      background-color: white;
+    }
+    .no-print {
+      display: none;
+    }
+  }
 `;
 
 export function ReportsClientPage() {
@@ -72,22 +78,36 @@ export function ReportsClientPage() {
         if (iframeDoc) {
             iframeDoc.open();
             iframeDoc.write(`
-                <html><head><title>Summary Report</title><style>${receiptStyles}</style></head>
-                <body>${reportHTML}</body></html>
+                <html>
+                  <head>
+                    <title>Financial Summary Report</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <style>${reportPrintStyles}</style>
+                  </head>
+                  <body>
+                    <div class="report-container">
+                      ${reportHTML}
+                    </div>
+                  </body>
+                </html>
             `);
             iframeDoc.close();
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
+            
+            // Wait for tailwind to process styles
+             setTimeout(() => {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+            }, 500);
         }
 
         setTimeout(() => {
             document.body.removeChild(iframe);
-        }, 500);
+        }, 1500);
     };
 
     return (
         <div className="flex flex-col h-full gap-6">
-            <Card>
+            <Card className="no-print">
                 <CardHeader>
                     <CardTitle>Report Generation</CardTitle>
                     <CardDescription>Select a date range and generate your financial summary report.</CardDescription>
@@ -122,7 +142,7 @@ export function ReportsClientPage() {
                  )}
                  {reportData && (
                      <Card>
-                         <CardHeader className="flex flex-row items-center justify-between">
+                         <CardHeader className="flex flex-row items-center justify-between no-print">
                             <div>
                                 <CardTitle>Summary Report</CardTitle>
                                 <CardDescription>
