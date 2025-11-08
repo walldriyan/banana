@@ -11,13 +11,20 @@ interface ReportRowProps {
     isBold?: boolean;
     isTotal?: boolean;
     valueClassName?: string;
+    isHeader?: boolean;
 }
 
 const ReportRow: React.FC<ReportRowProps> = ({ 
-    label, value, isSubtle, isBold, isTotal, valueClassName 
+    label, value, isSubtle, isBold, isTotal, valueClassName, isHeader
 }) => {
     const { t } = useLanguage();
     const translatedLabel = t(label as any);
+
+    if (isHeader) {
+        return (
+            <h2 className="p-3 bg-gray-100 font-semibold text-black text-base col-span-2">{translatedLabel}</h2>
+        )
+    }
 
     return (
         <div className={`grid grid-cols-2 gap-4 py-2 px-3 ${isTotal ? 'border-t' : ''}`}>
@@ -38,7 +45,8 @@ interface SummaryReportProps {
 
 export function SummaryReport({ data }: SummaryReportProps) {
   const { t, language } = useLanguage();
-  const totalIncome = (data.sales.totalRevenue || 0) + (data.sales.totalDiscount || 0);
+  const totalIncome = (data.sales.totalRevenue || 0) + (data.income.otherIncome || 0);
+  const totalExpenses = (data.purchases.totalCost || 0) + (data.expenses.otherExpenses || 0) + (data.sales.totalDiscount || 0);
 
   return (
     <div className="report-container p-4 bg-white rounded-lg text-sm text-black">
@@ -52,45 +60,48 @@ export function SummaryReport({ data }: SummaryReportProps) {
       <div className="border rounded-lg overflow-hidden">
         <div className="grid grid-cols-1">
           
-          <div className="grid grid-cols-2 bg-gray-100 font-semibold text-black">
-            <h2 className="p-3">{t('plStatementTitle')}</h2>
-          </div>
+          <ReportRow label="plStatementTitle" value="" isHeader />
 
-          <div className="grid grid-cols-2">
+          <div className="grid grid-cols-1 md:grid-cols-2">
             <div className="border-r">
                 <ReportRow label="expensesTitle" value="" isBold />
                 <ReportRow label="purchasesCost" value={data.purchases.totalCost} isSubtle />
                 <ReportRow label="otherExpenses" value={data.expenses.otherExpenses} isSubtle />
                 <ReportRow label="totalDiscountsGiven" value={data.sales.totalDiscount} isSubtle />
-                <ReportRow label="totalExpenses" value={data.expenses.totalExpenses + data.sales.totalDiscount} isTotal isBold />
+                <ReportRow label="totalExpenses" value={totalExpenses} isTotal isBold />
             </div>
             <div>
                 <ReportRow label="incomeTitle" value="" isBold />
-                <ReportRow label="salesRevenue" value={totalIncome} isSubtle />
+                <ReportRow label="salesRevenue" value={data.sales.totalRevenue + data.sales.totalDiscount} isSubtle />
                 <ReportRow label="otherIncome" value={data.income.otherIncome} isSubtle />
-                <div className="h-8"></div>
-                <ReportRow label="totalIncome" value={totalIncome + data.income.otherIncome} isTotal isBold />
+                 <div className="py-2 px-3 h-[52px]"></div> {/* Spacer */}
+                <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
             </div>
           </div>
           
-          <div className="grid grid-cols-2 p-3 rounded-b-lg bg-blue-50 border-t border-blue-200">
-              <div className='flex flex-col justify-center'>
-                  <p className="font-bold text-lg text-blue-800">{t('netProfitTitle')}</p>
-                  <p className="text-xs text-gray-600">{t('netProfitDesc')}</p>
-              </div>
-              <p className="text-right font-bold text-2xl text-blue-800">
-                Rs. {data.profit.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-          </div>
+            <div className="col-span-2 border-t bg-gray-50 p-4 space-y-2">
+                <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
+                <div className="flex justify-between items-center text-base">
+                    <span className="text-gray-600">{t('totalIncome')}</span>
+                    <span className="font-semibold">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                </div>
+                <div className="flex justify-between items-center text-base">
+                    <span className="text-gray-600">{`(-) ${t('totalExpenses')}`}</span>
+                    <span className="font-semibold">{`Rs. ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex justify-between items-center text-lg font-bold text-blue-800">
+                    <span>{`(=) ${t('netProfitTitle')}`}</span>
+                    <span>{`Rs. ${data.profit.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                </div>
+            </div>
         </div>
       </div>
       
        <div className="border rounded-lg overflow-hidden mt-6">
         <div className="grid grid-cols-1">
-            <div className="grid grid-cols-2 bg-gray-100 font-semibold text-black">
-                <h2 className="p-3">{t('bsAndMetricsTitle')}</h2>
-            </div>
-             <div className="grid grid-cols-2">
+             <ReportRow label="bsAndMetricsTitle" value="" isHeader />
+             <div className="grid grid-cols-1 md:grid-cols-2">
                 <div className="border-r">
                     <ReportRow label="assetsAndMetricsTitle" value="" isBold />
                     <ReportRow label="debtors" value={data.balanceSheet.assets.debtors} isSubtle />
