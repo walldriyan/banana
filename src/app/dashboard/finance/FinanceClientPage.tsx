@@ -27,6 +27,7 @@ import { TrendingUp, TrendingDown, Landmark, Briefcase } from 'lucide-react';
 import { AddTransactionForm } from './AddTransactionForm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Separator } from '../ui/separator';
 
 type TransactionWithRelations = FinancialTransaction & {
   company: Company | null;
@@ -40,15 +41,15 @@ const SummaryCard = ({ icon: Icon, label, value, valueClassName }: {
   value: string, 
   valueClassName?: string 
 }) => (
-  <Card className="flex-1">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{label}</CardTitle>
-      <Icon className={`h-4 w-4 text-muted-foreground ${valueClassName}`} />
-    </CardHeader>
-    <CardContent>
-      <div className={`text-2xl font-bold ${valueClassName}`}>{value}</div>
-    </CardContent>
-  </Card>
+  <div className="flex-1 p-4 rounded-lg bg-background flex items-center gap-4">
+      <div className={`p-3 rounded-full ${valueClassName} bg-opacity-10`}>
+        <Icon className={`h-6 w-6 ${valueClassName}`} />
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">{label}</p>
+        <p className={`text-2xl font-bold ${valueClassName}`}>{value}</p>
+      </div>
+    </div>
 );
 
 export function FinanceClientPage() {
@@ -174,12 +175,12 @@ export function FinanceClientPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
+        <Skeleton className="h-96 w-full" />
         <div className="grid gap-4 md:grid-cols-3">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
         </div>
-        <Skeleton className="h-96 w-full" />
       </div>
     );
   }
@@ -206,59 +207,55 @@ export function FinanceClientPage() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-full">
+    <div className="flex flex-col h-full gap-6">
 
-      {/* Left Column: Financial Overview */}
-      <div className="lg:w-1/3 flex flex-col gap-6">
-          <Card>
-              <CardHeader>
-                  <CardTitle>Financial Overview</CardTitle>
-                  <CardDescription>
-                  A summary of your total income, expenses, and net balance.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  <SummaryCard 
-                    icon={TrendingUp} 
-                    label="Total Income" 
-                    value={formatCurrency(summary.totalIncome)} 
-                    valueClassName="text-green-600" 
-                  />
-                  <SummaryCard 
-                    icon={TrendingDown} 
-                    label="Total Expenses" 
-                    value={formatCurrency(summary.totalExpense)} 
-                    valueClassName="text-red-600" 
-                  />
-                  <SummaryCard 
-                    icon={Landmark} 
-                    label="Net Balance" 
-                    value={formatCurrency(summary.netBalance)} 
-                    valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} 
-                  />
-              </CardContent>
-          </Card>
-      </div>
-
-      {/* Right Column: Transaction History */}
-      <div className="flex-1 min-h-0">
-          <Card className="flex flex-col h-full">
-              <CardHeader>
-                  <CardTitle>Transaction History</CardTitle>
-                  <CardDescription>
-                  View, add, edit, and manage all your financial transactions.
-                  </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1 min-h-0 overflow-y-auto">
-                  <FinanceDataTable
-                      columns={columns}
-                      data={transactions}
-                      onAddTransaction={openAddDrawer}
-                  />
-              </CardContent>
-          </Card>
-      </div>
+      {/* Main Content: Transaction History */}
+      <Card className="flex flex-col flex-1 min-h-0">
+          <CardHeader>
+              <CardTitle>Transaction History</CardTitle>
+              <CardDescription>
+              View, add, edit, and manage all your financial transactions.
+              </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 min-h-0 flex flex-col">
+              <FinanceDataTable
+                  columns={columns}
+                  data={transactions}
+                  onAddTransaction={openAddDrawer}
+              />
+          </CardContent>
+      </Card>
       
+      {/* Bottom Row: Financial Overview */}
+      <Card className="flex-shrink-0">
+          <CardHeader>
+              <CardTitle>Financial Overview</CardTitle>
+              <CardDescription>
+              A summary of your total income, expenses, and net balance.
+              </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col md:flex-row gap-4">
+              <SummaryCard 
+                icon={TrendingUp} 
+                label="Total Income" 
+                value={formatCurrency(summary.totalIncome)} 
+                valueClassName="text-green-600" 
+              />
+              <SummaryCard 
+                icon={TrendingDown} 
+                label="Total Expenses" 
+                value={formatCurrency(summary.totalExpense)} 
+                valueClassName="text-red-600" 
+              />
+              <SummaryCard 
+                icon={Landmark} 
+                label="Net Balance" 
+                value={formatCurrency(summary.netBalance)} 
+                valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} 
+              />
+          </CardContent>
+      </Card>
+
       {/* Delete confirmation dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
