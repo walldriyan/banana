@@ -1,16 +1,16 @@
 // src/components/reports/ReportsClientPage.tsx
 'use client';
 
-import { useState, useTransition, useCallback } from 'react';
+import { useState, useTransition, useCallback, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
-import { subDays, startOfMonth, startOfYear, startOfWeek } from 'date-fns';
+import { subDays, startOfMonth, startOfYear, startOfWeek, isSameDay } from 'date-fns';
 import { getSummaryReportDataAction, type SummaryReportData } from '@/lib/actions/report.actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DateRangePicker } from './DateRangePicker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Printer, RotateCcw } from 'lucide-react';
+import { AlertTriangle, Printer } from 'lucide-react';
 import { SummaryReport } from './SummaryReport';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { LanguageToggle } from '../LanguageToggle';
@@ -39,17 +39,17 @@ const reportPrintStyles = `
 const ReportGenerator = () => {
     const today = new Date();
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(today, 7),
+        from: subDays(today, 6), // Default to last 7 days including today
         to: today,
     });
+    const [activePreset, setActivePreset] = useState<string | null>('week');
     const [reportData, setReportData] = useState<SummaryReportData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
     const { language } = useLanguage();
 
-    const handleGenerateReport = useCallback((range?: DateRange) => {
-        const targetRange = range || dateRange;
-        if (!targetRange || !targetRange.from || !targetRange.to) {
+    const handleGenerateReport = useCallback((range: DateRange) => {
+        if (!range || !range.from || !range.to) {
             setError("Please select a valid date range.");
             return;
         }
@@ -57,18 +57,39 @@ const ReportGenerator = () => {
         startTransition(async () => {
             setError(null);
             setReportData(null);
-            const result = await getSummaryReportDataAction({ from: targetRange.from!, to: targetRange.to! });
+            const result = await getSummaryReportDataAction({ from: range.from!, to: range.to! });
             if (result.success) {
                 setReportData(result.data!);
             } else {
                 setError(result.error!);
             }
         });
-    }, [dateRange]);
+    }, []);
     
-    const handlePresetClick = (range: DateRange) => {
-        setDateRange(range);
-        handleGenerateReport(range);
+    // Auto-generate report when date range changes
+    useEffect(() => {
+        if (dateRange?.from && dateRange.to) {
+            handleGenerateReport(dateRange);
+            
+            // Check if the current range matches a preset
+            if (isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today)) {
+                setActivePreset('today');
+            } else if (isSameDay(dateRange.from, startOfWeek(today)) && isSameDay(dateRange.to, today)) {
+                setActivePreset('week');
+            } else if (isSameDay(dateRange.from, startOfMonth(today)) && isSameDay(dateRange.to, today)) {
+                setActivePreset('month');
+            } else if (isSameDay(dateRange.from, startOfYear(today)) && isSameDay(dateRange.to, today)) {
+                setActivePreset('year');
+            } else {
+                setActivePreset(null); // Custom range
+            }
+        }
+    }, [dateRange, handleGenerateReport]);
+
+
+    const handlePresetClick = (range: DateRange, presetName: string) => {
+        setActivePreset(presetName);
+        setDateRange(range); // This will trigger the useEffect to generate the report
     };
     
     const handlePrint = async () => {
@@ -121,21 +142,18 @@ const ReportGenerator = () => {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Report Generation</CardTitle>
-                        <CardDescription>Select a date range and generate your financial summary report.</CardDescription>
+                        <CardDescription>Select a date range to automatically generate your financial summary report.</CardDescription>
                     </div>
                     <LanguageToggle />
                 </CardHeader>
                 <CardContent className="flex flex-wrap items-center gap-4">
                     <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
                      <div className="flex flex-wrap gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: today, to: today })}>Today</Button>
-                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: startOfWeek(today), to: today })}>This Week</Button>
-                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: startOfMonth(today), to: today })}>This Month</Button>
-                        <Button variant="outline" size="sm" onClick={() => handlePresetClick({ from: startOfYear(today), to: today })}>This Year</Button>
+                        <Button variant={activePreset === 'today' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: today, to: today }, 'today')}>Today</Button>
+                        <Button variant={activePreset === 'week' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfWeek(today), to: today }, 'week')}>This Week</Button>
+                        <Button variant={activePreset === 'month' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfMonth(today), to: today }, 'month')}>This Month</Button>
+                        <Button variant={activePreset === 'year' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfYear(today), to: today }, 'year')}>This Year</Button>
                      </div>
-                     <Button onClick={() => handleGenerateReport()} disabled={isPending}>
-                        {isPending ? "Generating..." : "Generate Report"}
-                    </Button>
                 </CardContent>
             </Card>
 
