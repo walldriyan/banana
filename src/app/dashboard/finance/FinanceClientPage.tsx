@@ -210,14 +210,14 @@ export function FinanceClientPage() {
     <div className="flex flex-col h-full gap-6">
 
       {/* Main Content: Transaction History */}
-      <Card className="flex flex-col flex-1 min-h-0">
+      <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <CardHeader>
               <CardTitle>Transaction History</CardTitle>
               <CardDescription>
               View, add, edit, and manage all your financial transactions.
               </CardDescription>
           </CardHeader>
-          <CardContent className="flex-1 min-h-0 flex flex-col">
+          <CardContent className="flex-1 min-h-0 flex flex-col overflow-y-auto">
               <FinanceDataTable
                   columns={columns}
                   data={transactions}
