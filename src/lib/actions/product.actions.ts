@@ -222,7 +222,7 @@ export async function getProductBatchesAction() {
 
             return {
                 ...batch,
-                stock: stockString, // Now always has decimal point: e.g. "45.000"
+                stock: stockString, // Now always has decimal point: "45.000", "44.700"
             };
         });
 
