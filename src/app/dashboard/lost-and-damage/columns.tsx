@@ -59,7 +59,8 @@ export const getColumns = (
         cell: ({ row }) => format(new Date(row.getValue("date")), "PPP")
     },
     {
-        accessorKey: "productBatch.product.name",
+        id: "productName",
+        accessorFn: (row) => row.productBatch.product.name,
         header: "Product Name",
         cell: ({ row }) => <div className="font-medium">{row.original.productBatch.product.name}</div>
     },
