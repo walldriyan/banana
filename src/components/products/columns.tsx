@@ -63,9 +63,19 @@ const CellActions = ({ batch, onEdit, onDelete, onViewDetails }: CellActionsProp
 const StockCell = ({ row }: { row: any }) => {
     const batch = row.original as ProductBatch;
     const units = useProductUnits(batch.product.units);
-    const stock = row.getValue("stock") as number;
-    return <div className="text-right">{stock} {units.baseUnit}</div>;
+    
+    // The value from the server is now a string to preserve decimals.
+    const stockAsString = row.original.stock as string;
+    const stock = parseFloat(stockAsString);
+
+    // Always show up to 3 decimal places, but remove trailing zeros if they exist
+    // 46.000 -> "46"
+    // 45.700 -> "45.7"
+    const displayStock = stock.toFixed(3).replace(/\.?0+$/, '');
+    
+    return <div className="text-right">{displayStock} {units.baseUnit}</div>;
 };
+
 
 // Update the type definition for the columns factory
 export const getColumns = (
@@ -123,7 +133,8 @@ export const getColumns = (
         },
     },
     {
-        accessorKey: "stock",
+        id: "stock",
+        accessorFn: (row) => row.stock,
         header: () => <div className="text-right">Stock</div>,
         cell: StockCell,
     },

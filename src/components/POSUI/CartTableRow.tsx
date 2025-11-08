@@ -3,8 +3,7 @@
 import React, { useMemo } from 'react';
 import type { SaleItem } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Tag, Trash2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tag, Trash2, Scaling } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { Skeleton } from '../ui/skeleton';
@@ -16,9 +15,10 @@ interface CartTableRowProps {
   discountResult: any; // Using any because it's a plain object from server
   onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
   onOverrideDiscount: (item: SaleItem) => void;
+  onSelectUnit: (item: SaleItem) => void;
 }
 
-export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount }: CartTableRowProps) {
+export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount, onSelectUnit }: CartTableRowProps) {
   const lineItemResult = discountResult?.lineItems?.find((li: any) => li.lineId === item.saleItemId);
   const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
   const originalLineTotal = item.price * item.quantity;
@@ -26,11 +26,7 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
   const isCustomDiscount = item.customDiscountValue !== undefined && item.customDiscountValue > 0;
   
   const units = useProductUnits(item.product.units);
-  const allUnits = useMemo(() => [
-    { name: units.baseUnit, conversionFactor: 1 }, 
-    ...(units.derivedUnits || [])
-  ], [units]);
-  const hasDerivedUnits = allUnits.length > 1;
+  const hasDerivedUnits = (units.derivedUnits || []).length > 0;
 
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -73,22 +69,13 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
             +
           </Button>
            {hasDerivedUnits ? (
-            <Select 
-                value={item.displayUnit}
-                onValueChange={(newUnit) => onUpdateQuantity(item.saleItemId, item.displayQuantity, newUnit)}
-            >
-                <SelectTrigger className="w-[80px] h-8 ml-2 text-xs">
-                    <SelectValue placeholder="Unit" />
-                </SelectTrigger>
-                <SelectContent>
-                    {allUnits.map(u => (
-                        <SelectItem key={u.name} value={u.name} className="text-xs">{u.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        ) : (
+             <Button variant="outline" size="sm" className="h-8 ml-2" onClick={() => onSelectUnit(item)}>
+                <Scaling className="h-3 w-3 mr-2" />
+                {item.displayUnit}
+             </Button>
+            ) : (
              <span className="text-xs text-muted-foreground ml-2">{units.baseUnit}</span>
-        )}
+            )}
         </div>
       </TableCell>
       <TableCell>

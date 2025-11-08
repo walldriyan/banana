@@ -18,6 +18,8 @@ import { revalidatePath } from 'next/cache';
  * @returns The newly created transaction object from the database.
  */
 export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
+  console.log("💾 1. saveTransactionToDb ක්‍රියාවලිය ආරම්භ විය. ලැබුණු දත්ත:", JSON.stringify(data, null, 2));
+
   const {
     transactionHeader,
     transactionLines,
@@ -28,7 +30,8 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 
   try {
     const newTransaction = await prisma.$transaction(async (tx) => {
-      
+      console.log(" transactional block එකට ඇතුළු විය.");
+
       let customer;
       const phoneToUse = customerDetails.phone || null;
       const isWalkIn = customerDetails.name === 'Walk-in Customer' && !phoneToUse;
@@ -53,6 +56,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           },
         });
       }
+      console.log(`👤 2. Customer සකස් කරන ලදී: ID - ${customer.id}`);
 
       // Determine initial payment status
       let initialPaymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
@@ -120,6 +124,7 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           },
         },
       });
+      console.log(`🧾 3. ප්‍රධාන ගනුදෙනු වාර්තාව සාදන ලදී: ID - ${createdTransaction.id}`);
 
       // Record initial payment in the new SalePayment table if it's a credit sale
       if (initialPaymentStatus === 'partial' || initialPaymentStatus === 'pending') {
@@ -136,18 +141,27 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
           }
       }
 
-
       // STOCK MANAGEMENT LOGIC
+      console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
-            await tx.productBatch.update({ // Changed from Product to ProductBatch
+            const batchBeforeUpdate = await tx.productBatch.findUnique({ where: { id: line.batchId } });
+            if (!batchBeforeUpdate) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
+            
+            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${batchBeforeUpdate.stock.toString()} | අඩු කරන ප්‍රමාණය: ${line.quantity}`);
+
+            // Use Prisma's atomic decrement operation
+            await tx.productBatch.update({
                 where: { id: line.batchId }, 
-                data: {
+                data: { 
                     stock: {
-                       decrement: line.quantity
+                        decrement: line.quantity
                     }
                 }
             });
+
+            const updatedBatch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
+            console.log(`   - ✅ යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${line.batchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
         }
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
          const originalTx = await tx.transaction.findUnique({
@@ -160,45 +174,54 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
          }
 
          for (const originalLine of originalTx.lines) {
-             const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); // Changed to batchId
-             const originalQty = originalLine.quantity;
-             const keptQty = keptLine ? keptLine.quantity : 0;
-             const returnedQty = originalQty - keptQty;
+             const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); 
+             const originalQty = new Prisma.Decimal(originalLine.quantity);
+             const keptQty = keptLine ? new Prisma.Decimal(keptLine.quantity) : new Prisma.Decimal(0);
+             const returnedQty = originalQty.minus(keptQty);
 
-             if (returnedQty > 0) {
-                 await tx.productBatch.update({ // Changed from Product to ProductBatch
-                     where: { id: originalLine.productBatchId! }, // Use the correct ID from the original line
-                     data: {
-                         stock: {
-                             increment: returnedQty
-                         }
-                     }
+             if (returnedQty.greaterThan(0)) {
+                 const batchBeforeUpdate = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
+                 if (!batchBeforeUpdate) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
+                 
+                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${batchBeforeUpdate.stock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()}`);
+                 
+                 // Use Prisma's atomic increment operation
+                 await tx.productBatch.update({
+                     where: { id: originalLine.productBatchId! },
+                     data: { 
+                        stock: {
+                            increment: returnedQty.toNumber() // Convert Decimal back to number for increment
+                        }
+                    }
                  });
+
+                 const updatedBatch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
+                 console.log(`   - ✅ REFUND: යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${originalLine.productBatchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
              }
          }
       }
-
+      console.log("✅ 5. Stock Management සාර්ථකව අවසන් විය.");
 
       return createdTransaction;
     });
 
-    console.log(`[DB] Transaction ${newTransaction.id} saved successfully to database.`);
+    console.log("✅✅✅ FINAL SUCCESS: Transaction object saved to DB:", JSON.stringify(newTransaction, null, 2));
     revalidatePath('/history');
     revalidatePath('/dashboard/products');
     revalidatePath('/dashboard/debtors');
     return { success: true, data: newTransaction };
 
   } catch (error) {
-    console.error('[DB_SAVE_ERROR]', error);
+    console.error('[DB_SAVE_ERROR] සම්පූර්ණ දෝෂය:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if(error.code === 'P2002' && (error.meta?.target as string[])?.includes('originalTransactionId')) {
-           return { success: false, error: `The original transaction has already been refunded.` };
+           return { success: false, error: `දෝෂය: මෙම ගනුදෙනුව සඳහා දැනටමත් refund එකක් නිකුත් කර ඇත.` };
       }
-      return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
+      return { success: false, error: `Prisma දෝෂය (${error.code}): ${error.message}` };
     }
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'An unknown database error occurred.',
+      error: error instanceof Error ? error.message : 'දත්ත ගබඩාවේ නොදන්නා දෝෂයක් ඇතිවිය.',
     };
   }
 }

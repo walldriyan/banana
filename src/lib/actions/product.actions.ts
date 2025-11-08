@@ -213,7 +213,20 @@ export async function getProductBatchesAction() {
             include: { product: true },
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
-        return { success: true, data: batches };
+
+        // Convert Decimal `stock` to string to preserve decimals
+        const serializedBatches = batches.map(batch => {
+             // Force decimal format with toFixed(3) to ensure decimal point exists
+            const stockNumber = Number(batch.stock);
+            const stockString = stockNumber.toFixed(3);
+
+            return {
+                ...batch,
+                stock: stockString, // Now always has decimal point: "45.000", "44.700"
+            };
+        });
+
+        return { success: true, data: serializedBatches };
     } catch (error) {
         console.error("Error fetching product batches:", error);
         return { success: false, error: "Failed to fetch product batches." };

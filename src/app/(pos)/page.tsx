@@ -48,6 +48,14 @@ import {
 } from "@/components/ui/dropdown-menu"
 import OrderSummary from '@/components/POSUI/OrderSummary';
 import { HelpClientPage } from '@/app/dashboard/help/HelpClientPage';
+import { UnitSelectorModal } from '@/components/POSUI/UnitSelectorModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 
 const initialDiscountResult = {
@@ -78,6 +86,11 @@ export default function MyNewEcommerceShop() {
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
 
   const user = useSessionStore(state => state.user);
+  
+  const [unitModalState, setUnitModalState] = useState<{ isOpen: boolean; item: SaleItem | null }>({
+    isOpen: false,
+    item: null,
+  });
 
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
@@ -94,11 +107,13 @@ export default function MyNewEcommerceShop() {
       if (productsResult.success && productsResult.data) {
         setProducts(productsResult.data);
       } else {
+        setTimeout(() => {
         toast({
           variant: 'destructive',
           title: 'Error fetching products',
           description: productsResult.error,
         });
+        }, 0);
       }
 
       if (campaignsResult.success && campaignsResult.data) {
@@ -326,47 +341,77 @@ export default function MyNewEcommerceShop() {
 
 
   const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
-    const itemIndex = cart.findIndex(item => item.saleItemId === saleItemId);
-    if (itemIndex === -1) return;
-
-    const currentItem = cart[itemIndex];
-    const unitsData = parseUnits(currentItem.product.units);
-    const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
-
-    const unitToUse = newDisplayUnit || currentItem.displayUnit;
-    const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
-    const conversionFactor = selectedUnitDefinition?.conversionFactor || 1;
-
-    const newBaseQuantity = newDisplayQuantity * conversionFactor;
-    const originalProduct = products.find(p => p.id === currentItem.id);
-    const originalStock = originalProduct?.stock || 0;
-
-    if (newBaseQuantity > originalStock) {
-      toast({
-        variant: "destructive",
-        title: "Stock Limit Exceeded",
-        description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
-      });
-      return;
-    }
-
+    console.log("🛒 handleCartUpdate called:", { saleItemId, newDisplayQuantity, newDisplayUnit });
     setCart(currentCart => {
-      const updatedCart = [...currentCart];
-      const idx = updatedCart.findIndex(item => item.saleItemId === saleItemId);
-      if (idx === -1) return currentCart;
+        const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
+        if (itemIndex === -1) return currentCart;
 
-      if (newDisplayQuantity <= 0) {
-        return updatedCart.filter(item => item.saleItemId !== saleItemId);
-      }
+        const currentItem = currentCart[itemIndex];
+        const unitsData = parseUnits(currentItem.product.units);
+        const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
+        
+        if (newDisplayQuantity <= 0) {
+            return currentCart.filter(item => item.saleItemId !== saleItemId);
+        }
 
-      updatedCart[idx] = {
-        ...updatedCart[idx],
-        quantity: newBaseQuantity,
-        displayQuantity: newDisplayQuantity,
-        displayUnit: unitToUse,
-      };
-      return updatedCart;
+        const unitToUse = newDisplayUnit || currentItem.displayUnit;
+        const selectedUnitDefinition = allUnits.find(u => u.name === unitToUse);
+
+        if (!selectedUnitDefinition) {
+            console.error(`Unit definition for '${unitToUse}' not found.`);
+            return currentCart;
+        }
+
+        console.log(`--- Unit Conversion & Cart Update (සිංහලෙන්) ---`);
+        console.log(`1. පියවර: නව Base Quantity එක ගණනය කිරීම.`);
+        console.log(`   - Display Quantity: ${newDisplayQuantity} ${unitToUse}`);
+        console.log(`   - Conversion Factor (${unitToUse} to ${unitsData.baseUnit}): ${selectedUnitDefinition.conversionFactor}`);
+        
+        const newBaseQuantity = newDisplayQuantity * selectedUnitDefinition.conversionFactor;
+        
+        console.log(`   - ගණනය: ${newDisplayQuantity} * ${selectedUnitDefinition.conversionFactor} = ${newBaseQuantity.toFixed(4)} ${unitsData.baseUnit}`);
+
+        const originalProduct = products.find(p => p.id === currentItem.id);
+        const originalStock = originalProduct?.stock || 0;
+        
+        console.log(`2. පියවර: Stock එක පරීක්ෂා කිරීම.`);
+        console.log(`   - ඉල්ලූ ප්‍රමාණය (Base): ${newBaseQuantity.toFixed(4)}`);
+        console.log(`   - තොගයේ ඇති ප්‍රමාණය: ${originalStock}`);
+
+        if (newBaseQuantity > originalStock) {
+            console.log(`   - ❌ දෝෂය: Stock එක සීමාව ඉක්මවා ඇත.`);
+            setTimeout(() => {
+                toast({
+                    variant: "destructive",
+                    title: "Stock Limit Exceeded",
+                    description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
+                });
+            }, 0);
+            return currentCart; 
+        }
+
+        const updatedCart = [...currentCart];
+        updatedCart[itemIndex] = {
+            ...currentItem,
+            quantity: newBaseQuantity, 
+            displayQuantity: newDisplayQuantity,
+            displayUnit: unitToUse,
+        };
+
+        console.log(`3. පියවර: Cart එක යාවත්කාලීන කිරීම.`);
+        console.log(`   - ✅ සාර්ථකයි! නව අගයන්:`, updatedCart[itemIndex]);
+        console.log(`-------------------------------------------------`);
+        
+        return updatedCart;
     });
+  };
+
+  const openUnitSelectorModal = useCallback((item: SaleItem) => {
+    setUnitModalState({ isOpen: true, item: item });
+  }, []);
+
+  const closeUnitSelectorModal = () => {
+    setUnitModalState({ isOpen: false, item: null });
   };
 
 
@@ -385,11 +430,13 @@ export default function MyNewEcommerceShop() {
       const originalStock = originalProduct?.stock || 0;
 
       if (newBaseQuantity > originalStock) {
+        setTimeout(() => {
         toast({
           variant: "destructive",
           title: "Stock Limit Exceeded",
           description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
         });
+        }, 0);
         return;
       }
 
@@ -406,11 +453,13 @@ export default function MyNewEcommerceShop() {
     } else {
       const availableStock = availableProducts.find(p => p.id === productBatch.id)?.stock ?? 0;
       if (1 > availableStock) {
+        setTimeout(() => {
         toast({
           variant: "destructive",
           title: "Out of Stock",
           description: "This product batch is currently out of stock.",
         });
+        }, 0);
         return;
       }
 
@@ -653,6 +702,7 @@ export default function MyNewEcommerceShop() {
                       discountResult={discountResult}
                       onUpdateQuantity={handleCartUpdate}
                       onOverrideDiscount={openCustomDiscountDrawer}
+                      onSelectUnit={openUnitSelectorModal}
                     />
                   </div>
                 </div>
@@ -720,6 +770,26 @@ export default function MyNewEcommerceShop() {
           </Card>
         </main>
       </div>
+
+      {unitModalState.isOpen && unitModalState.item && (
+        <Dialog open={unitModalState.isOpen} onOpenChange={closeUnitSelectorModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Change Units for {unitModalState.item.product.name}</DialogTitle>
+              <DialogDescription>
+                Select a new unit and quantity for this item.
+              </DialogDescription>
+            </DialogHeader>
+            <UnitSelectorModal
+              item={unitModalState.item}
+              onUpdate={(saleItemId, newQty, newUnit) => {
+                handleCartUpdate(saleItemId, newQty, newUnit);
+                closeUnitSelectorModal();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

@@ -27,24 +27,31 @@ import {
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
-import { PlusCircle } from "lucide-react"
+import { PlusCircle, ArchiveX } from "lucide-react"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
+
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
-  onAddProduct: () => void; // Callback to open the add product drawer
+  onAddProduct: () => void; // Callback to open the add master product drawer
+  hideZeroStock: boolean;
+  onHideZeroStockChange: (checked: boolean) => void;
 }
 
 export function ProductsDataTable<TData, TValue>({
   columns,
   data,
-  onAddProduct
+  onAddProduct,
+  hideZeroStock,
+  onHideZeroStockChange,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
     const [rowSelection, setRowSelection] = useState({})
-    const [grouping, setGrouping] = useState<string[]>(['name'])
+    const [grouping, setGrouping] = useState<string[]>(['product.name']) // Group by master product name
     const [expanded, setExpanded] = useState<ExpandedState>({})
 
 
@@ -62,6 +69,7 @@ export function ProductsDataTable<TData, TValue>({
     getGroupedRowModel: getGroupedRowModel(),
     onExpandedChange: setExpanded,
     getExpandedRowModel: getExpandedRowModel(),
+    autoResetAll: false, // Prevents table from resetting on data change
     state: {
       sorting,
       columnFilters,
@@ -72,24 +80,37 @@ export function ProductsDataTable<TData, TValue>({
   })
 
   return (
-    <div>
-        <div className="flex items-center justify-between py-4">
+    <div className="flex flex-col min-h-0 flex-1">
+        <div className="flex items-center justify-between py-4 gap-4 flex-shrink-0">
             <Input
-                placeholder="Filter products by name..."
-                value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+                placeholder="Filter by product name..."
+                value={(table.getColumn("product.name")?.getFilterValue() as string) ?? ""}
                 onChange={(event) =>
-                    table.getColumn("name")?.setFilterValue(event.target.value)
+                    table.getColumn("product.name")?.setFilterValue(event.target.value)
                 }
                 className="max-w-sm"
             />
-            <AuthorizationGuard permissionKey="products.create">
-                <Button onClick={onAddProduct}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Product
-                </Button>
-            </AuthorizationGuard>
+            <div className="flex items-center gap-4">
+                <div className="flex items-center space-x-2">
+                    <Switch 
+                        id="hide-zero-stock" 
+                        checked={hideZeroStock}
+                        onCheckedChange={onHideZeroStockChange}
+                    />
+                    <Label htmlFor="hide-zero-stock" className="whitespace-nowrap">
+                        <ArchiveX className="inline-block mr-2 h-4 w-4" />
+                        Hide Zero Stock
+                    </Label>
+                </div>
+                <AuthorizationGuard permissionKey="products.create">
+                    <Button onClick={onAddProduct}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Master Product
+                    </Button>
+                </AuthorizationGuard>
+            </div>
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border flex-grow overflow-y-auto">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -117,7 +138,7 @@ export function ProductsDataTable<TData, TValue>({
                         data-state={row.getIsSelected() && "selected"}
                     >
                         {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
+                        <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 1.5 + (cell.getIsGrouped() ? 0 : 1.5)}rem` }}>
                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </TableCell>
                         ))}
@@ -133,7 +154,7 @@ export function ProductsDataTable<TData, TValue>({
                 </TableBody>
             </Table>
         </div>
-         <div className="flex items-center justify-end space-x-2 py-4">
+         <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
             <Button
                 variant="outline"
                 size="sm"
@@ -151,7 +172,7 @@ export function ProductsDataTable<TData, TValue>({
                 Next
             </Button>
         </div>
-        <div className="flex-1 text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground flex-shrink-0">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
