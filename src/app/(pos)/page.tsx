@@ -350,7 +350,6 @@ export default function MyNewEcommerceShop() {
         const unitsData = parseUnits(currentItem.product.units);
         const allUnits = [{ name: unitsData.baseUnit, conversionFactor: 1 }, ...(unitsData.derivedUnits || [])];
         
-        // If quantity is zero or less, remove the item
         if (newDisplayQuantity <= 0) {
             return currentCart.filter(item => item.saleItemId !== saleItemId);
         }
@@ -363,7 +362,6 @@ export default function MyNewEcommerceShop() {
             return currentCart;
         }
 
-        // --- NEW LOGIC ---
         console.log(`--- Unit Conversion & Cart Update (සිංහලෙන්) ---`);
         console.log(`1. පියවර: නව Base Quantity එක ගණනය කිරීම.`);
         console.log(`   - Display Quantity: ${newDisplayQuantity} ${unitToUse}`);
@@ -372,7 +370,6 @@ export default function MyNewEcommerceShop() {
         const newBaseQuantity = newDisplayQuantity * selectedUnitDefinition.conversionFactor;
         
         console.log(`   - ගණනය: ${newDisplayQuantity} * ${selectedUnitDefinition.conversionFactor} = ${newBaseQuantity.toFixed(4)} ${unitsData.baseUnit}`);
-
 
         const originalProduct = products.find(p => p.id === currentItem.id);
         const originalStock = originalProduct?.stock || 0;
@@ -390,15 +387,15 @@ export default function MyNewEcommerceShop() {
                     description: `Cannot add more than the available stock of ${originalStock} ${unitsData.baseUnit}.`,
                 });
             }, 0);
-            return currentCart; // Return original cart if stock limit is exceeded
+            return currentCart; 
         }
 
         const updatedCart = [...currentCart];
         updatedCart[itemIndex] = {
             ...currentItem,
-            quantity: newBaseQuantity, // This is the new BASE quantity
-            displayQuantity: newDisplayQuantity, // This is the new DISPLAY quantity
-            displayUnit: unitToUse, // This is the new DISPLAY unit
+            quantity: newBaseQuantity, 
+            displayQuantity: newDisplayQuantity,
+            displayUnit: unitToUse,
         };
 
         console.log(`3. පියවර: Cart එක යාවත්කාලීන කිරීම.`);
