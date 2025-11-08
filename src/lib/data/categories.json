@@ -1,12 +1,12 @@
-
 [
-    "Electronics",
-    "Clothing",
-    "Groceries",
-    "Books",
-    "Home Goods",
-    "Sports",
-    "Toys",
-    "Automotive",
-    "Health & Beauty"
+  "Automotive",
+  "Books",
+  "Clothing",
+  "Electronics",
+  "Groceries",
+  "Health & Beauty",
+  "Home Goods",
+  "Sent",
+  "Sports",
+  "Toys"
 ]
