@@ -1,7 +1,4 @@
 // src/app/dashboard/finance/FinanceClientPage.tsx
-// ✅ Card එකේ inside විතරක් scroll - Mobile responsive
-// -------------------------------------------------------------------
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -30,7 +27,6 @@ import { TrendingUp, TrendingDown, Landmark, Briefcase } from 'lucide-react';
 import { AddTransactionForm } from './AddTransactionForm';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Separator } from '@/components/ui/separator';
 
 type TransactionWithRelations = FinancialTransaction & {
   company: Company | null;
@@ -166,7 +162,7 @@ export function FinanceClientPage() {
 
   const columns = useMemo(() => 
     getColumns(openEditDrawer, handleDeleteRequest), 
-    [openEditDrawer, handleDeleteRequest]
+    [openEditDrawer]
   );
 
   const formatCurrency = (value: number) => 
@@ -210,62 +206,59 @@ export function FinanceClientPage() {
   }
 
   return (
-    <>
-      {/* 🎯 Card එක full height - Desktop & Mobile responsive */}
-      <Card className="flex flex-col h-full overflow-hidden">
-        
-        {/* Fixed summary section - Mobile වලත් scroll වෙන්නේ නැහැ */}
-        <CardHeader className="flex-shrink-0">
-          <CardTitle>Financial Overview</CardTitle>
-          <CardDescription>
-            A summary of your total income, expenses, and net balance.
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="flex-shrink-0 pb-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <SummaryCard 
-              icon={TrendingUp} 
-              label="Total Income" 
-              value={formatCurrency(summary.totalIncome)} 
-              valueClassName="text-green-600" 
-            />
-            <SummaryCard 
-              icon={TrendingDown} 
-              label="Total Expenses" 
-              value={formatCurrency(summary.totalExpense)} 
-              valueClassName="text-red-600" 
-            />
-            <SummaryCard 
-              icon={Landmark} 
-              label="Net Balance" 
-              value={formatCurrency(summary.netBalance)} 
-              valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} 
-            />
-          </div>
-        </CardContent>
-        
-        <Separator className="flex-shrink-0" />
+    <div className="flex flex-col lg:flex-row gap-6 h-full">
 
-        {/* Fixed header - Mobile වලත් scroll වෙන්නේ නැහැ */}
-        <CardHeader className="flex-shrink-0">
-          <CardTitle>Transaction History</CardTitle>
-          <CardDescription>
-            View, add, edit, and manage all your financial transactions.
-          </CardDescription>
-        </CardHeader>
+      {/* Left Column: Financial Overview */}
+      <div className="lg:w-1/3 flex flex-col gap-6">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Financial Overview</CardTitle>
+                  <CardDescription>
+                  A summary of your total income, expenses, and net balance.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                  <SummaryCard 
+                    icon={TrendingUp} 
+                    label="Total Income" 
+                    value={formatCurrency(summary.totalIncome)} 
+                    valueClassName="text-green-600" 
+                  />
+                  <SummaryCard 
+                    icon={TrendingDown} 
+                    label="Total Expenses" 
+                    value={formatCurrency(summary.totalExpense)} 
+                    valueClassName="text-red-600" 
+                  />
+                  <SummaryCard 
+                    icon={Landmark} 
+                    label="Net Balance" 
+                    value={formatCurrency(summary.netBalance)} 
+                    valueClassName={summary.netBalance >= 0 ? "text-blue-600" : "text-yellow-600"} 
+                  />
+              </CardContent>
+          </Card>
+      </div>
 
-        {/* 🎯 මෙතන විතරක් scroll - Card inside, Mobile & Desktop */}
-        <CardContent className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6">
-          <FinanceDataTable
-            columns={columns}
-            data={transactions}
-            onAddTransaction={openAddDrawer}
-          />
-        </CardContent>
-
-      </Card>
-
+      {/* Right Column: Transaction History */}
+      <div className="flex-1 min-h-0">
+          <Card className="flex flex-col h-full">
+              <CardHeader>
+                  <CardTitle>Transaction History</CardTitle>
+                  <CardDescription>
+                  View, add, edit, and manage all your financial transactions.
+                  </CardDescription>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 overflow-y-auto">
+                  <FinanceDataTable
+                      columns={columns}
+                      data={transactions}
+                      onAddTransaction={openAddDrawer}
+                  />
+              </CardContent>
+          </Card>
+      </div>
+      
       {/* Delete confirmation dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
@@ -286,6 +279,6 @@ export function FinanceClientPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }

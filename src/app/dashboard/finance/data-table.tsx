@@ -56,8 +56,7 @@ export function FinanceDataTable<TData, TValue>({
   })
 
   return (
-    // 🎯 DataTable එක එහෙම එහෙමයි - scroll parent එකේ (CardContent)
-    <div className="flex flex-col space-y-4">
+    <div className="flex flex-col space-y-4 h-full">
 
       {/* Fixed filter section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -77,8 +76,8 @@ export function FinanceDataTable<TData, TValue>({
         </AuthorizationGuard>
       </div>
 
-      {/* Table - scroll නැති border එකක් විතරයි */}
-      <div className="rounded-md border">
+      {/* Table - now grows to fill available space */}
+      <div className="rounded-md border flex-1 min-h-0 overflow-y-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

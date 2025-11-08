@@ -1,7 +1,4 @@
 // src/app/dashboard/finance/page.tsx
-// ✅ Page container එක - flex column structure
-// -------------------------------------------------------------------
-
 import { FinanceClientPage } from "./FinanceClientPage";
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
 
@@ -15,7 +12,7 @@ export default async function FinancePage() {
       </div>
 
       {/* Scrollable content area */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0">
         <AuthorizationGuard 
           permissionKey="finance.view" 
           fallback={<p>You do not have permission to view finance.</p>}
