@@ -214,11 +214,17 @@ export async function getProductBatchesAction() {
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
 
-        // Convert Decimal `stock` to string to prevent truncation during serialization
-        const serializedBatches = batches.map(batch => ({
-            ...batch,
-            stock: batch.stock.toString(),
-        }));
+        // Convert Decimal `stock` to string to preserve decimals
+        const serializedBatches = batches.map(batch => {
+             // Force decimal format with toFixed(3) to ensure decimal point exists
+            const stockNumber = Number(batch.stock);
+            const stockString = stockNumber.toFixed(3);
+
+            return {
+                ...batch,
+                stock: stockString, // Now always has decimal point: e.g. "45.000"
+            };
+        });
 
         return { success: true, data: serializedBatches };
     } catch (error) {
