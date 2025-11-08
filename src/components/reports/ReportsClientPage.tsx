@@ -24,6 +24,8 @@ const reportPrintStyles = `
     body {
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+      background-color: transparent !important;
+      color: black !important;
     }
     .report-container {
       font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
@@ -34,6 +36,23 @@ const reportPrintStyles = `
       display: none;
     }
   }
+  html.dark body {
+    background-color: transparent !important;
+    color: white !important;
+  }
+  html.dark .report-container {
+    background-color: #111827; /* gray-900 */
+    color: white;
+  }
+  html.dark .text-black { color: white !important; }
+  html.dark .text-gray-800 { color: #e5e7eb !important; } /* gray-200 */
+  html.dark .text-gray-600 { color: #9ca3af !important; } /* gray-400 */
+  html.dark .text-gray-500 { color: #a1a1aa !important; } /* zinc-400 */
+  html.dark .bg-gray-100 { background-color: #374151 !important; } /* gray-700 */
+  html.dark .bg-blue-50 { background-color: #1e3a8a !important; } /* blue-900 */
+  html.dark .text-blue-800 { color: #93c5fd !important; } /* blue-300 */
+  html.dark .border-gray-200 { border-color: #4b5563 !important; } /* gray-600 */
+  html.dark .border-gray-300 { border-color: #4b5563 !important; }
 `;
 
 const ReportGenerator = () => {
@@ -95,6 +114,7 @@ const ReportGenerator = () => {
     const handlePrint = async () => {
         if (!reportData) return;
 
+        const isDarkMode = document.documentElement.classList.contains('dark');
         const ReactDOMServer = (await import('react-dom/server')).default;
         const reportHTML = ReactDOMServer.renderToString(
           <LanguageProvider initialLanguage={language}>
@@ -116,7 +136,7 @@ const ReportGenerator = () => {
                     <script src="https://cdn.tailwindcss.com"></script>
                     <style>${reportPrintStyles}</style>
                   </head>
-                  <body>
+                  <body class="${isDarkMode ? 'dark' : ''}">
                     <div class="report-container">
                       ${reportHTML}
                     </div>

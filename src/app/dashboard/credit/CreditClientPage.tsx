@@ -26,8 +26,14 @@ export type CreditorGrn = GoodsReceivedNote & {
 
 const receiptStyles = `
   @page { size: auto; margin: 5px; }
-  body { font-family: monospace; color: black; background-color: transparent; margin: 0; padding: 0; }
-  .thermal-receipt-container { background-color: transparent; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  body { font-family: monospace; background-color: transparent; margin: 0; padding: 0; color: black; }
+  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  html.dark body, html.dark .thermal-receipt-container { color: white; }
+  html.dark .border-black { border-color: white; }
+  html.dark .text-gray-600 { color: #ccc; }
+  html.dark .text-green-700 { color: #6ee7b7; }
+  html.dark .text-blue-700 { color: #93c5fd; }
+  html.dark .text-red-600 { color: #fca5a5; }
   .text-center { text-align: center; }
   .space-y-1 > * + * { margin-top: 4px; }
   .text-lg { font-size: 1.125rem; }
@@ -100,6 +106,7 @@ export function CreditClientPage() {
   }, [fetchCreditorGrns]);
 
   const handlePrint = useCallback(async (grn: CreditorGrn) => {
+    const isDarkMode = document.documentElement.classList.contains('dark');
     // 1. Fetch the LATEST payment history and company details just before printing.
     const [paymentsResult, companyResult] = await Promise.all([
       getPaymentsForGrnAction(grn.id),
@@ -145,7 +152,7 @@ export function CreditClientPage() {
             <title>Print GRN Statement</title>
             <style>${receiptStyles}</style>
           </head>
-          <body>
+          <body class="${isDarkMode ? 'dark' : ''}">
             ${receiptHTML}
           </body>
         </html>
