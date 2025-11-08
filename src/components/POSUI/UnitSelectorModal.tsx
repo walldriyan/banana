@@ -27,31 +27,49 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
   const [selectedUnit, setSelectedUnit] = useState<string>(item.displayUnit || allUnits.baseUnit);
   const [quantity, setQuantity] = useState<number>(item.displayQuantity || 1);
 
-  // CORRECT LOGIC: Calculate the price of a single base unit.
   const unitPrice = useMemo(() => {
-    // If original quantity is zero, price must be zero to avoid division by zero.
     if (item.quantity === 0) return 0;
-    // item.price is the total line price, item.quantity is the total base quantity.
-    // So, price of one base unit = total price / total base quantity.
     return item.price / item.quantity;
   }, [item.price, item.quantity]);
 
-  // CORRECT LOGIC: This preview calculation is now accurate.
   const preview = useMemo(() => {
     const selectedUnitDef = allUnitDefs.find((u) => u.name === selectedUnit);
     if (!selectedUnitDef) return { convertedQty: 0, newPrice: 0 };
     
-    // 1. Calculate the total base quantity based on the CURRENT user input.
-    // e.g., User types '300' for 'G'. Base Qty = 300 / 1000 = 0.3 KG.
-    const baseQty = quantity / selectedUnitDef.conversionFactor;
-
-    // 2. Calculate the new total price based on the ACCURATE base quantity and ACCURATE unit price.
-    // e.g., New Price = 0.3 KG * (Rs. 260 / 1 KG) = Rs. 78.00
+    const baseQty = quantity * selectedUnitDef.conversionFactor;
     const newPrice = baseQty * unitPrice;
 
     return { convertedQty: baseQty, newPrice };
   }, [quantity, selectedUnit, allUnitDefs, unitPrice]);
+
+  const handleUnitSelect = (unitName: string) => {
+    console.log("--- Unit Conversion Calculation (සිංහලෙන්) ---");
   
+    const newUnitDef = allUnitDefs.find(u => u.name === unitName);
+    // Get the definition of the unit that is *currently* selected in the state, before the change.
+    const currentUnitDef = allUnitDefs.find(u => u.name === selectedUnit);
+  
+    if (!newUnitDef || !currentUnitDef) {
+      console.error("Unit එක සොයාගන්න බැරි වුණා");
+      return;
+    }
+  
+    // 1️⃣ Convert the CURRENT display quantity back to the base quantity.
+    // Use the `quantity` state value, which is what the user sees in the input box.
+    const baseQuantity = quantity * currentUnitDef.conversionFactor;
+    console.log(`   - දැනට ඇති Base Quantity: ${baseQuantity} ${allUnits.baseUnit}`);
+  
+    // 2️⃣ Convert the base quantity to the NEW display quantity.
+    const newDisplayQuantity = baseQuantity / newUnitDef.conversionFactor;
+    console.log(`   - ගණනය: ${baseQuantity} / ${newUnitDef.conversionFactor} = ${newDisplayQuantity}`);
+  
+    // 3️⃣ Update both the selected unit AND the quantity in the input box.
+    setSelectedUnit(unitName);
+    setQuantity(Number(newDisplayQuantity.toFixed(4))); // Use toFixed to avoid floating point inaccuracies
+  
+    console.log(`   ✅ නව Display Unit: ${unitName}, Quantity: ${newDisplayQuantity}`);
+    console.log("-------------------------------------------------");
+  };
 
   const handleUpdate = () => {
     onUpdate(item.saleItemId, quantity, selectedUnit);
@@ -77,7 +95,7 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
         {/* Unit Selection Dropdown */}
         <div className="flex flex-col space-y-2">
             <Label htmlFor="unit-select">Convert To</Label>
-            <Select onValueChange={setSelectedUnit} value={selectedUnit}>
+            <Select onValueChange={handleUnitSelect} value={selectedUnit}>
                 <SelectTrigger id="unit-select" className="w-full">
                     <SelectValue placeholder="Select unit" />
                 </SelectTrigger>
@@ -94,7 +112,7 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
 
         {/* Quantity Input */}
         <div className="flex flex-col space-y-2">
-          <Label htmlFor="quantity-input">Quantity</Label>
+          <Label htmlFor="quantity-input">Quantity in {selectedUnit}</Label>
           <Input
             id="quantity-input"
             type="number"
@@ -117,11 +135,11 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
               <span className="font-semibold">{quantity} {selectedUnit}</span>
            </div>
            <div className="flex justify-between">
-              <span className="text-muted-foreground">Base Quantity ({allUnits.baseUnit}):</span>
+              <span className="text-muted-foreground">Equivalent Base Quantity ({allUnits.baseUnit}):</span>
               <span className="font-bold">{preview.convertedQty.toFixed(3)}</span>
            </div>
            <div className="flex justify-between">
-              <span className="text-muted-foreground">Line Total:</span>
+              <span className="text-muted-foreground">New Line Total:</span>
               <span className="font-bold">Rs. {preview.newPrice.toFixed(2)}</span>
            </div>
         </CardContent>
