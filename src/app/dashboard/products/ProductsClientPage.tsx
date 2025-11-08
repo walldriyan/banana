@@ -22,8 +22,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { ProductDetailsView } from '@/components/products/ProductDetailsView';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Archive, DollarSign, Landmark, TrendingUp, Coins, AlertTriangle, Boxes, Wallet } from 'lucide-react';
+import { Package, Archive, DollarSign, Landmark, TrendingUp, Coins, AlertTriangle, Boxes, Wallet, ArchiveX } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 
 const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (

@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 import { Badge } from "@/components/ui/badge"
+import { useProductUnits } from "@/hooks/use-product-units"
 
 // Define a new interface for the component props
 interface CellActionsProps {
@@ -57,6 +58,17 @@ const CellActions = ({ batch, onEdit, onDelete, onViewDetails }: CellActionsProp
         </DropdownMenu>
     )
 }
+
+// Define a separate component for the stock cell to use the hook
+const StockCell = ({ row }: { row: any }) => {
+    const batch = row.original as ProductBatch;
+    const units = useProductUnits(batch.product.units);
+    const stock = row.getValue("stock") as number;
+    // Format to 2 decimal places if it's not a whole number
+    const displayStock = Number.isInteger(stock) ? stock : stock.toFixed(3);
+    return <div className="text-right">{displayStock} {units.baseUnit}</div>;
+};
+
 
 // Update the type definition for the columns factory
 export const getColumns = (
@@ -116,12 +128,7 @@ export const getColumns = (
     {
         accessorKey: "stock",
         header: () => <div className="text-right">Stock</div>,
-        cell: ({ row }) => {
-            const batch = row.original;
-            const stock = row.getValue("stock") as number;
-            const units = typeof batch.product.units === 'string' ? JSON.parse(batch.product.units) : batch.product.units;
-            return <div className="text-right">{stock} {units.baseUnit}</div>
-        }
+        cell: StockCell,
     },
      {
         accessorKey: "product.category",
