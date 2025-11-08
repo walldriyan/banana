@@ -148,7 +148,6 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             const batch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
             if (!batch) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
             
-            // Use Prisma.Decimal for accurate floating point arithmetic
             const currentStock = new Prisma.Decimal(batch.stock);
             const quantityToDecrement = new Prisma.Decimal(line.quantity);
             const newStock = currentStock.minus(quantityToDecrement);

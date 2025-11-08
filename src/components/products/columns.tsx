@@ -69,8 +69,8 @@ const StockCell = ({ row }: { row: any }) => {
     const stock = parseFloat(stockAsString);
 
     // Always show up to 3 decimal places, but remove trailing zeros if they exist
-    // 46.700 -> "46.7"
-    // 45.000 -> "45"
+    // 46.000 -> "46"
+    // 45.700 -> "45.7"
     const displayStock = stock.toFixed(3).replace(/\.?0+$/, '');
     
     return <div className="text-right">{displayStock} {units.baseUnit}</div>;
