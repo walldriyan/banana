@@ -26,8 +26,8 @@ export type CreditorGrn = GoodsReceivedNote & {
 
 const receiptStyles = `
   @page { size: auto; margin: 5px; }
-  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 0; }
-  .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  body { font-family: monospace; color: black; background-color: transparent; margin: 0; padding: 0; }
+  .thermal-receipt-container { background-color: transparent; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
   .text-center { text-align: center; }
   .space-y-1 > * + * { margin-top: 4px; }
   .text-lg { font-size: 1.125rem; }
