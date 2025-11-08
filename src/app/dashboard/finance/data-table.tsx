@@ -77,7 +77,7 @@ export function FinanceDataTable<TData, TValue>({
       </div>
 
       {/* Table - now grows to fill available space */}
-      <div className="rounded-md border flex-1 min-h-0 overflow-y-auto">
+      <div className="rounded-md border flex-1 min-h-0 overflow-y-auto max-h-[calc(100vh-28rem)]">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
