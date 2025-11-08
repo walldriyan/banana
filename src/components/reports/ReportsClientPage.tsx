@@ -12,6 +12,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Printer, RotateCcw } from 'lucide-react';
 import { SummaryReport } from './SummaryReport';
+import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
+import { LanguageToggle } from '../LanguageToggle';
 
 const reportPrintStyles = `
   @page { 
@@ -34,7 +36,7 @@ const reportPrintStyles = `
   }
 `;
 
-export function ReportsClientPage() {
+const ReportGenerator = () => {
     const today = new Date();
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
         from: subDays(today, 7),
@@ -43,6 +45,7 @@ export function ReportsClientPage() {
     const [reportData, setReportData] = useState<SummaryReportData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const { language } = useLanguage();
 
     const handleGenerateReport = () => {
         if (!dateRange || !dateRange.from || !dateRange.to) {
@@ -67,7 +70,10 @@ export function ReportsClientPage() {
 
         const ReactDOMServer = (await import('react-dom/server')).default;
         const reportHTML = ReactDOMServer.renderToString(
+          // Wrap with provider to ensure the correct language is used for printing
+          <LanguageProvider initialLanguage={language}>
             <SummaryReport data={reportData} />
+          </LanguageProvider>
         );
 
         const iframe = document.createElement('iframe');
@@ -108,9 +114,12 @@ export function ReportsClientPage() {
     return (
         <div className="flex flex-col h-full gap-6">
             <Card className="no-print">
-                <CardHeader>
-                    <CardTitle>Report Generation</CardTitle>
-                    <CardDescription>Select a date range and generate your financial summary report.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Report Generation</CardTitle>
+                        <CardDescription>Select a date range and generate your financial summary report.</CardDescription>
+                    </div>
+                    <LanguageToggle />
                 </CardHeader>
                 <CardContent className="flex flex-wrap items-center gap-4">
                     <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
@@ -159,4 +168,14 @@ export function ReportsClientPage() {
             </div>
         </div>
     );
+}
+
+
+export function ReportsClientPage() {
+  return (
+    // The provider ensures that all children can access the language context.
+    <LanguageProvider>
+      <ReportGenerator />
+    </LanguageProvider>
+  )
 }
