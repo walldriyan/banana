@@ -213,7 +213,14 @@ export async function getProductBatchesAction() {
             include: { product: true },
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
-        return { success: true, data: batches };
+
+        // Convert Decimal `stock` to string to prevent truncation during serialization
+        const serializedBatches = batches.map(batch => ({
+            ...batch,
+            stock: batch.stock.toString(),
+        }));
+
+        return { success: true, data: serializedBatches };
     } catch (error) {
         console.error("Error fetching product batches:", error);
         return { success: false, error: "Failed to fetch product batches." };

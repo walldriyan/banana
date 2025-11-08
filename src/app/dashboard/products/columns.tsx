@@ -63,9 +63,12 @@ const CellActions = ({ batch, onEdit, onDelete, onViewDetails }: CellActionsProp
 const StockCell = ({ row }: { row: any }) => {
     const batch = row.original as ProductBatch;
     const units = useProductUnits(batch.product.units);
-    const stock = parseFloat(row.getValue("stock"));
+    
+    // The value from the server is now a string to preserve decimals.
+    const stockAsString = row.getValue("stock") as string;
+    const stock = parseFloat(stockAsString);
 
-    console.log(`[StockCell] Rendering for batch ${batch.id}. Raw stock value from getValue:`, row.getValue("stock"), "Parsed as float:", stock);
+    console.log(`[StockCell] Rendering for batch ${batch.id}. Raw stock value from getValue:`, stockAsString, "Parsed as float:", stock);
 
     // Format to 3 decimal places if it's not a whole number, otherwise show as is.
     const displayStock = Number.isInteger(stock) ? stock : stock.toFixed(3);
