@@ -33,6 +33,12 @@ interface CreatableComboboxProps {
   creatable?: boolean;
 }
 
+const toCapitalCase = (str: string) => {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
+
+
 export function CreatableCombobox({ 
     options, 
     value, 
@@ -59,14 +65,14 @@ export function CreatableCombobox({
 
   const handleCreate = () => {
     if (creatable && inputValue) {
-        // Check if a case-insensitive match already exists
+        const capitalCasedValue = toCapitalCase(inputValue);
         const existingOption = options.find(
-            option => option.label.toLowerCase() === inputValue.toLowerCase()
+            option => option.label.toLowerCase() === capitalCasedValue.toLowerCase()
         );
         if (existingOption) {
              onChange(existingOption.value, false);
         } else {
-             onChange(inputValue, true); // Pass the label as the new value
+             onChange(capitalCasedValue, true); // Pass the capitalized label as the new value
         }
     }
     setOpen(false);
@@ -102,7 +108,7 @@ export function CreatableCombobox({
                     onSelect={handleCreate}
                     className="cursor-pointer"
                 >
-                    Create "{inputValue}"
+                    Create "{toCapitalCase(inputValue)}"
                 </CommandItem>
             ) : (
                  <CommandEmpty>No results found.</CommandEmpty>
