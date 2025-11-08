@@ -49,6 +49,13 @@ import {
 import OrderSummary from '@/components/POSUI/OrderSummary';
 import { HelpClientPage } from '@/app/dashboard/help/HelpClientPage';
 import { UnitSelectorModal } from '@/components/POSUI/UnitSelectorModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 
 const initialDiscountResult = {
@@ -79,6 +86,11 @@ export default function MyNewEcommerceShop() {
   const [discountResult, setDiscountResult] = useState<any>(initialDiscountResult);
 
   const user = useSessionStore(state => state.user);
+  
+  const [unitModalState, setUnitModalState] = useState<{ isOpen: boolean; item: SaleItem | null }>({
+    isOpen: false,
+    item: null,
+  });
 
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
@@ -381,21 +393,12 @@ export default function MyNewEcommerceShop() {
   };
   
   const openUnitSelectorModal = useCallback((item: SaleItem) => {
-    drawer.openDrawer({
-      title: `Change Units for ${item.product.name}`,
-      description: 'Select a new unit and quantity for this item.',
-      content: (
-        <UnitSelectorModal 
-          item={item} 
-          onUpdate={(saleItemId, newQty, newUnit) => {
-            handleCartUpdate(saleItemId, newQty, newUnit);
-            drawer.closeDrawer();
-          }} 
-        />
-      ),
-      drawerClassName: 'sm:max-w-md'
-    });
-  }, [drawer, handleCartUpdate]);
+    setUnitModalState({ isOpen: true, item: item });
+  }, []);
+
+  const closeUnitSelectorModal = () => {
+    setUnitModalState({ isOpen: false, item: null });
+  };
 
 
   const addToCart = (productBatch: ProductBatch) => {
@@ -753,6 +756,26 @@ export default function MyNewEcommerceShop() {
           </Card>
         </main>
       </div>
+
+      {unitModalState.isOpen && unitModalState.item && (
+        <Dialog open={unitModalState.isOpen} onOpenChange={closeUnitSelectorModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Change Units for {unitModalState.item.product.name}</DialogTitle>
+              <DialogDescription>
+                Select a new unit and quantity for this item.
+              </DialogDescription>
+            </DialogHeader>
+            <UnitSelectorModal
+              item={unitModalState.item}
+              onUpdate={(saleItemId, newQty, newUnit) => {
+                handleCartUpdate(saleItemId, newQty, newUnit);
+                closeUnitSelectorModal();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

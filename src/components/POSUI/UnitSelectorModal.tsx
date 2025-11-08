@@ -38,24 +38,31 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
     return { convertedQty: baseQty, newPrice };
   }, [quantity, selectedUnit, allUnitDefs, item.price]);
 
-  // 🧩 unit එක click කිරීමේ function එක
   const handleUnitSelect = (unitName: string) => {
+    console.log("--- Unit Conversion Calculation (සිංහලෙන්) ---");
+  
     const newUnitDef = allUnitDefs.find(u => u.name === unitName);
-    const currentUnitDef = allUnitDefs.find(u => u.name === selectedUnit);
-
+    const currentUnitDef = allUnitDefs.find(u => u.name === item.displayUnit);
+  
     if (!newUnitDef || !currentUnitDef) {
-        console.error("Unit එක සොයාගන්න බැරි වුණා");
-        return;
+      console.error("Unit එක සොයාගන්න බැරි වුණා");
+      return;
     }
-    
-    // 1️⃣ දැනට ඇති display quantity එකෙන් base quantity එක හදාගන්නවා
-    const baseQuantity = quantity * currentUnitDef.conversionFactor;
-
-    // 2️⃣ අලුත් unit එකට base quantity එක convert කිරීම
+  
+    // 1️⃣ Base quantity එක ගණනය කිරීම
+    const baseQuantity = item.displayQuantity * currentUnitDef.conversionFactor;
+    console.log(`   - දැනට ඇති Base Quantity: ${baseQuantity} ${allUnits.baseUnit}`);
+  
+    // 2️⃣ අලුත් unit එකේ conversion factor එකෙන් බෙදීම
     const newDisplayQuantity = baseQuantity / newUnitDef.conversionFactor;
-    
+    console.log(`   - ගණනය: ${baseQuantity} / ${newUnitDef.conversionFactor} = ${newDisplayQuantity}`);
+  
+    // 3️⃣ Update modal values
     setSelectedUnit(unitName);
-    setQuantity(Number(newDisplayQuantity.toFixed(4)));
+    setQuantity(newDisplayQuantity);
+  
+    console.log(`   ✅ නව Display Unit: ${unitName}, Quantity: ${newDisplayQuantity}`);
+    console.log("-------------------------------------------------");
   };
 
 
@@ -65,7 +72,7 @@ export function UnitSelectorModal({ item, onUpdate }: UnitSelectorModalProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pt-4">
       {/* 🔹 Unit Selection */}
       <Card>
         <CardHeader>
