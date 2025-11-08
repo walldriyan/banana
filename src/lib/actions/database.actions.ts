@@ -148,15 +148,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             const batch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
             if (!batch) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
             
-            const currentStock = new Prisma.Decimal(batch.stock);
-            const quantityToDecrement = new Prisma.Decimal(line.quantity);
-            const newStock = currentStock.minus(quantityToDecrement);
-            
-            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${currentStock.toString()} | අඩු කරන ප්‍රමාණය: ${quantityToDecrement.toString()}`);
+            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${batch.stock.toString()} | අඩු කරන ප්‍රමාණය: ${line.quantity}`);
 
             await tx.productBatch.update({
                 where: { id: line.batchId }, 
-                data: { stock: newStock }
+                data: { 
+                    stock: {
+                        decrement: new Prisma.Decimal(line.quantity)
+                    }
+                }
             });
 
             const updatedBatch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
@@ -182,14 +182,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                  const batch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
                  if (!batch) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
                  
-                 const currentStock = new Prisma.Decimal(batch.stock);
-                 const newStock = currentStock.plus(returnedQty);
-
-                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${currentStock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()}`);
+                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${batch.stock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()}`);
 
                  await tx.productBatch.update({
                      where: { id: originalLine.productBatchId! },
-                     data: { stock: newStock }
+                     data: { 
+                        stock: {
+                            increment: new Prisma.Decimal(returnedQty)
+                        } 
+                    }
                  });
 
                  const updatedBatch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
