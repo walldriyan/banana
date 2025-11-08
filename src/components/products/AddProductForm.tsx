@@ -30,9 +30,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
 import { getSuppliersAction } from '@/lib/actions/supplier.actions';
+import { getBrandsAction, getCategoriesAction, updateBrandsAction, updateCategoriesAction } from '@/lib/actions/data.actions';
 import type { Supplier } from '@prisma/client';
-import categoriesData from '@/lib/data/categories.json';
-import brandsData from '@/lib/data/brands.json';
 import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Separator } from '../ui/separator';
@@ -75,26 +74,33 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  
   const [suppliers, setSuppliers] = useState<ComboboxOption[]>([]);
-  const [categories, setCategories] = useState<ComboboxOption[]>(
-    categoriesData.map(c => ({ value: c.toLowerCase(), label: c }))
-  );
-  const [brands, setBrands] = useState<ComboboxOption[]>(
-     brandsData.map(b => ({ value: b.toLowerCase(), label: b }))
-  );
+  const [categories, setCategories] = useState<string[]>([]);
+  const [brands, setBrands] = useState<string[]>([]);
 
   const isEditMode = !!productBatch;
 
-  useEffect(() => {
-    async function fetchSuppliers() {
-        const result = await getSuppliersAction();
-        if(result.success && result.data) {
-            setSuppliers(result.data.map(s => ({ value: s.id, label: s.name })));
+   useEffect(() => {
+    async function fetchInitialData() {
+        const [suppliersRes, categoriesRes, brandsRes] = await Promise.all([
+            getSuppliersAction(),
+            getCategoriesAction(),
+            getBrandsAction(),
+        ]);
+        if(suppliersRes.success && suppliersRes.data) {
+            setSuppliers(suppliersRes.data.map(s => ({ value: s.id, label: s.name })));
         } else {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load suppliers.' });
         }
+        if(categoriesRes.success && categoriesRes.data) {
+            setCategories(categoriesRes.data);
+        }
+        if(brandsRes.success && brandsRes.data) {
+            setBrands(brandsRes.data);
+        }
     }
-    fetchSuppliers();
+    fetchInitialData();
   }, [toast]);
 
   const form = useForm<ProductFormValues>({
@@ -177,6 +183,10 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
     setSubmissionError(null);
     setIsSubmitting(true);
     
+    // Save new categories/brands before submitting the product
+    await updateCategoriesAction(categories);
+    await updateBrandsAction(brands);
+
     const action = isEditMode && productBatch
       ? updateProductBatchAction(productBatch.id, data)
       : addProductAction(data);
@@ -323,13 +333,12 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                                 <FormItem>
                                     <FormLabel>Category</FormLabel>
                                     <CreatableCombobox 
-                                        options={categories}
+                                        options={categories.map(c => ({ value: c.toLowerCase(), label: c }))}
                                         value={field.value}
                                         onChange={(newValue, isNew) => {
                                             field.onChange(newValue);
-                                            if (isNew) {
-                                                const newOption = { value: newValue.toLowerCase(), label: newValue };
-                                                setCategories(prev => [...prev, newOption]);
+                                            if (isNew && !categories.includes(newValue)) {
+                                                setCategories(prev => [...prev, newValue]);
                                             }
                                         }}
                                         placeholder="Select or create category"
@@ -341,13 +350,12 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                                 <FormItem>
                                     <FormLabel>Brand</FormLabel>
                                     <CreatableCombobox 
-                                        options={brands}
+                                        options={brands.map(b => ({ value: b.toLowerCase(), label: b }))}
                                         value={field.value}
                                         onChange={(newValue, isNew) => {
                                             field.onChange(newValue);
-                                            if (isNew) {
-                                                const newOption = { value: newValue.toLowerCase(), label: newValue };
-                                                setBrands(prev => [...prev, newOption]);
+                                            if (isNew && !brands.includes(newValue)) {
+                                                setBrands(prev => [...prev, newValue]);
                                             }
                                         }}
                                         placeholder="Select or create brand"
