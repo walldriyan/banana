@@ -23,17 +23,17 @@ const ReportRow: React.FC<ReportRowProps> = ({
 
     if (isHeader) {
         return (
-            <h2 className={`p-3 bg-gray-100 dark:bg-gray-800 font-semibold text-black dark:text-white text-base col-span-2 ${className}`}>{translatedLabel}</h2>
+            <h2 className={`p-3 bg-gray-100 font-semibold text-black text-base col-span-2 ${className}`}>{translatedLabel}</h2>
         )
     }
 
     return (
         <>
-            <div className={`flex items-center ${isSubtle ? 'text-gray-600 dark:text-gray-400' : 'text-black dark:text-white'} ${isBold ? 'font-semibold' : ''} ${className}`}>
+            <div className={`flex items-center ${isSubtle ? 'text-gray-600' : 'text-black'} ${isBold ? 'font-semibold' : ''} ${className}`}>
                 {isSubtle && <span className="mr-4">–</span>}
                 {translatedLabel}
             </div>
-            <div className={`text-right ${isSubtle ? 'text-gray-600 dark:text-gray-400' : 'text-black dark:text-white'} ${isBold ? 'font-semibold' : ''} ${valueClassName} ${className}`}>
+            <div className={`text-right ${isSubtle ? 'text-gray-600' : 'text-black'} ${isBold ? 'font-semibold' : ''} ${valueClassName} ${className}`}>
                 {typeof value === 'number' ? `Rs. ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : value}
             </div>
         </>
@@ -67,58 +67,58 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const b_s_expenseItems = [
       { label: 'creditors', value: data.balanceSheet.liabilities.creditors},
       { label: 'totalGrns', value: data.purchases.totalGrns},
-      { label: 'totalDiscounts', value: data.sales.totalDiscount},
   ];
 
   const b_s_incomeItems = [
       { label: 'debtors', value: data.balanceSheet.assets.debtors},
       { label: 'totalTransactions', value: data.sales.totalTransactions},
-      { label: 'grossProfit', value: data.profit.grossProfit, className: 'text-green-700 dark:text-green-500' },
+      { label: 'grossProfit', value: data.profit.grossProfit, valueClassName: 'text-green-700' },
   ];
   
-  const maxRows = Math.max(expenseItems.length, incomeItems.length);
+  const maxRowsPL = Math.max(expenseItems.length, incomeItems.length);
+  const maxRowsBS = Math.max(b_s_expenseItems.length, b_s_incomeItems.length);
 
   return (
-    <div className="report-container p-4 bg-white dark:bg-gray-900 rounded-lg text-sm text-black dark:text-white">
+    <div className="report-container p-4 bg-white text-sm text-black">
       <header className="text-center mb-6">
-        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-200">{t('reportTitle')}</h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <h1 className="text-xl font-bold text-gray-800">{t('reportTitle')}</h1>
+        <p className="text-xs text-gray-500">
           {t('reportPeriodTitle')} {new Date(data.dateRange.from).toLocaleDateString(language)} {t('reportToTitle')} {new Date(data.dateRange.to).toLocaleDateString(language)}
         </p>
       </header>
       
-      <div className="border dark:border-gray-700 rounded-lg overflow-hidden">
+      <div className="border border-gray-300 overflow-hidden">
         {/* Profit & Loss Section */}
         <ReportRow label="plStatementTitle" value="" isHeader />
-        <div className="grid grid-cols-2 gap-x-4 p-3">
-          <div className="font-semibold">{t('expensesTitle')}</div>
-          <div className="font-semibold">{t('incomeTitle')}</div>
+        <div className="grid grid-cols-2 gap-x-4 p-3 border-b border-gray-200">
+          <div className="font-semibold text-black">{t('expensesTitle')}</div>
+          <div className="font-semibold text-black">{t('incomeTitle')}</div>
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3">
-          {Array.from({ length: maxRows }).map((_, index) => (
+          {Array.from({ length: maxRowsPL }).map((_, index) => (
             <React.Fragment key={`pl-row-${index}`}>
               {expenseItems[index] ? <ReportRow {...expenseItems[index]} isSubtle /> : <><div /><div /></>}
               {incomeItems[index] ? <ReportRow {...incomeItems[index]} isSubtle /> : <><div /><div /></>}
             </React.Fragment>
           ))}
         </div>
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3 border-t dark:border-gray-700">
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3 border-t border-gray-200">
           <ReportRow label="totalExpenses" value={totalExpenses} isTotal isBold />
           <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
         </div>
         
-        <div className="col-span-2 border-t dark:border-gray-700 bg-blue-50 dark:bg-blue-900/20 p-4 space-y-2">
-            <h3 className="font-bold text-base text-center text-blue-800 dark:text-blue-300">{t('netProfitTitle')}</h3>
+        <div className="col-span-2 border-t border-gray-200 bg-blue-50 p-4 space-y-2">
+            <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
               <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600 dark:text-gray-400">{t('totalIncome')}</span>
+                  <span className="text-gray-600">{t('totalIncome')}</span>
                   <span className="font-semibold">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
               <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600 dark:text-gray-400">{`(-) ${t('totalExpenses')}`}</span>
+                  <span className="text-gray-600">{`(-) ${t('totalExpenses')}`}</span>
                   <span className="font-semibold">{`Rs. ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
-              <Separator className="my-2 bg-gray-300 dark:bg-gray-600" />
-              <div className="flex justify-between items-center text-lg font-bold text-blue-800 dark:text-blue-300">
+              <Separator className="my-2 bg-gray-300" />
+              <div className="flex justify-between items-center text-lg font-bold text-blue-800">
                   <span>{`(=) ${t('netProfitTitle')}`}</span>
                   <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
@@ -126,12 +126,12 @@ export function SummaryReport({ data }: SummaryReportProps) {
 
         {/* Balance Sheet & Metrics Section */}
         <ReportRow label="bsAndMetricsTitle" value="" isHeader />
-        <div className="grid grid-cols-2 gap-x-4 p-3">
-          <div className="font-semibold">{t('liabilitiesAndMetricsTitle')}</div>
-          <div className="font-semibold">{t('assetsAndMetricsTitle')}</div>
+        <div className="grid grid-cols-2 gap-x-4 p-3 border-b border-gray-200">
+          <div className="font-semibold text-black">{t('liabilitiesAndMetricsTitle')}</div>
+          <div className="font-semibold text-black">{t('assetsAndMetricsTitle')}</div>
         </div>
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3">
-           {Array.from({ length: Math.max(b_s_expenseItems.length, b_s_incomeItems.length) }).map((_, index) => (
+           {Array.from({ length: maxRowsBS }).map((_, index) => (
             <React.Fragment key={`bs-row-${index}`}>
               {b_s_expenseItems[index] ? <ReportRow {...b_s_expenseItems[index]} isSubtle /> : <><div /><div /></>}
               {b_s_incomeItems[index] ? <ReportRow {...b_s_incomeItems[index]} isSubtle /> : <><div /><div /></>}
@@ -140,9 +140,9 @@ export function SummaryReport({ data }: SummaryReportProps) {
         </div>
       </div>
 
-      <footer className="text-center mt-8 pt-4 border-t dark:border-gray-700">
-        <p className="text-xs text-gray-500 dark:text-gray-400">{t('generatedOn')} {new Date().toLocaleString(language)}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{t('computerGeneratedReport')}</p>
+      <footer className="text-center mt-8 pt-4 border-t border-gray-300">
+        <p className="text-xs text-gray-500">{t('generatedOn')} {new Date().toLocaleString(language)}</p>
+        <p className="text-xs text-gray-500">{t('computerGeneratedReport')}</p>
       </footer>
     </div>
   );
