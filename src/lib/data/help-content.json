@@ -2,6 +2,7 @@
 {
   "dashboard": {
     "title": "Dashboard",
+    "icon": "LayoutDashboard",
     "en": {
       "summary": "The main landing page after logging in. It provides a quick overview and navigation to other key sections of the application.",
       "features": [
@@ -19,6 +20,7 @@
   },
   "products": {
     "title": "Products",
+    "icon": "Package",
     "en": {
       "summary": "Manage your entire product catalog. This includes adding new master products and viewing all available product batches with their stock levels.",
       "features": [
@@ -42,6 +44,7 @@
   },
   "purchases": {
     "title": "Purchases (GRN)",
+    "icon": "ShoppingCart",
     "en": {
       "summary": "Record all incoming stock from your suppliers using Goods Received Notes (GRN). This process creates new product batches and updates your inventory.",
       "features": [
@@ -63,8 +66,9 @@
       ]
     }
   },
-  "suppliers": {
+    "suppliers": {
     "title": "Suppliers",
+    "icon": "Building",
     "en": {
       "summary": "Manage the list of all your suppliers. Keep contact information and other details organized in one place.",
       "features": [
@@ -86,6 +90,7 @@
   },
   "customers": {
     "title": "Customers",
+    "icon": "Users",
     "en": {
       "summary": "Maintain a database of your customers. This is useful for tracking sales history and managing credit sales (debtors).",
       "features": [
@@ -107,6 +112,7 @@
   },
   "creditors": {
     "title": "Creditors",
+    "icon": "CreditCard",
     "en": {
       "summary": "Manage money you owe to suppliers. This page lists all GRNs that have not been fully paid for.",
       "features": [
@@ -130,6 +136,7 @@
   },
   "debtors": {
     "title": "Debtors",
+    "icon": "HandCoins",
     "en": {
       "summary": "Manage money owed to you by customers. This page lists all sales transactions that were made on credit and have not been fully paid.",
       "features": [
@@ -151,8 +158,31 @@
       ]
     }
   },
+   "finance": {
+    "title": "Income/Expenses",
+    "icon": "TrendingUp",
+     "en": {
+      "summary": "Track all your other financial transactions that are not directly related to sales or purchases, such as rent, salaries, or other income.",
+      "features": [
+        "Record new income or expense transactions.",
+        "Categorize each transaction (e.g., 'Rent', 'Utilities', 'Services').",
+        "View a complete history of all financial transactions.",
+        "See a running balance of your income vs. expenses."
+      ]
+    },
+    "si": {
+      "summary": "විකුණුම් හෝ මිලදී ගැනීම්වලට සෘජුවම සම්බන්ධ නොවන අනෙකුත් සියලුම මූල්‍ය ගනුදෙනු, එනම් කුලී, වැටුප්, හෝ වෙනත් ආදායම් වැනි දේ, සටහන් කරන්න.",
+      "features": [
+        "නව ආදායම් හෝ වියදම් ගනුදෙනු සටහන් කරන්න.",
+        "එක් එක් ගනුදෙනුව වර්ග කරන්න (උදා: 'කුලී', 'උපයෝගිතා', 'සේවා').",
+        "සියලුම මූල්‍ය ගනුදෙනු වල සම්පූර්ණ ඉතිහාසය බලන්න.",
+        "ඔබගේ ආදායම් සහ වියදම් වල ශේෂය බලන්න."
+      ]
+    }
+  },
   "reports": {
     "title": "Reports",
+    "icon": "Printer",
     "en": {
       "summary": "Generate and print financial summary reports for your business. Select a date range to see a breakdown of income, expenses, and profit.",
       "features": [
@@ -178,6 +208,7 @@
   },
   "settings": {
     "title": "Settings",
+    "icon": "Settings",
     "en": {
       "summary": "Configure global settings for the application. This includes managing company profiles, discount campaigns, and receipt printing options.",
       "features": [
@@ -199,6 +230,7 @@
   },
   "help": {
     "title": "Help & Support",
+    "icon": "LifeBuoy",
     "en": {
         "summary": "This section provides guides and explanations for all the major features of the application.",
         "features": [
