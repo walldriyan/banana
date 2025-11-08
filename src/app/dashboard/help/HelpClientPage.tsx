@@ -9,7 +9,7 @@ import helpContent from "@/lib/data/help-content.json";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard, Package, ShoppingCart, Building, Users, CreditCard,
-    HandCoins, Printer, Settings, LifeBuoy, TrendingUp
+    HandCoins, Printer, Settings, LifeBuoy, TrendingUp, ArchiveX
 } from 'lucide-react';
 
 const iconMap = {
@@ -23,7 +23,8 @@ const iconMap = {
     TrendingUp,
     Printer,
     Settings,
-    LifeBuoy
+    LifeBuoy,
+    ArchiveX
 };
 
 type SectionKey = keyof typeof helpContent;
@@ -39,19 +40,42 @@ export function HelpClientPage() {
     const CurrentIcon = iconMap[currentIconName] || LifeBuoy;
 
     return (
-        <Card className="flex flex-col h-full overflow-hidden">
-             <CardHeader className="flex flex-row items-center justify-between no-print">
+        <div className="flex flex-col h-full overflow-hidden bg-card border rounded-lg">
+             <div className="flex flex-row items-center justify-between no-print p-6 border-b">
                 <div>
-                    <CardTitle>Application Guide</CardTitle>
-                    <CardDescription>
-                        Click on a section to the left to see its description.
-                    </CardDescription>
+                    <h2 className="text-xl font-semibold">Application Guide</h2>
+                    <p className="text-sm text-muted-foreground">
+                        Click on a section to the right to see its description.
+                    </p>
                 </div>
                 <LanguageToggle />
-             </CardHeader>
-             <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-8 min-h-0">
-                {/* Left Panel: Navigation */}
-                <div className="md:col-span-1 border-r pr-4 overflow-y-auto">
+             </div>
+             <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-8 min-h-0 p-6">
+                {/* Left Panel: Content */}
+                <div className="md:col-span-3 rounded-lg overflow-y-auto">
+                    <div className="flex items-center gap-4 mb-6">
+                        <div className="bg-primary/10 p-3 rounded-lg">
+                           <CurrentIcon className="h-8 w-8 text-primary" />
+                        </div>
+                        <h2 className="text-3xl font-bold text-primary">{helpContent[activeSection].title}</h2>
+                    </div>
+
+                    <div className="space-y-6 prose prose-base max-w-none dark:prose-invert">
+                        <p className="lead text-lg text-muted-foreground">{currentContent.summary}</p>
+                        
+                        <div className="border-t pt-6">
+                            <h3 className="text-xl font-semibold mb-3">{t('featuresTitle') || 'Key Features'}</h3>
+                            <ul className="list-disc pl-5 space-y-2">
+                                {currentContent.features.map((feature, index) => (
+                                    <li key={index} className="pl-2">{feature}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Panel: Navigation */}
+                <div className="md:col-span-1 border-l pl-4 overflow-y-auto">
                     <nav className="flex flex-col gap-1">
                         {sections.map((key) => {
                             const sectionInfo = helpContent[key];
@@ -74,30 +98,7 @@ export function HelpClientPage() {
                         })}
                     </nav>
                 </div>
-
-                {/* Right Panel: Content */}
-                 <div className="md:col-span-3 rounded-lg p-6 overflow-y-auto">
-                    <div className="flex items-center gap-4 mb-6">
-                        <div className="bg-primary/10 p-3 rounded-lg">
-                           <CurrentIcon className="h-8 w-8 text-primary" />
-                        </div>
-                        <h2 className="text-3xl font-bold text-primary">{helpContent[activeSection].title}</h2>
-                    </div>
-
-                    <div className="space-y-6 prose prose-base max-w-none dark:prose-invert">
-                        <p className="lead text-lg text-muted-foreground">{currentContent.summary}</p>
-                        
-                        <div className="border-t pt-6">
-                            <h3 className="text-xl font-semibold mb-3">{t('featuresTitle') || 'Key Features'}</h3>
-                            <ul className="list-disc pl-5 space-y-2">
-                                {currentContent.features.map((feature, index) => (
-                                    <li key={index} className="pl-2">{feature}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-             </CardContent>
-        </Card>
+             </div>
+        </div>
     )
 }
