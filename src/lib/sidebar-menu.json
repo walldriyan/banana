@@ -15,7 +15,7 @@
                 { "href": "/dashboard/products", "icon": "Package", "label": "Products", "permission": "products.view" },
                 { "href": "/dashboard/purchases", "icon": "ShoppingCart", "label": "Purchases (GRN)", "permission": "purchases.view" },
                 { "href": "/dashboard/suppliers", "icon": "Building", "label": "Suppliers", "permission": "suppliers.view" },
-                { "href": "/dashboard/lost-and-damage", "icon": "Archive", "label": "Lost & Damage", "permission": "products.delete" }
+                { "href": "/dashboard/lost-and-damage", "icon": "ArchiveX", "label": "Lost & Damage", "permission": "products.delete" }
             ]
         },
         {
