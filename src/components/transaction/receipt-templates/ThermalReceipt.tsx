@@ -44,7 +44,7 @@ export function ThermalReceipt({ data, company, originalTransaction, showAsGiftR
     <div id="thermal-receipt-container" className="thermal-receipt-container">
       <header className="text-center space-y-1">
         <h1 className="text-lg font-bold">{companyName}</h1>
-        <p>{companyAddress}</p>
+        {companyAddress && <p>{companyAddress}</p>}
         {companyPhone && <p>{t('shopTel')}: {companyPhone}</p>}
         <p>{t('dateLabel')}: {new Date(transactionHeader.transactionDate).toLocaleString()}</p>
         <p>{t('receiptNoLabel')}: {transactionHeader.transactionId}</p>
