@@ -148,10 +148,14 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             const batch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
             if (!batch) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
             
-            const newStock = batch.stock - line.quantity;
-            console.log(`   - Batch ID: ${line.batchId} | Current Stock: ${batch.stock} | Quantity to Decrement: ${line.quantity} | New Stock: ${newStock}`);
+            // Use Prisma.Decimal for accurate floating point arithmetic
+            const currentStock = new Prisma.Decimal(batch.stock);
+            const quantityToDecrement = new Prisma.Decimal(line.quantity);
+            const newStock = currentStock.minus(quantityToDecrement);
+            
+            console.log(`   - Batch ID: ${line.batchId} | Current Stock: ${currentStock.toString()} | Quantity to Decrement: ${quantityToDecrement.toString()} | New Stock: ${newStock.toString()}`);
 
-            if (newStock < 0) {
+            if (newStock.isNegative()) {
                  throw new Error(`Stock update failed for batch ${line.batchId}: Cannot have negative stock.`);
             }
 
@@ -172,16 +176,18 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 
          for (const originalLine of originalTx.lines) {
              const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); 
-             const originalQty = originalLine.quantity;
-             const keptQty = keptLine ? keptLine.quantity : 0;
-             const returnedQty = originalQty - keptQty;
+             const originalQty = new Prisma.Decimal(originalLine.quantity);
+             const keptQty = keptLine ? new Prisma.Decimal(keptLine.quantity) : new Prisma.Decimal(0);
+             const returnedQty = originalQty.minus(keptQty);
 
-             if (returnedQty > 0) {
+             if (returnedQty.greaterThan(0)) {
                  const batch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
                  if (!batch) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
                  
-                 const newStock = batch.stock + returnedQty;
-                 console.log(`   - REFUND: Batch ID: ${originalLine.productBatchId} | Current Stock: ${batch.stock} | Quantity to Increment: ${returnedQty} | New Stock: ${newStock}`);
+                 const currentStock = new Prisma.Decimal(batch.stock);
+                 const newStock = currentStock.plus(returnedQty);
+
+                 console.log(`   - REFUND: Batch ID: ${originalLine.productBatchId} | Current Stock: ${currentStock.toString()} | Quantity to Increment: ${returnedQty.toString()} | New Stock: ${newStock.toString()}`);
 
                  await tx.productBatch.update({
                      where: { id: originalLine.productBatchId! },
