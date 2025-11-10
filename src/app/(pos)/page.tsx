@@ -71,6 +71,8 @@ const initialDiscountResult = {
 };
 
 
+const CACHE_MAX_SIZE = 100;
+
 export default function MyNewEcommerceShop() {
   const [products, setProducts] = useState<ProductBatch[]>([]);
   const [allCampaigns, setAllCampaigns] = useState<DiscountSet[]>(hardcodedCampaigns);
@@ -139,12 +141,24 @@ export default function MyNewEcommerceShop() {
 
   const parseUnits = useCallback((units: any) => {
     if (typeof units !== 'string') return units;
-
-    const cached = unitsCache.current.get(units);
-    if (cached) return cached;
-
+  
+    // If item is in cache, move it to the end to mark it as recently used.
+    if (unitsCache.current.has(units)) {
+      const cachedItem = unitsCache.current.get(units);
+      unitsCache.current.delete(units);
+      unitsCache.current.set(units, cachedItem);
+      return cachedItem;
+    }
+  
     try {
       const parsed = JSON.parse(units);
+      
+      // If cache is full, remove the oldest item (first item in map's iteration)
+      if (unitsCache.current.size >= CACHE_MAX_SIZE) {
+        const oldestKey = unitsCache.current.keys().next().value;
+        unitsCache.current.delete(oldestKey);
+      }
+      
       unitsCache.current.set(units, parsed);
       return parsed;
     } catch (e) {
@@ -227,18 +241,6 @@ export default function MyNewEcommerceShop() {
       debouncedCalculateRef.current(cartWithUnits, activeCampaign);
     }
   }, [cartFingerprint, campaignFingerprint, cartWithUnits, activeCampaign]);
-
-
-  // Clear cache periodically to prevent memory growth
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (unitsCache.current.size > 100) {
-        unitsCache.current.clear();
-      }
-    }, 300000); // Every 5 minutes
-
-    return () => clearInterval(interval);
-  }, []);
 
 
   const handleTransactionComplete = useCallback(() => {
