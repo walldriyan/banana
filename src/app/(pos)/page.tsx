@@ -1,3 +1,4 @@
+
 // src/app/(pos)/page.tsx
 'use client';
 
