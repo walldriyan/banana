@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 const customFont = localFont({
-  src: '../../public/NotoSansSinhala.ttf',
+  src: '../../public/CabinetGrotesk-Black.ttf',
   display: 'swap',
   variable: '--font-custom',
 });
