@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalDrawerProvider } from '@/context/GlobalDrawerContext';
@@ -8,12 +9,20 @@ import AuthProvider from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { ThemeWrapper } from '@/components/ThemeWrapper';
+
 
 // This forces the entire app to be dynamically rendered, which can help
 // with strange caching and fetch errors in certain environments.
 export const dynamic = 'force-dynamic';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+
+const customFont = localFont({
+  src: '../../public/NotoSansSinhala.ttf',
+  display: 'swap',
+  variable: '--font-custom',
+});
 
 export const metadata: Metadata = {
   title: 'Tailwind Starter',
@@ -53,7 +62,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={cn('min-h-screen overflow-hidden bg-background font-sans antialiased', inter.variable)}>
+      <body className={cn('min-h-screen overflow-hidden bg-background font-sans antialiased', inter.variable, customFont.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -63,7 +72,7 @@ export default function RootLayout({
           <AuthProvider>
             <LanguageProvider>
               <GlobalDrawerProvider>
-                {children}
+                <ThemeWrapper>{children}</ThemeWrapper>
                 <GlobalDrawer />
                 <Toaster />
               </GlobalDrawerProvider>

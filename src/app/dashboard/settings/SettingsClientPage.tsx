@@ -7,6 +7,7 @@ import { Percent, Printer, Bell, Users, Palette } from "lucide-react";
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
 import { DiscountSettings } from "@/components/settings/discounts/DiscountSettings";
 import { PrintSettings } from "@/components/settings/printing/PrintSettings";
+import { AppearanceSettings } from "@/components/settings/appearance/AppearanceSettings";
 
 const settingsNav = [
     {
@@ -98,15 +99,7 @@ export function SettingsClientPage() {
                         </Card>
                     </TabsContent>
                      <TabsContent value="appearance">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Appearance Settings</CardTitle>
-                                <CardDescription>Customize the application's theme and layout.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p>Appearance settings will be configured here.</p>
-                            </CardContent>
-                        </Card>
+                        <AppearanceSettings />
                     </TabsContent>
                 </div>
             </Tabs>
