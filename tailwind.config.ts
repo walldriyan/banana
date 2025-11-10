@@ -12,7 +12,7 @@ export default {
       fontFamily: {
         sans: ['var(--font-inter)', 'sans-serif'], // Default sans-serif
         inter: ['var(--font-inter)', 'sans-serif'],
-        custom: ['var(--font-custom)', 'sans-serif'],
+        custom: ['CabinetGrotesk', 'sans-serif'],
         body: ['var(--font-inter)', 'sans-serif'], // Kept for backward compatibility
         headline: ['var(--font-inter)', 'sans-serif'], // Kept for backward compatibility
         code: ['monospace'],
