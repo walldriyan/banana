@@ -24,8 +24,8 @@ const receiptStyles = `
   .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 8px; overflow-x: hidden; }
   
   html.dark body, html.dark .thermal-receipt-container { 
-    background-color: #111827 !important; /* gray-900 */
-    color: white !important;
+    background-color: #18181b !important; /* zinc-900 */
+    color: #f4f4f5 !important; /* zinc-100 */
   }
   html.dark .border-black { border-color: #f4f4f5; }
   html.dark .text-gray-600 { color: #a1a1aa; } /* zinc-400 */
