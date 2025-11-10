@@ -86,13 +86,32 @@ export class BatchSpecificRule implements IDiscountRule {
       
       console.log(`[BatchRule] Evaluating rule '${ruleEntry.config.name}' (${ruleEntry.type})`);
 
-      const discountAmount = evaluateRule(
-          ruleEntry.config,
-          targetLineItem.price,
-          targetLineItem.quantity,
-          lineTotal,
-          ruleEntry.valueToTest
-      );
+      let discountAmount = 0;
+      // Pro-rating logic for one-time fixed discounts during refunds
+      if (
+        ruleEntry.config.type === 'fixed' &&
+        ruleEntry.config.applyFixedOnce &&
+        targetLineItem.originalQuantity &&
+        targetLineItem.originalQuantity > targetLineItem.quantity
+      ) {
+        const originalDiscount = ruleEntry.config.value;
+        const originalQty = targetLineItem.originalQuantity;
+        const currentQty = targetLineItem.quantity;
+        
+        // Only apply discount if the original condition is still met by the original quantity
+        if (originalQty >= (ruleEntry.config.conditionMin ?? 0)) {
+           discountAmount = (originalDiscount / originalQty) * currentQty;
+           console.log(`[BatchRule] Pro-rated refund discount: (${originalDiscount} / ${originalQty}) * ${currentQty} = ${discountAmount}`);
+        }
+      } else {
+         discountAmount = evaluateRule(
+            ruleEntry.config,
+            targetLineItem.price,
+            targetLineItem.quantity,
+            lineTotal,
+            ruleEntry.valueToTest
+        );
+      }
 
 
       if (discountAmount > 0) {

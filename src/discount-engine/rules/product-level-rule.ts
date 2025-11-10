@@ -91,14 +91,33 @@ export class ProductLevelRule implements IDiscountRule {
           continue;
         }
 
-        const discountAmount = evaluateRule(
-            ruleEntry.config,
-            item.price,
-            item.quantity,
-            lineTotal,
-            ruleEntry.valueToTest
-        );
+        let discountAmount = 0;
+        // Pro-rating logic for one-time fixed discounts during refunds
+        if (
+            ruleEntry.config.type === 'fixed' &&
+            ruleEntry.config.applyFixedOnce &&
+            item.originalQuantity &&
+            item.originalQuantity > item.quantity
+        ) {
+            const originalDiscount = ruleEntry.config.value;
+            const originalQty = item.originalQuantity;
+            const currentQty = item.quantity;
 
+            // Only apply discount if the original condition is still met by the original quantity
+            if (originalQty >= (ruleEntry.config.conditionMin ?? 0)) {
+                discountAmount = (originalDiscount / originalQty) * currentQty;
+                console.log(`[ProductRule] Pro-rated refund discount: (${originalDiscount} / ${originalQty}) * ${currentQty} = ${discountAmount}`);
+            }
+        } else {
+            discountAmount = evaluateRule(
+                ruleEntry.config,
+                item.price,
+                item.quantity,
+                lineTotal,
+                ruleEntry.valueToTest
+            );
+        }
+        
         // console.log(`Product rule evaluation result for ${ruleEntry.type}: discount=${discountAmount}`);
 
         if (discountAmount > 0) {
