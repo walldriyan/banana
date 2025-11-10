@@ -195,7 +195,7 @@ export function RefundDialogContent({
   }
 
   return (
-    <div className="flex flex-col h-[85vh]">
+    <div className="flex flex-col h-[85vh] overflow-hidden">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow py-4 min-h-0 overflow-y-auto pr-6">
         <RefundCart
           cart={refundCart}
