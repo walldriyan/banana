@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import localFont from 'next/font/local';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { GlobalDrawerProvider } from '@/context/GlobalDrawerContext';
@@ -17,12 +16,6 @@ import { ThemeWrapper } from '@/components/ThemeWrapper';
 export const dynamic = 'force-dynamic';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
-
-const customFont = localFont({
-  src: '../../public/font/OTF/CabinetGrotesk-Black.otf',
-  display: 'swap',
-  variable: '--font-custom',
-});
 
 export const metadata: Metadata = {
   title: 'Tailwind Starter',
@@ -62,7 +55,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={cn('min-h-screen overflow-hidden bg-background font-sans antialiased', inter.variable, customFont.variable)}>
+      <body className={cn('min-h-screen overflow-hidden bg-background font-sans antialiased', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

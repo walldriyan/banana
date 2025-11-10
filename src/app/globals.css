@@ -1,8 +1,16 @@
  @tailwind base;
  @tailwind components;
  @tailwind utilities;
-
+ 
  @layer base {
+    @font-face {
+        font-family: 'CabinetGrotesk';
+        src: url('/font/OTF/CabinetGrotesk-Black.otf') format('opentype');
+        font-weight: 900;
+        font-style: normal;
+        font-display: swap;
+    }
+
    :root {
      --background: 0 10% 100%;
      --foreground: 282 28% 15%;
@@ -38,6 +46,7 @@
      --sidebar-border: 220 13% 91%;
      --sidebar-ring: 217.2 91.2% 59.8%;
      color-scheme: light;
+     --font-custom: 'CabinetGrotesk', sans-serif;
    }
 
    .dark {
