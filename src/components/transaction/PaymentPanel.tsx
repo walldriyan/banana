@@ -1,6 +1,6 @@
 // src/components/transaction/PaymentPanel.tsx
 'use client';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -28,14 +28,24 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
     // When isInstallment is toggled, re-validate the paidAmount field
     // to apply the new rules immediately.
   }, [isInstallment]);
+  
+  const outstandingOrChange = useMemo(() => finalTotal - (paidAmount || 0), [paidAmount, finalTotal]);
+
 
   useEffect(() => {
-    const outstanding = finalTotal - (paidAmount || 0);
     // Outstanding amount is only relevant if it's positive (customer owes money)
-    setValue('payment.outstandingAmount', outstanding > 0 ? outstanding : 0, { shouldValidate: true });
+    setValue('payment.outstandingAmount', outstandingOrChange > 0 ? outstandingOrChange : 0, { shouldValidate: true });
     setValue('payment.finalTotal', finalTotal, { shouldValidate: true });
 
-  }, [paidAmount, finalTotal, setValue]);
+  }, [outstandingOrChange, finalTotal, setValue]);
+
+  const isOutstanding = outstandingOrChange > 0;
+  const displayLabel = isOutstanding ? 'Outstanding' : 'Change';
+  const displayValue = isOutstanding ? outstandingOrChange : -outstandingOrChange; // Show change as a positive number
+  const displayColorClass = isOutstanding 
+    ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20' 
+    : 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20';
+
 
   return (
     <Card>
@@ -94,9 +104,9 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
         </FormItem>
         
         <FormItem>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400 text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-            <div>Outstanding</div>
-            <div>Rs. {watch('payment.outstandingAmount').toFixed(2)}</div>
+            <div className={`text-2xl font-bold text-center p-3 rounded-lg ${displayColorClass}`}>
+              <div>{displayLabel}</div>
+              <div>Rs. {displayValue.toFixed(2)}</div>
             </div>
              {errors.payment?.outstandingAmount && (
                 <FormMessage>{errors.payment.outstandingAmount.message?.toString()}</FormMessage>

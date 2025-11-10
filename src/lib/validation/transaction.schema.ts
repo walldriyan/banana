@@ -8,7 +8,7 @@ export const customerSchema = z.object({
 });
 
 export const paymentSchema = z.object({
-  paidAmount: z.number().min(0, { message: "Paid amount cannot be negative." }),
+  paidAmount: z.coerce.number().min(0, { message: "Paid amount cannot be negative." }),
   paymentMethod: z.enum(['cash', 'card', 'online'], {
     errorMap: () => ({ message: "Please select a valid payment method." }),
   }),
@@ -16,15 +16,14 @@ export const paymentSchema = z.object({
   isInstallment: z.boolean(),
   finalTotal: z.number(), // We need the final total to be in the form data for validation
 }).refine(data => {
-    // If it's NOT an installment plan, the paid amount must be exactly the final total.
+    // If it's NOT an installment plan, the paid amount must be greater than or equal to the final total.
     if (!data.isInstallment) {
-      // Using a small epsilon for floating point comparison
-      return Math.abs(data.paidAmount - data.finalTotal) < 0.01;
+      return data.paidAmount >= data.finalTotal;
     }
     // If it IS an installment, this rule doesn't apply, so we return true.
     return true;
 }, {
-    message: "For a full payment, the amount paid must exactly match the total amount.",
+    message: "For a full payment, the amount paid must be equal to or greater than the total.",
     path: ["paidAmount"], // Apply this error message to the paidAmount field
 }).refine(data => {
     // If it IS an installment plan, the paid amount must be less than the final total.
