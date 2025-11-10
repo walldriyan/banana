@@ -25,7 +25,7 @@ export function GrnReceipt({ grn, payments, company }: GrnReceiptProps) {
     <div id="grn-receipt-container" className="thermal-receipt-container">
       <header className="text-center space-y-1">
         <h1 className="text-lg font-bold">{companyName}</h1>
-        <p>{companyAddress}</p>
+        {companyAddress && <p>{companyAddress}</p>}
         {companyPhone && <p>{t('shopTel')}: {companyPhone}</p>}
       </header>
 

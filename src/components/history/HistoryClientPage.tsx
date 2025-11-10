@@ -91,7 +91,7 @@ export function HistoryClientPage() {
 
   if (isLoading) {
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 p-6">
             <Skeleton className="h-16 w-full" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-32 w-full" />
@@ -110,9 +110,9 @@ export function HistoryClientPage() {
   }
 
   return (
-    <>
-      <header className="bg-card shadow-sm sticky top-0 z-10 rounded-lg mb-6">
-        <div className="flex items-center justify-between gap-4 p-4">
+    <div className="flex flex-col h-full">
+      <header className="flex-shrink-0 bg-card/95 backdrop-blur-sm shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4 p-4">
             <div className="flex items-center gap-4">
                 <Link href="/" passHref>
                 <Button variant="outline" size="icon">
@@ -133,35 +133,39 @@ export function HistoryClientPage() {
         </div>
       </header>
       
-      <TransactionList 
-          originalTransactions={paginatedTransactions}
-          refundMap={refundMap}
-          onRefresh={fetchTransactions} 
-      />
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+            <TransactionList 
+                originalTransactions={paginatedTransactions}
+                refundMap={refundMap}
+                onRefresh={fetchTransactions} 
+            />
 
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-            <Button 
-                variant="outline"
-                onClick={() => handlePageChange(currentPage - 1)} 
-                disabled={currentPage === 1}
-            >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
-            </Button>
-            <span className="text-sm font-medium">
-                Page {currentPage} of {totalPages}
-            </span>
-            <Button 
-                variant="outline"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-            >
-                Next
-                <ChevronRight className="ml-2 h-4 w-4" />
-            </Button>
+            {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-4 mt-6">
+                    <Button 
+                        variant="outline"
+                        onClick={() => handlePageChange(currentPage - 1)} 
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="mr-2 h-4 w-4" />
+                        Previous
+                    </Button>
+                    <span className="text-sm font-medium">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <Button 
+                        variant="outline"
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                    >
+                        Next
+                        <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </div>
+            )}
         </div>
-      )}
-    </>
+      </div>
+    </div>
   );
 }

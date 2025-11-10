@@ -26,11 +26,11 @@ export function RefundSummary({ originalTransaction, newDiscountResult, finalRef
   const hasDiscounts = newTotalDiscount > 0;
 
   return (
-    <Card>
+    <Card className="flex flex-col h-full">
       <CardHeader>
         <CardTitle>Refund Calculation</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex-grow overflow-y-auto space-y-4">
         
         {/* Original Bill Info */}
         <div className="p-3 rounded-lg space-y-2 border bg-muted/50 border-transparent">

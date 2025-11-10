@@ -1,4 +1,4 @@
-// src/components/history/TransactionDetailsDialog.tsx
+// src/components/transaction/TransactionDetailsDialog.tsx
 import React, { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -20,12 +20,12 @@ import { useToast } from '@/hooks/use-toast';
 
 const receiptStyles = `
   @page { size: auto; margin: 5px; }
-  body { font-family: monospace; background-color: transparent; margin: 0; padding: 0; }
+  body { font-family: monospace; background-color: transparent; margin: 0; padding: 0; color: black; }
   .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
   
   html.dark body, html.dark .thermal-receipt-container { 
-    background-color: #111827 !important; /* gray-900 */
-    color: white !important;
+    background-color: #18181b !important; /* zinc-900 */
+    color: #f4f4f5 !important; /* zinc-100 */
   }
   html.dark .border-black { border-color: #f4f4f5; }
   html.dark .text-gray-600 { color: #a1a1aa; } /* zinc-400 */

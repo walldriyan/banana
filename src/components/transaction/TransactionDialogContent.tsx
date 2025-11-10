@@ -27,8 +27,19 @@ const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
 const receiptStyles = `
   @page { size: auto; margin: 5px; }
-  body { font-family: monospace; color: black; background-color: white; margin: 0; padding: 0; }
-  .thermal-receipt-container { background-color: white; color: black; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  body { font-family: monospace; background-color: transparent; margin: 0; padding: 0; }
+  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 10px; max-width: 300px; margin: 0 auto; padding: 8px; }
+  
+  html.dark body, html.dark .thermal-receipt-container { 
+    background-color: #111827 !important; /* gray-900 */
+    color: white !important;
+  }
+  html.dark .border-black { border-color: #f4f4f5; }
+  html.dark .text-gray-600 { color: #a1a1aa; } /* zinc-400 */
+  html.dark .text-green-700 { color: #86efac; } /* green-300 */
+  html.dark .text-blue-700 { color: #93c5fd; } /* blue-300 */
+  html.dark .text-red-600 { color: #fca5a5; } /* red-300 */
+
   .text-center { text-align: center; }
   .space-y-1 > * + * { margin-top: 4px; }
   .text-lg { font-size: 1.125rem; }
@@ -45,7 +56,6 @@ const receiptStyles = `
   .text-gray-600 { color: #555; }
   .flex { display: flex; }
   .justify-between { justify-content: space-between; }
-  .font-bold { font-weight: bold; }
   .text-green-700 { color: #047857; }
   .text-blue-700 { color: #1d4ed8; }
   .text-red-600 { color: #dc2626; }
@@ -166,6 +176,7 @@ export function TransactionDialogContent({
   };
 
   const handlePrintAndFinish = async (dataToSave: DatabaseReadyTransaction) => {
+    const isDarkMode = document.documentElement.classList.contains('dark');
     const ReactDOMServer = (await import('react-dom/server')).default;
     const receiptHTML = ReactDOMServer.renderToString(
       <LanguageProvider initialLanguage={language}>
@@ -186,7 +197,7 @@ export function TransactionDialogContent({
             <title>Print Receipt</title>
             <style>${receiptStyles}</style>
           </head>
-          <body>
+          <body class="${isDarkMode ? 'dark' : ''}">
             ${receiptHTML}
           </body>
         </html>
@@ -278,14 +289,16 @@ export function TransactionDialogContent({
 
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-col h-full no-print">
+      <div className="flex flex-col h-[85vh] no-print">
         {step === 'details' && (
-          <form onSubmit={handleSubmit(handlePreview)}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-              <CustomerInfoPanel customers={customers} />
-              <PaymentPanel finalTotal={discountResult.finalTotal} />
+          <form onSubmit={handleSubmit(handlePreview)} className="flex flex-col flex-grow min-h-0">
+            <div className="flex-grow overflow-y-auto py-4 pr-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <CustomerInfoPanel customers={customers} />
+                    <PaymentPanel finalTotal={discountResult.finalTotal} />
+                </div>
             </div>
-            <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-end">
+            <div className="flex-shrink-0 pt-4 mt-auto border-t flex items-center justify-end">
                 <div className="flex gap-2">
                     <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
                     <Button ref={confirmButtonRef} type="submit" disabled={!isValid || isSubmitting}>
@@ -297,16 +310,16 @@ export function TransactionDialogContent({
         )}
 
         {step === 'print' && finalTransactionData && (
-          <div className='py-4'>
+          <div className='py-4 flex flex-col flex-grow min-h-0'>
             <div 
-                className="bg-muted p-4 rounded-lg overflow-y-auto max-h-[60vh] printable-area focus:outline-none"
+                className="bg-muted p-4 rounded-lg overflow-y-auto flex-grow printable-area focus:outline-none"
                 style={{ boxShadow: 'none' }}
             >
               <div style={{ maxWidth: '300px', margin: '0 auto' }}>
                 <ThermalReceipt data={finalTransactionData} company={companyDetails} showAsGiftReceipt={isGiftReceipt} />
               </div>
             </div>
-            <div className="flex-shrink-0 pt-4 mt-4 border-t flex items-center justify-between">
+            <div className="flex-shrink-0 pt-4 mt-auto border-t flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <LanguageToggle />
                      <div className="flex items-center space-x-2">
