@@ -195,8 +195,8 @@ export function RefundDialogContent({
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow py-4">
+    <div className="flex flex-col h-[85vh]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-grow py-4 min-h-0 overflow-y-auto pr-6">
         <RefundCart
           cart={refundCart}
           onUpdateQuantity={updateRefundQuantity}
@@ -210,7 +210,7 @@ export function RefundDialogContent({
           isProcessing={isProcessing}
         />
       </div>
-      <div className="flex-shrink-0 pt-4 mt-4 border-t flex justify-end gap-2">
+      <div className="flex-shrink-0 pt-4 mt-auto border-t flex justify-end gap-2">
         <Button 
             type="button" 
             variant="destructive" 
