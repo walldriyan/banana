@@ -323,7 +323,7 @@ export default function MyNewEcommerceShop() {
     return () => {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, [handleGlobalKeyDown]); // Now handleGlobalKeyDown never changes
+  }, []); // ✅ FIX: Empty dependency array ensures listener is added only once.
 
 
   const availableProducts = useMemo(() => {
