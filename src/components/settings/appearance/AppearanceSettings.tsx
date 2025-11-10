@@ -26,7 +26,7 @@ export function AppearanceSettings() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="inter">Inter (Default)</SelectItem>
-                    <SelectItem value="custom">Custom Font (Sinhala)</SelectItem>
+                    <SelectItem value="custom">Cabinet Grotesk</SelectItem>
                 </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
