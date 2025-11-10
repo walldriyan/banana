@@ -120,7 +120,7 @@ export function TransactionDialogContent({
     }
 
     fetchInitialData();
-  }, [toast]);
+  }, []);
 
   const handleShouldPrintChange = (checked: boolean) => {
     setShouldPrintBill(checked);

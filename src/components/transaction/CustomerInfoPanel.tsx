@@ -39,8 +39,30 @@ export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
     setOpen(false);
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLElement) {
+      if (!e.target.closest('[role="combobox"]')) { // Don't interfere with combobox selection
+        e.preventDefault();
+        const form = e.currentTarget.closest('form');
+        if (!form) return;
+        
+        const focusable = Array.from(
+          form.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter(el => !el.hasAttribute('disabled'));
+
+        const index = focusable.indexOf(e.target);
+
+        if (index > -1 && index < focusable.length - 1) {
+          focusable[index + 1].focus();
+        }
+      }
+    }
+  };
+
   return (
-    <Card>
+    <Card onKeyDown={handleKeyDown}>
       <CardHeader>
         <CardTitle>Customer Details</CardTitle>
       </CardHeader>
