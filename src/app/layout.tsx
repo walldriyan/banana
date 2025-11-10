@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 const customFont = localFont({
-  src: '../../public/CabinetGrotesk-Black.ttf',
+  src: '../../public/font/OTF/CabinetGrotesk-Black.otf',
   display: 'swap',
   variable: '--font-custom',
 });
