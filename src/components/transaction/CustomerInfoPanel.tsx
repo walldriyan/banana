@@ -61,6 +61,14 @@ export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
     }
   };
 
+  // Create a unique list of customers by name to prevent duplicates in the dropdown
+  const uniqueCustomers = customers.reduce((acc, current) => {
+    if (!acc.find(item => item.name === current.name)) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as Customer[]);
+
   return (
     <Card onKeyDown={handleKeyDown}>
       <CardHeader>
@@ -100,15 +108,17 @@ export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
                                 <Check className={cn("mr-2 h-4 w-4", customerName === 'Walk-in Customer' ? "opacity-100" : "opacity-0")} />
                                 Walk-in Customer
                             </CommandItem>
-                            {customers.map((customer) => (
-                            <CommandItem
-                                key={customer.id}
-                                value={customer.name}
-                                onSelect={() => handleSelectCustomer(customer)}
-                            >
-                                <Check className={cn("mr-2 h-4 w-4", customer.name === customerName ? "opacity-100" : "opacity-0" )} />
-                                {customer.name}
-                            </CommandItem>
+                            {uniqueCustomers
+                              .filter(customer => customer.name !== 'Walk-in Customer') // Exclude walk-in from the main list
+                              .map((customer) => (
+                              <CommandItem
+                                  key={customer.id}
+                                  value={customer.name}
+                                  onSelect={() => handleSelectCustomer(customer)}
+                              >
+                                  <Check className={cn("mr-2 h-4 w-4", customer.name === customerName ? "opacity-100" : "opacity-0" )} />
+                                  {customer.name}
+                              </CommandItem>
                             ))}
                         </CommandGroup>
                       </CommandList>
