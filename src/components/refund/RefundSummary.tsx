@@ -16,7 +16,8 @@ export function RefundSummary({ originalTransaction, newDiscountResult, finalRef
   const { transactionHeader, paymentDetails } = originalTransaction;
 
   const originalTotal = transactionHeader.finalTotal;
-  const originalPaid = paymentDetails.paidAmount;
+  // This is now corrected to show the bill's total, not what was physically paid
+  const originalPaid = transactionHeader.finalTotal; 
   const originalOutstanding = paymentDetails.outstandingAmount;
   const originalIsInstallment = paymentDetails.isInstallment;
 
