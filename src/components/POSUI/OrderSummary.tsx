@@ -38,11 +38,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ originalTotal, finalTotal, 
           <h5 className="  w-full text-sm font-semibold text-foreground">Applied Discounts Breakdown:</h5>
           <div className="space-y-1 h-full ">
             {discountResult.lineItems
-              .flatMap((li: any) => li.appliedRules.map((rule: any) => ({ ...rule, lineItem: li })))
-              .map((rule: any, i: number) => (
-                <div key={`item-disc-${i}`} className="flex justify-between text-sm">
-                  <span className="text-muted-foreground truncate pr-2">(Item) {rule.appliedRuleInfo.sourceRuleName}</span>
-                  <span className="font-medium text-green-600">-Rs. {rule.discountAmount.toFixed(2)}</span>
+              .filter((li: any) => li.totalDiscount > 0)
+              .map((li: any, i: number) => (
+                <div key={`line-disc-${i}`} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground truncate pr-2">
+                    Discount for {li.product?.name || 'Item'}
+                  </span>
+                  <span className="font-medium text-green-600">-Rs. {li.totalDiscount.toFixed(2)}</span>
                 </div>
               ))}
             {discountResult.appliedCartRules.map((rule: any, i: number) => (
