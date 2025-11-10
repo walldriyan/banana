@@ -20,7 +20,7 @@ import { History, LayoutDashboard, SlidersHorizontal, LifeBuoy } from 'lucide-re
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
-import { defaultDiscounts } from '@/lib/default-campaign';
+import { productDefaults } from '@/lib/default-campaign';
 import { CustomDiscountForm } from '@/components/POSUI/CustomDiscountForm';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getProductBatchesAction } from '@/lib/actions/product.actions';
@@ -78,7 +78,7 @@ export default function MyNewEcommerceShop() {
   const [products, setProducts] = useState<ProductBatch[]>([]);
   const [allCampaigns, setAllCampaigns] = useState<DiscountSet[]>(hardcodedCampaigns);
   const [cart, setCart] = useState<SaleItem[]>([]);
-  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(defaultDiscounts);
+  const [activeCampaign, setActiveCampaign] = useState<DiscountSet>(productDefaults);
   const [transactionId, setTransactionId] = useState<string>('');
   const productSearchRef = useRef<SearchableProductInputRef>(null);
   const drawer = useDrawer();
@@ -324,7 +324,7 @@ export default function MyNewEcommerceShop() {
     return () => {
       document.removeEventListener('keydown', handleGlobalKeyDown);
     };
-  }, []); // ✅ FIX: Empty dependency array ensures listener is added only once.
+  }, []); 
 
 
   const availableProducts = useMemo(() => {
