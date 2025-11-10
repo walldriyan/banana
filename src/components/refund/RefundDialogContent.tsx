@@ -210,7 +210,7 @@ export function RefundDialogContent({
           isProcessing={isProcessing}
         />
       </div>
-      <div className="flex-shrink-0 pt-4 mt-auto border-t flex justify-end gap-2">
+      <div className="flex-shrink-0 pt-4 border-t flex justify-end gap-2">
         <Button 
             type="button" 
             variant="destructive" 
