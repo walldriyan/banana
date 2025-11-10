@@ -74,13 +74,19 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                       </div>
                     )}
                     <div className="flex justify-between items-baseline text-sm">
-                      <span className={hasDiscounts ? "text-gray-500 line-through" : "text-gray-600 font-semibold"}>
-                        New Total: Rs. {originalLineTotal.toFixed(2)}
-                      </span>
-                      {hasDiscounts && (
-                        <span className="font-bold text-lg text-green-700 dark:text-green-400">
-                          Final Price: Rs. {finalLineTotal.toFixed(2)}
-                        </span>
+                      {hasDiscounts ? (
+                          <>
+                              <span className="text-gray-500 line-through">
+                                  Original: Rs. {originalLineTotal.toFixed(2)}
+                              </span>
+                              <span className="font-bold text-lg text-green-700 dark:text-green-400">
+                                  Final Price: Rs. {finalLineTotal.toFixed(2)}
+                              </span>
+                          </>
+                      ) : (
+                          <span className="text-gray-600 font-semibold">
+                              New Total: Rs. {originalLineTotal.toFixed(2)}
+                          </span>
                       )}
                     </div>
                   </div>
