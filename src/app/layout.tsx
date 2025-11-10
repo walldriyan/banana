@@ -55,7 +55,8 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={cn('min-h-screen overflow-hidden bg-background font-sans antialiased', inter.variable)}>
+      {/* The body tag no longer needs font-sans directly, ThemeWrapper handles it */}
+      <body className={cn('min-h-screen overflow-hidden bg-background antialiased', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
