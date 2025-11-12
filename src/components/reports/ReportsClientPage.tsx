@@ -1,7 +1,7 @@
 // src/components/reports/ReportsClientPage.tsx
 'use client';
 
-import { useState, useTransition, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import { useState, useTransition, useCallback, useEffect, ReactNode } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, startOfYear, startOfWeek, isSameDay } from 'date-fns';
 import { 
@@ -68,7 +68,7 @@ const reportPrintStyles = `
 type ReportType = 'summary' | 'stock' | 'creditors' | 'debtors' | 'transactions' | 'refunds';
 
 const ReportGenerator = () => {
-    const today = useMemo(() => new Date(), []);
+    const today = new Date();
     const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: today, to: today });
     const [activePreset, setActivePreset] = useState<string | null>('today');
     
@@ -236,16 +236,13 @@ const ReportGenerator = () => {
     const renderActiveReport = (): ReactNode => {
         if (!activeReportData) return null;
         
-        const reportData = (activeReport === 'stock' && activeReportData.data) ? activeReportData.data : activeReportData;
-
-
         switch(activeReport) {
-            case 'summary': return <SummaryReport data={reportData} />;
-            case 'stock': return <StockReport data={reportData} />;
-            case 'creditors': return <CreditorsReport data={reportData} />;
-            case 'debtors': return <DebtorsReport data={reportData} />;
-            case 'transactions': return <TransactionsReport data={reportData} />;
-            case 'refunds': return <RefundsReport data={reportData} />;
+            case 'summary': return <SummaryReport data={activeReportData} />;
+            case 'stock': return <StockReport data={activeReportData.data} />;
+            case 'creditors': return <CreditorsReport data={activeReportData} />;
+            case 'debtors': return <DebtorsReport data={activeReportData} />;
+            case 'transactions': return <TransactionsReport data={activeReportData} />;
+            case 'refunds': return <RefundsReport data={activeReportData} />;
             default: return null;
         }
     }
@@ -263,7 +260,7 @@ const ReportGenerator = () => {
     }
     
     const getReportDescription = (): string => {
-        if (['summary', 'transactions', 'refunds'].includes(activeReport) && activeReportData?.dateRange) {
+        if ((['summary', 'transactions', 'refunds'].includes(activeReport)) && activeReportData?.dateRange) {
              return `Report for the period of ${new Date(activeReportData.dateRange.from).toLocaleDateString()} to ${new Date(activeReportData.dateRange.to).toLocaleDateString()}`;
         }
         return `Generated on ${new Date().toLocaleDateString()}`;
@@ -329,27 +326,27 @@ const ReportGenerator = () => {
                         <CardDescription>Select a specific report to view and print.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
-                         <Button variant="outline" className="justify-start" onClick={() => setActiveReport('summary')} disabled={isPending}>
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(dateRange, 'summary')} disabled={isPending}>
                             <FileText className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'summary' ? 'Generating...' : 'View Summary Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => setActiveReport('stock')} disabled={isPending}>
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(dateRange, 'stock')} disabled={isPending}>
                             <Package className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'stock' ? 'Generating...' : 'View Stock Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => setActiveReport('creditors')} disabled={isPending}>
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(dateRange, 'creditors')} disabled={isPending}>
                             <CreditCard className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'creditors' ? 'Generating...' : 'View Creditors Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => setActiveReport('debtors')} disabled={isPending}>
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(dateRange, 'debtors')} disabled={isPending}>
                             <HandCoins className="mr-2 h-4 w-4" />
                            {isPending && activeReport === 'debtors' ? 'Generating...' : 'View Debtors Report'}
                         </Button>
-                        <Button variant="outline" className="justify-start" onClick={() => setActiveReport('transactions')} disabled={isPending}>
+                        <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(dateRange, 'transactions')} disabled={isPending}>
                             <FileText className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'transactions' ? 'Generating...' : 'View Transactions Report'}
                         </Button>
-                        <Button variant="outline" className="justify-start" onClick={() => setActiveReport('refunds')} disabled={isPending}>
+                        <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(dateRange, 'refunds')} disabled={isPending}>
                             <RefreshCw className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'refunds' ? 'Generating...' : 'View Refunds Report'}
                         </Button>
