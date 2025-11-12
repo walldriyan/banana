@@ -151,10 +151,10 @@ export function SummaryReport({ data }: SummaryReportProps) {
          </div>
 
         {/* Cash Flow Section */}
-        <ReportRow label="Cash Flow Summary (Today)" value="" isHeader />
+        <ReportRow label="cashFlowTitle" value="" isHeader />
          <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
-             <div className="font-semibold text-black col-span-2">Cash In</div>
-             <div className="font-semibold text-black col-span-2">Cash Out</div>
+             <div className="font-semibold text-black col-span-2">{t('cashInTitle')}</div>
+             <div className="font-semibold text-black col-span-2">{t('cashOutTitle')}</div>
               {Array.from({ length: Math.max(cashInItems.length, cashOutItems.length) }).map((_, index) => (
                 <React.Fragment key={`cash-flow-${index}`}>
                     {cashInItems[index] ? <ReportRow {...cashInItems[index]} /> : <><div /><div /></>}
@@ -162,7 +162,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
                 </React.Fragment>
               ))}
               <div className="col-span-4 pt-2 mt-2 border-t border-gray-200">
-                  <ReportRow label="Expected Cash in Drawer" value={data.cashFlow.cashInDrawer} isBold valueClassName="text-green-800" />
+                  <ReportRow label="cashInDrawer" value={data.cashFlow.cashInDrawer} isBold valueClassName="text-green-800" />
               </div>
          </div>
       </div>

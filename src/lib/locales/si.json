@@ -62,5 +62,14 @@
   "lostAndDamageValue": "නැතිවූ/අලාභ වූ අගය",
   "totalRefundsIssued": "ආපසු ගෙවූ මුළු මුදල",
   "todaysDebtorPayments": "අද දින ලැබීම් (ණයගැතියන්)",
-  "todaysCreditorPayments": "අද දින ගෙවීම් (ණයහිමියන්)"
+  "todaysCreditorPayments": "අද දින ගෙවීම් (ණයහිමියන්)",
+  "cashFlowTitle": "මුදල් ප්‍රවාහ සාරාංශය (අද දින)",
+  "cashInTitle": "ලැබුණු මුදල්",
+  "cashOutTitle": "ගෙවූ මුදල්",
+  "cashSales": "විකුණුම් වලින් මුදල්",
+  "cashOtherIncome": "වෙනත් ආදායම් වලින් මුදල්",
+  "todaysDebtorCashPayments": "අද දින ණයගැතියන්ගෙන් මුදල්",
+  "cashOtherExpenses": "වෙනත් වියදම් සඳහා මුදල්",
+  "todaysCreditorCashPayments": "අද දින ණයහිමියන්ට මුදල්",
+  "cashInDrawer": "ලාච්චුවේ තිබිය යුතු මුදල"
 }

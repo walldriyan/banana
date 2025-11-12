@@ -62,5 +62,14 @@
   "lostAndDamageValue": "Lost & Damage Value",
   "totalRefundsIssued": "Total Refunds Issued",
   "todaysDebtorPayments": "Today's Collections (Debtors)",
-  "todaysCreditorPayments": "Today's Payments (Creditors)"
+  "todaysCreditorPayments": "Today's Payments (Creditors)",
+  "cashFlowTitle": "Cash Flow Summary (Today)",
+  "cashInTitle": "Cash In",
+  "cashOutTitle": "Cash Out",
+  "cashSales": "Cash from Sales",
+  "cashOtherIncome": "Cash from Other Income",
+  "todaysDebtorCashPayments": "Today's Debtor Cash Payments",
+  "cashOtherExpenses": "Cash for Other Expenses",
+  "todaysCreditorCashPayments": "Today's Creditor Cash Payments",
+  "cashInDrawer": "Expected Cash in Drawer"
 }
