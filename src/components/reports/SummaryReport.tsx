@@ -3,6 +3,8 @@ import React from 'react';
 import type { SummaryReportData } from '@/lib/actions/report.actions';
 import { Separator } from '../ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Landmark, Scale } from 'lucide-react';
 
 interface ReportRowProps {
     label: string;
@@ -64,23 +66,11 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const totalIncome = incomeItems.reduce((sum, item) => sum + item.value, 0);
   const netProfit = totalIncome - totalExpenses;
 
-  const b_s_expenseItems = [
-      { label: 'creditors', value: data.balanceSheet.liabilities.creditors},
-      { label: 'totalGrns', value: data.purchases.totalGrns},
-  ];
-
-  const b_s_incomeItems = [
-      { label: 'debtors', value: data.balanceSheet.assets.debtors},
-      { label: 'totalTransactions', value: data.sales.totalTransactions},
-      { label: 'grossProfit', value: data.profit.grossProfit, valueClassName: 'text-green-700' },
-  ];
-  
   const maxRowsPL = Math.max(expenseItems.length, incomeItems.length);
-  const maxRowsBS = Math.max(b_s_expenseItems.length, b_s_incomeItems.length);
 
   return (
-    <div className="report-container p-4 bg-white text-sm text-black">
-      <header className="text-center mb-6">
+    <div className="report-container p-4 bg-white text-sm text-black space-y-6">
+      <header className="text-center">
         <h1 className="text-xl font-bold text-gray-800">{t('reportTitle')}</h1>
         <p className="text-xs text-gray-500">
           {t('reportPeriodTitle')} {new Date(data.dateRange.from).toLocaleDateString(language)} {t('reportToTitle')} {new Date(data.dateRange.to).toLocaleDateString(language)}
@@ -123,22 +113,27 @@ export function SummaryReport({ data }: SummaryReportProps) {
                   <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
         </div>
-
-        {/* Balance Sheet & Metrics Section */}
-        <ReportRow label="bsAndMetricsTitle" value="" isHeader />
-        <div className="grid grid-cols-2 gap-x-4 p-3 border-b border-gray-200">
-          <div className="font-semibold text-black">{t('liabilitiesAndMetricsTitle')}</div>
-          <div className="font-semibold text-black">{t('assetsAndMetricsTitle')}</div>
-        </div>
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3">
-           {Array.from({ length: maxRowsBS }).map((_, index) => (
-            <React.Fragment key={`bs-row-${index}`}>
-              {b_s_expenseItems[index] ? <ReportRow {...b_s_expenseItems[index]} isSubtle /> : <><div /><div /></>}
-              {b_s_incomeItems[index] ? <ReportRow {...b_s_incomeItems[index]} isSubtle /> : <><div /><div /></>}
-            </React.Fragment>
-          ))}
-        </div>
       </div>
+
+       <Card>
+          <CardHeader>
+             <div className='flex items-center gap-3'>
+                <Scale className="h-6 w-6 text-muted-foreground" />
+                <div>
+                    <CardTitle>Debtors & Creditors Summary</CardTitle>
+                    <CardDescription>A summary of money you owe and money owed to you, as of today.</CardDescription>
+                </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+              <ReportRow label="Total Receivable (Debtors)" value={data.balanceSheet.assets.debtors} valueClassName="text-red-600 font-bold" />
+              <ReportRow label="Today's Collections (Debtors)" value={data.balanceSheet.assets.todaysDebtorPayments} valueClassName="text-green-600" isSubtle/>
+              <Separator className="my-2"/>
+              <ReportRow label="Total Payable (Creditors)" value={data.balanceSheet.liabilities.creditors} valueClassName="text-orange-600 font-bold" />
+              <ReportRow label="Today's Payments (Creditors)" value={data.balanceSheet.liabilities.todaysCreditorPayments} valueClassName="text-green-600" isSubtle/>
+          </CardContent>
+      </Card>
+
 
       <footer className="text-center mt-8 pt-4 border-t border-gray-300">
         <p className="text-xs text-gray-500">{t('generatedOn')} {new Date().toLocaleString(language)}</p>

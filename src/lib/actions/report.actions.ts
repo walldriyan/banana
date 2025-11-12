@@ -43,9 +43,11 @@ export interface SummaryReportData {
     balanceSheet: {
         assets: {
             debtors: number; // Money owed by customers
+            todaysDebtorPayments: number; // Collections received today for any debt
         };
         liabilities: {
             creditors: number; // Money owed to suppliers
+            todaysCreditorPayments: number; // Payments made today for any debt
         };
     };
 }
@@ -58,14 +60,13 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const adjustedFrom = startOfDay(from);
         const adjustedTo = endOfDay(to);
 
+        // --- P&L Calculations (Period Specific) ---
         const [
             salesData, 
             purchaseData, 
             financialTxData, 
-            creditorsData,
             lostAndDamageData,
             refundData,
-            debtorsData,
         ] = await Promise.all([
             // P&L: Sales within the date range
             prisma.transaction.aggregate({
@@ -88,13 +89,6 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 _sum: { amount: true },
             }),
-             // Balance Sheet: ALL outstanding GRNs (creditors)
-            prisma.goodsReceivedNote.aggregate({
-                where: {
-                    paymentStatus: { in: ['pending', 'partial'] },
-                },
-                _sum: { totalAmount: true, paidAmount: true },
-            }),
             // P&L: Lost & Damage within the date range
             prisma.lostAndDamage.findMany({
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
@@ -112,22 +106,41 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                     }
                 }
             }),
-            // Balance Sheet: Get all pending/partial transactions and their payments to calculate total debtors
+        ]);
+
+        // --- Balance Sheet Calculations (As of Now) ---
+        const todayStart = startOfDay(new Date());
+        const todayEnd = endOfDay(new Date());
+
+        const [
+            debtorsData,
+            creditorsData,
+            todaysDebtorPayments,
+            todaysCreditorPayments,
+        ] = await Promise.all([
+            // Balance Sheet: All outstanding debtor transactions
             prisma.transaction.findMany({
-                where: {
-                    paymentStatus: { in: ['pending', 'partial'] }
-                },
-                select: {
-                    finalTotal: true,
-                    salePayments: {
-                        select: {
-                            amount: true
-                        }
-                    }
-                }
+                where: { paymentStatus: { in: ['pending', 'partial'] } },
+                select: { finalTotal: true, salePayments: { select: { amount: true } } }
+            }),
+            // Balance Sheet: All outstanding creditor GRNs
+            prisma.goodsReceivedNote.findMany({
+                where: { paymentStatus: { in: ['pending', 'partial'] } },
+                select: { totalAmount: true, payments: { select: { amount: true } } }
+            }),
+            // Balance Sheet: Debtor payments received today
+            prisma.salePayment.aggregate({
+                _sum: { amount: true },
+                where: { paymentDate: { gte: todayStart, lte: todayEnd } }
+            }),
+            // Balance Sheet: Creditor payments made today
+            prisma.purchasePayment.aggregate({
+                _sum: { amount: true },
+                where: { paymentDate: { gte: todayStart, lte: todayEnd } }
             })
         ]);
         
+
         const otherIncome = financialTxData.find(d => d.type === 'INCOME')?._sum.amount || 0;
         const otherExpenses = financialTxData.find(d => d.type === 'EXPENSE')?._sum.amount || 0;
 
@@ -145,18 +158,22 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         }, 0);
 
         const netSalesRevenue = grossSalesRevenue - totalRefundsValue;
-        const grossProfit = netSalesRevenue - totalPurchaseCost;
+        const grossProfit = netSalesRevenue - totalPurchaseCost; // This is a simplified GP
         const totalDiscountsGiven = salesData._sum.totalDiscountAmount || 0;
         const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue;
         
-        // Accurate Balance Sheet Calculations
-         const totalDebtorsValue = debtorsData.reduce((totalDue, tx) => {
+        const totalDebtorsValue = debtorsData.reduce((totalDue, tx) => {
             const totalPaidForTx = tx.salePayments.reduce((paidSum, p) => paidSum + p.amount, 0);
             const dueForThisTx = tx.finalTotal - totalPaidForTx;
             return totalDue + dueForThisTx;
         }, 0);
 
-        const totalCreditorsValue = (creditorsData._sum.totalAmount || 0) - (creditorsData._sum.paidAmount || 0);
+        const totalCreditorsValue = creditorsData.reduce((totalDue, grn) => {
+            const totalPaidForGrn = grn.payments.reduce((paidSum, p) => paidSum + p.amount, 0);
+            const dueForThisGrn = grn.totalAmount - totalPaidForGrn;
+            return totalDue + dueForThisGrn;
+        }, 0);
+
 
         const reportData: SummaryReportData = {
             dateRange: {
@@ -193,9 +210,11 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             balanceSheet: {
                 assets: {
                     debtors: totalDebtorsValue,
+                    todaysDebtorPayments: todaysDebtorPayments._sum.amount || 0,
                 },
                 liabilities: {
                     creditors: totalCreditorsValue,
+                    todaysCreditorPayments: todaysCreditorPayments._sum.amount || 0,
                 },
             },
         };
