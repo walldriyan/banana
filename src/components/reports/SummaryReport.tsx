@@ -5,6 +5,7 @@ import { Separator } from '../ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Landmark, Scale } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ReportRowProps {
     label: string;
@@ -75,6 +76,19 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const totalIncome = incomeItems.reduce((sum, item) => sum + item.value, 0);
   const netProfit = totalIncome - totalExpenses;
 
+  const liabilitiesAndMetrics = [
+    { label: 'creditors', value: data.balanceSheet.liabilities.creditors, isBold: true, valueClassName: 'text-orange-600' },
+    { label: 'todaysCreditorPayments', value: data.balanceSheet.liabilities.todaysCreditorPayments, isSubtle: true, valueClassName: 'text-green-600' },
+    { label: 'totalGrns', value: data.purchases.totalGrns, isSubtle: true },
+  ];
+
+  const assetsAndMetrics = [
+      { label: 'debtors', value: data.balanceSheet.assets.debtors, isBold: true, valueClassName: 'text-red-600' },
+      { label: 'todaysDebtorPayments', value: data.balanceSheet.assets.todaysDebtorPayments, isSubtle: true, valueClassName: 'text-green-600' },
+      { label: 'totalTransactions', value: data.sales.totalTransactions, isSubtle: true },
+      { label: 'grossProfit', value: data.profit.grossProfit, isBold: true },
+  ];
+
   return (
     <div className="report-container p-4 bg-white text-sm text-black space-y-6">
       <header className="text-center">
@@ -132,19 +146,13 @@ export function SummaryReport({ data }: SummaryReportProps) {
             <ReportSubHeader label="liabilitiesAndMetricsTitle" className="col-span-2" />
             <ReportSubHeader label="assetsAndMetricsTitle" className="col-span-2" />
             
-            {/* Data Rows */}
-            <ReportRow label="creditors" value={data.balanceSheet.liabilities.creditors} valueClassName="text-orange-600 font-bold" />
-            <ReportRow label="debtors" value={data.balanceSheet.assets.debtors} valueClassName="text-red-600 font-bold" />
-
-            <ReportRow label="todaysCreditorPayments" value={data.balanceSheet.liabilities.todaysCreditorPayments} isSubtle valueClassName="text-green-600"/>
-            <ReportRow label="todaysDebtorPayments" value={data.balanceSheet.assets.todaysDebtorPayments} isSubtle valueClassName="text-green-600"/>
-
-            <ReportRow label="totalGrns" value={data.purchases.totalGrns} isSubtle />
-            <ReportRow label="totalTransactions" value={data.sales.totalTransactions} isSubtle />
-
-            <div />
-            <div />
-            <ReportRow label="grossProfit" value={data.profit.grossProfit} isBold />
+             {/* Data Rows */}
+            {Array.from({ length: Math.max(liabilitiesAndMetrics.length, assetsAndMetrics.length) }).map((_, index) => (
+                <React.Fragment key={`bs-row-${index}`}>
+                    {liabilitiesAndMetrics[index] ? <ReportRow {...liabilitiesAndMetrics[index]} /> : <><div /><div /></>}
+                    {assetsAndMetrics[index] ? <ReportRow {...assetsAndMetrics[index]} /> : <><div /><div /></>}
+                </React.Fragment>
+            ))}
         </div>
       </div>
 
