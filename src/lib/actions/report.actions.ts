@@ -65,7 +65,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             creditorsData,
             lostAndDamageData,
             refundData,
-            debtorsCalculations, // New calculation for debtors
+            debtorsData,
         ] = await Promise.all([
             // P&L: Sales within the date range
             prisma.transaction.aggregate({
@@ -112,14 +112,17 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                     }
                 }
             }),
-            // Balance Sheet: Correctly calculate total debtors balance
+            // Balance Sheet: Get all pending/partial transactions and their payments to calculate total debtors
             prisma.transaction.findMany({
                 where: {
                     paymentStatus: { in: ['pending', 'partial'] }
                 },
-                include: {
+                select: {
+                    finalTotal: true,
                     salePayments: {
-                        select: { amount: true }
+                        select: {
+                            amount: true
+                        }
                     }
                 }
             })
@@ -147,9 +150,9 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue;
         
         // Accurate Balance Sheet Calculations
-        const totalDebtorsValue = debtorsCalculations.reduce((totalDue, tx) => {
-            const totalPaid = tx.salePayments.reduce((paidSum, p) => paidSum + p.amount, 0);
-            const dueForThisTx = tx.finalTotal - totalPaid;
+         const totalDebtorsValue = debtorsData.reduce((totalDue, tx) => {
+            const totalPaidForTx = tx.salePayments.reduce((paidSum, p) => paidSum + p.amount, 0);
+            const dueForThisTx = tx.finalTotal - totalPaidForTx;
             return totalDue + dueForThisTx;
         }, 0);
 
