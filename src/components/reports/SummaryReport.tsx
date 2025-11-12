@@ -3,9 +3,8 @@ import React from 'react';
 import type { SummaryReportData } from '@/lib/actions/report.actions';
 import { Separator } from '../ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Landmark, Scale, Users, FileText } from 'lucide-react';
 import { cn } from "@/lib/utils";
+
 
 interface ReportRowProps {
     label: string;
@@ -76,17 +75,14 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const totalIncome = incomeItems.reduce((sum, item) => sum + item.value, 0);
   const netProfit = totalIncome - totalExpenses;
 
-  const liabilitiesAndMetrics = [
+  const liabilitiesItems = [
     { label: 'creditors', value: data.balanceSheet.liabilities.creditors, isBold: true, valueClassName: 'text-orange-600' },
     { label: 'todaysCreditorPayments', value: data.balanceSheet.liabilities.todaysCreditorPayments, isSubtle: true, valueClassName: 'text-green-600' },
-    { label: 'totalGrns', value: data.purchases.totalGrns, isSubtle: true },
   ];
 
-  const assetsAndMetrics = [
+  const assetsItems = [
       { label: 'debtors', value: data.balanceSheet.assets.debtors, isBold: true, valueClassName: 'text-red-600' },
       { label: 'todaysDebtorPayments', value: data.balanceSheet.assets.todaysDebtorPayments, isSubtle: true, valueClassName: 'text-green-600' },
-      { label: 'grossProfit', value: data.profit.grossProfit, isBold: true },
-      { label: 'totalTransactions', value: data.sales.totalTransactions, isSubtle: true },
   ];
 
 
@@ -102,30 +98,21 @@ export function SummaryReport({ data }: SummaryReportProps) {
       <div className="border border-gray-300 overflow-hidden">
         {/* Profit & Loss Section */}
         <ReportRow label="plStatementTitle" value="" isHeader />
-        <div className="grid grid-cols-[1fr_auto] gap-x-4 p-3">
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
           {/* Column Headers */}
-          <div className="font-semibold text-black">{t('expensesTitle')}</div>
-          <div className="font-semibold text-black text-right">{/* Empty for alignment */}</div>
+          <div className="font-semibold text-black col-span-2">{t('expensesTitle')}</div>
+          <div className="font-semibold text-black col-span-2">{t('incomeTitle')}</div>
           
           {/* P&L Items */}
-          {expenseItems.map((item, index) => (
-            <React.Fragment key={`pl-exp-row-${index}`}>
-              <ReportRow {...item} isSubtle />
-            </React.Fragment>
-          ))}
-
-          <div className="font-semibold text-black mt-4">{t('incomeTitle')}</div>
-          <div className="font-semibold text-black text-right mt-4">{/* Empty for alignment */}</div>
-          {incomeItems.map((item, index) => (
-             <React.Fragment key={`pl-inc-row-${index}`}>
-              <ReportRow {...item} isSubtle />
+          {Array.from({ length: Math.max(expenseItems.length, incomeItems.length) }).map((_, index) => (
+             <React.Fragment key={`pl-row-${index}`}>
+                {expenseItems[index] ? <ReportRow {...expenseItems[index]} isSubtle /> : <><div/><div/></>}
+                {incomeItems[index] ? <ReportRow {...incomeItems[index]} isSubtle /> : <><div/><div/></>}
             </React.Fragment>
           ))}
         </div>
-        <div className="grid grid-cols-[1fr_auto] gap-x-4 px-3 pt-2 mt-2 border-t border-gray-200">
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3 pt-2 mt-2 border-t border-gray-200">
           <ReportRow label="totalExpenses" value={totalExpenses} isTotal isBold />
-        </div>
-         <div className="grid grid-cols-[1fr_auto] gap-x-4 px-3 pt-2">
           <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
         </div>
         
@@ -137,16 +124,17 @@ export function SummaryReport({ data }: SummaryReportProps) {
             <ReportSubHeader label="assetsAndMetricsTitle" className="col-span-2" />
             
              {/* Data Rows */}
-            {Array.from({ length: Math.max(liabilitiesAndMetrics.length, assetsAndMetrics.length) }).map((_, index) => (
+            {Array.from({ length: Math.max(liabilitiesItems.length, assetsItems.length) }).map((_, index) => (
                 <React.Fragment key={`bs-row-${index}`}>
-                    {liabilitiesAndMetrics[index] ? <ReportRow {...liabilitiesAndMetrics[index]} /> : <><div /><div /></>}
-                    {assetsAndMetrics[index] ? <ReportRow {...assetsAndMetrics[index]} /> : <><div /><div /></>}
+                    {liabilitiesItems[index] ? <ReportRow {...liabilitiesItems[index]} /> : <><div /><div /></>}
+                    {assetsItems[index] ? <ReportRow {...assetsItems[index]} /> : <><div /><div /></>}
                 </React.Fragment>
             ))}
         </div>
+      </div>
 
-         {/* Net Profit Section */}
-        <div className="col-span-4 bg-blue-50 p-4 space-y-2 mt-2">
+       {/* Net Profit Section */}
+        <div className="col-span-4 bg-blue-50 p-4 space-y-2">
             <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
               <div className="flex justify-between items-center text-base">
                   <span className="text-gray-600">{t('totalIncome')}</span>
@@ -162,7 +150,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
                   <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
         </div>
-      </div>
+
 
       <footer className="text-center mt-8 pt-4 border-t border-gray-300">
         <p className="text-xs text-gray-500">{t('generatedOn')} {new Date().toLocaleString(language)}</p>
