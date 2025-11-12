@@ -72,7 +72,7 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
 const ConversionFactorDisplay = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
     const { control } = useFormContext<ProductFormValues>();
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
-    const conversionFactor = item?.conversionFactor || 0;
+    const conversionFactor = Number(item?.conversionFactor || 0);
     const derivedUnitName = item?.name || 'New Unit';
 
     if (conversionFactor <= 0) return null;
@@ -93,7 +93,7 @@ const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, bas
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
     const sellingPrice = Number(useWatch({ control, name: `sellingPrice` }) || 0);
 
-    const conversionFactor = item?.conversionFactor || 0;
+    const conversionFactor = Number(item?.conversionFactor || 0);
     const derivedUnitName = item?.name || 'New Unit';
 
     const calculatedPrice = useMemo(() => conversionFactor * sellingPrice, [conversionFactor, sellingPrice]);
@@ -330,7 +330,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[0].description}</CardDescription>
                     </CardHeader>
                     <CardContent>
-                       <div className="divide-y">
+                       <div className="divide-y dark:divide-slate-800">
                         {isEditMode && (
                             <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 mb-6">
                                  <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -367,10 +367,10 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         
                         <div className="flex items-start gap-6 py-4">
                             <div className="w-1/3 pt-1">
-                                <FormLabel>Batch Number</FormLabel>
+                                <FormLabel>Batch Number & Barcode</FormLabel>
                                 <FormDescription>Unique identifiers for this specific stock.</FormDescription>
                             </div>
-                            <div className="w-2/3">
+                            <div className="w-2/3 grid grid-cols-2 gap-4">
                                 <FormField control={form.control} name="batchNumber" render={({ field }) => (
                                     <FormItem className="m-0 p-0 space-y-0">
                                         <div className="flex gap-2">
@@ -380,15 +380,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-6 py-4">
-                            <div className="w-1/3 pt-1">
-                                <FormLabel>Barcode (SKU)</FormLabel>
-                            </div>
-                            <div className="w-2/3">
-                                <FormField control={form.control} name="barcode" render={({ field }) => (
+                                 <FormField control={form.control} name="barcode" render={({ field }) => (
                                     <FormItem className="m-0 p-0 space-y-0">
                                         <div className="flex gap-2">
                                             <FormControl><Input placeholder="e.g., 890..." {...field} /></FormControl>
@@ -466,23 +458,15 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[1].title}</CardTitle>
                         <CardDescription>{steps[1].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y">
+                    <CardContent className="divide-y dark:divide-slate-800">
                         <div className="flex items-start gap-6 py-4">
                            <div className="w-1/3 pt-1">
-                               <FormLabel>Cost Price</FormLabel>
-                               <FormDescription>The price you paid for the product per base unit.</FormDescription>
+                               <FormLabel>Pricing (per Base Unit)</FormLabel>
+                               <FormDescription>Define the cost and selling price for a single base unit.</FormDescription>
                            </div>
-                           <div className="w-2/3">
-                                <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                           </div>
-                        </div>
-                        <div className="flex items-start gap-6 py-4">
-                           <div className="w-1/3 pt-1">
-                               <FormLabel>Selling Price</FormLabel>
-                               <FormDescription>The price you will sell the product for per base unit.</FormDescription>
-                           </div>
-                           <div className="w-2/3">
-                                <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                           <div className="w-2/3 grid grid-cols-2 gap-4">
+                                <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Cost Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Selling Price</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
                          <div className="flex items-start gap-6 py-4">
@@ -508,7 +492,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is tracked in.</FormDescription><FormMessage /></FormItem> )} />
                                 <div>
                                     <FormLabel>Derived Units (Optional)</FormLabel>
-                                    <Alert className="bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-700/50 text-sky-800 dark:text-sky-300 mt-2">
+                                     <Alert className="mt-2 bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-700/50 text-sky-800 dark:text-sky-300">
                                         <Info className="h-4 w-4 !text-sky-700 dark:!text-sky-300" />
                                         <AlertTitle className="font-semibold text-sky-900 dark:text-sky-200">මේක වැඩ කරන හැටි</AlertTitle>
                                         <AlertDescription className="text-xs space-y-2 text-sky-800/90 dark:text-sky-400">
@@ -516,7 +500,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                                 <strong className="text-sky-900 dark:text-sky-200">මූලික ඒකකය (Base Unit)</strong> කියන්නේ ඔයා බඩු ගබඩා කරන, ගණන් බලන පොඩිම ඒකකය (උදා: තනි tablet එක, 1kg, 1ml).
                                             </p>
                                             <p>
-                                                <strong className="text-sky-900 dark:text-sky-200">ව්‍යුත්පන්න ඒකක (Derived Units)</strong> කියන්නේ, ඔයා බඩු විකුණන ලොකු ඇසුරුම් (උදා: පෙත්ත, කාඩ් එක, පෙට්ටිය). "Conversion Factor" එකෙන් කියවෙන්නේ ඒ ලොකු ඇසුරුමක, පොඩි ඒකක කීයක් තියෙනවද කියන එකයි.
+                                                <strong className="text-sky-900 dark:text-sky-200">ව්‍යුත්පන්න ඒකක (Derived Units)</strong> කියන්නේ, ඔයා බඩු විකුණන ලොකු ඇසුරුම් (උදා: පෙට්ටිය, කාඩ් එක). "Conversion Factor" එකෙන් කියවෙන්නේ ඒ ලොකු ඇසුරුමක, පොඩි ඒකක කීයක් තියෙනවද කියන එකයි.
                                             </p>
                                             <ul className="list-disc pl-5 mt-2 space-y-1">
                                                 <li><strong className="text-sky-900 dark:text-sky-200">උදා 1 (Panadol):</strong> Base Unit: 'tablet', Derived Unit 1: 'card' (Factor: 10), Derived Unit 2: 'box' (Factor: 100).</li>
@@ -541,7 +525,6 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 </div>
                            </div>
                         </div>
-
                     </CardContent>
                 </Card>
               )}
@@ -552,7 +535,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[2].title}</CardTitle>
                         <CardDescription>{steps[2].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y">
+                    <CardContent className="divide-y dark:divide-slate-800">
                        <div className="flex items-start gap-6 py-4">
                            <div className="w-1/3 pt-1">
                                <FormLabel>Batch Discount</FormLabel>
@@ -607,7 +590,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[3].title}</CardTitle>
                         <CardDescription>{steps[3].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y">
+                    <CardContent className="divide-y dark:divide-slate-800">
                         <div className="flex items-start gap-6 py-4">
                            <div className="w-1/3 pt-1">
                                <FormLabel>Location</FormLabel>
