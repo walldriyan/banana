@@ -1,7 +1,7 @@
 // src/components/products/AddProductForm.tsx
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addProductAction, updateProductBatchAction } from "@/lib/actions/product.actions";
 import { useState, useEffect } from "react";
 import type { ProductBatch } from "@/types";
-import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, DollarSign, Tag, Boxes, AlertTriangle, Wallet, TrendingUp, Coins } from "lucide-react";
+import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, AlertTriangle, Package, Archive, Tag, Coins, Boxes, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
@@ -36,7 +36,6 @@ import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Separator } from '../ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-
 
 interface AddProductFormProps {
   productBatch?: ProductBatch;
@@ -69,6 +68,43 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
         fields: ["maxStockLevel", "minStockLevel", "manufactureDate", "expiryDate", "location", "isActive", "isService", "notes"]
     }
 ];
+
+const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
+    const { control } = useForm<ProductFormValues>();
+    const [quantity, setQuantity] = useState(1);
+    const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
+    const sellingPrice = useWatch({ control, name: `sellingPrice` }) || 0;
+
+    const conversionFactor = item?.conversionFactor || 0;
+
+    const calculatedBaseQty = useMemo(() => quantity * conversionFactor, [quantity, conversionFactor]);
+    const calculatedPrice = useMemo(() => calculatedBaseQty * sellingPrice, [calculatedBaseQty, sellingPrice]);
+
+    if (!item) return null;
+
+    return (
+        <div className="flex items-end gap-3 p-2 border-t mt-2">
+            <div className="flex-1">
+                <Label htmlFor={`calc-qty-${itemIndex}`} className="text-xs">Qty in '{item.name}'</Label>
+                <Input
+                    id={`calc-qty-${itemIndex}`}
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    min="1"
+                    className="h-8"
+                />
+            </div>
+            <div className="text-center text-2xl font-light text-muted-foreground">=</div>
+            <div className="flex-1 space-y-1">
+                <p className="text-xs text-muted-foreground">Equals</p>
+                <p><span className="font-bold text-primary">{calculatedBaseQty.toFixed(2)}</span> <span className="text-xs">{baseUnit}</span></p>
+                <p className="text-xs font-semibold">Price: Rs. {calculatedPrice.toFixed(2)}</p>
+            </div>
+        </div>
+    );
+};
+
 
 export function AddProductForm({ productBatch, onSuccess, categories: initialCategories = [], brands: initialBrands = [] }: AddProductFormProps) {
   const { toast } = useToast();
@@ -131,6 +167,9 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
     control: form.control,
     name: "units.derivedUnits",
   });
+  
+  const watchedBaseUnit = useWatch({ control: form.control, name: 'units.baseUnit' });
+
 
   useEffect(() => {
     if (isEditMode && productBatch) {
@@ -284,21 +323,21 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 </AlertDescription>
                             </Alert>
                         )}
-                        <div className="grid md:grid-cols-3 gap-6 py-4">
-                            <div className="md:col-span-1">
+                        <div className="py-4 grid grid-cols-3 gap-6">
+                            <div className="col-span-1">
                                 <FormLabel>Product Name</FormLabel>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="col-span-2">
                                 <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                         </div>
 
-                         <div className="grid md:grid-cols-3 gap-6 py-4">
-                            <div className="md:col-span-1">
+                         <div className="py-4 grid grid-cols-3 gap-6">
+                            <div className="col-span-1">
                                 <FormLabel>Product ID</FormLabel>
                                 <FormDescription>General ID for this product line.</FormDescription>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="col-span-2">
                                 <FormField control={form.control} name="productId" render={({ field }) => (
                                     <FormItem>
                                         <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode} /></FormControl>
@@ -308,12 +347,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
                         
-                        <div className="grid md:grid-cols-3 gap-6 py-4">
-                            <div className="md:col-span-1">
+                        <div className="py-4 grid grid-cols-3 gap-6">
+                            <div className="col-span-1">
                                 <FormLabel>Batch Number</FormLabel>
                                 <FormDescription>Unique identifiers for this specific stock.</FormDescription>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="col-span-2">
                                 <FormField control={form.control} name="batchNumber" render={({ field }) => (
                                     <FormItem>
                                         <div className="flex gap-2">
@@ -326,11 +365,11 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-6 py-4">
-                            <div className="md:col-span-1">
+                        <div className="py-4 grid grid-cols-3 gap-6">
+                            <div className="col-span-1">
                                 <FormLabel>Barcode (SKU)</FormLabel>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="col-span-2">
                                 <FormField control={form.control} name="barcode" render={({ field }) => (
                                     <FormItem>
                                         <div className="flex gap-2">
@@ -343,12 +382,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
 
-                         <div className="grid md:grid-cols-3 gap-6 py-4">
-                            <div className="md:col-span-1">
+                         <div className="py-4 grid grid-cols-3 gap-6">
+                            <div className="col-span-1">
                                 <FormLabel>Organization</FormLabel>
                                 <FormDescription>Categorize the product and link to a supplier.</FormDescription>
                             </div>
-                            <div className="md:col-span-2 grid sm:grid-cols-3 gap-4">
+                            <div className="col-span-2 grid sm:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="category" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Category</FormLabel>
@@ -409,30 +448,30 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[1].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y">
-                        <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                        <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Cost Price</FormLabel>
                                <FormDescription>The price you paid for the product per base unit.</FormDescription>
                            </div>
-                           <div className="md:col-span-2">
+                           <div className="col-span-2">
                                 <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                        <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Selling Price</FormLabel>
                                <FormDescription>The price you will sell the product for per base unit.</FormDescription>
                            </div>
-                           <div className="md:col-span-2">
+                           <div className="col-span-2">
                                 <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                         <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>{isEditMode ? 'Current Stock' : 'Initial Stock'}</FormLabel>
                                <FormDescription>The quantity of this product batch in its base unit.</FormDescription>
                            </div>
-                           <div className="md:col-span-2">
+                           <div className="col-span-2">
                                 <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem>
                                 <FormControl><Input type="number" {...field} disabled={isEditMode} /></FormControl>
                                 {isEditMode && <Alert variant="destructive" className="mt-2"><AlertTriangle className="h-4 w-4" /><AlertTitle>Stock Update Notice</AlertTitle><AlertDescription>Stock can only be adjusted via the <strong>'Purchases (GRN)'</strong> or <strong>'Lost & Damage'</strong> sections.</AlertDescription></Alert>}
@@ -443,20 +482,41 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
 
                         <Separator className="!my-6" />
 
-                         <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                         <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Units of Measurement</FormLabel>
                                <FormDescription>Define how this product is measured and sold.</FormDescription>
                            </div>
-                           <div className="md:col-span-2 space-y-4">
+                           <div className="col-span-2 space-y-4">
                                 <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is tracked in.</FormDescription><FormMessage /></FormItem> )} />
-                                <div className="space-y-2">
+                                <div>
                                     <FormLabel>Derived Units (Optional)</FormLabel>
+                                    <Alert className="bg-sky-50 border-sky-200 text-sky-800 mt-2">
+                                        <Info className="h-4 w-4 !text-sky-700" />
+                                        <AlertTitle className="font-semibold">මේක වැඩ කරන හැටි</AlertTitle>
+                                        <AlertDescription className="text-xs space-y-2">
+                                            <p>
+                                                <strong className="text-sky-900">මූලික ඒකකය (Base Unit)</strong> කියන්නේ ඔයා බඩු ගබඩා කරන, ගණන් බලන පොඩිම ඒකකය (උදා: තනි tablet එක, 1kg, 1ml).
+                                            </p>
+                                            <p>
+                                                <strong className="text-sky-900">ව්‍යුත්පන්න ඒකක (Derived Units)</strong> කියන්නේ, ඔයා බඩු විකුණන ලොකු ඇසුරුම් (උදා: පෙත්ත, කාඩ් එක, පෙට්ටිය). "Conversion Factor" එකෙන් කියවෙන්නේ ඒ ලොකු ඇසුරුමක, පොඩි ඒකක කීයක් තියෙනවද කියන එකයි.
+                                            </p>
+                                            <ul className="list-disc pl-5 mt-2 space-y-1">
+                                                <li><strong className="text-sky-900">උදා 1 (Panadol):</strong> Base Unit: 'tablet', Derived Unit 1: 'card' (Factor: 10), Derived Unit 2: 'box' (Factor: 100).</li>
+                                                <li><strong className="text-sky-900">උදා 2 (Rice):</strong> Base Unit: 'kg', Derived Unit: 'bag' (Factor: 25).</li>
+                                            </ul>
+                                        </AlertDescription>
+                                    </Alert>
+                                </div>
+                                <div className="space-y-2">
                                     {fields.map((field, index) => (
-                                        <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
-                                            <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
-                                            <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder={`x Base Units (e.g., 12)`} /></FormItem> )} />
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                                        <div key={field.id} className="p-3 border rounded-md bg-muted/30">
+                                            <div className="flex items-center gap-2">
+                                                <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
+                                                <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder={`x Base Units (e.g., 12)`} /></FormItem> )} />
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                                            </div>
+                                            <DerivedUnitCalculator itemIndex={index} baseUnit={watchedBaseUnit} />
                                         </div>
                                     ))}
                                     <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', conversionFactor: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Derived Unit</Button>
@@ -475,12 +535,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[2].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y">
-                       <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                       <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Batch Discount</FormLabel>
                                <FormDescription>Default discount for this specific batch. This is used by the 'Product Defaults' campaign.</FormDescription>
                            </div>
-                           <div className="md:col-span-2 flex gap-4">
+                           <div className="col-span-2 flex gap-4">
                                <FormField control={form.control} name="discount" render={({ field }) => (
                                     <FormItem className="flex-1">
                                         <FormLabel>Value</FormLabel>
@@ -503,12 +563,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 )}/>
                            </div>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                        <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Batch Tax Rate</FormLabel>
                                <FormDescription>Tax rate applied to this specific batch (in percentage).</FormDescription>
                            </div>
-                           <div className="md:col-span-2">
+                           <div className="col-span-2">
                                 <FormField control={form.control} name="tax" render={({ field }) => (
                                     <FormItem>
                                     <FormControl>
@@ -530,40 +590,40 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[3].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y">
-                        <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                        <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Location</FormLabel>
                                <FormDescription>Where this batch is stored.</FormDescription>
                            </div>
-                           <div className="md:col-span-2">
+                           <div className="col-span-2">
                                 <FormField name="location" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                         <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Notes</FormLabel>
                                <FormDescription>Any additional notes about this batch.</FormDescription>
                            </div>
-                           <div className="md:col-span-2">
+                           <div className="col-span-2">
                                 <FormField name="notes" control={form.control} render={({ field }) => ( <FormItem><FormControl><Textarea placeholder="e.g., Handle with care." {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                         <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Manufacture & Expiry</FormLabel>
                                <FormDescription>Dates relevant to this batch.</FormDescription>
                            </div>
-                           <div className="md:col-span-2 grid sm:grid-cols-2 gap-4">
+                           <div className="col-span-2 grid sm:grid-cols-2 gap-4">
                                 <FormField name="manufactureDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Manufacture Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField name="expiryDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Expiry Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid md:grid-cols-3 gap-6 py-4">
-                           <div className="md:col-span-1">
+                         <div className="py-4 grid grid-cols-3 gap-6">
+                           <div className="col-span-1">
                                <FormLabel>Product Status</FormLabel>
                                <FormDescription>Control the visibility and usability of the product.</FormDescription>
                            </div>
-                           <div className="md:col-span-2 space-y-4">
+                           <div className="col-span-2 space-y-4">
                                 <FormField name="isActive" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>Product Active</FormLabel><FormDescription>If inactive, it won't appear in POS searches.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                                 <FormField name="isService" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>Is a Service</FormLabel><FormDescription>Service products don't have stock tracking.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                            </div>
