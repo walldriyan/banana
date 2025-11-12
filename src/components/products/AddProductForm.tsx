@@ -41,8 +41,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 interface AddProductFormProps {
   productBatch?: ProductBatch;
   onSuccess: () => void;
-  categories: string[];
-  brands: string[];
+  categories?: string[];
+  brands?: string[];
 }
 
 type StepFields = (keyof ProductFormValues)[];
@@ -70,7 +70,7 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
     }
 ];
 
-export function AddProductForm({ productBatch, onSuccess, categories: initialCategories, brands: initialBrands }: AddProductFormProps) {
+export function AddProductForm({ productBatch, onSuccess, categories: initialCategories = [], brands: initialBrands = [] }: AddProductFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -284,10 +284,9 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 </AlertDescription>
                             </Alert>
                         )}
-
-                        <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+                            <FormField name="name" control={form.control} render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
                         
-                        <div className="grid grid-cols-2 gap-4">
                             <FormField control={form.control} name="productId" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Product ID</FormLabel>
