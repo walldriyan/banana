@@ -176,9 +176,11 @@ export function RefundDialogContent({
     }
   };
   
-  const originalPaidAmount = originalTransaction.paymentDetails.paidAmount;
+  const originalBillTotal = originalTransaction.transactionHeader.finalTotal;
   const newTotalToPay = discountResult.finalTotal;
-  const finalRefundAmount = originalPaidAmount - newTotalToPay;
+  // This is the correct logic: Refund is based on what the bill *should have been*,
+  // not what the customer handed over. The original change was already given.
+  const finalRefundAmount = originalBillTotal - newTotalToPay;
 
 
   if (!activeCampaign) {

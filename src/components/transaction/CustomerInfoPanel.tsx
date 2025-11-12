@@ -39,8 +39,38 @@ export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
     setOpen(false);
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' && e.target instanceof HTMLElement) {
+      if (!e.target.closest('[role="combobox"]')) { // Don't interfere with combobox selection
+        e.preventDefault();
+        const form = e.currentTarget.closest('form');
+        if (!form) return;
+        
+        const focusable = Array.from(
+          form.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          )
+        ).filter(el => !el.hasAttribute('disabled'));
+
+        const index = focusable.indexOf(e.target);
+
+        if (index > -1 && index < focusable.length - 1) {
+          focusable[index + 1].focus();
+        }
+      }
+    }
+  };
+
+  // Create a unique list of customers by name to prevent duplicates in the dropdown
+  const uniqueCustomers = customers.reduce((acc, current) => {
+    if (!acc.find(item => item.name === current.name)) {
+      acc.push(current);
+    }
+    return acc;
+  }, [] as Customer[]);
+
   return (
-    <Card>
+    <Card onKeyDown={handleKeyDown}>
       <CardHeader>
         <CardTitle>Customer Details</CardTitle>
       </CardHeader>
@@ -78,15 +108,17 @@ export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
                                 <Check className={cn("mr-2 h-4 w-4", customerName === 'Walk-in Customer' ? "opacity-100" : "opacity-0")} />
                                 Walk-in Customer
                             </CommandItem>
-                            {customers.map((customer) => (
-                            <CommandItem
-                                key={customer.id}
-                                value={customer.name}
-                                onSelect={() => handleSelectCustomer(customer)}
-                            >
-                                <Check className={cn("mr-2 h-4 w-4", customer.name === customerName ? "opacity-100" : "opacity-0" )} />
-                                {customer.name}
-                            </CommandItem>
+                            {uniqueCustomers
+                              .filter(customer => customer.name !== 'Walk-in Customer') // Exclude walk-in from the main list
+                              .map((customer) => (
+                              <CommandItem
+                                  key={customer.id}
+                                  value={customer.name}
+                                  onSelect={() => handleSelectCustomer(customer)}
+                              >
+                                  <Check className={cn("mr-2 h-4 w-4", customer.name === customerName ? "opacity-100" : "opacity-0" )} />
+                                  {customer.name}
+                              </CommandItem>
                             ))}
                         </CommandGroup>
                       </CommandList>

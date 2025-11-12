@@ -145,8 +145,22 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
-            const batchBeforeUpdate = await tx.productBatch.findUnique({ where: { id: line.batchId } });
-            if (!batchBeforeUpdate) throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
+            // Check stock before updating to prevent race conditions
+            const batchBeforeUpdate = await tx.productBatch.findUnique({ 
+                where: { id: line.batchId },
+                select: { stock: true }
+            });
+
+            if (!batchBeforeUpdate) {
+                throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
+            }
+
+            if (new Prisma.Decimal(batchBeforeUpdate.stock).lt(line.quantity)) {
+                throw new Error(
+                    `Insufficient stock for batch ${line.batchId}. ` +
+                    `Available: ${batchBeforeUpdate.stock}, Required: ${line.quantity}`
+                );
+            }
             
             console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${batchBeforeUpdate.stock.toString()} | අඩු කරන ප්‍රමාණය: ${line.quantity}`);
 

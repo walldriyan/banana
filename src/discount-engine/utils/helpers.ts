@@ -55,8 +55,12 @@ export function evaluateRule(
   }
   
   // Ensure discount is not more than the line's total value and not negative.
-  const finalDiscount = Math.max(0, Math.min(discountAmount, lineTotalValue));
-  console.log(`[evaluateRule] Final discount after validation: ${finalDiscount}`);
+  const validatedDiscount = Math.max(0, Math.min(discountAmount, lineTotalValue));
+  
+  // Round to 2 decimal places to avoid floating point issues.
+  const finalDiscount = Math.round((validatedDiscount + Number.EPSILON) * 100) / 100;
+
+  console.log(`[evaluateRule] Final discount after validation and rounding: ${finalDiscount}`);
   return finalDiscount;
 }
 

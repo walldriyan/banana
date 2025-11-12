@@ -8,6 +8,8 @@ import AuthProvider from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { ThemeWrapper } from '@/components/ThemeWrapper';
+
 
 // This forces the entire app to be dynamically rendered, which can help
 // with strange caching and fetch errors in certain environments.
@@ -53,7 +55,8 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={cn('min-h-screen overflow-hidden bg-background font-sans antialiased', inter.variable)}>
+      {/* The body tag no longer needs font-sans directly, ThemeWrapper handles it */}
+      <body className={cn('min-h-screen overflow-hidden bg-background antialiased', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -63,7 +66,7 @@ export default function RootLayout({
           <AuthProvider>
             <LanguageProvider>
               <GlobalDrawerProvider>
-                {children}
+                <ThemeWrapper>{children}</ThemeWrapper>
                 <GlobalDrawer />
                 <Toaster />
               </GlobalDrawerProvider>

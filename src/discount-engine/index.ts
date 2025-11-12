@@ -15,6 +15,7 @@ import type { DiscountSet } from '@/types';
 // Cache for compiled rule sets
 const engineCache = new Map<string, { rules: IDiscountRule[], timestamp: number }>();
 const CACHE_TTL = 300000; // 5 minutes
+const CACHE_MAX_SIZE = 50; // Maximum number of engines to cache
 
 export class DiscountEngine {
   private rules: IDiscountRule[] = [];
@@ -48,19 +49,19 @@ export class DiscountEngine {
   }
 
   private cacheRules(campaignId: string, rules: IDiscountRule[]): void {
+    // Add the new item to the cache.
     engineCache.set(campaignId, {
       rules,
       timestamp: Date.now()
     });
     
-    // Cleanup old cache entries
-    if (engineCache.size > 50) {
-      const now = Date.now();
-      for (const [key, value] of engineCache.entries()) {
-        if (now - value.timestamp > CACHE_TTL) {
-          engineCache.delete(key);
+    // Enforce cache size limit. If the size exceeds the max, remove the oldest entry.
+    if (engineCache.size > CACHE_MAX_SIZE) {
+        // A Map iterates its elements in insertion order, so the first one is the oldest.
+        const oldestKey = engineCache.keys().next().value;
+        if (oldestKey) {
+            engineCache.delete(oldestKey);
         }
-      }
     }
   }
 

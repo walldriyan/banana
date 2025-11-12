@@ -44,6 +44,10 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                     <div>
                       <p className="font-semibold">{item.product.name} {item.batchNumber && `(${item.batchNumber})`}</p>
                       <p className="text-sm text-gray-500">Rs. {item.price.toFixed(2)} / unit</p>
+                      {item.discount && item.discount > 0 && <p className="text-sm text-green-500">discount {item.discount.toFixed(2)} </p>}
+                   
+
+
                     </div>
                     <div className="flex items-center gap-2">
                       <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(item.saleItemId, -1)}>-</Button>
@@ -63,24 +67,30 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                   
                   <div className="mt-3 border-t border-dashed pt-3">
                     {hasDiscounts && lineItemResult && (
-                      <div className="mb-2 text-xs text-green-800 bg-green-50 p-2 rounded-md space-y-1">
-                        <div className="font-bold text-green-900 mb-1">Recalculated Discounts:</div>
+                      <div className="mb-2 text-xs text-green-800 bg-green-50 dark:bg-green-900/20 p-2 rounded-md space-y-1">
+                        <div className="font-bold text-green-900 dark:text-green-200 mb-1">Recalculated Discounts:</div>
                         {lineItemResult.appliedRules.map((rule: any, i: number) => (
                           <p key={i} className="flex justify-between items-center">
                             <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
-                            <span className="font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
+                            <span className="font-semibold bg-green-100 dark:bg-green-800/50 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
                           </p>
                         ))}
                       </div>
                     )}
                     <div className="flex justify-between items-baseline text-sm">
-                      <span className={hasDiscounts ? "text-gray-500 line-through" : "text-gray-600 font-semibold"}>
-                        New Total: Rs. {originalLineTotal.toFixed(2)}
-                      </span>
-                      {hasDiscounts && (
-                        <span className="font-bold text-lg text-green-700">
-                          Final Price: Rs. {finalLineTotal.toFixed(2)}
-                        </span>
+                      {hasDiscounts ? (
+                          <>
+                              <span className="text-gray-500 line-through">
+                                  Original: Rs. {originalLineTotal.toFixed(2)}
+                              </span>
+                              <span className="font-bold text-lg text-green-700 dark:text-green-400">
+                                  Final Price: Rs. {finalLineTotal.toFixed(2)}
+                              </span>
+                          </>
+                      ) : (
+                          <span className="text-gray-600 font-semibold">
+                              New Total: Rs. {originalLineTotal.toFixed(2)}
+                          </span>
                       )}
                     </div>
                   </div>
@@ -107,7 +117,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
               <Separator className="my-1" />
               <div className="flex justify-between font-bold text-base">
                 <span className="text-foreground">New Total:</span>
-                <span className="text-blue-700">Rs. {discountResult.finalTotal.toFixed(2)}</span>
+                <span className="text-blue-700 dark:text-blue-400">Rs. {discountResult.finalTotal.toFixed(2)}</span>
               </div>
             </div>
           </CardFooter>
