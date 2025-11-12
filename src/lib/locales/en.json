@@ -60,5 +60,7 @@
   "generatedOn": "Generated on:",
   "computerGeneratedReport": "This is a computer-generated report.",
   "lostAndDamageValue": "Lost & Damage Value",
-  "totalRefundsIssued": "Total Refunds Issued"
+  "totalRefundsIssued": "Total Refunds Issued",
+  "todaysDebtorPayments": "Today's Collections (Debtors)",
+  "todaysCreditorPayments": "Today's Payments (Creditors)"
 }

@@ -60,5 +60,7 @@
   "generatedOn": "සකස් කළේ:",
   "computerGeneratedReport": "මෙය පරිගණක ගත වාර්තාවකි.",
   "lostAndDamageValue": "නැතිවූ/අලාභ වූ අගය",
-  "totalRefundsIssued": "ආපසු ගෙවූ මුළු මුදල"
+  "totalRefundsIssued": "ආපසු ගෙවූ මුළු මුදල",
+  "todaysDebtorPayments": "අද දින ලැබීම් (ණයගැතියන්)",
+  "todaysCreditorPayments": "අද දින ගෙවීම් (ණයහිමියන්)"
 }
