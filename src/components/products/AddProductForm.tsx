@@ -30,7 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
 import { getSuppliersAction } from '@/lib/actions/supplier.actions';
-import { getBrandsAction, getCategoriesAction, updateBrandsAction, updateCategoriesAction } from '@/lib/actions/data.actions';
+import { updateBrandsAction, updateCategoriesAction } from '@/lib/actions/data.actions';
 import type { Supplier } from '@prisma/client';
 import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -39,8 +39,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 
 
 interface AddProductFormProps {
-  productBatch?: ProductBatch; // Now receives a ProductBatch
-  onSuccess: () => void; // Callback to close drawer and refresh data
+  productBatch?: ProductBatch;
+  onSuccess: () => void;
+  categories: string[];
+  brands: string[];
 }
 
 type StepFields = (keyof ProductFormValues)[];
@@ -68,7 +70,7 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
     }
 ];
 
-export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps) {
+export function AddProductForm({ productBatch, onSuccess, categories: initialCategories, brands: initialBrands }: AddProductFormProps) {
   const { toast } = useToast();
   const drawer = useDrawer();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,28 +78,18 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
   const [currentStep, setCurrentStep] = useState(0);
   
   const [suppliers, setSuppliers] = useState<ComboboxOption[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [brands, setBrands] = useState<string[]>([]);
+  const [categories, setCategories] = useState<string[]>(initialCategories);
+  const [brands, setBrands] = useState<string[]>(initialBrands);
 
   const isEditMode = !!productBatch;
 
    useEffect(() => {
     async function fetchInitialData() {
-        const [suppliersRes, categoriesRes, brandsRes] = await Promise.all([
-            getSuppliersAction(),
-            getCategoriesAction(),
-            getBrandsAction(),
-        ]);
+        const suppliersRes = await getSuppliersAction();
         if(suppliersRes.success && suppliersRes.data) {
             setSuppliers(suppliersRes.data.map(s => ({ value: s.id, label: s.name })));
         } else {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load suppliers.' });
-        }
-        if(categoriesRes.success && categoriesRes.data) {
-            setCategories(categoriesRes.data);
-        }
-        if(brandsRes.success && brandsRes.data) {
-            setBrands(brandsRes.data);
         }
     }
     fetchInitialData();
@@ -333,7 +325,7 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                                 <FormItem>
                                     <FormLabel>Category</FormLabel>
                                     <CreatableCombobox 
-                                        options={categories.map(c => ({ value: c.toLowerCase(), label: c }))}
+                                        options={categories.map(c => ({ value: c, label: c }))}
                                         value={field.value}
                                         onChange={(newValue, isNew) => {
                                             field.onChange(newValue);
@@ -350,7 +342,7 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
                                 <FormItem>
                                     <FormLabel>Brand</FormLabel>
                                     <CreatableCombobox 
-                                        options={brands.map(b => ({ value: b.toLowerCase(), label: b }))}
+                                        options={brands.map(b => ({ value: b, label: b }))}
                                         value={field.value}
                                         onChange={(newValue, isNew) => {
                                             field.onChange(newValue);
@@ -551,7 +543,7 @@ export function AddProductForm({ productBatch, onSuccess }: AddProductFormProps)
              {currentStep < 3 && (
                  <Button type="button" onClick={handleNextStep}>
                     Next
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    <ArrowRight className="ml-2 h-4" />
                  </Button>
              )}
 

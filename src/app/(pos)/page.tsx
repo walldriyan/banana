@@ -16,7 +16,7 @@ import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { History, LayoutDashboard, SlidersHorizontal, LifeBuoy } from 'lucide-react';
+import { History, LayoutDashboard, SlidersHorizontal, LifeBuoy, PlusCircle } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
@@ -57,6 +57,8 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { AddProductForm } from '@/components/products/AddProductForm';
+import { getBrandsAction, getCategoriesAction } from '@/lib/actions/data.actions';
 
 
 const initialDiscountResult = {
@@ -95,43 +97,53 @@ export default function MyNewEcommerceShop() {
     item: null,
   });
 
+   const [initialData, setInitialData] = useState<{categories: string[], brands: string[]}>({
+    categories: [],
+    brands: []
+  });
 
   const createNewTransactionId = () => `txn-${Date.now()}`;
 
-  useEffect(() => {
-    async function fetchData() {
-      setIsLoading(true);
+  const fetchData = useCallback(async () => {
+    setIsLoading(true);
 
-      const [productsResult, campaignsResult] = await Promise.all([
-        getProductBatchesAction(),
-        getDiscountSetsAction()
-      ]);
+    const [productsResult, campaignsResult, categoriesRes, brandsRes] = await Promise.all([
+      getProductBatchesAction(),
+      getDiscountSetsAction(),
+      getCategoriesAction(),
+      getBrandsAction(),
+    ]);
 
-      if (productsResult.success && productsResult.data) {
-        setProducts(productsResult.data);
-      } else {
-        setTimeout(() => {
-        toast({
-          variant: 'destructive',
-          title: 'Error fetching products',
-          description: productsResult.error,
-        });
-        }, 0);
-      }
-
-      if (campaignsResult.success && campaignsResult.data) {
-        // Combine hardcoded campaigns with database campaigns
-        setAllCampaigns([...hardcodedCampaigns, ...campaignsResult.data]);
-      } else {
-        // Fallback to hardcoded if DB fetch fails
-        setAllCampaigns(hardcodedCampaigns);
-      }
-
-
-      setIsLoading(false);
+    if (productsResult.success && productsResult.data) {
+      setProducts(productsResult.data);
+    } else {
+      setTimeout(() => {
+      toast({
+        variant: 'destructive',
+        title: 'Error fetching products',
+        description: productsResult.error,
+      });
+      }, 0);
     }
-    fetchData();
+
+    if (campaignsResult.success && campaignsResult.data) {
+      setAllCampaigns([...hardcodedCampaigns, ...campaignsResult.data]);
+    } else {
+      setAllCampaigns(hardcodedCampaigns);
+    }
+    
+    setInitialData({
+      categories: categoriesRes.success ? categoriesRes.data || [] : [],
+      brands: brandsRes.success ? brandsRes.data || [] : [],
+    });
+
+    setIsLoading(false);
   }, [toast]);
+
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
 
   useEffect(() => {
@@ -542,6 +554,26 @@ export default function MyNewEcommerceShop() {
       drawerClassName: 'sm:max-w-4xl'
     });
   }, [drawer]);
+  
+   const handleFormSuccess = () => {
+    drawer.closeDrawer();
+    fetchData(); // Refresh product list
+  };
+
+  const openAddProductDrawer = () => {
+    drawer.openDrawer({
+      title: 'Add New Master Product',
+      description: 'Define a new type of product. You can add batches later during purchase.',
+      content: (
+        <AddProductForm 
+          onSuccess={handleFormSuccess} 
+          categories={initialData.categories}
+          brands={initialData.brands}
+        />
+      ),
+      drawerClassName: 'sm:max-w-4xl'
+    });
+  };
 
 
   const originalTotal = useMemo(() => cart.reduce((sum, item) => sum + item.price * item.quantity, 0), [cart]);
@@ -675,12 +707,26 @@ export default function MyNewEcommerceShop() {
 
               {/* 🔍 Search Row */}
               <div className="flex flex-col sm:flex-row gap-4 flex-shrink-0">
-                <div className="flex-grow min-w-0">
+                <div className="flex-grow min-w-0 flex items-center gap-2">
                   <SearchableProductInput
                     ref={productSearchRef}
                     products={availableProducts}
                     onProductSelect={addToCart}
                   />
+                   <AuthorizationGuard permissionKey="products.create">
+                      <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button size="icon" className="rounded-full flex-shrink-0 h-12 w-12" onClick={openAddProductDrawer}>
+                                    <PlusCircle className="h-6 w-6" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Add New Product</p>
+                            </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                   </AuthorizationGuard>
                 </div>
                 <div className="w-full sm:w-64 flex-shrink-0">
                   <AuthorizationGuard permissionKey="pos.view">
