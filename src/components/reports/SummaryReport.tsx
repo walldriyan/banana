@@ -101,7 +101,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
 
 
   return (
-    <div className="report-container p-4 bg-white text-sm text-black space-y-6">
+    <div className="report-container p-4 bg-white text-sm text-black space-y-4">
       <header className="text-center">
         <h1 className="text-xl font-bold text-gray-800">{t('reportTitle')}</h1>
         <p className="text-xs text-gray-500">
@@ -117,8 +117,8 @@ export function SummaryReport({ data }: SummaryReportProps) {
           <div className="font-semibold text-black col-span-2">{t('incomeTitle')}</div>
           {Array.from({ length: Math.max(expenseItems.length, incomeItems.length) }).map((_, index) => (
              <React.Fragment key={`pl-row-${index}`}>
-                {expenseItems[index] ? <ReportRow {...expenseItems[index]} isSubtle /> : <><div/><div/></>}
-                {incomeItems[index] ? <ReportRow {...incomeItems[index]} isSubtle /> : <><div/><div/></>}
+                {expenseItems[index] ? <ReportRow {...expenseItems[index]} /> : <><div/><div/></>}
+                {incomeItems[index] ? <ReportRow {...incomeItems[index]} /> : <><div/><div/></>}
             </React.Fragment>
           ))}
            <div className="col-span-4 pt-2 mt-2 border-t border-gray-200 grid grid-cols-[1fr_auto_1fr_auto] gap-x-4">
@@ -153,12 +153,12 @@ export function SummaryReport({ data }: SummaryReportProps) {
         {/* Cash Flow Section */}
         <ReportRow label="cashFlowTitle" value="" isHeader />
          <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
-             <div className="font-semibold text-black col-span-2">{t('cashInTitle')}</div>
              <div className="font-semibold text-black col-span-2">{t('cashOutTitle')}</div>
+             <div className="font-semibold text-black col-span-2">{t('cashInTitle')}</div>
               {Array.from({ length: Math.max(cashInItems.length, cashOutItems.length) }).map((_, index) => (
                 <React.Fragment key={`cash-flow-${index}`}>
-                    {cashInItems[index] ? <ReportRow {...cashInItems[index]} /> : <><div /><div /></>}
                     {cashOutItems[index] ? <ReportRow {...cashOutItems[index]} /> : <><div /><div /></>}
+                    {cashInItems[index] ? <ReportRow {...cashInItems[index]} /> : <><div /><div /></>}
                 </React.Fragment>
               ))}
               <div className="col-span-4 pt-2 mt-2 border-t border-gray-200">
