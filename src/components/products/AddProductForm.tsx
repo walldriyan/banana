@@ -24,8 +24,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { addProductAction, updateProductBatchAction } from "@/lib/actions/product.actions";
 import type { ProductBatch } from "@/types";
-import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, AlertTriangle, Package, Archive, Tag, Coins, Boxes, Info, CheckCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
+import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, AlertTriangle, Package, Archive, Tag, Coins, Boxes, Info, CheckCircle, Wallet, Landmark, Banknote } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "../ui/card";
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
 import { getSuppliersAction } from '@/lib/actions/supplier.actions';
@@ -90,37 +90,34 @@ const ConversionFactorDisplay = ({ itemIndex, baseUnit }: { itemIndex: number, b
 
 const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
     const { control } = useFormContext<ProductFormValues>();
-    const [quantity, setQuantity] = useState(1);
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
     const sellingPrice = useWatch({ control, name: `sellingPrice` }) || 0;
 
     const conversionFactor = item?.conversionFactor || 0;
+    const derivedUnitName = item?.name || 'New Unit';
 
-    const calculatedBaseQty = useMemo(() => quantity * conversionFactor, [quantity, conversionFactor]);
-    const calculatedPrice = useMemo(() => calculatedBaseQty * sellingPrice, [calculatedBaseQty, sellingPrice]);
+    const calculatedPrice = useMemo(() => conversionFactor * sellingPrice, [conversionFactor, sellingPrice]);
 
-    if (!item) return null;
+    if (!item || !conversionFactor) return null;
 
     return (
-        <div className="flex items-end gap-3 p-2 border-t mt-2 dark:border-slate-700">
-            <div className="flex-1">
-                <Label htmlFor={`calc-qty-${itemIndex}`} className="text-xs">Qty in '{item.name}'</Label>
-                <Input
-                    id={`calc-qty-${itemIndex}`}
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    min="1"
-                    className="h-8"
-                />
-            </div>
-            <div className="text-center text-2xl font-light text-muted-foreground">=</div>
-            <div className="flex-1 space-y-1">
-                <p className="text-xs text-muted-foreground">Equals</p>
-                <p><span className="font-bold text-primary">{calculatedBaseQty.toFixed(2)}</span> <span className="text-xs">{baseUnit}</span></p>
-                <p className="text-xs font-semibold">Price: Rs. {calculatedPrice.toFixed(2)}</p>
-            </div>
-        </div>
+        <Card className="mt-2 bg-muted/30 dark:bg-muted/10 border-dashed">
+            <CardContent className="p-3 text-sm">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Price for 1 <span className='text-primary font-bold'>{derivedUnitName}</span></p>
+                 <div className="flex justify-between items-center text-xs">
+                    <span className="text-muted-foreground">Price per <span className='font-semibold'>{baseUnit}</span>:</span>
+                    <span className="font-medium">Rs. {sellingPrice.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-center items-center my-1 text-muted-foreground text-xs">
+                   ( {conversionFactor} {baseUnit} &times; Rs. {sellingPrice.toFixed(2)} )
+                </div>
+                <Separator className="my-1"/>
+                <div className="flex justify-between items-baseline font-bold">
+                    <span>Total Price:</span>
+                    <span className="text-lg text-primary">Rs. {calculatedPrice.toFixed(2)}</span>
+                </div>
+            </CardContent>
+        </Card>
     );
 };
 
