@@ -60,8 +60,8 @@ type ReportType = 'summary' | 'stock' | 'creditors' | 'debtors';
 
 const ReportGenerator = () => {
     const today = new Date();
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: subDays(today, 6), to: today });
-    const [activePreset, setActivePreset] = useState<string | null>('week');
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: today, to: today });
+    const [activePreset, setActivePreset] = useState<string | null>('today');
     
     const [activeReport, setActiveReport] = useState<ReportType>('summary');
     const [activeReportData, setActiveReportData] = useState<any>(null);
@@ -273,7 +273,7 @@ const ReportGenerator = () => {
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Report Generation</CardTitle>
-                            <CardDescription>Select a date range for the financial summary report.</CardDescription>
+                            <CardDescription>Select a date range to automatically generate your financial summary report.</CardDescription>
                         </div>
                         <LanguageToggle />
                     </CardHeader>
