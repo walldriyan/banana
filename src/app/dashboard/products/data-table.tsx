@@ -130,8 +130,7 @@ export function ProductsDataTable<TData, TValue>({
                         <div
                             key={row.id}
                             className={cn(
-                                "bg-card rounded-md shadow-sm transition-all",
-                                isGrouped ? "border-l-4 border-primary" : "border",
+                                "bg-card rounded-sm shadow-sm transition-all border",
                                 row.depth > 0 && "bg-muted/50"
                             )}
                         >
