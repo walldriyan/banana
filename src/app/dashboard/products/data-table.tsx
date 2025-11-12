@@ -31,6 +31,7 @@ import { PlusCircle, ArchiveX } from "lucide-react"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 
 interface DataTableProps<TData, TValue> {
@@ -136,6 +137,7 @@ export function ProductsDataTable<TData, TValue>({
                     <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && "selected"}
+                        className={cn(row.depth > 0 && "bg-muted/50")}
                     >
                         {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 1.5 + (cell.getIsGrouped() ? 0 : 1.5)}rem` }}>

@@ -98,7 +98,7 @@ export const getColumns = (
                     variant="outline"
                     size="icon"
                     onClick={row.getToggleExpandedHandler()}
-                    className="h-6 w-6"
+                    className="h-6 w-6 ml-2"
                     >
                     {row.getIsExpanded() ? (
                         <ChevronsDownUp className="h-4 w-4" />
