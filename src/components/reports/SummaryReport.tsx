@@ -141,7 +141,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
         </div>
         
         {/* Balance Sheet & Metrics Section */}
-        <ReportRow label="bsAndMetricsTitle" value="" isHeader />
+        <ReportRow label="bsAndMetricsTitle" value="" isHeader className="mt-0" />
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
             {/* Headers */}
             <ReportSubHeader label="liabilitiesAndMetricsTitle" className="col-span-2" />
