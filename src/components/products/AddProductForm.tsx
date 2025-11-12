@@ -25,7 +25,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addProductAction, updateProductBatchAction } from "@/lib/actions/product.actions";
 import { useState, useEffect } from "react";
 import type { ProductBatch } from "@/types";
-import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, AlertTriangle, Package, Archive, Tag, Coins, Boxes, Info } from "lucide-react";
+import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, AlertTriangle, Package, Archive, Tag, Coins, Boxes, Info, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
@@ -69,8 +69,27 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
     }
 ];
 
+const ConversionFactorDisplay = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
+    const { control } = useForm<ProductFormValues>();
+    const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
+    const conversionFactor = item?.conversionFactor || 0;
+    const derivedUnitName = item?.name || 'New Unit';
+
+    if (conversionFactor <= 0) return null;
+
+    return (
+        <Alert className="mt-2 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300">
+            <CheckCircle className="h-4 w-4 !text-emerald-700 dark:!text-emerald-300" />
+            <AlertDescription className="text-emerald-900 dark:text-emerald-200">
+                1 {derivedUnitName} = <strong>{conversionFactor}</strong> {baseUnit}
+            </AlertDescription>
+        </Alert>
+    );
+};
+
+
 const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
-    const { control, getValues } = useForm<ProductFormValues>();
+    const { control } = useForm<ProductFormValues>();
     const [quantity, setQuantity] = useState(1);
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
     const sellingPrice = useWatch({ control, name: `sellingPrice` }) || 0;
@@ -83,7 +102,7 @@ const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, bas
     if (!item) return null;
 
     return (
-        <div className="flex items-end gap-3 p-2 border-t mt-2">
+        <div className="flex items-end gap-3 p-2 border-t mt-2 dark:border-slate-700">
             <div className="flex-1">
                 <Label htmlFor={`calc-qty-${itemIndex}`} className="text-xs">Qty in '{item.name}'</Label>
                 <Input
@@ -324,7 +343,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </Alert>
                         )}
                        
-                        <div className="py-4 grid grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 items-start gap-6 py-4">
                             <div className="col-span-1">
                                 <FormLabel>Product Name</FormLabel>
                             </div>
@@ -333,7 +352,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
 
-                         <div className="py-4 grid grid-cols-3 gap-6">
+                         <div className="grid grid-cols-3 items-start gap-6 py-4">
                             <div className="col-span-1">
                                 <FormLabel>Product ID</FormLabel>
                                 <FormDescription>General ID for this product line.</FormDescription>
@@ -348,7 +367,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
                         
-                        <div className="py-4 grid grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 items-start gap-6 py-4">
                             <div className="col-span-1">
                                 <FormLabel>Batch Number</FormLabel>
                                 <FormDescription>Unique identifiers for this specific stock.</FormDescription>
@@ -366,7 +385,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
 
-                        <div className="py-4 grid grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 items-start gap-6 py-4">
                             <div className="col-span-1">
                                 <FormLabel>Barcode (SKU)</FormLabel>
                             </div>
@@ -383,7 +402,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
 
-                         <div className="py-4 grid grid-cols-3 gap-6">
+                         <div className="grid grid-cols-3 items-start gap-6 py-4">
                             <div className="col-span-1">
                                 <FormLabel>Organization</FormLabel>
                                 <FormDescription>Categorize the product and link to a supplier.</FormDescription>
@@ -449,7 +468,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[1].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y divide-border">
-                        <div className="py-4 grid grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Cost Price</FormLabel>
                                <FormDescription>The price you paid for the product per base unit.</FormDescription>
@@ -458,7 +477,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                        <div className="py-4 grid grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Selling Price</FormLabel>
                                <FormDescription>The price you will sell the product for per base unit.</FormDescription>
@@ -467,7 +486,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="py-4 grid grid-cols-3 gap-6">
+                         <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>{isEditMode ? 'Current Stock' : 'Initial Stock'}</FormLabel>
                                <FormDescription>The quantity of this product batch in its base unit.</FormDescription>
@@ -483,7 +502,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
 
                         <Separator className="!my-6" />
 
-                         <div className="py-4 grid grid-cols-3 gap-6">
+                         <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Units of Measurement</FormLabel>
                                <FormDescription>Define how this product is measured and sold.</FormDescription>
@@ -517,6 +536,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                                 <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder={`x Base Units (e.g., 12)`} /></FormItem> )} />
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                                             </div>
+                                            <ConversionFactorDisplay itemIndex={index} baseUnit={watchedBaseUnit} />
                                             <DerivedUnitCalculator itemIndex={index} baseUnit={watchedBaseUnit} />
                                         </div>
                                     ))}
@@ -536,7 +556,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[2].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y divide-border">
-                       <div className="py-4 grid grid-cols-3 gap-6">
+                       <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Batch Discount</FormLabel>
                                <FormDescription>Default discount for this specific batch. This is used by the 'Product Defaults' campaign.</FormDescription>
@@ -564,7 +584,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 )}/>
                            </div>
                         </div>
-                        <div className="py-4 grid grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Batch Tax Rate</FormLabel>
                                <FormDescription>Tax rate applied to this specific batch (in percentage).</FormDescription>
@@ -591,7 +611,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[3].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y divide-border">
-                        <div className="py-4 grid grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Location</FormLabel>
                                <FormDescription>Where this batch is stored.</FormDescription>
@@ -600,7 +620,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <FormField name="location" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="py-4 grid grid-cols-3 gap-6">
+                         <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Notes</FormLabel>
                                <FormDescription>Any additional notes about this batch.</FormDescription>
@@ -609,7 +629,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <FormField name="notes" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Textarea placeholder="e.g., Handle with care." {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="py-4 grid grid-cols-3 gap-6">
+                         <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Manufacture & Expiry</FormLabel>
                                <FormDescription>Dates relevant to this batch.</FormDescription>
@@ -619,7 +639,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <FormField name="expiryDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Expiry Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="py-4 grid grid-cols-3 gap-6">
+                         <div className="grid grid-cols-3 items-start gap-6 py-4">
                            <div className="col-span-1">
                                <FormLabel>Product Status</FormLabel>
                                <FormDescription>Control the visibility and usability of the product.</FormDescription>
