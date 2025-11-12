@@ -113,7 +113,7 @@ export function ProductsDataTable<TData, TValue>({
                 </AuthorizationGuard>
             </div>
         </div>
-        <div className="rounded-md border flex-grow overflow-y-auto">
+        <div className="rounded-md border flex-grow overflow-auto">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
