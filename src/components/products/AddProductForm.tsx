@@ -274,9 +274,9 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[0].title}</CardTitle>
                         <CardDescription>{steps[0].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        {isEditMode && (
-                            <Alert variant="default" className="bg-blue-50 border-blue-200">
+                    <CardContent className="divide-y">
+                         {isEditMode && (
+                            <Alert variant="default" className="bg-blue-50 border-blue-200 mb-6">
                                  <AlertTriangle className="h-4 w-4 text-blue-600" />
                                 <AlertTitle className='text-blue-800'>Edit Mode</AlertTitle>
                                 <AlertDescription className='text-blue-700'>
@@ -284,89 +284,113 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 </AlertDescription>
                             </Alert>
                         )}
-                         <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-                            <FormField name="name" control={form.control} render={({ field }) => ( <FormItem className="col-span-2"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        
-                            <FormField control={form.control} name="productId" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Product ID</FormLabel>
-                                    <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode} /></FormControl>
-                                    <FormDescription>General ID for this product line.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                             <FormField control={form.control} name="batchNumber" render={({ field }) => (
-                                 <FormItem>
-                                    <FormLabel>Batch Number</FormLabel>
-                                    <div className="flex gap-2">
-                                        <FormControl><Input placeholder="e.g., B-1726..." {...field} /></FormControl>
-                                        <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
-                                    </div>
-                                    <FormDescription>Unique ID for this specific batch.</FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                             )} />
+                        <div className="grid md:grid-cols-3 gap-6 py-4">
+                            <div className="md:col-span-1">
+                                <FormLabel>Product Name</FormLabel>
+                            </div>
+                            <div className="md:col-span-2">
+                                <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                            </div>
                         </div>
 
-                         <FormField control={form.control} name="barcode" render={({ field }) => (
-                             <FormItem>
-                                <FormLabel>Barcode (SKU)</FormLabel>
-                                <div className="flex gap-2">
-                                    <FormControl><Input placeholder="e.g., 890..." {...field} /></FormControl>
-                                    <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(Math.random().toString().slice(2, 15))}><Sparkles className="h-4 w-4" /></Button>
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                         )} />
+                         <div className="grid md:grid-cols-3 gap-6 py-4">
+                            <div className="md:col-span-1">
+                                <FormLabel>Product ID</FormLabel>
+                                <FormDescription>General ID for this product line.</FormDescription>
+                            </div>
+                            <div className="md:col-span-2">
+                                <FormField control={form.control} name="productId" render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                        </div>
                         
-                        <div className="grid grid-cols-3 gap-4">
-                            <FormField control={form.control} name="category" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Category</FormLabel>
-                                    <CreatableCombobox 
-                                        options={categories.map(c => ({ value: c, label: c }))}
-                                        value={field.value}
-                                        onChange={(newValue, isNew) => {
-                                            field.onChange(newValue);
-                                            if (isNew && !categories.includes(newValue)) {
-                                                setCategories(prev => [...prev, newValue]);
-                                            }
-                                        }}
-                                        placeholder="Select or create category"
-                                    />
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                             <FormField control={form.control} name="brand" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Brand</FormLabel>
-                                    <CreatableCombobox 
-                                        options={brands.map(b => ({ value: b, label: b }))}
-                                        value={field.value}
-                                        onChange={(newValue, isNew) => {
-                                            field.onChange(newValue);
-                                            if (isNew && !brands.includes(newValue)) {
-                                                setBrands(prev => [...prev, newValue]);
-                                            }
-                                        }}
-                                        placeholder="Select or create brand"
-                                    />
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={form.control} name="supplierId" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Supplier</FormLabel>
-                                    <CreatableCombobox 
-                                        options={suppliers}
-                                        value={field.value}
-                                        onChange={(newValue, isNew) => field.onChange(newValue)}
-                                        placeholder="Select a supplier"
-                                        creatable={false}
-                                    />
-                                    <FormMessage />
-                                </FormItem>
-                             )} />
+                        <div className="grid md:grid-cols-3 gap-6 py-4">
+                            <div className="md:col-span-1">
+                                <FormLabel>Barcode & Batch</FormLabel>
+                                <FormDescription>Unique identifiers for this specific stock.</FormDescription>
+                            </div>
+                            <div className="md:col-span-2 grid sm:grid-cols-2 gap-4">
+                               <FormField control={form.control} name="barcode" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Barcode (SKU)</FormLabel>
+                                        <div className="flex gap-2">
+                                            <FormControl><Input placeholder="e.g., 890..." {...field} /></FormControl>
+                                            <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(Math.random().toString().slice(2, 15))}><Sparkles className="h-4 w-4" /></Button>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="batchNumber" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Batch Number</FormLabel>
+                                        <div className="flex gap-2">
+                                            <FormControl><Input placeholder="e.g., B-1726..." {...field} /></FormControl>
+                                            <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                        </div>
+
+                         <div className="grid md:grid-cols-3 gap-6 py-4">
+                            <div className="md:col-span-1">
+                                <FormLabel>Organization</FormLabel>
+                                <FormDescription>Categorize the product and link to a supplier.</FormDescription>
+                            </div>
+                            <div className="md:col-span-2 grid sm:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="category" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Category</FormLabel>
+                                        <CreatableCombobox 
+                                            options={categories.map(c => ({ value: c, label: c }))}
+                                            value={field.value}
+                                            onChange={(newValue, isNew) => {
+                                                field.onChange(newValue);
+                                                if (isNew && !categories.includes(newValue)) {
+                                                    setCategories(prev => [...prev, newValue]);
+                                                }
+                                            }}
+                                            placeholder="Select category"
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="brand" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Brand</FormLabel>
+                                        <CreatableCombobox 
+                                            options={brands.map(b => ({ value: b, label: b }))}
+                                            value={field.value}
+                                            onChange={(newValue, isNew) => {
+                                                field.onChange(newValue);
+                                                if (isNew && !brands.includes(newValue)) {
+                                                    setBrands(prev => [...prev, newValue]);
+                                                }
+                                            }}
+                                            placeholder="Select brand"
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="supplierId" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Supplier</FormLabel>
+                                        <CreatableCombobox 
+                                            options={suppliers}
+                                            value={field.value}
+                                            onChange={(newValue, isNew) => field.onChange(newValue)}
+                                            placeholder="Select supplier"
+                                            creatable={false}
+                                        />
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
                         </div>
                     </CardContent>
                  </Card>
@@ -376,7 +400,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <Card>
                         <CardHeader>
-                            <CardTitle>Pricing &amp; Stock</CardTitle>
+                            <CardTitle>Pricing & Stock</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem>
