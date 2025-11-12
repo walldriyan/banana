@@ -70,7 +70,7 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
 ];
 
 const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
-    const { control } = useForm<ProductFormValues>();
+    const { control, getValues } = useForm<ProductFormValues>();
     const [quantity, setQuantity] = useState(1);
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
     const sellingPrice = useWatch({ control, name: `sellingPrice` }) || 0;
@@ -313,22 +313,23 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[0].title}</CardTitle>
                         <CardDescription>{steps[0].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y">
+                    <CardContent className="divide-y divide-border">
                         {isEditMode && (
-                            <Alert variant="default" className="bg-blue-50 border-blue-200 mb-6">
-                                 <AlertTriangle className="h-4 w-4 text-blue-600" />
-                                <AlertTitle className='text-blue-800'>Edit Mode</AlertTitle>
-                                <AlertDescription className='text-blue-700'>
+                            <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 mb-6">
+                                 <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <AlertTitle className='text-blue-800 dark:text-blue-300'>Edit Mode</AlertTitle>
+                                <AlertDescription className='text-blue-700 dark:text-blue-400'>
                                     You are editing an existing product batch. Some master product fields like Product ID are locked.
                                 </AlertDescription>
                             </Alert>
                         )}
+                       
                         <div className="py-4 grid grid-cols-3 gap-6">
                             <div className="col-span-1">
                                 <FormLabel>Product Name</FormLabel>
                             </div>
                             <div className="col-span-2">
-                                <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField name="name" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                         </div>
 
@@ -339,7 +340,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                             <div className="col-span-2">
                                 <FormField control={form.control} name="productId" render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="m-0 p-0 space-y-0">
                                         <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -354,7 +355,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                             <div className="col-span-2">
                                 <FormField control={form.control} name="batchNumber" render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="m-0 p-0 space-y-0">
                                         <div className="flex gap-2">
                                             <FormControl><Input placeholder="e.g., B-1726..." {...field} /></FormControl>
                                             <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(`B-${Date.now()}`)}><Sparkles className="h-4 w-4" /></Button>
@@ -371,7 +372,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                             <div className="col-span-2">
                                 <FormField control={form.control} name="barcode" render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="m-0 p-0 space-y-0">
                                         <div className="flex gap-2">
                                             <FormControl><Input placeholder="e.g., 890..." {...field} /></FormControl>
                                             <Button type="button" variant="outline" size="icon" onClick={() => field.onChange(Math.random().toString().slice(2, 15))}><Sparkles className="h-4 w-4" /></Button>
@@ -447,14 +448,14 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[1].title}</CardTitle>
                         <CardDescription>{steps[1].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y">
+                    <CardContent className="divide-y divide-border">
                         <div className="py-4 grid grid-cols-3 gap-6">
                            <div className="col-span-1">
                                <FormLabel>Cost Price</FormLabel>
                                <FormDescription>The price you paid for the product per base unit.</FormDescription>
                            </div>
                            <div className="col-span-2">
-                                <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
                         <div className="py-4 grid grid-cols-3 gap-6">
@@ -463,7 +464,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                <FormDescription>The price you will sell the product for per base unit.</FormDescription>
                            </div>
                            <div className="col-span-2">
-                                <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
                          <div className="py-4 grid grid-cols-3 gap-6">
@@ -472,7 +473,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                <FormDescription>The quantity of this product batch in its base unit.</FormDescription>
                            </div>
                            <div className="col-span-2">
-                                <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem>
+                                <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0">
                                 <FormControl><Input type="number" {...field} disabled={isEditMode} /></FormControl>
                                 {isEditMode && <Alert variant="destructive" className="mt-2"><AlertTriangle className="h-4 w-4" /><AlertTitle>Stock Update Notice</AlertTitle><AlertDescription>Stock can only be adjusted via the <strong>'Purchases (GRN)'</strong> or <strong>'Lost & Damage'</strong> sections.</AlertDescription></Alert>}
                                 <FormMessage />
@@ -491,26 +492,26 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is tracked in.</FormDescription><FormMessage /></FormItem> )} />
                                 <div>
                                     <FormLabel>Derived Units (Optional)</FormLabel>
-                                    <Alert className="bg-sky-50 border-sky-200 text-sky-800 mt-2">
-                                        <Info className="h-4 w-4 !text-sky-700" />
-                                        <AlertTitle className="font-semibold">මේක වැඩ කරන හැටි</AlertTitle>
-                                        <AlertDescription className="text-xs space-y-2">
+                                    <Alert className="bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-700/50 text-sky-800 dark:text-sky-300 mt-2">
+                                        <Info className="h-4 w-4 !text-sky-700 dark:!text-sky-300" />
+                                        <AlertTitle className="font-semibold text-sky-900 dark:text-sky-200">මේක වැඩ කරන හැටි</AlertTitle>
+                                        <AlertDescription className="text-xs space-y-2 text-sky-800/90 dark:text-sky-400">
                                             <p>
-                                                <strong className="text-sky-900">මූලික ඒකකය (Base Unit)</strong> කියන්නේ ඔයා බඩු ගබඩා කරන, ගණන් බලන පොඩිම ඒකකය (උදා: තනි tablet එක, 1kg, 1ml).
+                                                <strong className="text-sky-900 dark:text-sky-200">මූලික ඒකකය (Base Unit)</strong> කියන්නේ ඔයා බඩු ගබඩා කරන, ගණන් බලන පොඩිම ඒකකය (උදා: තනි tablet එක, 1kg, 1ml).
                                             </p>
                                             <p>
-                                                <strong className="text-sky-900">ව්‍යුත්පන්න ඒකක (Derived Units)</strong> කියන්නේ, ඔයා බඩු විකුණන ලොකු ඇසුරුම් (උදා: පෙත්ත, කාඩ් එක, පෙට්ටිය). "Conversion Factor" එකෙන් කියවෙන්නේ ඒ ලොකු ඇසුරුමක, පොඩි ඒකක කීයක් තියෙනවද කියන එකයි.
+                                                <strong className="text-sky-900 dark:text-sky-200">ව්‍යුත්පන්න ඒකක (Derived Units)</strong> කියන්නේ, ඔයා බඩු විකුණන ලොකු ඇසුරුම් (උදා: පෙත්ත, කාඩ් එක, පෙට්ටිය). "Conversion Factor" එකෙන් කියවෙන්නේ ඒ ලොකු ඇසුරුමක, පොඩි ඒකක කීයක් තියෙනවද කියන එකයි.
                                             </p>
                                             <ul className="list-disc pl-5 mt-2 space-y-1">
-                                                <li><strong className="text-sky-900">උදා 1 (Panadol):</strong> Base Unit: 'tablet', Derived Unit 1: 'card' (Factor: 10), Derived Unit 2: 'box' (Factor: 100).</li>
-                                                <li><strong className="text-sky-900">උදා 2 (Rice):</strong> Base Unit: 'kg', Derived Unit: 'bag' (Factor: 25).</li>
+                                                <li><strong className="text-sky-900 dark:text-sky-200">උදා 1 (Panadol):</strong> Base Unit: 'tablet', Derived Unit 1: 'card' (Factor: 10), Derived Unit 2: 'box' (Factor: 100).</li>
+                                                <li><strong className="text-sky-900 dark:text-sky-200">උදා 2 (Rice):</strong> Base Unit: 'kg', Derived Unit: 'bag' (Factor: 25).</li>
                                             </ul>
                                         </AlertDescription>
                                     </Alert>
                                 </div>
                                 <div className="space-y-2">
                                     {fields.map((field, index) => (
-                                        <div key={field.id} className="p-3 border rounded-md bg-muted/30">
+                                        <div key={field.id} className="p-3 border rounded-md bg-muted/30 dark:bg-muted/10">
                                             <div className="flex items-center gap-2">
                                                 <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
                                                 <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder={`x Base Units (e.g., 12)`} /></FormItem> )} />
@@ -534,7 +535,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[2].title}</CardTitle>
                         <CardDescription>{steps[2].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y">
+                    <CardContent className="divide-y divide-border">
                        <div className="py-4 grid grid-cols-3 gap-6">
                            <div className="col-span-1">
                                <FormLabel>Batch Discount</FormLabel>
@@ -570,7 +571,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                            </div>
                            <div className="col-span-2">
                                 <FormField control={form.control} name="tax" render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="m-0 p-0 space-y-0">
                                     <FormControl>
                                         <Input type="number" placeholder="e.g., 15" {...field} />
                                     </FormControl>
@@ -589,14 +590,14 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[3].title}</CardTitle>
                         <CardDescription>{steps[3].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y">
+                    <CardContent className="divide-y divide-border">
                         <div className="py-4 grid grid-cols-3 gap-6">
                            <div className="col-span-1">
                                <FormLabel>Location</FormLabel>
                                <FormDescription>Where this batch is stored.</FormDescription>
                            </div>
                            <div className="col-span-2">
-                                <FormField name="location" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField name="location" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
                          <div className="py-4 grid grid-cols-3 gap-6">
@@ -605,7 +606,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                <FormDescription>Any additional notes about this batch.</FormDescription>
                            </div>
                            <div className="col-span-2">
-                                <FormField name="notes" control={form.control} render={({ field }) => ( <FormItem><FormControl><Textarea placeholder="e.g., Handle with care." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                                <FormField name="notes" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Textarea placeholder="e.g., Handle with care." {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
                          <div className="py-4 grid grid-cols-3 gap-6">
