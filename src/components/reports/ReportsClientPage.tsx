@@ -153,26 +153,7 @@ const ReportGenerator = () => {
     };
 
     return (
-        <div className="flex flex-col h-full gap-6">
-            <Card className="no-print">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Report Generation</CardTitle>
-                        <CardDescription>Select a date range to automatically generate your financial summary report.</CardDescription>
-                    </div>
-                    <LanguageToggle />
-                </CardHeader>
-                <CardContent className="flex flex-wrap items-center gap-4">
-                    <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
-                     <div className="flex flex-wrap gap-2">
-                        <Button variant={activePreset === 'today' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: today, to: today }, 'today')}>Today</Button>
-                        <Button variant={activePreset === 'week' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfWeek(today), to: today }, 'week')}>This Week</Button>
-                        <Button variant={activePreset === 'month' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfMonth(today), to: today }, 'month')}>This Month</Button>
-                        <Button variant={activePreset === 'year' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfYear(today), to: today }, 'year')}>This Year</Button>
-                     </div>
-                </CardContent>
-            </Card>
-
+        <div className="flex flex-row h-full gap-6">
             <div className="flex-1 min-h-0 overflow-y-auto">
                  {isPending && (
                     <Card>
@@ -203,6 +184,27 @@ const ReportGenerator = () => {
                          </CardContent>
                      </Card>
                  )}
+            </div>
+
+            <div className="flex flex-col w-96 flex-shrink-0 gap-6">
+                <Card className="no-print">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle>Report Generation</CardTitle>
+                            <CardDescription>Select a date range to automatically generate your financial summary report.</CardDescription>
+                        </div>
+                        <LanguageToggle />
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-4">
+                        <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
+                        <div className="flex flex-wrap gap-2">
+                            <Button variant={activePreset === 'today' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: today, to: today }, 'today')}>Today</Button>
+                            <Button variant={activePreset === 'week' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfWeek(today), to: today }, 'week')}>This Week</Button>
+                            <Button variant={activePreset === 'month' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfMonth(today), to: today }, 'month')}>This Month</Button>
+                            <Button variant={activePreset === 'year' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfYear(today), to: today }, 'year')}>This Year</Button>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
