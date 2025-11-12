@@ -1,7 +1,7 @@
 // src/components/reports/ReportsClientPage.tsx
 'use client';
 
-import { useState, useTransition, useCallback, useEffect } from 'react';
+import { useState, useTransition, useCallback, useEffect, ReactNode } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, startOfYear, startOfWeek, isSameDay } from 'date-fns';
 import { getSummaryReportDataAction, type SummaryReportData, getStockReportDataAction, getCreditorsReportDataAction, getDebtorsReportDataAction } from '@/lib/actions/report.actions';
@@ -14,7 +14,6 @@ import { AlertTriangle, Printer, Package, CreditCard, HandCoins } from 'lucide-r
 import { SummaryReport } from './SummaryReport';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { LanguageToggle } from '../LanguageToggle';
-import { Separator } from '../ui/separator';
 import { StockReport } from './StockReport';
 import { CreditorsReport } from './CreditorsReport';
 import { DebtorsReport } from './DebtorsReport';
@@ -57,62 +56,79 @@ const reportPrintStyles = `
   html.dark .border-gray-300 { border-color: #4b5563 !important; }
 `;
 
+type ReportType = 'summary' | 'stock' | 'creditors' | 'debtors';
+
 const ReportGenerator = () => {
     const today = new Date();
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(today, 6), // Default to last 7 days including today
-        to: today,
-    });
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: subDays(today, 6), to: today });
     const [activePreset, setActivePreset] = useState<string | null>('week');
-    const [reportData, setReportData] = useState<SummaryReportData | null>(null);
+    
+    const [activeReport, setActiveReport] = useState<ReportType>('summary');
+    const [activeReportData, setActiveReportData] = useState<any>(null);
+
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
-    const [isPrinting, setIsPrinting] = useState(false);
     const { language } = useLanguage();
     const { toast } = useToast();
 
-    const handleGenerateReport = useCallback((range: DateRange) => {
-        if (!range || !range.from || !range.to) {
-            setError("Please select a valid date range.");
+    const handleGenerateReport = useCallback((range: DateRange | undefined, type: ReportType) => {
+        if (type === 'summary' && (!range || !range.from || !range.to)) {
+            setError("Please select a valid date range for the summary report.");
             return;
         }
 
         startTransition(async () => {
             setError(null);
-            setReportData(null);
-            const result = await getSummaryReportDataAction({ from: range.from!, to: range.to! });
+            setActiveReportData(null);
+            
+            let result: { success: boolean; data?: any; error?: string };
+
+            switch(type) {
+                case 'summary':
+                    result = await getSummaryReportDataAction({ from: range!.from!, to: range!.to! });
+                    break;
+                case 'stock':
+                    result = await getStockReportDataAction();
+                    break;
+                case 'creditors':
+                    result = await getCreditorsReportDataAction();
+                    break;
+                case 'debtors':
+                    result = await getDebtorsReportDataAction();
+                    break;
+                default:
+                    result = { success: false, error: 'Invalid report type' };
+            }
+
             if (result.success) {
-                setReportData(result.data!);
+                setActiveReport(type);
+                setActiveReportData(result.data!);
             } else {
                 setError(result.error!);
+                setActiveReport('summary'); // Fallback to summary view on error
             }
         });
     }, []);
     
-    // Auto-generate report when date range changes
+    // Auto-generate summary report when date range changes
     useEffect(() => {
         if (dateRange?.from && dateRange.to) {
-            handleGenerateReport(dateRange);
+            handleGenerateReport(dateRange, 'summary');
             
-            // Check if the current range matches a preset
-            if (isSameDay(dateRange.from, today) && isSameDay(dateRange.to, today)) {
-                setActivePreset('today');
-            } else if (isSameDay(dateRange.from, startOfWeek(today)) && isSameDay(dateRange.to, today)) {
-                setActivePreset('week');
-            } else if (isSameDay(dateRange.from, startOfMonth(today)) && isSameDay(dateRange.to, today)) {
-                setActivePreset('month');
-            } else if (isSameDay(dateRange.from, startOfYear(today)) && isSameDay(dateRange.to, today)) {
-                setActivePreset('year');
-            } else {
-                setActivePreset(null); // Custom range
-            }
+            const from = dateRange.from;
+            const to = dateRange.to;
+            if (isSameDay(from, today) && isSameDay(to, today)) setActivePreset('today');
+            else if (isSameDay(from, startOfWeek(today)) && isSameDay(to, today)) setActivePreset('week');
+            else if (isSameDay(from, startOfMonth(today)) && isSameDay(to, today)) setActivePreset('month');
+            else if (isSameDay(from, startOfYear(today)) && isSameDay(to, today)) setActivePreset('year');
+            else setActivePreset(null);
         }
     }, [dateRange, handleGenerateReport]);
 
 
     const handlePresetClick = (range: DateRange, presetName: string) => {
         setActivePreset(presetName);
-        setDateRange(range); // This will trigger the useEffect to generate the report
+        setDateRange(range); 
     };
     
     const printReport = async (reportHTML: string, title: string) => {
@@ -151,37 +167,73 @@ const ReportGenerator = () => {
         }, 1500);
     }
     
-    const handlePrintSummaryReport = async () => {
-        if (!reportData) return;
-        const ReactDOMServer = (await import('react-dom/server')).default;
-        const reportHTML = ReactDOMServer.renderToString(
-          <LanguageProvider initialLanguage={language}>
-            <SummaryReport data={reportData} />
-          </LanguageProvider>
-        );
-        await printReport(reportHTML, "Financial Summary Report");
-    };
+    const handlePrintActiveReport = async () => {
+        if (!activeReportData) {
+             toast({ variant: 'destructive', title: 'Error', description: 'No report data to print.' });
+             return;
+        }
+        
+        let ReportComponent: React.ComponentType<{ data: any }> | null = null;
+        let title = "Report";
 
-    const handlePrintGenericReport = async (
-        fetchAction: () => Promise<{ success: boolean; data?: any; error?: string }>,
-        ReportComponent: React.ComponentType<{ data: any }>,
-        title: string
-    ) => {
-        setIsPrinting(true);
-        const result = await fetchAction();
-        if (result.success && result.data) {
+        switch(activeReport) {
+            case 'summary':
+                ReportComponent = SummaryReport;
+                title = 'Financial Summary Report';
+                break;
+            case 'stock':
+                ReportComponent = StockReport;
+                title = 'Stock Report';
+                break;
+            case 'creditors':
+                ReportComponent = CreditorsReport;
+                title = 'Creditors Report';
+                break;
+            case 'debtors':
+                ReportComponent = DebtorsReport;
+                title = 'Debtors Report';
+                break;
+        }
+
+        if (ReportComponent) {
             const ReactDOMServer = (await import('react-dom/server')).default;
             const reportHTML = ReactDOMServer.renderToString(
-              <LanguageProvider initialLanguage={language}>
-                <ReportComponent data={result.data} />
-              </LanguageProvider>
+            <LanguageProvider initialLanguage={language}>
+                <ReportComponent data={activeReportData} />
+            </LanguageProvider>
             );
             await printReport(reportHTML, title);
-        } else {
-            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to generate report data.' });
         }
-        setIsPrinting(false);
     };
+
+    const renderActiveReport = (): ReactNode => {
+        if (!activeReportData) return null;
+
+        switch(activeReport) {
+            case 'summary': return <SummaryReport data={activeReportData} />;
+            case 'stock': return <StockReport data={activeReportData} />;
+            case 'creditors': return <CreditorsReport data={activeReportData} />;
+            case 'debtors': return <DebtorsReport data={activeReportData} />;
+            default: return null;
+        }
+    }
+    
+    const getReportTitle = (): string => {
+        switch(activeReport) {
+            case 'summary': return 'Summary Report';
+            case 'stock': return 'Stock Report';
+            case 'creditors': return 'Creditors Report';
+            case 'debtors': return 'Debtors Report';
+            default: return 'Report';
+        }
+    }
+    
+    const getReportDescription = (): string => {
+        if (activeReport === 'summary' && activeReportData?.dateRange) {
+             return `Report for the period of ${new Date(activeReportData.dateRange.from).toLocaleDateString()} to ${new Date(activeReportData.dateRange.to).toLocaleDateString()}`;
+        }
+        return `Generated on ${new Date().toLocaleDateString()}`;
+    }
 
 
     return (
@@ -200,19 +252,17 @@ const ReportGenerator = () => {
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                  )}
-                 {reportData && (
+                 {activeReportData && (
                      <Card>
                          <CardHeader className="flex flex-row items-center justify-between no-print">
                             <div>
-                                <CardTitle>Summary Report</CardTitle>
-                                <CardDescription>
-                                    Report for the period of {new Date(reportData.dateRange.from).toLocaleDateString()} to {new Date(reportData.dateRange.to).toLocaleDateString()}
-                                </CardDescription>
+                                <CardTitle>{getReportTitle()}</CardTitle>
+                                <CardDescription>{getReportDescription()}</CardDescription>
                             </div>
-                            <Button onClick={handlePrintSummaryReport} variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Report</Button>
+                            <Button onClick={handlePrintActiveReport} variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Report</Button>
                          </CardHeader>
                          <CardContent>
-                            <SummaryReport data={reportData} />
+                            {renderActiveReport()}
                          </CardContent>
                      </Card>
                  )}
@@ -223,7 +273,7 @@ const ReportGenerator = () => {
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Report Generation</CardTitle>
-                            <CardDescription>Select a date range to automatically generate your financial summary report.</CardDescription>
+                            <CardDescription>Select a date range for the financial summary report.</CardDescription>
                         </div>
                         <LanguageToggle />
                     </CardHeader>
@@ -240,20 +290,20 @@ const ReportGenerator = () => {
                  <Card className="no-print">
                     <CardHeader>
                         <CardTitle>Other Reports</CardTitle>
-                        <CardDescription>Print specific reports like stock levels or debtor lists.</CardDescription>
+                        <CardDescription>Select a specific report to view and print.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
-                         <Button variant="outline" className="justify-start" onClick={() => handlePrintGenericReport(getStockReportDataAction, StockReport, 'Stock Report')} disabled={isPrinting}>
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(undefined, 'stock')} disabled={isPending}>
                             <Package className="mr-2 h-4 w-4" />
-                            {isPrinting ? 'Generating...' : 'Print Stock Report'}
+                            {isPending && activeReport === 'stock' ? 'Generating...' : 'View Stock Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => handlePrintGenericReport(getCreditorsReportDataAction, CreditorsReport, 'Creditors Report')} disabled={isPrinting}>
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(undefined, 'creditors')} disabled={isPending}>
                             <CreditCard className="mr-2 h-4 w-4" />
-                            {isPrinting ? 'Generating...' : 'Print Creditors Report'}
+                            {isPending && activeReport === 'creditors' ? 'Generating...' : 'View Creditors Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => handlePrintGenericReport(getDebtorsReportDataAction, DebtorsReport, 'Debtors Report')} disabled={isPrinting}>
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(undefined, 'debtors')} disabled={isPending}>
                             <HandCoins className="mr-2 h-4 w-4" />
-                            {isPrinting ? 'Generating...' : 'Print Debtors Report'}
+                           {isPending && activeReport === 'debtors' ? 'Generating...' : 'View Debtors Report'}
                         </Button>
                     </CardContent>
                 </Card>
