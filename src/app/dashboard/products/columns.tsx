@@ -110,15 +110,15 @@ export const getColumns = (
                 </div>
                 );
             }
-            return (
-              <div>
-                <div className="font-bold">{value}</div>
-                <div className="text-xs text-muted-foreground">
-                  Batch: <Badge variant="outline" className="font-mono">{row.original.batchNumber}</Badge>
-                </div>
-              </div>
-            )
+            return <div className="font-bold">{value}</div>;
         },
+    },
+     {
+        accessorKey: "batchNumber",
+        header: "Batch Number",
+        cell: ({ row }) => {
+            return <Badge variant="secondary">{row.getValue("batchNumber")}</Badge>
+        }
     },
     {
         accessorKey: "sellingPrice",
