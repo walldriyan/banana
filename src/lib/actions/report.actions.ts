@@ -183,3 +183,70 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         return { success: false, error: 'Failed to generate summary report data.' };
     }
 }
+
+
+export async function getStockReportDataAction() {
+    try {
+        const batches = await prisma.productBatch.findMany({
+            include: { product: true },
+            orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
+        });
+
+        // Convert Decimal `stock` to string to preserve decimals
+        const serializedBatches = batches.map(batch => ({
+            ...batch,
+            stock: Number(batch.stock), // Keep as number for the report
+        }));
+
+        return { success: true, data: serializedBatches };
+    } catch (error) {
+        console.error("Error fetching stock report data:", error);
+        return { success: false, error: "Failed to fetch stock report data." };
+    }
+}
+
+export async function getCreditorsReportDataAction() {
+  try {
+    const creditorGrns = await prisma.goodsReceivedNote.findMany({
+      where: { paymentStatus: { in: ['pending', 'partial'] } },
+      include: {
+        supplier: true,
+        payments: { select: { amount: true } }
+      },
+      orderBy: { grnDate: 'asc' },
+    });
+
+    const grnsWithPaidAmount = creditorGrns.map(grn => ({
+      ...grn,
+      totalPaid: grn.payments.reduce((sum, p) => sum + p.amount, 0),
+    }));
+
+    return { success: true, data: grnsWithPaidAmount };
+  } catch (error) {
+    console.error('[getCreditorsReportDataAction] Error:', error);
+    return { success: false, error: 'Failed to fetch creditors report data.' };
+  }
+}
+
+export async function getDebtorsReportDataAction() {
+  try {
+    const debtorTransactions = await prisma.transaction.findMany({
+      where: { paymentStatus: { in: ['pending', 'partial'] } },
+      include: {
+        customer: true,
+        salePayments: { select: { amount: true } }
+      },
+      orderBy: { transactionDate: 'asc' },
+    });
+
+    const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
+      ...tx,
+      totalPaid: tx.salePayments.reduce((sum, p) => sum + p.amount, 0),
+    }));
+
+    return { success: true, data: transactionsWithPaidAmount };
+  } catch (error) {
+    console.error('[getDebtorsReportDataAction] Error:', error);
+    return { success: false, error: 'Failed to fetch debtors report data.' };
+  }
+}

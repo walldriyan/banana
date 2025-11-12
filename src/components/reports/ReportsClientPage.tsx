@@ -4,7 +4,7 @@
 import { useState, useTransition, useCallback, useEffect } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, startOfYear, startOfWeek, isSameDay } from 'date-fns';
-import { getSummaryReportDataAction, type SummaryReportData } from '@/lib/actions/report.actions';
+import { getSummaryReportDataAction, type SummaryReportData, getStockReportDataAction, getCreditorsReportDataAction, getDebtorsReportDataAction } from '@/lib/actions/report.actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DateRangePicker } from './DateRangePicker';
@@ -15,6 +15,11 @@ import { SummaryReport } from './SummaryReport';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { LanguageToggle } from '../LanguageToggle';
 import { Separator } from '../ui/separator';
+import { StockReport } from './StockReport';
+import { CreditorsReport } from './CreditorsReport';
+import { DebtorsReport } from './DebtorsReport';
+import { useToast } from '@/hooks/use-toast';
+
 
 const reportPrintStyles = `
   @page { 
@@ -62,7 +67,9 @@ const ReportGenerator = () => {
     const [reportData, setReportData] = useState<SummaryReportData | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const [isPrinting, setIsPrinting] = useState(false);
     const { language } = useLanguage();
+    const { toast } = useToast();
 
     const handleGenerateReport = useCallback((range: DateRange) => {
         if (!range || !range.from || !range.to) {
@@ -108,17 +115,8 @@ const ReportGenerator = () => {
         setDateRange(range); // This will trigger the useEffect to generate the report
     };
     
-    const handlePrint = async () => {
-        if (!reportData) return;
-
+    const printReport = async (reportHTML: string, title: string) => {
         const isDarkMode = document.documentElement.classList.contains('dark');
-        const ReactDOMServer = (await import('react-dom/server')).default;
-        const reportHTML = ReactDOMServer.renderToString(
-          <LanguageProvider initialLanguage={language}>
-            <SummaryReport data={reportData} />
-          </LanguageProvider>
-        );
-
         const iframe = document.createElement('iframe');
         iframe.style.display = 'none';
         document.body.appendChild(iframe);
@@ -129,7 +127,7 @@ const ReportGenerator = () => {
             iframeDoc.write(`
                 <html>
                   <head>
-                    <title>Financial Summary Report</title>
+                    <title>${title}</title>
                     <script src="https://cdn.tailwindcss.com"></script>
                     <style>${reportPrintStyles}</style>
                   </head>
@@ -151,7 +149,40 @@ const ReportGenerator = () => {
         setTimeout(() => {
             document.body.removeChild(iframe);
         }, 1500);
+    }
+    
+    const handlePrintSummaryReport = async () => {
+        if (!reportData) return;
+        const ReactDOMServer = (await import('react-dom/server')).default;
+        const reportHTML = ReactDOMServer.renderToString(
+          <LanguageProvider initialLanguage={language}>
+            <SummaryReport data={reportData} />
+          </LanguageProvider>
+        );
+        await printReport(reportHTML, "Financial Summary Report");
     };
+
+    const handlePrintGenericReport = async (
+        fetchAction: () => Promise<{ success: boolean; data?: any; error?: string }>,
+        ReportComponent: React.ComponentType<{ data: any }>,
+        title: string
+    ) => {
+        setIsPrinting(true);
+        const result = await fetchAction();
+        if (result.success && result.data) {
+            const ReactDOMServer = (await import('react-dom/server')).default;
+            const reportHTML = ReactDOMServer.renderToString(
+              <LanguageProvider initialLanguage={language}>
+                <ReportComponent data={result.data} />
+              </LanguageProvider>
+            );
+            await printReport(reportHTML, title);
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: result.error || 'Failed to generate report data.' });
+        }
+        setIsPrinting(false);
+    };
+
 
     return (
         <div className="flex flex-row h-full gap-6">
@@ -178,7 +209,7 @@ const ReportGenerator = () => {
                                     Report for the period of {new Date(reportData.dateRange.from).toLocaleDateString()} to {new Date(reportData.dateRange.to).toLocaleDateString()}
                                 </CardDescription>
                             </div>
-                            <Button onClick={handlePrint} variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Report</Button>
+                            <Button onClick={handlePrintSummaryReport} variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Report</Button>
                          </CardHeader>
                          <CardContent>
                             <SummaryReport data={reportData} />
@@ -212,17 +243,17 @@ const ReportGenerator = () => {
                         <CardDescription>Print specific reports like stock levels or debtor lists.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
-                         <Button variant="outline" className="justify-start" disabled>
+                         <Button variant="outline" className="justify-start" onClick={() => handlePrintGenericReport(getStockReportDataAction, StockReport, 'Stock Report')} disabled={isPrinting}>
                             <Package className="mr-2 h-4 w-4" />
-                            Print Stock Report
+                            {isPrinting ? 'Generating...' : 'Print Stock Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" disabled>
+                         <Button variant="outline" className="justify-start" onClick={() => handlePrintGenericReport(getCreditorsReportDataAction, CreditorsReport, 'Creditors Report')} disabled={isPrinting}>
                             <CreditCard className="mr-2 h-4 w-4" />
-                            Print Creditors Report
+                            {isPrinting ? 'Generating...' : 'Print Creditors Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" disabled>
+                         <Button variant="outline" className="justify-start" onClick={() => handlePrintGenericReport(getDebtorsReportDataAction, DebtorsReport, 'Debtors Report')} disabled={isPrinting}>
                             <HandCoins className="mr-2 h-4 w-4" />
-                            Print Debtors Report
+                            {isPrinting ? 'Generating...' : 'Print Debtors Report'}
                         </Button>
                     </CardContent>
                 </Card>
