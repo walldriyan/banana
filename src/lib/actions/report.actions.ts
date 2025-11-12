@@ -281,7 +281,8 @@ export async function getDebtorsReportDataAction(dateRange?: DateRange) {
       where,
       include: {
         customer: true,
-        salePayments: { select: { amount: true } }
+        salePayments: true, // Include full payment details
+        lines: true,        // Include transaction lines
       },
       orderBy: { transactionDate: 'asc' },
     });
