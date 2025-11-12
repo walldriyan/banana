@@ -10,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { DateRangePicker } from './DateRangePicker';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Printer } from 'lucide-react';
+import { AlertTriangle, Printer, Package, CreditCard, HandCoins } from 'lucide-react';
 import { SummaryReport } from './SummaryReport';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import { LanguageToggle } from '../LanguageToggle';
+import { Separator } from '../ui/separator';
 
 const reportPrintStyles = `
   @page { 
@@ -203,6 +204,26 @@ const ReportGenerator = () => {
                             <Button variant={activePreset === 'month' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfMonth(today), to: today }, 'month')}>This Month</Button>
                             <Button variant={activePreset === 'year' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePresetClick({ from: startOfYear(today), to: today }, 'year')}>This Year</Button>
                         </div>
+                    </CardContent>
+                </Card>
+                 <Card className="no-print">
+                    <CardHeader>
+                        <CardTitle>Other Reports</CardTitle>
+                        <CardDescription>Print specific reports like stock levels or debtor lists.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-3">
+                         <Button variant="outline" className="justify-start" disabled>
+                            <Package className="mr-2 h-4 w-4" />
+                            Print Stock Report
+                        </Button>
+                         <Button variant="outline" className="justify-start" disabled>
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Print Creditors Report
+                        </Button>
+                         <Button variant="outline" className="justify-start" disabled>
+                            <HandCoins className="mr-2 h-4 w-4" />
+                            Print Debtors Report
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
