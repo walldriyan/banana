@@ -35,7 +35,7 @@ export function TransactionCard({
   const isRefunded = transaction.isRefunded;
 
   return (
-    <Card className={cn("hover:shadow-lg transition-shadow", isRefunded && "bg-orange-50 border-orange-200")}>
+    <Card className={cn("hover:shadow-lg transition-shadow", isRefunded && "bg-orange-50 dark:bg-red-900/20 border-orange-200 dark:border-red-800/50")}>
       <CardHeader>
         <CardTitle className="text-lg flex justify-between items-start">
           <div className="flex flex-col gap-1">
