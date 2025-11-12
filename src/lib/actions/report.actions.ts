@@ -3,6 +3,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { startOfDay, endOfDay } from 'date-fns';
+import { Prisma } from "@prisma/client";
+
 
 interface DateRange {
     from: Date;
@@ -88,15 +90,17 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             }),
             // Debtors (Outstanding customer payments for transactions within the date range)
             prisma.transaction.aggregate({
-                where: { 
+                where: {
                     paymentStatus: { in: ['pending', 'partial'] },
                     transactionDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
-                _sum: { finalTotal: true, payment: { _sum: { paidAmount: true } } },
+                _sum: {
+                    finalTotal: true,
+                },
             }),
              // Creditors (Outstanding supplier payments for GRNs within the date range)
             prisma.goodsReceivedNote.aggregate({
-                where: { 
+                where: {
                     paymentStatus: { in: ['pending', 'partial'] },
                     grnDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
@@ -120,6 +124,15 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 }
             })
         ]);
+
+        const salePaymentsSum = await prisma.salePayment.aggregate({
+             where: {
+                transaction: {
+                    id: { in: (await prisma.transaction.findMany({ where: { paymentStatus: { in: ['pending', 'partial'] }, transactionDate: { gte: adjustedFrom, lte: adjustedTo } } })).map(t => t.id) }
+                }
+            },
+            _sum: { amount: true }
+        });
         
         const otherIncome = financialTxData.find(d => d.type === 'INCOME')?._sum.amount || 0;
         const otherExpenses = financialTxData.find(d => d.type === 'EXPENSE')?._sum.amount || 0;
@@ -148,7 +161,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const totalDiscountsGiven = salesData._sum.totalDiscountAmount || 0;
         const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue;
         
-        const totalDebtors = (debtorsData._sum.finalTotal || 0) - (debtorsData._sum.payment?._sum?.paidAmount || 0);
+        const totalDebtors = (debtorsData._sum.finalTotal || 0) - (salePaymentsSum._sum.amount || 0);
         const totalCreditors = (creditorsData._sum.totalAmount || 0) - (creditorsData._sum.paidAmount || 0);
 
         const reportData: SummaryReportData = {
