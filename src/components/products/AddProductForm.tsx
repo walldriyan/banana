@@ -81,7 +81,7 @@ const ConversionFactorDisplay = ({ itemIndex, baseUnit }: { itemIndex: number, b
         <Alert className="mt-2 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300">
             <CheckCircle className="h-4 w-4 !text-emerald-700 dark:!text-emerald-300" />
             <AlertDescription className="text-emerald-900 dark:text-emerald-200">
-                1 {derivedUnitName} = <strong>{conversionFactor}</strong> {baseUnit}
+                1 {derivedUnitName} = <strong>{conversionFactor.toPrecision(4)}</strong> {baseUnit}
             </AlertDescription>
         </Alert>
     );
@@ -109,7 +109,7 @@ const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, bas
                     <span className="font-medium">Rs. {sellingPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-center items-center my-1 text-muted-foreground text-xs">
-                   ( {conversionFactor} {baseUnit} &times; Rs. {sellingPrice.toFixed(2)} )
+                   ( {conversionFactor.toPrecision(4)} {baseUnit} &times; Rs. {sellingPrice.toFixed(2)} )
                 </div>
                 <Separator className="my-1"/>
                 <div className="flex justify-between items-baseline font-bold">
