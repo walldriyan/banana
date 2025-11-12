@@ -1,7 +1,7 @@
 // src/components/products/AddProductForm.tsx
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useForm, useFieldArray, useWatch, useFormContext } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -23,7 +23,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { addProductAction, updateProductBatchAction } from "@/lib/actions/product.actions";
-import { useState, useEffect } from "react";
 import type { ProductBatch } from "@/types";
 import { PlusCircle, Trash2, ArrowLeft, ArrowRight, Sparkles, AlertTriangle, Package, Archive, Tag, Coins, Boxes, Info, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../ui/card";
@@ -36,6 +35,7 @@ import { CreatableCombobox, type ComboboxOption } from './CreatableCombobox';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Separator } from '../ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Label } from '../ui/label';
 
 interface AddProductFormProps {
   productBatch?: ProductBatch;
@@ -332,9 +332,9 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[0].title}</CardTitle>
                         <CardDescription>{steps[0].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y divide-border">
+                    <CardContent className="space-y-6">
                         {isEditMode && (
-                            <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 mb-6">
+                            <Alert variant="default" className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700">
                                  <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                 <AlertTitle className='text-blue-800 dark:text-blue-300'>Edit Mode</AlertTitle>
                                 <AlertDescription className='text-blue-700 dark:text-blue-400'>
@@ -343,21 +343,21 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </Alert>
                         )}
                        
-                        <div className="grid grid-cols-3 items-start gap-6 py-4">
-                            <div className="col-span-1">
+                        <div className="flex items-start gap-6 border-b pb-6">
+                            <div className="w-1/3 pt-1">
                                 <FormLabel>Product Name</FormLabel>
                             </div>
-                            <div className="col-span-2">
+                            <div className="w-2/3">
                                 <FormField name="name" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input placeholder="e.g., Dell Inspiron 15" {...field} /></FormControl><FormMessage /></FormItem> )} />
                             </div>
                         </div>
 
-                         <div className="grid grid-cols-3 items-start gap-6 py-4">
-                            <div className="col-span-1">
+                         <div className="flex items-start gap-6 border-b pb-6">
+                            <div className="w-1/3 pt-1">
                                 <FormLabel>Product ID</FormLabel>
                                 <FormDescription>General ID for this product line.</FormDescription>
                             </div>
-                            <div className="col-span-2">
+                            <div className="w-2/3">
                                 <FormField control={form.control} name="productId" render={({ field }) => (
                                     <FormItem className="m-0 p-0 space-y-0">
                                         <FormControl><Input placeholder="e.g., dell-inspiron-15" {...field} disabled={isEditMode} /></FormControl>
@@ -367,12 +367,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
                         
-                        <div className="grid grid-cols-3 items-start gap-6 py-4">
-                            <div className="col-span-1">
+                        <div className="flex items-start gap-6 border-b pb-6">
+                            <div className="w-1/3 pt-1">
                                 <FormLabel>Batch Number</FormLabel>
                                 <FormDescription>Unique identifiers for this specific stock.</FormDescription>
                             </div>
-                            <div className="col-span-2">
+                            <div className="w-2/3">
                                 <FormField control={form.control} name="batchNumber" render={({ field }) => (
                                     <FormItem className="m-0 p-0 space-y-0">
                                         <div className="flex gap-2">
@@ -385,11 +385,11 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 items-start gap-6 py-4">
-                            <div className="col-span-1">
+                        <div className="flex items-start gap-6 border-b pb-6">
+                            <div className="w-1/3 pt-1">
                                 <FormLabel>Barcode (SKU)</FormLabel>
                             </div>
-                            <div className="col-span-2">
+                            <div className="w-2/3">
                                 <FormField control={form.control} name="barcode" render={({ field }) => (
                                     <FormItem className="m-0 p-0 space-y-0">
                                         <div className="flex gap-2">
@@ -402,12 +402,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                             </div>
                         </div>
 
-                         <div className="grid grid-cols-3 items-start gap-6 py-4">
-                            <div className="col-span-1">
+                         <div className="flex items-start gap-6 pb-6">
+                            <div className="w-1/3 pt-1">
                                 <FormLabel>Organization</FormLabel>
                                 <FormDescription>Categorize the product and link to a supplier.</FormDescription>
                             </div>
-                            <div className="col-span-2 grid sm:grid-cols-3 gap-4">
+                            <div className="w-2/3 grid sm:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="category" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Category</FormLabel>
@@ -467,31 +467,31 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[1].title}</CardTitle>
                         <CardDescription>{steps[1].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y divide-border">
-                        <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                    <CardContent className="space-y-6">
+                        <div className="flex items-start gap-6 border-b pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Cost Price</FormLabel>
                                <FormDescription>The price you paid for the product per base unit.</FormDescription>
                            </div>
-                           <div className="col-span-2">
+                           <div className="w-2/3">
                                 <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                        <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                        <div className="flex items-start gap-6 border-b pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Selling Price</FormLabel>
                                <FormDescription>The price you will sell the product for per base unit.</FormDescription>
                            </div>
-                           <div className="col-span-2">
+                           <div className="w-2/3">
                                 <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                         <div className="flex items-start gap-6 border-b pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>{isEditMode ? 'Current Stock' : 'Initial Stock'}</FormLabel>
                                <FormDescription>The quantity of this product batch in its base unit.</FormDescription>
                            </div>
-                           <div className="col-span-2">
+                           <div className="w-2/3">
                                 <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0">
                                 <FormControl><Input type="number" {...field} disabled={isEditMode} /></FormControl>
                                 {isEditMode && <Alert variant="destructive" className="mt-2"><AlertTriangle className="h-4 w-4" /><AlertTitle>Stock Update Notice</AlertTitle><AlertDescription>Stock can only be adjusted via the <strong>'Purchases (GRN)'</strong> or <strong>'Lost & Damage'</strong> sections.</AlertDescription></Alert>}
@@ -500,14 +500,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                            </div>
                         </div>
 
-                        <Separator className="!my-6" />
-
-                         <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                         <div className="flex items-start gap-6 pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Units of Measurement</FormLabel>
                                <FormDescription>Define how this product is measured and sold.</FormDescription>
                            </div>
-                           <div className="col-span-2 space-y-4">
+                           <div className="w-2/3 space-y-4">
                                 <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is tracked in.</FormDescription><FormMessage /></FormItem> )} />
                                 <div>
                                     <FormLabel>Derived Units (Optional)</FormLabel>
@@ -555,13 +553,13 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[2].title}</CardTitle>
                         <CardDescription>{steps[2].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y divide-border">
-                       <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                    <CardContent className="space-y-6">
+                       <div className="flex items-start gap-6 border-b pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Batch Discount</FormLabel>
                                <FormDescription>Default discount for this specific batch. This is used by the 'Product Defaults' campaign.</FormDescription>
                            </div>
-                           <div className="col-span-2 flex gap-4">
+                           <div className="w-2/3 flex gap-4">
                                <FormField control={form.control} name="discount" render={({ field }) => (
                                     <FormItem className="flex-1">
                                         <FormLabel>Value</FormLabel>
@@ -584,12 +582,12 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 )}/>
                            </div>
                         </div>
-                        <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                        <div className="flex items-start gap-6 pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Batch Tax Rate</FormLabel>
                                <FormDescription>Tax rate applied to this specific batch (in percentage).</FormDescription>
                            </div>
-                           <div className="col-span-2">
+                           <div className="w-2/3">
                                 <FormField control={form.control} name="tax" render={({ field }) => (
                                     <FormItem className="m-0 p-0 space-y-0">
                                     <FormControl>
@@ -610,41 +608,41 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[3].title}</CardTitle>
                         <CardDescription>{steps[3].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="divide-y divide-border">
-                        <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                    <CardContent className="space-y-6">
+                        <div className="flex items-start gap-6 border-b pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Location</FormLabel>
                                <FormDescription>Where this batch is stored.</FormDescription>
                            </div>
-                           <div className="col-span-2">
+                           <div className="w-2/3">
                                 <FormField name="location" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Input placeholder="e.g., Warehouse A, Shelf 3" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                         <div className="flex items-start gap-6 border-b pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Notes</FormLabel>
                                <FormDescription>Any additional notes about this batch.</FormDescription>
                            </div>
-                           <div className="col-span-2">
+                           <div className="w-2/3">
                                 <FormField name="notes" control={form.control} render={({ field }) => ( <FormItem className="m-0 p-0 space-y-0"><FormControl><Textarea placeholder="e.g., Handle with care." {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                         <div className="flex items-start gap-6 border-b pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Manufacture & Expiry</FormLabel>
                                <FormDescription>Dates relevant to this batch.</FormDescription>
                            </div>
-                           <div className="col-span-2 grid sm:grid-cols-2 gap-4">
+                           <div className="w-2/3 grid sm:grid-cols-2 gap-4">
                                 <FormField name="manufactureDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Manufacture Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                                 <FormField name="expiryDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Expiry Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                            </div>
                         </div>
-                         <div className="grid grid-cols-3 items-start gap-6 py-4">
-                           <div className="col-span-1">
+                         <div className="flex items-start gap-6 pb-6">
+                           <div className="w-1/3 pt-1">
                                <FormLabel>Product Status</FormLabel>
                                <FormDescription>Control the visibility and usability of the product.</FormDescription>
                            </div>
-                           <div className="col-span-2 space-y-4">
+                           <div className="w-2/3 space-y-4">
                                 <FormField name="isActive" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>Product Active</FormLabel><FormDescription>If inactive, it won't appear in POS searches.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                                 <FormField name="isService" control={form.control} render={({ field }) => ( <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm"><div className="space-y-0.5"><FormLabel>Is a Service</FormLabel><FormDescription>Service products don't have stock tracking.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem> )} />
                            </div>
