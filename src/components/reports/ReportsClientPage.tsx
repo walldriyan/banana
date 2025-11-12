@@ -32,7 +32,7 @@ import { RefundsReport } from './RefundsReport';
 const reportPrintStyles = `
   @page { 
     size: A4; 
-    margin: 20mm; 
+    margin: 10mm; 
   }
   @media print {
     body {
