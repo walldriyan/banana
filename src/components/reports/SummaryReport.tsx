@@ -78,11 +78,14 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const liabilitiesItems = [
     { label: 'creditors', value: data.balanceSheet.liabilities.creditors, isBold: true, valueClassName: 'text-orange-600' },
     { label: 'todaysCreditorPayments', value: data.balanceSheet.liabilities.todaysCreditorPayments, isSubtle: true, valueClassName: 'text-green-600' },
+    { label: 'totalGrns', value: data.purchases.totalGrns, isSubtle: true },
   ];
 
   const assetsItems = [
       { label: 'debtors', value: data.balanceSheet.assets.debtors, isBold: true, valueClassName: 'text-red-600' },
       { label: 'todaysDebtorPayments', value: data.balanceSheet.assets.todaysDebtorPayments, isSubtle: true, valueClassName: 'text-green-600' },
+      { label: 'grossProfit', value: data.profit.grossProfit, isSubtle: true },
+      { label: 'totalTransactions', value: data.sales.totalTransactions, isSubtle: true },
   ];
 
 
@@ -134,7 +137,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
       </div>
 
        {/* Net Profit Section */}
-        <div className="col-span-4 bg-blue-50 p-4 space-y-2">
+        <div className="col-span-4 bg-blue-50 p-4 space-y-2 mt-2">
             <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
               <div className="flex justify-between items-center text-base">
                   <span className="text-gray-600">{t('totalIncome')}</span>
