@@ -85,8 +85,8 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const assetsAndMetrics = [
       { label: 'debtors', value: data.balanceSheet.assets.debtors, isBold: true, valueClassName: 'text-red-600' },
       { label: 'todaysDebtorPayments', value: data.balanceSheet.assets.todaysDebtorPayments, isSubtle: true, valueClassName: 'text-green-600' },
-      { label: 'totalTransactions', value: data.sales.totalTransactions, isSubtle: true },
       { label: 'grossProfit', value: data.profit.grossProfit, isBold: true },
+      { label: 'totalTransactions', value: data.sales.totalTransactions, isSubtle: true },
   ];
 
   return (
