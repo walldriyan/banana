@@ -59,16 +59,16 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const { t, language } = useLanguage();
   
   const expenseItems = [
-    { label: 'purchasesCost', value: data.purchases.totalCost },
-    { label: 'otherExpenses', value: data.expenses.otherExpenses },
-    { label: 'totalDiscountsGiven', value: data.sales.totalDiscount },
-    { label: 'lostAndDamageValue', value: data.inventory.lostAndDamageValue },
-    { label: 'totalRefundsIssued', value: data.sales.totalRefunds },
+    { label: 'purchasesCost', value: data.purchases.totalCost, valueClassName: 'text-red-600' },
+    { label: 'otherExpenses', value: data.expenses.otherExpenses, valueClassName: 'text-red-600' },
+    { label: 'totalDiscountsGiven', value: data.sales.totalDiscount, valueClassName: 'text-red-600' },
+    { label: 'lostAndDamageValue', value: data.inventory.lostAndDamageValue, valueClassName: 'text-red-600' },
+    { label: 'totalRefundsIssued', value: data.sales.totalRefunds, valueClassName: 'text-red-600' },
   ];
 
   const incomeItems = [
-      { label: 'salesRevenue', value: data.income.salesIncome },
-      { label: 'otherIncome', value: data.income.otherIncome },
+      { label: 'salesRevenue', value: data.income.salesIncome, valueClassName: 'text-green-600' },
+      { label: 'otherIncome', value: data.income.otherIncome, valueClassName: 'text-green-600' },
   ];
   
   const totalExpenses = expenseItems.reduce((sum, item) => sum + item.value, 0);
