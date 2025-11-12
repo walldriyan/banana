@@ -114,7 +114,7 @@ export const getColumns = (
               <div>
                 <div className="font-bold">{value}</div>
                 <div className="text-xs text-muted-foreground">
-                  Batch: <Badge variant="secondary" className="font-mono">{row.original.batchNumber}</Badge>
+                  Batch: <Badge variant="outline" className="font-mono">{row.original.batchNumber}</Badge>
                 </div>
               </div>
             )
