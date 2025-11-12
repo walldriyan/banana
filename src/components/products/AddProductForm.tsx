@@ -70,7 +70,7 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
 ];
 
 const ConversionFactorDisplay = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
-    const { control } = useForm<ProductFormValues>();
+    const { control } = useFormContext<ProductFormValues>();
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
     const conversionFactor = item?.conversionFactor || 0;
     const derivedUnitName = item?.name || 'New Unit';
@@ -89,7 +89,7 @@ const ConversionFactorDisplay = ({ itemIndex, baseUnit }: { itemIndex: number, b
 
 
 const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
-    const { control } = useForm<ProductFormValues>();
+    const { control } = useFormContext<ProductFormValues>();
     const [quantity, setQuantity] = useState(1);
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
     const sellingPrice = useWatch({ control, name: `sellingPrice` }) || 0;
