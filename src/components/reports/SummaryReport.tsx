@@ -20,7 +20,7 @@ interface ReportRowProps {
 const ReportSubHeader: React.FC<{ label: string, className?: string }> = ({ label, className }) => {
     const { t } = useLanguage();
     return (
-        <h3 className={cn("font-semibold text-black mt-4 border-b pb-1 mb-1", className)}>
+        <h3 className={cn("font-semibold text-black mt-4 border-b pb-1 mb-1 col-span-4", className)}>
             {t(label as any)}
         </h3>
     )
@@ -88,6 +88,17 @@ export function SummaryReport({ data }: SummaryReportProps) {
       { label: 'totalTransactions', value: data.sales.totalTransactions, isSubtle: true },
   ];
 
+  // Data for the cash flow summary
+  const cashInItems = [
+      { label: 'cashSales', value: data.cashFlow.cashSales, isSubtle: true, valueClassName: 'text-green-600' },
+      { label: 'cashOtherIncome', value: data.cashFlow.cashOtherIncome, isSubtle: true, valueClassName: 'text-green-600' },
+      { label: 'todaysDebtorCashPayments', value: data.cashFlow.todaysDebtorCashPayments, isSubtle: true, valueClassName: 'text-green-600' },
+  ];
+  const cashOutItems = [
+      { label: 'cashOtherExpenses', value: data.cashFlow.cashOtherExpenses, isSubtle: true, valueClassName: 'text-red-600' },
+      { label: 'todaysCreditorCashPayments', value: data.cashFlow.todaysCreditorCashPayments, isSubtle: true, valueClassName: 'text-red-600' },
+  ];
+
 
   return (
     <div className="report-container p-4 bg-white text-sm text-black space-y-6">
@@ -98,7 +109,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
         </p>
       </header>
       
-      <div className="border border-gray-300 overflow-hidden">
+      <div className="border border-gray-300 overflow-hidden rounded-lg">
         {/* P&L Section */}
         <ReportRow label="plStatementTitle" value="" isHeader />
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
@@ -110,10 +121,10 @@ export function SummaryReport({ data }: SummaryReportProps) {
                 {incomeItems[index] ? <ReportRow {...incomeItems[index]} isSubtle /> : <><div/><div/></>}
             </React.Fragment>
           ))}
-        </div>
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3 pt-2 mt-2 border-t border-gray-200">
-          <ReportRow label="totalExpenses" value={totalExpenses} isTotal isBold />
-          <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
+           <div className="col-span-4 pt-2 mt-2 border-t border-gray-200 grid grid-cols-[1fr_auto_1fr_auto] gap-x-4">
+              <ReportRow label="totalExpenses" value={totalExpenses} isTotal isBold />
+              <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
+           </div>
         </div>
         
         {/* Balance Sheet Section */}
@@ -128,57 +139,34 @@ export function SummaryReport({ data }: SummaryReportProps) {
                 </React.Fragment>
             ))}
         </div>
+
+         {/* Net Profit Section */}
+        <ReportRow label="netProfitTitle" value="" isHeader />
+         <div className="grid grid-cols-[1fr_auto] gap-x-4 p-3">
+            <ReportRow label="totalIncome" value={totalIncome} isSubtle valueClassName="text-green-600 font-medium" />
+            <ReportRow label="totalExpenses" value={`(${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`} isSubtle valueClassName="text-red-600 font-medium" />
+            <div className="col-span-2 pt-2 mt-2 border-t border-gray-200">
+               <ReportRow label="netProfitTitle" value={netProfit} isBold valueClassName="text-blue-800" />
+            </div>
+         </div>
+
+        {/* Cash Flow Section */}
+        <ReportRow label="Cash Flow Summary (Today)" value="" isHeader />
+         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
+             <div className="font-semibold text-black col-span-2">Cash In</div>
+             <div className="font-semibold text-black col-span-2">Cash Out</div>
+              {Array.from({ length: Math.max(cashInItems.length, cashOutItems.length) }).map((_, index) => (
+                <React.Fragment key={`cash-flow-${index}`}>
+                    {cashInItems[index] ? <ReportRow {...cashInItems[index]} /> : <><div /><div /></>}
+                    {cashOutItems[index] ? <ReportRow {...cashOutItems[index]} /> : <><div /><div /></>}
+                </React.Fragment>
+              ))}
+              <div className="col-span-4 pt-2 mt-2 border-t border-gray-200">
+                  <ReportRow label="Expected Cash in Drawer" value={data.cashFlow.cashInDrawer} isBold valueClassName="text-green-800" />
+              </div>
+         </div>
       </div>
       
-       {/* Net Profit Section */}
-        <div className="col-span-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 p-4 space-y-2 mt-2 rounded-lg">
-            <h3 className="font-bold text-base text-center text-blue-800 dark:text-blue-200">{t('netProfitTitle')}</h3>
-              <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600 dark:text-gray-400">{t('totalIncome')}</span>
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-              <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600 dark:text-gray-400">{`(-) ${t('totalExpenses')}`}</span>
-                  <span className="font-semibold text-gray-800 dark:text-gray-200">{`Rs. ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-              <Separator className="my-2 bg-gray-300" />
-              <div className="flex justify-between items-center text-lg font-bold text-blue-800 dark:text-blue-300">
-                  <span>{`(=) ${t('netProfitTitle')}`}</span>
-                  <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-        </div>
-
-      {/* Cash In Drawer Section */}
-        <div className="col-span-4 bg-green-50 dark:bg-green-900/20 border border-green-200 p-4 space-y-2 mt-2 rounded-lg">
-            <h3 className="font-bold text-base text-center text-green-800 dark:text-green-200">Cash In Drawer (Today)</h3>
-             <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">(+) Cash Sales</span>
-                  <span className="font-medium text-green-700 dark:text-green-300">{`Rs. ${data.cashFlow.cashSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-               <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">(+) Cash Other Income</span>
-                  <span className="font-medium text-green-700 dark:text-green-300">{`Rs. ${data.cashFlow.cashOtherIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-               <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">(+) Debtor Cash Payments</span>
-                  <span className="font-medium text-green-700 dark:text-green-300">{`Rs. ${data.cashFlow.todaysDebtorCashPayments.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-               <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">(-) Cash Expenses</span>
-                  <span className="font-medium text-red-700 dark:text-red-300">{`Rs. ${data.cashFlow.cashOtherExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-               <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">(-) Creditor Cash Payments</span>
-                  <span className="font-medium text-red-700 dark:text-red-300">{`Rs. ${data.cashFlow.todaysCreditorCashPayments.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-              <Separator className="my-2 bg-gray-300" />
-              <div className="flex justify-between items-center text-lg font-bold text-green-800 dark:text-green-300">
-                  <span>Expected Cash in Drawer</span>
-                  <span>{`Rs. ${data.cashFlow.cashInDrawer.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-        </div>
-
-
       <footer className="text-center mt-8 pt-4 border-t border-gray-300">
         <p className="text-xs text-gray-500">{t('generatedOn')} {new Date().toLocaleString(language)}</p>
         <p className="text-xs text-gray-500">{t('computerGeneratedReport')}</p>
