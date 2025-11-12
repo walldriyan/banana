@@ -62,11 +62,10 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             salesData, 
             purchaseData, 
             financialTxData, 
-            debtorsData, 
             creditorsData,
             lostAndDamageData,
             refundData,
-            totalSalePayments, // New aggregate for all payments on outstanding sales
+            debtorsCalculations, // New calculation for debtors
         ] = await Promise.all([
             // P&L: Sales within the date range
             prisma.transaction.aggregate({
@@ -88,13 +87,6 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 by: ['type'],
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 _sum: { amount: true },
-            }),
-            // Balance Sheet: ALL outstanding sales transactions (debtors)
-            prisma.transaction.aggregate({
-                where: {
-                    paymentStatus: { in: ['pending', 'partial'] },
-                },
-                _sum: { finalTotal: true },
             }),
              // Balance Sheet: ALL outstanding GRNs (creditors)
             prisma.goodsReceivedNote.aggregate({
@@ -120,14 +112,16 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                     }
                 }
             }),
-            // Balance Sheet Helper: Total payments made against ALL outstanding sales
-            prisma.salePayment.aggregate({
+            // Balance Sheet: Correctly calculate total debtors balance
+            prisma.transaction.findMany({
                 where: {
-                    transaction: {
-                        paymentStatus: { in: ['pending', 'partial'] }
-                    }
+                    paymentStatus: { in: ['pending', 'partial'] }
                 },
-                _sum: { amount: true }
+                include: {
+                    salePayments: {
+                        select: { amount: true }
+                    }
+                }
             })
         ]);
         
@@ -153,7 +147,12 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue;
         
         // Accurate Balance Sheet Calculations
-        const totalDebtorsValue = (debtorsData._sum.finalTotal || 0) - (totalSalePayments._sum.amount || 0);
+        const totalDebtorsValue = debtorsCalculations.reduce((totalDue, tx) => {
+            const totalPaid = tx.salePayments.reduce((paidSum, p) => paidSum + p.amount, 0);
+            const dueForThisTx = tx.finalTotal - totalPaid;
+            return totalDue + dueForThisTx;
+        }, 0);
+
         const totalCreditorsValue = (creditorsData._sum.totalAmount || 0) - (creditorsData._sum.paidAmount || 0);
 
         const reportData: SummaryReportData = {
@@ -287,7 +286,15 @@ export async function getDebtorsReportDataAction(dateRange?: DateRange) {
       include: {
         customer: true,
         salePayments: true, // Include full payment details
-        lines: true,        // Include transaction lines
+        lines: {
+          include: {
+            productBatch: {
+              include: {
+                product: true
+              }
+            }
+          }
+        },
       },
       orderBy: { transactionDate: 'asc' },
     });
@@ -295,6 +302,10 @@ export async function getDebtorsReportDataAction(dateRange?: DateRange) {
     const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
       ...tx,
       totalPaid: tx.salePayments.reduce((sum, p) => sum + p.amount, 0),
+       lines: tx.lines.map(line => ({
+          ...line,
+          productName: line.productBatch.product.name,
+      })),
     }));
 
     return { success: true, data: { debtors: transactionsWithPaidAmount, dateRange } };
