@@ -53,6 +53,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
     try {
         const { from, to } = dateRange;
         
+        const adjustedFrom = startOfDay(from);
         const adjustedTo = endOfDay(to);
 
         const [
@@ -68,70 +69,86 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             prisma.transaction.aggregate({
                 where: {
                     status: 'completed',
-                    transactionDate: { gte: from, lte: adjustedTo },
+                    transactionDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
                 _sum: { finalTotal: true, totalDiscountAmount: true },
                 _count: { id: true },
             }),
             // Purchase Data
             prisma.goodsReceivedNote.aggregate({
-                where: { grnDate: { gte: from, lte: adjustedTo } },
+                where: { grnDate: { gte: adjustedFrom, lte: adjustedTo } },
                 _sum: { totalAmount: true },
                 _count: { id: true },
             }),
             // Other Income/Expenses
             prisma.financialTransaction.groupBy({
                 by: ['type'],
-                where: { date: { gte: from, lte: adjustedTo } },
+                where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 _sum: { amount: true },
             }),
-            // Debtors (Outstanding customer payments)
+            // Debtors (Outstanding customer payments for transactions within the date range)
             prisma.transaction.aggregate({
-                where: { paymentStatus: { in: ['pending', 'partial'] } },
-                _sum: { finalTotal: true },
+                where: { 
+                    paymentStatus: { in: ['pending', 'partial'] },
+                    transactionDate: { gte: adjustedFrom, lte: adjustedTo },
+                },
+                _sum: { finalTotal: true, payment: { _sum: { paidAmount: true } } },
             }),
-             // Creditors (Outstanding supplier payments)
+             // Creditors (Outstanding supplier payments for GRNs within the date range)
             prisma.goodsReceivedNote.aggregate({
-                where: { paymentStatus: { in: ['pending', 'partial'] } },
+                where: { 
+                    paymentStatus: { in: ['pending', 'partial'] },
+                    grnDate: { gte: adjustedFrom, lte: adjustedTo },
+                },
                 _sum: { totalAmount: true, paidAmount: true },
             }),
             // Lost & Damage Data
             prisma.lostAndDamage.findMany({
-                where: { date: { gte: from, lte: adjustedTo } },
+                where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 include: { productBatch: { select: { costPrice: true }}}
             }),
-            // Refund Data
-            prisma.transaction.aggregate({
+            // Refund Data - we sum `finalTotal` which is what customer *kept*. The refund amount is the difference.
+            prisma.transaction.findMany({
                  where: {
                     status: 'refund',
-                    transactionDate: { gte: from, lte: adjustedTo },
+                    transactionDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
-                _sum: { finalTotal: true } // sum of what customers kept
+                include: {
+                    originalTransaction: {
+                        select: { finalTotal: true }
+                    }
+                }
             })
         ]);
         
         const otherIncome = financialTxData.find(d => d.type === 'INCOME')?._sum.amount || 0;
         const otherExpenses = financialTxData.find(d => d.type === 'EXPENSE')?._sum.amount || 0;
 
-        const totalRevenue = salesData._sum.finalTotal || 0;
+        const grossSalesRevenue = salesData._sum.finalTotal || 0;
         const totalPurchaseCost = purchaseData._sum.totalAmount || 0;
         
         const lostAndDamageValue = lostAndDamageData.reduce((sum, record) => {
             return sum + (record.quantity * (record.productBatch?.costPrice || 0));
         }, 0);
         
-        const totalRefundsValue = Math.abs(refundData._sum.finalTotal || 0);
+        // Calculate total value of refunds issued
+        const totalRefundsValue = refundData.reduce((sum, tx) => {
+            const originalTotal = tx.originalTransaction?.finalTotal || 0;
+            const keptTotal = tx.finalTotal; // finalTotal of a refund tx is the value of items kept
+            return sum + (originalTotal - keptTotal);
+        }, 0);
 
-        // Revenue is sales minus refunds
-        const netRevenue = totalRevenue - totalRefundsValue;
+        // Net Revenue is sales minus refunds
+        const netSalesRevenue = grossSalesRevenue - totalRefundsValue;
 
         // Gross Profit = Net Sales Revenue - Cost of Goods (approximated by purchases in the period)
-        const grossProfit = netRevenue - totalPurchaseCost;
+        const grossProfit = netSalesRevenue - totalPurchaseCost;
 
         // Net Profit = Gross Profit + Other Income - Other Expenses - Lost&Damage - Discounts
         const totalDiscountsGiven = salesData._sum.totalDiscountAmount || 0;
-        const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue - totalDiscountsGiven;
+        const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue;
         
+        const totalDebtors = (debtorsData._sum.finalTotal || 0) - (debtorsData._sum.payment?._sum?.paidAmount || 0);
         const totalCreditors = (creditorsData._sum.totalAmount || 0) - (creditorsData._sum.paidAmount || 0);
 
         const reportData: SummaryReportData = {
@@ -140,7 +157,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 to: to.toISOString(),
             },
             sales: {
-                totalRevenue: totalRevenue, // Gross Revenue before refunds
+                totalRevenue: grossSalesRevenue,
                 totalTransactions: salesData._count.id || 0,
                 totalDiscount: totalDiscountsGiven,
                 totalRefunds: totalRefundsValue,
@@ -153,8 +170,8 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 lostAndDamageValue: lostAndDamageValue,
             },
             income: {
-                totalIncome: totalRevenue + otherIncome,
-                salesIncome: totalRevenue,
+                totalIncome: grossSalesRevenue + otherIncome,
+                salesIncome: grossSalesRevenue,
                 otherIncome: otherIncome,
             },
             expenses: {
@@ -168,7 +185,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             },
             balanceSheet: {
                 assets: {
-                    debtors: debtorsData._sum.finalTotal || 0,
+                    debtors: totalDebtors,
                 },
                 liabilities: {
                     creditors: totalCreditors,
@@ -188,14 +205,15 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
 export async function getStockReportDataAction() {
     try {
         const batches = await prisma.productBatch.findMany({
+            where: { stock: { gt: 0 }},
             include: { product: true },
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
 
-        // Convert Decimal `stock` to string to preserve decimals
+        // Convert Decimal `stock` to number for easier use in the report
         const serializedBatches = batches.map(batch => ({
             ...batch,
-            stock: Number(batch.stock), // Keep as number for the report
+            stock: Number(batch.stock),
         }));
 
         return { success: true, data: serializedBatches };

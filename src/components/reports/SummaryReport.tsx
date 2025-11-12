@@ -52,12 +52,12 @@ export function SummaryReport({ data }: SummaryReportProps) {
     { label: 'otherExpenses', value: data.expenses.otherExpenses },
     { label: 'totalDiscountsGiven', value: data.sales.totalDiscount },
     { label: 'lostAndDamageValue', value: data.inventory.lostAndDamageValue },
+    { label: 'totalRefundsIssued', value: data.sales.totalRefunds },
   ];
 
   const incomeItems = [
       { label: 'salesRevenue', value: data.income.salesIncome },
       { label: 'otherIncome', value: data.income.otherIncome },
-      { label: 'totalRefundsIssued', value: -data.sales.totalRefunds, valueClassName: 'text-red-600' }, // Show as negative
   ];
   
   const totalExpenses = expenseItems.reduce((sum, item) => sum + item.value, 0);

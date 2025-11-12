@@ -123,7 +123,7 @@ const ReportGenerator = () => {
             else if (isSameDay(from, startOfYear(today)) && isSameDay(to, today)) setActivePreset('year');
             else setActivePreset(null);
         }
-    }, [dateRange, handleGenerateReport]);
+    }, [dateRange, handleGenerateReport, today]);
 
 
     const handlePresetClick = (range: DateRange, presetName: string) => {
@@ -252,7 +252,7 @@ const ReportGenerator = () => {
                         <AlertDescription>{error}</AlertDescription>
                     </Alert>
                  )}
-                 {activeReportData && (
+                 {activeReportData && !isPending && (
                      <Card>
                          <CardHeader className="flex flex-row items-center justify-between no-print">
                             <div>
