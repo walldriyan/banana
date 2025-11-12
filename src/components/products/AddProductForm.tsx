@@ -74,11 +74,14 @@ const ConversionFactorDisplay = ({ derivedUnitName, baseUnit, conversionFactor, 
     const factor = Number(conversionFactor);
     if (!factor || factor <= 0) return null;
 
+    // Show how many derived units make up one base unit.
+    const derivedPerBase = Number((1 / factor).toPrecision(6));
+
     return (
         <Alert className="mt-2 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300">
             <CheckCircle className="h-4 w-4 !text-emerald-700 dark:!text-emerald-300" />
             <AlertDescription className="text-emerald-900 dark:text-emerald-200">
-                {userInputQty} {derivedUnitName} = 1 {baseUnit} 
+                {derivedPerBase} {derivedUnitName} = <strong>1</strong> {baseUnit}
             </AlertDescription>
         </Alert>
     );
@@ -159,17 +162,20 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
          <Card className="mt-2 bg-muted/30 dark:bg-muted/10 border-dashed">
             <CardContent className="p-3 text-sm space-y-3">
                 <div className="space-y-4">
-                    <div className="flex justify-between items-center bg-background/50 p-2 rounded-md border text-sm">
-                        <span className="text-muted-foreground font-medium">Price per <span className='font-bold'>{baseUnit}</span>:</span>
-                        <span className="text-lg font-bold text-green-600">Rs. {sellingPrice.toFixed(2)}</span>
-                    </div>
                      <div className="grid grid-cols-2 gap-4">
                          <FormItem>
                             <Label>How many '<span className="font-bold text-primary">{derivedUnitName}</span>' make 1 '{baseUnit}'?</Label>
+                             <div className="flex justify-between items-center bg-background/50 p-2 rounded-md border text-sm">
+                                <span className="text-muted-foreground font-medium">Price per <span className='font-bold'>{baseUnit}</span>:</span>
+                                <span className="text-lg font-bold text-green-600">Rs. {sellingPrice.toFixed(2)}</span>
+                            </div>
                             <Input type="number" value={userQtyInput} onChange={handleQtyChange} placeholder="e.g., 1000" />
                         </FormItem>
                          <FormItem>
                             <Label>Price for 1 '<span className="font-bold text-primary">{derivedUnitName}</span>'</Label>
+                             <div className="flex justify-between items-center p-2 rounded-md text-sm h-10">
+                                 {/* This is a spacer to align the inputs */}
+                            </div>
                             <Input type="number" value={derivedPriceInput} onChange={handlePriceChange} placeholder="e.g., 0.40" />
                         </FormItem>
                     </div>
