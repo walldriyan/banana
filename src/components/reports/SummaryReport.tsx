@@ -113,27 +113,20 @@ export function SummaryReport({ data }: SummaryReportProps) {
                   <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
         </div>
+        
+        {/* Balance Sheet Section */}
+        <ReportRow label="bsAndMetricsTitle" value="" isHeader />
+        <div className="grid grid-cols-2 gap-x-4 p-3">
+            <ReportRow label="debtors" value={data.balanceSheet.assets.debtors} valueClassName="text-red-600 font-bold" />
+            <ReportRow label="creditors" value={data.balanceSheet.liabilities.creditors} valueClassName="text-orange-600 font-bold" />
+
+            <ReportRow label="todaysDebtorPayments" value={data.balanceSheet.assets.todaysDebtorPayments} isSubtle valueClassName="text-green-600"/>
+            <ReportRow label="todaysCreditorPayments" value={data.balanceSheet.liabilities.todaysCreditorPayments} isSubtle valueClassName="text-green-600"/>
+
+            <ReportRow label="grossProfit" value={data.profit.grossProfit} isBold/>
+            <ReportRow label="totalTransactions" value={data.sales.totalTransactions} isBold />
+        </div>
       </div>
-
-       <Card>
-          <CardHeader>
-             <div className='flex items-center gap-3'>
-                <Scale className="h-6 w-6 text-muted-foreground" />
-                <div>
-                    <CardTitle>Debtors & Creditors Summary</CardTitle>
-                    <CardDescription>A summary of money you owe and money owed to you, as of today.</CardDescription>
-                </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-              <ReportRow label="Total Receivable (Debtors)" value={data.balanceSheet.assets.debtors} valueClassName="text-red-600 font-bold" />
-              <ReportRow label="Today's Collections (Debtors)" value={data.balanceSheet.assets.todaysDebtorPayments} valueClassName="text-green-600" isSubtle/>
-              <Separator className="my-2"/>
-              <ReportRow label="Total Payable (Creditors)" value={data.balanceSheet.liabilities.creditors} valueClassName="text-orange-600 font-bold" />
-              <ReportRow label="Today's Payments (Creditors)" value={data.balanceSheet.liabilities.todaysCreditorPayments} valueClassName="text-green-600" isSubtle/>
-          </CardContent>
-      </Card>
-
 
       <footer className="text-center mt-8 pt-4 border-t border-gray-300">
         <p className="text-xs text-gray-500">{t('generatedOn')} {new Date().toLocaleString(language)}</p>
