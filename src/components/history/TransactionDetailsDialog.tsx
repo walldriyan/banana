@@ -118,13 +118,18 @@ export function TransactionDetailsDialog({
         </html>
       `);
       iframeDoc.close();
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
+      
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      }, 500);
     }
 
     setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 500);
+      if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+      }
+    }, 1500);
   };
 
   if (!transaction) return null;
