@@ -81,7 +81,7 @@ const ReportGenerator = () => {
     const { toast } = useToast();
 
     const handleGenerateReport = useCallback((type: ReportType, range: DateRange) => {
-        if ((type === 'summary' || type === 'transactions' || type === 'refunds') && (!range || !range.from || !range.to)) {
+        if ((type === 'summary' || type === 'transactions' || type === 'refunds' || type === 'debtors') && (!range || !range.from || !range.to)) {
             toast({
                 variant: 'destructive',
                 title: "Date Range Required",
@@ -108,7 +108,7 @@ const ReportGenerator = () => {
                     result = await getCreditorsReportDataAction();
                     break;
                 case 'debtors':
-                    result = await getDebtorsReportDataAction();
+                     result = await getDebtorsReportDataAction(range);
                     break;
                 case 'transactions':
                      result = await getTransactionsReportDataAction(range);
@@ -129,6 +129,10 @@ const ReportGenerator = () => {
         });
     }, [toast]);
 
+    const dateRangeString = useMemo(() => {
+        return dateRange ? `${dateRange.from?.toISOString()}-${dateRange.to?.toISOString()}` : '';
+    }, [dateRange]);
+
     useEffect(() => {
         if (dateRange?.from && dateRange.to) {
             handleGenerateReport(activeReport, dateRange);
@@ -141,7 +145,7 @@ const ReportGenerator = () => {
             else if (isSameDay(from, startOfYear(today)) && isSameDay(to, today)) setActivePreset('year');
             else setActivePreset(null);
         }
-    }, [dateRange, activeReport, handleGenerateReport]);
+    }, [dateRangeString, activeReport, handleGenerateReport]);
 
 
     const handlePresetClick = (range: DateRange, presetName: string) => {
@@ -195,6 +199,7 @@ const ReportGenerator = () => {
         
         let ReportComponent: React.ComponentType<{ data: any }> | null = null;
         let title = "Report";
+        let reportData = activeReportData;
 
         switch(activeReport) {
             case 'summary':
@@ -204,6 +209,7 @@ const ReportGenerator = () => {
             case 'stock':
                 ReportComponent = StockReport;
                 title = 'Stock Report';
+                reportData = activeReportData.data; // Nested data
                 break;
             case 'creditors':
                 ReportComponent = CreditorsReport;
@@ -224,7 +230,6 @@ const ReportGenerator = () => {
         }
 
         if (ReportComponent) {
-            const reportData = (activeReport === 'stock' && activeReportData.data) ? activeReportData.data : activeReportData;
             const ReactDOMServer = (await import('react-dom/server')).default;
             const reportHTML = ReactDOMServer.renderToString(
             <LanguageProvider initialLanguage={language}>
@@ -262,21 +267,22 @@ const ReportGenerator = () => {
     }
     
     const getReportDescription = (): string => {
-        if ((['summary', 'transactions', 'refunds'].includes(activeReport)) && activeReportData?.dateRange) {
-             return `Report for the period of ${new Date(activeReportData.dateRange.from).toLocaleDateString()} to ${new Date(activeReportData.dateRange.to).toLocaleDateString()}`;
+        const dataForDesc = activeReport === 'debtors' ? activeReportData.dateRange : activeReportData?.dateRange;
+        if ((['summary', 'transactions', 'refunds', 'debtors'].includes(activeReport)) && dataForDesc) {
+             return `Report for the period of ${new Date(dataForDesc.from).toLocaleDateString()} to ${new Date(dataForDesc.to).toLocaleDateString()}`;
         }
         return `Generated on ${new Date().toLocaleDateString()}`;
     }
 
 
     return (
-        <div className="flex flex-row h-full gap-6">
+        <div className="flex flex-col md:flex-row h-full gap-6">
             <div className="flex-1">
-                <Card>
+                <Card className="h-full flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between no-print flex-shrink-0">
                         <div>
                             <CardTitle>{getReportTitle()}</CardTitle>
-                            <CardDescription>{getReportDescription()}</CardDescription>
+                            {activeReportData && <CardDescription>{getReportDescription()}</CardDescription>}
                         </div>
                         <Button onClick={handlePrintActiveReport} variant="outline" disabled={!activeReportData || isPending}>
                             <Printer className="mr-2 h-4 w-4" /> Print Report
@@ -303,7 +309,7 @@ const ReportGenerator = () => {
                 </Card>
             </div>
 
-            <div className="flex flex-col w-96 flex-shrink-0 gap-6">
+            <div className="flex flex-col w-full md:w-96 flex-shrink-0 gap-6">
                 <Card className="no-print">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>

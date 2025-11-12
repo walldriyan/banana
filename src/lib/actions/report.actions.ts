@@ -88,16 +88,14 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 _sum: { amount: true },
             }),
-            // Debtors (Outstanding customer payments)
+            // Debtors (Outstanding customer payments) - This fetches ALL outstanding, not just from the date range. This is correct.
             prisma.transaction.aggregate({
                 where: {
                     paymentStatus: { in: ['pending', 'partial'] },
                 },
-                _sum: {
-                    finalTotal: true,
-                },
+                _sum: { finalTotal: true },
             }),
-             // Creditors (Outstanding supplier payments)
+             // Creditors (Outstanding supplier payments) - This also fetches ALL outstanding.
             prisma.goodsReceivedNote.aggregate({
                 where: {
                     paymentStatus: { in: ['pending', 'partial'] },
@@ -109,7 +107,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 include: { productBatch: { select: { costPrice: true }}}
             }),
-            // Refund Data - we sum `finalTotal` which is what customer *kept*. The refund amount is the difference.
+            // Refund Data
             prisma.transaction.findMany({
                  where: {
                     status: 'refund',
@@ -122,7 +120,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 }
             })
         ]);
-
+        
         const salePaymentsSum = await prisma.salePayment.aggregate({
              where: {
                 transaction: {
@@ -131,7 +129,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             },
             _sum: { amount: true }
         });
-        
+
         const otherIncome = financialTxData.find(d => d.type === 'INCOME')?._sum.amount || 0;
         const otherExpenses = financialTxData.find(d => d.type === 'EXPENSE')?._sum.amount || 0;
 
@@ -257,10 +255,20 @@ export async function getCreditorsReportDataAction() {
   }
 }
 
-export async function getDebtorsReportDataAction() {
+export async function getDebtorsReportDataAction(dateRange?: DateRange) {
   try {
+    const where: Prisma.TransactionWhereInput = {
+        paymentStatus: { in: ['pending', 'partial'] }
+    };
+    if (dateRange?.from && dateRange?.to) {
+        where.transactionDate = {
+            gte: startOfDay(dateRange.from),
+            lte: endOfDay(dateRange.to),
+        };
+    }
+
     const debtorTransactions = await prisma.transaction.findMany({
-      where: { paymentStatus: { in: ['pending', 'partial'] } },
+      where,
       include: {
         customer: true,
         salePayments: { select: { amount: true } }
@@ -273,7 +281,7 @@ export async function getDebtorsReportDataAction() {
       totalPaid: tx.salePayments.reduce((sum, p) => sum + p.amount, 0),
     }));
 
-    return { success: true, data: transactionsWithPaidAmount };
+    return { success: true, data: { debtors: transactionsWithPaidAmount, dateRange } };
   } catch (error) {
     console.error('[getDebtorsReportDataAction] Error:', error);
     return { success: false, error: 'Failed to fetch debtors report data.' };
