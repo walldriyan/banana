@@ -27,8 +27,8 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ cart, isCalculating, discou
           <div className="w-full flex flex-col h-full">
             <div className="flex-shrink-0">
                 <Table>
-                <TableHeader className="sticky top-0 bg-muted/95 backdrop-blur-sm z-10">
-                    <TableRow className="bg-muted hover:bg-muted">
+                <TableHeader className="sticky top-0 bg-muted/40 backdrop-blur-sm z-10">
+                    <TableRow className="bg-muted/40 hover:bg-muted/50">
                     <TableHead className="w-[40%]">Product</TableHead>
                     <TableHead className="w-[25%]">Qty</TableHead>
                     <TableHead>Price</TableHead>
