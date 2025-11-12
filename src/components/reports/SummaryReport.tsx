@@ -102,42 +102,31 @@ export function SummaryReport({ data }: SummaryReportProps) {
       <div className="border border-gray-300 overflow-hidden">
         {/* Profit & Loss Section */}
         <ReportRow label="plStatementTitle" value="" isHeader />
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
+        <div className="grid grid-cols-[1fr_auto] gap-x-4 p-3">
           {/* Column Headers */}
           <div className="font-semibold text-black">{t('expensesTitle')}</div>
           <div className="font-semibold text-black text-right">{/* Empty for alignment */}</div>
-          <div className="font-semibold text-black">{t('incomeTitle')}</div>
-          <div className="font-semibold text-black text-right">{/* Empty for alignment */}</div>
           
           {/* P&L Items */}
-          {Array.from({ length: Math.max(expenseItems.length, incomeItems.length) }).map((_, index) => (
-            <React.Fragment key={`pl-row-${index}`}>
-              {expenseItems[index] ? <ReportRow {...expenseItems[index]} isSubtle /> : <><div /><div /></>}
-              {incomeItems[index] ? <ReportRow {...incomeItems[index]} isSubtle /> : <><div /><div /></>}
+          {expenseItems.map((item, index) => (
+            <React.Fragment key={`pl-exp-row-${index}`}>
+              <ReportRow {...item} isSubtle />
+            </React.Fragment>
+          ))}
+
+          <div className="font-semibold text-black mt-4">{t('incomeTitle')}</div>
+          <div className="font-semibold text-black text-right mt-4">{/* Empty for alignment */}</div>
+          {incomeItems.map((item, index) => (
+             <React.Fragment key={`pl-inc-row-${index}`}>
+              <ReportRow {...item} isSubtle />
             </React.Fragment>
           ))}
         </div>
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3 pt-2 mt-2 border-t border-gray-200">
+        <div className="grid grid-cols-[1fr_auto] gap-x-4 px-3 pt-2 mt-2 border-t border-gray-200">
           <ReportRow label="totalExpenses" value={totalExpenses} isTotal isBold />
-          <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
         </div>
-        
-        {/* Net Profit Section */}
-        <div className="col-span-4 bg-blue-50 p-4 space-y-2 mt-2">
-            <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
-              <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600">{t('totalIncome')}</span>
-                  <span className="font-semibold">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-              <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600">{`(-) ${t('totalExpenses')}`}</span>
-                  <span className="font-semibold">{`Rs. ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
-              <Separator className="my-2 bg-gray-300" />
-              <div className="flex justify-between items-center text-lg font-bold text-blue-800">
-                  <span>{`(=) ${t('netProfitTitle')}`}</span>
-                  <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
-              </div>
+         <div className="grid grid-cols-[1fr_auto] gap-x-4 px-3 pt-2">
+          <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
         </div>
         
         {/* Balance Sheet & Metrics Section */}
@@ -154,6 +143,24 @@ export function SummaryReport({ data }: SummaryReportProps) {
                     {assetsAndMetrics[index] ? <ReportRow {...assetsAndMetrics[index]} /> : <><div /><div /></>}
                 </React.Fragment>
             ))}
+        </div>
+
+         {/* Net Profit Section */}
+        <div className="col-span-4 bg-blue-50 p-4 space-y-2 mt-2">
+            <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
+              <div className="flex justify-between items-center text-base">
+                  <span className="text-gray-600">{t('totalIncome')}</span>
+                  <span className="font-semibold">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+              <div className="flex justify-between items-center text-base">
+                  <span className="text-gray-600">{`(-) ${t('totalExpenses')}`}</span>
+                  <span className="font-semibold">{`Rs. ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+              <Separator className="my-2 bg-gray-300" />
+              <div className="flex justify-between items-center text-lg font-bold text-blue-800">
+                  <span>{`(=) ${t('netProfitTitle')}`}</span>
+                  <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
         </div>
       </div>
 
