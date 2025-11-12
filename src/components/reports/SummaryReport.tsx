@@ -4,7 +4,7 @@ import type { SummaryReportData } from '@/lib/actions/report.actions';
 import { Separator } from '../ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Landmark, Scale } from 'lucide-react';
+import { Landmark, Scale, Users, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ReportRowProps {
@@ -88,6 +88,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
       { label: 'grossProfit', value: data.profit.grossProfit, isBold: true },
       { label: 'totalTransactions', value: data.sales.totalTransactions, isSubtle: true },
   ];
+
 
   return (
     <div className="report-container p-4 bg-white text-sm text-black space-y-6">
