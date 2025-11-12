@@ -312,7 +312,7 @@ const ReportGenerator = () => {
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div>
                             <CardTitle>Report Generation</CardTitle>
-                            <CardDescription>Select a date range to automatically generate your financial summary report.</CardDescription>
+                            <CardDescription>Select a date range to generate reports.</CardDescription>
                         </div>
                         <LanguageToggle />
                     </CardHeader>
@@ -332,6 +332,10 @@ const ReportGenerator = () => {
                         <CardDescription>Select a specific report to view and print.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
+                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(dateRange, 'summary')} disabled={isPending}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            {isPending && activeReport === 'summary' ? 'Generating...' : 'View Summary Report'}
+                        </Button>
                          <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport(undefined, 'stock')} disabled={isPending}>
                             <Package className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'stock' ? 'Generating...' : 'View Stock Report'}
