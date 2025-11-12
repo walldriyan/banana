@@ -7,19 +7,26 @@ import { format } from 'date-fns';
 type CompletedTransaction = Transaction & { customer: Customer };
 
 interface TransactionsReportProps {
-  data: CompletedTransaction[];
+  data: {
+    transactions: CompletedTransaction[],
+    dateRange?: { from: Date, to: Date }
+  };
 }
 
 export const TransactionsReport: React.FC<TransactionsReportProps> = ({ data }) => {
+  const { transactions, dateRange } = data;
   const { t, language } = useLanguage();
-  const grandTotal = data.reduce((sum, tx) => sum + tx.finalTotal, 0);
+  const grandTotal = transactions.reduce((sum, tx) => sum + tx.finalTotal, 0);
 
   return (
     <div className="report-container p-4 bg-white text-sm text-black">
         <header className="text-center mb-6">
             <h1 className="text-xl font-bold text-gray-800">Completed Transactions Report</h1>
-            <p className="text-xs text-gray-500">
-            As of {new Date().toLocaleString(language)}
+             <p className="text-xs text-gray-500">
+                {dateRange?.from && dateRange?.to
+                    ? `For the period of ${format(new Date(dateRange.from), 'PPP')} to ${format(new Date(dateRange.to), 'PPP')}`
+                    : `As of ${new Date().toLocaleString(language)}`
+                }
             </p>
         </header>
 
@@ -34,7 +41,7 @@ export const TransactionsReport: React.FC<TransactionsReportProps> = ({ data }) 
                 </tr>
             </thead>
             <tbody>
-                {data.map((tx) => (
+                {transactions.map((tx) => (
                     <tr key={tx.id} className="hover:bg-gray-50">
                         <td className="p-2 border-b border-gray-200">{format(new Date(tx.transactionDate), 'yyyy-MM-dd HH:mm')}</td>
                         <td className="p-2 border-b border-gray-200 truncate max-w-[100px]">{tx.id}</td>

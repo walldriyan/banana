@@ -10,13 +10,17 @@ type RefundTransaction = Transaction & {
 };
 
 interface RefundsReportProps {
-  data: RefundTransaction[];
+  data: {
+    refunds: RefundTransaction[],
+    dateRange?: { from: Date, to: Date }
+  };
 }
 
 export const RefundsReport: React.FC<RefundsReportProps> = ({ data }) => {
+  const { refunds, dateRange } = data;
   const { t, language } = useLanguage();
 
-  const totalRefundedValue = data.reduce((sum, tx) => {
+  const totalRefundedValue = refunds.reduce((sum, tx) => {
       const originalTotal = tx.originalTransaction?.finalTotal || 0;
       const keptTotal = tx.finalTotal;
       return sum + (originalTotal - keptTotal);
@@ -27,7 +31,10 @@ export const RefundsReport: React.FC<RefundsReportProps> = ({ data }) => {
         <header className="text-center mb-6">
             <h1 className="text-xl font-bold text-gray-800">Refunds Report</h1>
             <p className="text-xs text-gray-500">
-                As of {new Date().toLocaleString(language)}
+                 {dateRange?.from && dateRange?.to
+                    ? `For the period of ${format(new Date(dateRange.from), 'PPP')} to ${format(new Date(dateRange.to), 'PPP')}`
+                    : `As of ${new Date().toLocaleString(language)}`
+                }
             </p>
         </header>
 
@@ -42,7 +49,7 @@ export const RefundsReport: React.FC<RefundsReportProps> = ({ data }) => {
                 </tr>
             </thead>
             <tbody>
-                {data.map((tx) => {
+                {refunds.map((tx) => {
                     const originalTotal = tx.originalTransaction?.finalTotal || 0;
                     const keptTotal = tx.finalTotal;
                     const refundedAmount = originalTotal - keptTotal;

@@ -137,7 +137,7 @@ const ReportGenerator = () => {
     // Auto-generate summary report when date range changes
     useEffect(() => {
         if (dateRange?.from && dateRange.to) {
-            handleGenerateReport(dateRange, 'summary');
+            handleGenerateReport(dateRange, activeReport);
             
             const from = dateRange.from;
             const to = dateRange.to;
@@ -147,7 +147,8 @@ const ReportGenerator = () => {
             else if (isSameDay(from, startOfYear(today)) && isSameDay(to, today)) setActivePreset('year');
             else setActivePreset(null);
         }
-    }, [dateRangeString, handleGenerateReport, today]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dateRangeString, today]);
 
 
     const handlePresetClick = (range: DateRange, presetName: string) => {

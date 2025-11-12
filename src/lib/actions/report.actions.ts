@@ -88,21 +88,19 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 _sum: { amount: true },
             }),
-            // Debtors (Outstanding customer payments for transactions within the date range)
+            // Debtors (Outstanding customer payments)
             prisma.transaction.aggregate({
                 where: {
                     paymentStatus: { in: ['pending', 'partial'] },
-                    transactionDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
                 _sum: {
                     finalTotal: true,
                 },
             }),
-             // Creditors (Outstanding supplier payments for GRNs within the date range)
+             // Creditors (Outstanding supplier payments)
             prisma.goodsReceivedNote.aggregate({
                 where: {
                     paymentStatus: { in: ['pending', 'partial'] },
-                    grnDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
                 _sum: { totalAmount: true, paidAmount: true },
             }),
@@ -128,7 +126,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const salePaymentsSum = await prisma.salePayment.aggregate({
              where: {
                 transaction: {
-                    id: { in: (await prisma.transaction.findMany({ where: { paymentStatus: { in: ['pending', 'partial'] }, transactionDate: { gte: adjustedFrom, lte: adjustedTo } } })).map(t => t.id) }
+                    paymentStatus: { in: ['pending', 'partial'] }
                 }
             },
             _sum: { amount: true }
@@ -299,7 +297,7 @@ export async function getTransactionsReportDataAction(dateRange?: DateRange) {
             include: { customer: true },
             orderBy: { transactionDate: 'desc' },
         });
-        return { success: true, data: transactions };
+        return { success: true, data: { transactions, dateRange } };
     } catch (error) {
         return { success: false, error: "Failed to fetch transactions report data." };
     }
@@ -325,7 +323,7 @@ export async function getRefundsReportDataAction(dateRange?: DateRange) {
             },
             orderBy: { transactionDate: 'desc' },
         });
-        return { success: true, data: refunds };
+        return { success: true, data: { refunds, dateRange } };
     } catch (error) {
         return { success: false, error: "Failed to fetch refunds report data." };
     }
