@@ -275,7 +275,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardDescription>{steps[0].description}</CardDescription>
                     </CardHeader>
                     <CardContent className="divide-y">
-                         {isEditMode && (
+                        {isEditMode && (
                             <Alert variant="default" className="bg-blue-50 border-blue-200 mb-6">
                                  <AlertTriangle className="h-4 w-4 text-blue-600" />
                                 <AlertTitle className='text-blue-800'>Edit Mode</AlertTitle>
@@ -395,66 +395,71 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                     </CardContent>
                  </Card>
               )}
-
+             
               {currentStep === 1 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Pricing & Stock</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem>
-                                <FormLabel>Cost Price</FormLabel>
-                                <div className="relative">
-                                    <Wallet className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <FormControl><Input type="number" {...field} className="pl-10" /></FormControl>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{steps[1].title}</CardTitle>
+                        <CardDescription>{steps[1].description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="divide-y">
+                        <div className="grid md:grid-cols-3 gap-6 py-4">
+                           <div className="md:col-span-1">
+                               <FormLabel>Cost Price</FormLabel>
+                               <FormDescription>The price you paid for the product.</FormDescription>
+                           </div>
+                           <div className="md:col-span-2">
+                                <FormField name="costPrice" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                           </div>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-6 py-4">
+                           <div className="md:col-span-1">
+                               <FormLabel>Selling Price</FormLabel>
+                               <FormDescription>The price you will sell the product for.</FormDescription>
+                           </div>
+                           <div className="md:col-span-2">
+                                <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                           </div>
+                        </div>
+                         <div className="grid md:grid-cols-3 gap-6 py-4">
+                           <div className="md:col-span-1">
+                               <FormLabel>{isEditMode ? 'Current Stock' : 'Initial Stock'}</FormLabel>
+                               <FormDescription>The quantity of this product batch.</FormDescription>
+                           </div>
+                           <div className="md:col-span-2">
+                                <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem>
+                                <FormControl><Input type="number" {...field} disabled={isEditMode} /></FormControl>
+                                {isEditMode && <Alert variant="destructive" className="mt-2"><AlertTriangle className="h-4 w-4" /><AlertTitle>Stock Update Notice</AlertTitle><AlertDescription>Stock can only be adjusted via the <strong>'Purchases (GRN)'</strong> section.</AlertDescription></Alert>}
+                                <FormMessage />
+                                </FormItem> )} />
+                           </div>
+                        </div>
+
+                        <Separator className="my-6" />
+
+                         <div className="grid md:grid-cols-3 gap-6 py-4">
+                           <div className="md:col-span-1">
+                               <FormLabel>Units of Measurement</FormLabel>
+                               <FormDescription>Define how this product is measured.</FormDescription>
+                           </div>
+                           <div className="md:col-span-2 space-y-4">
+                                <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is sold in.</FormDescription><FormMessage /></FormItem> )} />
+                                <div className="space-y-2">
+                                    <FormLabel>Derived Units</FormLabel>
+                                    {fields.map((field, index) => (
+                                        <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
+                                            <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
+                                            <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder="Factor (e.g., 12)" /></FormItem> )} />
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+                                        </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', conversionFactor: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Derived Unit</Button>
                                 </div>
-                                <FormMessage /></FormItem> )} />
-                            <FormField name="sellingPrice" control={form.control} render={({ field }) => ( <FormItem>
-                                <FormLabel>Selling Price</FormLabel>
-                                 <div className="relative">
-                                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <FormControl><Input type="number" {...field} className="pl-10 text-lg h-12" /></FormControl>
-                                </div>
-                                <FormMessage /></FormItem> )} />
-                            <FormField name="quantity" control={form.control} render={({ field }) => ( <FormItem>
-                                <FormLabel>{isEditMode ? 'Current Stock' : 'Initial Stock'}</FormLabel>
-                                <div className="relative">
-                                    <Boxes className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                                    <FormControl><Input type="number" {...field} disabled={isEditMode} className="pl-10 text-lg h-12 font-bold" /></FormControl>
-                                </div>
-                                <FormMessage /></FormItem> )} />
-                            {isEditMode && (
-                                <Alert variant="destructive">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertTitle>Stock Update Notice</AlertTitle>
-                                    <AlertDescription>
-                                        Stock can only be adjusted via the <strong>'Purchases (GRN)'</strong> section to maintain an accurate audit trail. This field is for display only.
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                        </CardContent>
-                    </Card>
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Units of Measurement</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <FormField name="units.baseUnit" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Base Unit</FormLabel><FormControl><Input placeholder="e.g., pcs, kg, ltr" {...field} /></FormControl><FormDescription>The smallest unit the product is sold in.</FormDescription><FormMessage /></FormItem> )} />
-                            <div className="space-y-2">
-                                <FormLabel>Derived Units</FormLabel>
-                                {fields.map((field, index) => (
-                                    <div key={field.id} className="flex items-center gap-2 p-2 border rounded-md">
-                                        <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
-                                        <FormField control={form.control} name={`units.derivedUnits.${index}.conversionFactor`} render={({ field }) => ( <FormItem className="flex-1"><Input type="number" {...field} placeholder="Factor (e.g., 12)" /></FormItem> )} />
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                                    </div>
-                                ))}
-                                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', conversionFactor: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Derived Unit</Button>
-                            </div>
-                        </CardContent>
-                     </Card>
-                </div>
+                           </div>
+                        </div>
+
+                    </CardContent>
+                </Card>
               )}
               
               {currentStep === 2 && (
@@ -463,54 +468,51 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                         <CardTitle>{steps[2].title}</CardTitle>
                         <CardDescription>{steps[2].description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                        <FormField
-                            control={form.control}
-                            name="tax"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Batch Tax Rate (%)</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="e.g., 15" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="discount"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Batch Default Discount Value</FormLabel>
-                                <FormControl>
-                                    <Input type="number" placeholder="e.g., 10 or 100" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                         <FormField
-                            control={form.control}
-                            name="discountType"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Batch Default Discount Type</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a discount type" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="PERCENTAGE">PERCENTAGE</SelectItem>
-                                            <SelectItem value="FIXED">FIXED</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                    <CardContent className="divide-y">
+                       <div className="grid md:grid-cols-3 gap-6 py-4">
+                           <div className="md:col-span-1">
+                               <FormLabel>Batch Discount</FormLabel>
+                               <FormDescription>Default discount for this specific batch.</FormDescription>
+                           </div>
+                           <div className="md:col-span-2 flex gap-4">
+                               <FormField control={form.control} name="discount" render={({ field }) => (
+                                    <FormItem className="flex-1">
+                                        <FormLabel>Value</FormLabel>
+                                        <FormControl><Input type="number" placeholder="e.g., 10 or 100" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="discountType" render={({ field }) => (
+                                    <FormItem className="w-[150px]">
+                                        <FormLabel>Type</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                            <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                <SelectItem value="PERCENTAGE">Percentage</SelectItem>
+                                                <SelectItem value="FIXED">Fixed</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}/>
+                           </div>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-6 py-4">
+                           <div className="md:col-span-1">
+                               <FormLabel>Batch Tax Rate</FormLabel>
+                               <FormDescription>Tax rate applied to this specific batch.</FormDescription>
+                           </div>
+                           <div className="md:col-span-2">
+                                <FormField control={form.control} name="tax" render={({ field }) => (
+                                    <FormItem>
+                                    <FormControl>
+                                        <Input type="number" placeholder="e.g., 15" {...field} />
+                                    </FormControl>
                                     <FormMessage />
-                                </FormItem>
-                            )}
-                            />
+                                    </FormItem>
+                                )}/>
+                           </div>
+                        </div>
                     </CardContent>
                  </Card>
               )}
