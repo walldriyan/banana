@@ -14,6 +14,7 @@ import {
   getGroupedRowModel,
   getExpandedRowModel,
   ExpandedState,
+  Row,
 } from "@tanstack/react-table"
 
 import {
@@ -31,6 +32,7 @@ import { PlusCircle, ArchiveX } from "lucide-react"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
 
 
 interface DataTableProps<TData, TValue> {
@@ -40,6 +42,7 @@ interface DataTableProps<TData, TValue> {
   hideZeroStock: boolean;
   onHideZeroStockChange: (checked: boolean) => void;
 }
+
 
 export function ProductsDataTable<TData, TValue>({
   columns,
@@ -110,7 +113,7 @@ export function ProductsDataTable<TData, TValue>({
                 </AuthorizationGuard>
             </div>
         </div>
-        <div className="rounded-md border flex-grow overflow-y-auto">
+        <div className="rounded-md border flex-grow overflow-auto">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -136,6 +139,7 @@ export function ProductsDataTable<TData, TValue>({
                     <TableRow
                         key={row.id}
                         data-state={row.getIsSelected() && "selected"}
+                        className={cn(row.depth > 0 && "bg-muted/50")}
                     >
                         {row.getVisibleCells().map((cell) => (
                         <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 1.5 + (cell.getIsGrouped() ? 0 : 1.5)}rem` }}>

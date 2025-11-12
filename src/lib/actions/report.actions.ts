@@ -43,10 +43,21 @@ export interface SummaryReportData {
     balanceSheet: {
         assets: {
             debtors: number; // Money owed by customers
+            todaysDebtorPayments: number; // Collections received today for any debt
         };
         liabilities: {
             creditors: number; // Money owed to suppliers
+            todaysCreditorPayments: number; // Payments made today for any debt
         };
+    };
+     cashFlow: { // New Section
+        cashSales: number;
+        cashOtherIncome: number;
+        todaysDebtorCashPayments: number;
+        cashPurchases: number;
+        cashOtherExpenses: number;
+        todaysCreditorCashPayments: number;
+        cashInDrawer: number;
     };
 }
 
@@ -58,58 +69,38 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const adjustedFrom = startOfDay(from);
         const adjustedTo = endOfDay(to);
 
+        // --- P&L Calculations (Period Specific) ---
         const [
             salesData, 
             purchaseData, 
             financialTxData, 
-            debtorsData, 
-            creditorsData,
             lostAndDamageData,
-            refundData
+            refundData,
         ] = await Promise.all([
-            // Sales Data
-            prisma.transaction.aggregate({
+            // P&L: Sales within the date range
+            prisma.transaction.findMany({
                 where: {
                     status: 'completed',
                     transactionDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
-                _sum: { finalTotal: true, totalDiscountAmount: true },
-                _count: { id: true },
+                 include: { payment: true }
             }),
-            // Purchase Data
+            // P&L: Purchases within the date range
             prisma.goodsReceivedNote.aggregate({
                 where: { grnDate: { gte: adjustedFrom, lte: adjustedTo } },
                 _sum: { totalAmount: true },
                 _count: { id: true },
             }),
-            // Other Income/Expenses
-            prisma.financialTransaction.groupBy({
-                by: ['type'],
+            // P&L: Other Income/Expenses within the date range
+            prisma.financialTransaction.findMany({
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
-                _sum: { amount: true },
             }),
-            // Debtors (Outstanding customer payments)
-            prisma.transaction.aggregate({
-                where: {
-                    paymentStatus: { in: ['pending', 'partial'] },
-                },
-                _sum: {
-                    finalTotal: true,
-                },
-            }),
-             // Creditors (Outstanding supplier payments)
-            prisma.goodsReceivedNote.aggregate({
-                where: {
-                    paymentStatus: { in: ['pending', 'partial'] },
-                },
-                _sum: { totalAmount: true, paidAmount: true },
-            }),
-            // Lost & Damage Data
+            // P&L: Lost & Damage within the date range
             prisma.lostAndDamage.findMany({
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
                 include: { productBatch: { select: { costPrice: true }}}
             }),
-            // Refund Data - we sum `finalTotal` which is what customer *kept*. The refund amount is the difference.
+            // P&L: Refunds within the date range
             prisma.transaction.findMany({
                  where: {
                     status: 'refund',
@@ -120,47 +111,110 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                         select: { finalTotal: true }
                     }
                 }
-            })
+            }),
         ]);
 
-        const salePaymentsSum = await prisma.salePayment.aggregate({
-             where: {
-                transaction: {
-                    paymentStatus: { in: ['pending', 'partial'] }
-                }
-            },
-            _sum: { amount: true }
-        });
-        
-        const otherIncome = financialTxData.find(d => d.type === 'INCOME')?._sum.amount || 0;
-        const otherExpenses = financialTxData.find(d => d.type === 'EXPENSE')?._sum.amount || 0;
+        // --- Balance Sheet Calculations (As of Now) ---
+        const todayStart = startOfDay(new Date());
+        const todayEnd = endOfDay(new Date());
 
-        const grossSalesRevenue = salesData._sum.finalTotal || 0;
-        const totalPurchaseCost = purchaseData._sum.totalAmount || 0;
+        const [
+            debtorsData,
+            creditorsData,
+            todaysDebtorPayments,
+            todaysCreditorPayments,
+        ] = await Promise.all([
+            // Balance Sheet: All outstanding debtor transactions
+            prisma.transaction.findMany({
+                where: { paymentStatus: { in: ['pending', 'partial'] } },
+                select: { finalTotal: true, salePayments: { select: { amount: true } } }
+            }),
+            // Balance Sheet: All outstanding creditor GRNs
+            prisma.goodsReceivedNote.findMany({
+                where: { paymentStatus: { in: ['pending', 'partial'] } },
+                select: { totalAmount: true, payments: { select: { amount: true } } }
+            }),
+            // Balance Sheet: Debtor payments received today
+            prisma.salePayment.findMany({
+                where: { paymentDate: { gte: todayStart, lte: todayEnd } }
+            }),
+            // Balance Sheet: Creditor payments made today
+            prisma.purchasePayment.findMany({
+                where: { paymentDate: { gte: todayStart, lte: todayEnd } }
+            })
+        ]);
         
+        // --- Process Sales Data ---
+        const grossSalesRevenue = salesData.reduce((sum, tx) => sum + tx.finalTotal, 0);
+        const totalDiscountsGiven = salesData.reduce((sum, tx) => sum + tx.totalDiscountAmount, 0);
+        const cashSales = salesData
+            .filter(tx => tx.payment?.paymentMethod === 'cash')
+            .reduce((sum, tx) => sum + tx.payment!.paidAmount, 0); // Amount paid in cash
+
+        // --- Process Other Financial Transactions ---
+        const otherIncome = financialTxData
+            .filter(tx => tx.type === 'INCOME')
+            .reduce((sum, tx) => sum + tx.amount, 0);
+        const otherExpenses = financialTxData
+            .filter(tx => tx.type === 'EXPENSE')
+            .reduce((sum, tx) => sum + tx.amount, 0);
+        
+        // --- Process Purchase Data ---
+        const totalPurchaseCost = purchaseData._sum.totalAmount || 0;
+
+        // --- Process Inventory & Refund Data ---
         const lostAndDamageValue = lostAndDamageData.reduce((sum, record) => {
             return sum + (record.quantity * (record.productBatch?.costPrice || 0));
         }, 0);
         
-        // Calculate total value of refunds issued
         const totalRefundsValue = refundData.reduce((sum, tx) => {
             const originalTotal = tx.originalTransaction?.finalTotal || 0;
-            const keptTotal = tx.finalTotal; // finalTotal of a refund tx is the value of items kept
+            const keptTotal = tx.finalTotal;
             return sum + (originalTotal - keptTotal);
         }, 0);
 
-        // Net Revenue is sales minus refunds
+        // --- P&L Summary ---
         const netSalesRevenue = grossSalesRevenue - totalRefundsValue;
-
-        // Gross Profit = Net Sales Revenue - Cost of Goods (approximated by purchases in the period)
-        const grossProfit = netSalesRevenue - totalPurchaseCost;
-
-        // Net Profit = Gross Profit + Other Income - Other Expenses - Lost&Damage - Discounts
-        const totalDiscountsGiven = salesData._sum.totalDiscountAmount || 0;
+        const grossProfit = netSalesRevenue - totalPurchaseCost; // This is a simplified GP
         const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue;
         
-        const totalDebtors = (debtorsData._sum.finalTotal || 0) - (salePaymentsSum._sum.amount || 0);
-        const totalCreditors = (creditorsData._sum.totalAmount || 0) - (creditorsData._sum.paidAmount || 0);
+        // --- Balance Sheet Summary ---
+        const totalDebtorsValue = debtorsData.reduce((totalDue, tx) => {
+            const totalPaidForTx = tx.salePayments.reduce((paidSum, p) => paidSum + p.amount, 0);
+            const dueForThisTx = tx.finalTotal - totalPaidForTx;
+            return totalDue + dueForThisTx;
+        }, 0);
+
+        const totalCreditorsValue = creditorsData.reduce((totalDue, grn) => {
+            const totalPaidForGrn = grn.payments.reduce((paidSum, p) => paidSum + p.amount, 0);
+            const dueForThisGrn = grn.totalAmount - totalPaidForGrn;
+            return totalDue + dueForThisGrn;
+        }, 0);
+        
+        const totalTodaysDebtorPayments = todaysDebtorPayments.reduce((sum, p) => sum + p.amount, 0);
+        const totalTodaysCreditorPayments = todaysCreditorPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        // --- Cash Flow Calculations (For Today Only) ---
+        const cashOtherIncomeToday = financialTxData
+            .filter(tx => tx.type === 'INCOME' && tx.date >= todayStart && tx.date <= todayEnd) // Assuming all 'other' are cash
+            .reduce((sum, tx) => sum + tx.amount, 0);
+        
+        const cashOtherExpensesToday = financialTxData
+            .filter(tx => tx.type === 'EXPENSE' && tx.date >= todayStart && tx.date <= todayEnd) // Assuming all 'other' are cash
+            .reduce((sum, tx) => sum + tx.amount, 0);
+            
+        const todaysDebtorCashPayments = todaysDebtorPayments
+            .filter(p => p.paymentMethod === 'cash')
+            .reduce((sum, p) => sum + p.amount, 0);
+            
+        const todaysCreditorCashPayments = todaysCreditorPayments
+            .filter(p => p.paymentMethod === 'cash')
+            .reduce((sum, p) => sum + p.amount, 0);
+
+        const cashIn = cashSales + cashOtherIncomeToday + todaysDebtorCashPayments;
+        const cashOut = cashOtherExpensesToday + todaysCreditorCashPayments;
+        const cashInDrawer = cashIn - cashOut;
+
 
         const reportData: SummaryReportData = {
             dateRange: {
@@ -169,7 +223,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             },
             sales: {
                 totalRevenue: grossSalesRevenue,
-                totalTransactions: salesData._count.id || 0,
+                totalTransactions: salesData.length || 0,
                 totalDiscount: totalDiscountsGiven,
                 totalRefunds: totalRefundsValue,
             },
@@ -196,12 +250,23 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             },
             balanceSheet: {
                 assets: {
-                    debtors: totalDebtors,
+                    debtors: totalDebtorsValue,
+                    todaysDebtorPayments: totalTodaysDebtorPayments,
                 },
                 liabilities: {
-                    creditors: totalCreditors,
+                    creditors: totalCreditorsValue,
+                    todaysCreditorPayments: totalTodaysCreditorPayments,
                 },
             },
+            cashFlow: {
+                cashSales,
+                cashOtherIncome: cashOtherIncomeToday,
+                todaysDebtorCashPayments,
+                cashPurchases: 0, // Not tracked by payment method yet
+                cashOtherExpenses: cashOtherExpensesToday,
+                todaysCreditorCashPayments,
+                cashInDrawer,
+            }
         };
 
         return { success: true, data: reportData };
@@ -227,20 +292,39 @@ export async function getStockReportDataAction() {
             stock: Number(batch.stock),
         }));
 
-        return { success: true, data: serializedBatches };
+        return { success: true, data: { data: serializedBatches } };
     } catch (error) {
         console.error("Error fetching stock report data:", error);
         return { success: false, error: "Failed to fetch stock report data." };
     }
 }
 
-export async function getCreditorsReportDataAction() {
+export async function getCreditorsReportDataAction(dateRange?: DateRange) {
   try {
+    const where: Prisma.GoodsReceivedNoteWhereInput = {
+        paymentStatus: { in: ['pending', 'partial'] }
+    };
+    if (dateRange?.from && dateRange?.to) {
+        where.grnDate = {
+            gte: startOfDay(dateRange.from),
+            lte: endOfDay(dateRange.to),
+        };
+    }
+
     const creditorGrns = await prisma.goodsReceivedNote.findMany({
-      where: { paymentStatus: { in: ['pending', 'partial'] } },
+      where,
       include: {
         supplier: true,
-        payments: { select: { amount: true } }
+        payments: true, // Include full payment details
+        items: {
+            include: {
+                productBatch: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
+        },
       },
       orderBy: { grnDate: 'asc' },
     });
@@ -250,20 +334,39 @@ export async function getCreditorsReportDataAction() {
       totalPaid: grn.payments.reduce((sum, p) => sum + p.amount, 0),
     }));
 
-    return { success: true, data: grnsWithPaidAmount };
+    return { success: true, data: { creditors: grnsWithPaidAmount, dateRange } };
   } catch (error) {
     console.error('[getCreditorsReportDataAction] Error:', error);
     return { success: false, error: 'Failed to fetch creditors report data.' };
   }
 }
 
-export async function getDebtorsReportDataAction() {
+export async function getDebtorsReportDataAction(dateRange?: DateRange) {
   try {
+    const where: Prisma.TransactionWhereInput = {
+        paymentStatus: { in: ['pending', 'partial'] }
+    };
+    if (dateRange?.from && dateRange?.to) {
+        where.transactionDate = {
+            gte: startOfDay(dateRange.from),
+            lte: endOfDay(dateRange.to),
+        };
+    }
+
     const debtorTransactions = await prisma.transaction.findMany({
-      where: { paymentStatus: { in: ['pending', 'partial'] } },
+      where,
       include: {
         customer: true,
-        salePayments: { select: { amount: true } }
+        salePayments: true, // Include full payment details
+        lines: {
+          include: {
+            productBatch: {
+              include: {
+                product: true
+              }
+            }
+          }
+        },
       },
       orderBy: { transactionDate: 'asc' },
     });
@@ -271,9 +374,13 @@ export async function getDebtorsReportDataAction() {
     const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
       ...tx,
       totalPaid: tx.salePayments.reduce((sum, p) => sum + p.amount, 0),
+       lines: tx.lines.map(line => ({
+          ...line,
+          productName: line.productBatch.product.name,
+      })),
     }));
 
-    return { success: true, data: transactionsWithPaidAmount };
+    return { success: true, data: { debtors: transactionsWithPaidAmount, dateRange } };
   } catch (error) {
     console.error('[getDebtorsReportDataAction] Error:', error);
     return { success: false, error: 'Failed to fetch debtors report data.' };

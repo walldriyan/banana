@@ -95,10 +95,10 @@ export const getColumns = (
                 return (
                 <div className="flex items-center gap-2">
                     <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
                     onClick={row.getToggleExpandedHandler()}
-                    className="h-6 w-6"
+                    className="h-6 w-6 ml-2"
                     >
                     {row.getIsExpanded() ? (
                         <ChevronsDownUp className="h-4 w-4" />
@@ -106,19 +106,17 @@ export const getColumns = (
                         <ChevronsRight className="h-4 w-4" />
                     )}
                     </Button>
-                    <span className="font-bold">{value} ({row.subRows.length})</span>
+                    <span className="font-bold truncate max-w-[200px]">{value} ({row.subRows.length})</span>
                 </div>
                 );
             }
-            return <div className="font-bold">{value}</div>;
+            return (
+                <div>
+                    <div className="font-bold truncate max-w-[200px]">{value}</div>
+                    <Badge variant="outline" className="font-mono mt-1">{row.original.batchNumber}</Badge>
+                </div>
+            )
         },
-    },
-     {
-        accessorKey: "batchNumber",
-        header: "Batch Number",
-        cell: ({ row }) => {
-            return <Badge variant="secondary">{row.getValue("batchNumber")}</Badge>
-        }
     },
     {
         accessorKey: "sellingPrice",
@@ -141,12 +139,12 @@ export const getColumns = (
      {
         accessorKey: "product.category",
         header: "Category",
-         cell: info => info.row.original.product.category,
+         cell: ({row}) => <div className="truncate max-w-[150px]">{row.original.product.category}</div>,
     },
      {
         accessorKey: "product.brand",
         header: "Brand",
-         cell: info => info.row.original.product.brand,
+         cell: ({row}) => <div className="truncate max-w-[150px]">{row.original.product.brand}</div>,
     },
     {
         accessorKey: "product.isActive",

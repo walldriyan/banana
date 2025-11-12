@@ -10,7 +10,7 @@ export default async function ReportsPage() {
         <p className="text-muted-foreground">Generate and view financial summary reports for your business.</p>
       </div>
       
-       <div className="flex-1 min-h-0">
+       <div className="flex-1">
          <AuthorizationGuard 
             permissionKey="reports.view"
             fallback={<p>You do not have permission to view reports.</p>}

@@ -53,13 +53,13 @@
      /* 🩶 මුළු UI එකේ පසුබිම - deep charcoal gray */
      --background: 0 0% 11%;
      /* #212121 වගේ, මෘදු අඳුරු look එකක් */
-     --foreground: 0 0% 90%;
+     --foreground: 0 0% 80%;
      /* #F2F2F2 - අකුරු පැහැදිලිව දක්වන්න */
 
      /* 🪟 Card / Panel / Table section */
      --card: 0 0% 10%;
      /* #2E2E2E - box එකේ අඳුරු bg එක */
-     --card-foreground: 0 0% 95%;
+     --card-foreground: 0 0% 80%;
 
      /* 🧭 Popovers / tooltips වගේ overlays */
      --popover: 0 0% 18%;
