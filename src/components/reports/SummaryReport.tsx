@@ -30,7 +30,7 @@ const ReportRow: React.FC<ReportRowProps> = ({
     label, value, isSubtle, isBold, isTotal, valueClassName, isHeader, className
 }) => {
     const { t } = useLanguage();
-    const translatedLabel = t(label as any);
+    const translatedLabel = t(label as any) || label;
 
     if (isHeader) {
         return (
@@ -109,7 +109,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
         </p>
       </header>
       
-      <div className="border border-gray-300 overflow-hidden rounded-lg">
+      <div className="border border-gray-300 overflow-hidden">
         {/* P&L Section */}
         <ReportRow label="plStatementTitle" value="" isHeader />
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
@@ -140,7 +140,7 @@ export function SummaryReport({ data }: SummaryReportProps) {
             ))}
         </div>
 
-         {/* Net Profit Section */}
+        {/* Net Profit Section */}
         <ReportRow label="netProfitTitle" value="" isHeader />
          <div className="grid grid-cols-[1fr_auto] gap-x-4 p-3">
             <ReportRow label="totalIncome" value={totalIncome} isSubtle valueClassName="text-green-600 font-medium" />
