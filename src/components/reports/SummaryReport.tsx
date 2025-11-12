@@ -5,7 +5,7 @@ import { Separator } from '../ui/separator';
 import { useLanguage } from '@/context/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Landmark, Scale, Users, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface ReportRowProps {
     label: string;
