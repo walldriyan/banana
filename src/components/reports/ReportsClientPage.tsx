@@ -1,7 +1,7 @@
 // src/components/reports/ReportsClientPage.tsx
 'use client';
 
-import { useState, useTransition, useCallback, useEffect, ReactNode } from 'react';
+import { useState, useTransition, useCallback, useEffect, ReactNode, useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, startOfYear, startOfWeek, isSameDay } from 'date-fns';
 import { 
@@ -68,7 +68,7 @@ const reportPrintStyles = `
 type ReportType = 'summary' | 'stock' | 'creditors' | 'debtors' | 'transactions' | 'refunds';
 
 const ReportGenerator = () => {
-    const today = new Date();
+    const today = useMemo(() => new Date(), []);
     const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: today, to: today });
     const [activePreset, setActivePreset] = useState<string | null>('today');
     
@@ -89,6 +89,7 @@ const ReportGenerator = () => {
         startTransition(async () => {
             setError(null);
             setActiveReportData(null);
+            setActiveReport(type);
             
             let result: { success: boolean; data?: any; error?: string };
 
@@ -116,7 +117,6 @@ const ReportGenerator = () => {
             }
 
             if (result.success) {
-                setActiveReport(type);
                 setActiveReportData(result.data!);
             } else {
                 setError(result.error!);
@@ -125,6 +125,15 @@ const ReportGenerator = () => {
         });
     }, []);
     
+    // Create a stable string representation of the date range
+    const dateRangeString = useMemo(() => {
+        if (!dateRange || !dateRange.from) return '';
+        const from = dateRange.from.toISOString();
+        const to = dateRange.to ? dateRange.to.toISOString() : '';
+        return `${from}-${to}`;
+    }, [dateRange]);
+
+
     // Auto-generate summary report when date range changes
     useEffect(() => {
         if (dateRange?.from && dateRange.to) {
@@ -138,7 +147,7 @@ const ReportGenerator = () => {
             else if (isSameDay(from, startOfYear(today)) && isSameDay(to, today)) setActivePreset('year');
             else setActivePreset(null);
         }
-    }, [dateRange, handleGenerateReport, today]);
+    }, [dateRangeString, handleGenerateReport, today]);
 
 
     const handlePresetClick = (range: DateRange, presetName: string) => {
