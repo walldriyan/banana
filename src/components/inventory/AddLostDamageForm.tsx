@@ -22,12 +22,14 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useToast } from "@/hooks/use-toast";
 import { addLostAndDamageAction } from "@/lib/actions/inventory.actions";
 import { getProductBatchesAction } from "@/lib/actions/product.actions";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDrawer } from "@/hooks/use-drawer";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CalendarIcon, ChevronsUpDown } from "lucide-react";
-import { ProductBatch } from "@prisma/client";
+import { CalendarIcon, ChevronsUpDown, Wallet } from "lucide-react";
+import type { ProductBatch } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+
 
 export function AddLostDamageForm({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
@@ -40,7 +42,7 @@ export function AddLostDamageForm({ onSuccess }: { onSuccess: () => void }) {
     async function fetchBatches() {
       const result = await getProductBatchesAction();
       if (result.success && result.data) {
-        setBatches(result.data.filter(b => b.stock > 0)); // Only show batches with stock
+        setBatches(result.data.filter(b => parseFloat(b.stock) > 0)); // Only show batches with stock
       }
     }
     fetchBatches();
@@ -58,7 +60,19 @@ export function AddLostDamageForm({ onSuccess }: { onSuccess: () => void }) {
   });
 
   const selectedBatchId = form.watch("productBatchId");
-  const maxQuantity = batches.find(b => b.id === selectedBatchId)?.stock || 0;
+  const quantity = form.watch("quantity");
+  
+  const { selectedBatch, maxQuantity, totalValue } = useMemo(() => {
+    const batch = batches.find(b => b.id === selectedBatchId);
+    if (!batch) {
+      return { selectedBatch: null, maxQuantity: 0, totalValue: 0 };
+    }
+    const stock = parseFloat(batch.stock);
+    const cost = batch.costPrice ?? 0;
+    const value = (quantity || 0) * cost;
+    return { selectedBatch: batch, maxQuantity: stock, totalValue: value };
+  }, [selectedBatchId, quantity, batches]);
+
 
   async function onSubmit(data: LostAndDamageFormValues) {
     setIsSubmitting(true);
@@ -101,10 +115,8 @@ export function AddLostDamageForm({ onSuccess }: { onSuccess: () => void }) {
                         !field.value && "text-muted-foreground"
                       )}
                     >
-                      {field.value
-                        ? batches.find(
-                            (batch) => batch.id === field.value
-                          )?.product.name + ` (Batch: ${batches.find((batch) => batch.id === field.value)?.batchNumber})`
+                      {selectedBatch
+                        ? selectedBatch.product.name + ` (Batch: ${selectedBatch.batchNumber})`
                         : "Select product batch"}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -138,56 +150,80 @@ export function AddLostDamageForm({ onSuccess }: { onSuccess: () => void }) {
           )}
         />
 
-        <div className="grid grid-cols-2 gap-4">
-            <FormField control={form.control} name="quantity" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                        <Input type="number" placeholder="0" {...field} max={maxQuantity} />
-                    </FormControl>
-                    <FormMessage />
-                    {selectedBatchId && <p className="text-xs text-muted-foreground">Max available: {maxQuantity}</p>}
-                </FormItem>
-            )} />
-            <FormField control={form.control} name="date" render={({ field }) => (
-                <FormItem className="flex flex-col"><FormLabel>Date</FormLabel>
-                    <Popover>
-                    <PopoverTrigger asChild>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+           <div className="space-y-4">
+                <FormField control={form.control} name="quantity" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Quantity Lost/Damaged</FormLabel>
                         <FormControl>
-                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
+                            <Input type="number" placeholder="0" {...field} max={maxQuantity} />
                         </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                    </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                </FormItem>
-            )} />
+                        <FormMessage />
+                        {selectedBatchId && <p className="text-xs text-muted-foreground">Max available: {maxQuantity}</p>}
+                    </FormItem>
+                )} />
+
+                <Card className="bg-destructive/10 border-destructive/20">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-base flex items-center gap-2 text-destructive">
+                            <Wallet className="h-5 w-5" />
+                            Total Value Write-Off
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-3xl font-bold text-destructive">
+                           Rs. {totalValue.toFixed(2)}
+                        </p>
+                         {selectedBatch && (
+                            <p className="text-xs text-destructive/80 mt-1">
+                                ({quantity} units &times; Rs. {selectedBatch.costPrice?.toFixed(2)} cost)
+                            </p>
+                        )}
+                    </CardContent>
+                </Card>
+           </div>
+           <div className="space-y-4">
+                <FormField control={form.control} name="date" render={({ field }) => (
+                    <FormItem className="flex flex-col"><FormLabel>Date</FormLabel>
+                        <Popover>
+                        <PopoverTrigger asChild>
+                            <FormControl>
+                            <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                            </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                        </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+
+                <FormField control={form.control} name="reason" render={({ field }) => (
+                    <FormItem><FormLabel>Reason</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="DAMAGED">Damaged</SelectItem>
+                                <SelectItem value="LOST">Lost / Theft</SelectItem>
+                                <SelectItem value="EXPIRED">Expired</SelectItem>
+                                <SelectItem value="OTHER">Other</SelectItem>
+                            </SelectContent>
+                        </Select><FormMessage />
+                    </FormItem>
+                )} />
+           </div>
         </div>
 
-        <FormField control={form.control} name="reason" render={({ field }) => (
-            <FormItem><FormLabel>Reason</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                        <SelectItem value="DAMAGED">Damaged</SelectItem>
-                        <SelectItem value="LOST">Lost / Theft</SelectItem>
-                        <SelectItem value="EXPIRED">Expired</SelectItem>
-                        <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                </Select><FormMessage />
-            </FormItem>
-        )} />
         
         <FormField control={form.control} name="notes" render={({ field }) => (
-            <FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Add any relevant notes..." {...field} /></FormControl><FormMessage /></FormItem>
+            <FormItem><FormLabel>Notes (Optional)</FormLabel><FormControl><Textarea placeholder="Add any relevant notes about the incident..." {...field} /></FormControl><FormMessage /></FormItem>
         )} />
 
-        <div className="flex justify-end gap-4 pt-4">
+        <div className="flex justify-end gap-4 pt-4 border-t">
           <Button type="button" variant="outline" onClick={drawer.closeDrawer}>
             Cancel
           </Button>
