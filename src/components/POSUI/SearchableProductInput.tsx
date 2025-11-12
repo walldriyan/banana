@@ -126,7 +126,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                               key={batch.id}
                               value={batch.id}
                               onSelect={() => handleSelect(batch.id)}
-                              className="cursor-pointer group"
+                              className="cursor-pointer group aria-selected:bg-blue-900/20 aria-selected:text-white"
                             >
                               <div className="flex items-center justify-between w-full">
                                 <div className="flex items-center gap-3">
@@ -148,7 +148,10 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                                     )}
                                   </div>
                                 </div>
-                                <span className={cn("font-bold text-lg group-aria-selected:text-accent-foreground")}>Rs. {batch.sellingPrice.toFixed(2)}</span>
+                                <div className="flex flex-col items-end">
+                                    <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">{batch.product.name}</span>
+                                    <span className={cn("font-bold text-lg group-aria-selected:text-accent-foreground")}>Rs. {batch.sellingPrice.toFixed(2)}</span>
+                                </div>
                               </div>
                             </CommandItem>
                           );
