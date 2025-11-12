@@ -268,3 +268,52 @@ export async function getDebtorsReportDataAction() {
     return { success: false, error: 'Failed to fetch debtors report data.' };
   }
 }
+
+export async function getTransactionsReportDataAction(dateRange?: DateRange) {
+    try {
+        const where: Prisma.TransactionWhereInput = {
+            status: 'completed',
+        };
+        if (dateRange?.from && dateRange?.to) {
+            where.transactionDate = {
+                gte: startOfDay(dateRange.from),
+                lte: endOfDay(dateRange.to),
+            };
+        }
+
+        const transactions = await prisma.transaction.findMany({
+            where,
+            include: { customer: true },
+            orderBy: { transactionDate: 'desc' },
+        });
+        return { success: true, data: transactions };
+    } catch (error) {
+        return { success: false, error: "Failed to fetch transactions report data." };
+    }
+}
+
+export async function getRefundsReportDataAction(dateRange?: DateRange) {
+    try {
+        const where: Prisma.TransactionWhereInput = {
+            status: 'refund',
+        };
+        if (dateRange?.from && dateRange?.to) {
+            where.transactionDate = {
+                gte: startOfDay(dateRange.from),
+                lte: endOfDay(dateRange.to),
+            };
+        }
+
+        const refunds = await prisma.transaction.findMany({
+            where,
+            include: {
+                customer: true,
+                originalTransaction: { select: { id: true, finalTotal: true } },
+            },
+            orderBy: { transactionDate: 'desc' },
+        });
+        return { success: true, data: refunds };
+    } catch (error) {
+        return { success: false, error: "Failed to fetch refunds report data." };
+    }
+}
