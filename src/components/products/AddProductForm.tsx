@@ -70,54 +70,103 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
 ];
 
 
-const ConversionFactorDisplay = ({ itemIndex, baseUnit, userInput }: { itemIndex: number, baseUnit: string, userInput: number }) => {
-    const { control } = useFormContext<ProductFormValues>();
-    const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
-    const derivedUnitName = item?.name || 'New Unit';
-    
-    if (userInput <= 0) return null;
+const ConversionFactorDisplay = ({ derivedUnitName, baseUnit, conversionFactor }: { derivedUnitName: string, baseUnit: string, conversionFactor: number }) => {
+    if (conversionFactor <= 0) return null;
 
     return (
         <Alert className="mt-2 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300">
             <CheckCircle className="h-4 w-4 !text-emerald-700 dark:!text-emerald-300" />
             <AlertDescription className="text-emerald-900 dark:text-emerald-200">
-                {userInput} {derivedUnitName} = <strong>1</strong> {baseUnit}
+                1 {derivedUnitName} = <strong>{Number(conversionFactor).toPrecision(4)}</strong> {baseUnit}
             </AlertDescription>
         </Alert>
     );
 };
 
 
-const DerivedUnitCalculator = ({ itemIndex, baseUnit, userInput }: { itemIndex: number, baseUnit: string, userInput: number }) => {
-    const { control } = useFormContext<ProductFormValues>();
-    const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
-    const sellingPrice = Number(useWatch({ control, name: `sellingPrice` }) || 0);
-
-    const derivedUnitName = item?.name || 'New Unit';
+const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
+    const { control, setValue } = useFormContext<ProductFormValues>();
     
-    const calculatedPrice = useMemo(() => {
-        if (userInput <= 0 || sellingPrice <= 0) return 0;
-        return sellingPrice / userInput;
-    }, [userInput, sellingPrice]);
+    // Watch relevant fields
+    const baseUnit = useWatch({ control, name: 'units.baseUnit' });
+    const sellingPrice = Number(useWatch({ control, name: `sellingPrice` }) || 0);
+    const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
+    const conversionFactor = Number(item?.conversionFactor || 0);
+    const derivedUnitName = item?.name || 'New Unit';
+
+    // Local state for the two-way data binding
+    const [userQtyInput, setUserQtyInput] = useState<string | number>('');
+    const [derivedPriceInput, setDerivedPriceInput] = useState<string | number>('');
+    const [lastEdited, setLastEdited] = useState<'qty' | 'price' | null>(null);
+
+    // Effect to initialize and sync state when form values change from outside
+    useEffect(() => {
+        if (conversionFactor > 0) {
+            const qty = 1 / conversionFactor;
+            if (lastEdited !== 'qty') setUserQtyInput(qty);
+            if (lastEdited !== 'price') setDerivedPriceInput(sellingPrice * conversionFactor);
+        } else {
+            setUserQtyInput('');
+            setDerivedPriceInput('');
+        }
+    }, [conversionFactor, sellingPrice, lastEdited]);
+
+    // Handle user input for QUANTITY
+    const handleQtyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const qty = e.target.value;
+        setUserQtyInput(qty);
+        setLastEdited('qty');
+
+        const numericQty = Number(qty);
+        if (numericQty > 0) {
+            const newFactor = 1 / numericQty;
+            const newPrice = sellingPrice * newFactor;
+            setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, newFactor, { shouldValidate: true, shouldDirty: true });
+            setDerivedPriceInput(newPrice);
+        } else {
+            setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, 0);
+            setDerivedPriceInput('');
+        }
+    };
+
+    // Handle user input for PRICE
+    const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const price = e.target.value;
+        setDerivedPriceInput(price);
+        setLastEdited('price');
+        
+        const numericPrice = Number(price);
+        if (numericPrice > 0 && sellingPrice > 0) {
+            const newQty = sellingPrice / numericPrice;
+            const newFactor = 1 / newQty;
+            setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, newFactor, { shouldValidate: true, shouldDirty: true });
+            setUserQtyInput(newQty);
+        } else {
+            setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, 0);
+            setUserQtyInput('');
+        }
+    };
 
     if (!item) return null;
 
     return (
-        <Card className="mt-2 bg-muted/30 dark:bg-muted/10 border-dashed">
-            <CardContent className="p-3 text-sm">
-                <p className="text-xs font-semibold text-muted-foreground mb-2">Price for 1 <span className='text-primary font-bold'>{derivedUnitName}</span></p>
-                 <div className="flex justify-between items-center text-xs">
-                    <span className="text-muted-foreground">Price per <span className='font-semibold'>{baseUnit}</span>:</span>
-                    <span className="font-medium">Rs. {sellingPrice.toFixed(2)}</span>
+         <Card className="mt-2 bg-muted/30 dark:bg-muted/10 border-dashed">
+            <CardContent className="p-3 text-sm space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                     <FormItem>
+                        <Label>How many '<span className="font-bold text-primary">{derivedUnitName}</span>' make 1 '{baseUnit}'?</Label>
+                        <Input type="number" value={userQtyInput} onChange={handleQtyChange} placeholder="e.g., 1000" />
+                    </FormItem>
+                     <FormItem>
+                        <Label>Price for 1 '<span className="font-bold text-primary">{derivedUnitName}</span>'</Label>
+                        <Input type="number" value={derivedPriceInput} onChange={handlePriceChange} placeholder="e.g., 0.40" />
+                    </FormItem>
                 </div>
-                <div className="flex justify-center items-center my-1 text-muted-foreground text-xs">
-                   ( Rs. {sellingPrice.toFixed(2)} / {userInput} {derivedUnitName} )
-                </div>
-                <Separator className="my-1"/>
-                <div className="flex justify-between items-baseline font-bold">
-                    <span>Total Price:</span>
-                    <span className="text-lg text-primary">Rs. {calculatedPrice.toFixed(4)}</span>
-                </div>
+                 <ConversionFactorDisplay
+                    derivedUnitName={derivedUnitName}
+                    baseUnit={baseUnit}
+                    conversionFactor={conversionFactor}
+                />
             </CardContent>
         </Card>
     );
@@ -181,39 +230,10 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
      mode: "onChange"
   });
   
-  // Use a separate state to hold the user-friendly input values for derived units
-  const [userInputs, setUserInputs] = useState<Record<number, number>>({});
-
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "units.derivedUnits",
   });
-
-  const handleUserInput = (index: number, value: number) => {
-    setUserInputs(prev => ({...prev, [index]: value}));
-    // Calculate the real conversion factor and set it in the form
-    const factor = value > 0 ? 1 / value : 0;
-    form.setValue(`units.derivedUnits.${index}.conversionFactor`, factor, { shouldValidate: true, shouldDirty: true });
-  }
-
-  // Effect to populate userInputs when in edit mode
-  useEffect(() => {
-    if(isEditMode && productBatch) {
-        const initialUserInputs: Record<number, number> = {};
-        const units = typeof productBatch.product.units === 'string' ? JSON.parse(productBatch.product.units) : productBatch.product.units;
-        if(units.derivedUnits) {
-            units.derivedUnits.forEach((unit: any, index: number) => {
-                if(unit.conversionFactor > 0) {
-                    initialUserInputs[index] = 1 / unit.conversionFactor;
-                }
-            });
-        }
-        setUserInputs(initialUserInputs);
-    }
-  }, [productBatch, isEditMode]);
-  
-  const watchedBaseUnit = useWatch({ control: form.control, name: 'units.baseUnit' });
-
 
   useEffect(() => {
     if (isEditMode && productBatch) {
@@ -522,10 +542,10 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                     <FormLabel>Derived Units (Optional)</FormLabel>
                                      <Alert className="mt-2 bg-sky-50 dark:bg-sky-900/30 border-sky-200 dark:border-sky-700/50 text-sky-800 dark:text-sky-300">
                                         <Info className="h-4 w-4 !text-sky-700 dark:!text-sky-300" />
-                                        <AlertTitle className="font-semibold text-sky-900 dark:text-sky-200">මේක වැඩ කරන හැටි</AlertTitle>
+                                        <AlertTitle className="font-semibold text-sky-900 dark:text-sky-200">How this works</AlertTitle>
                                         <AlertDescription className="text-xs space-y-2 text-sky-800/90 dark:text-sky-400">
                                             <p>
-                                                පරිශීලකයාට, ඉතා, සරලව, ඒකක, අතර, සම්බන්ධය, ඇතුළත්, කිරීමට, මෙතැනදී, අවස්ථාව, ලැබේ. උදාහරණයක්, ලෙස, <strong className="text-sky-900 dark:text-sky-200">Base Unit</strong> එක, 'KG' නම්, සහ, ඔබ, 'g' (ග්‍රෑම්), යන, නව, ඒකකය, හදන්නේ, නම්, පහත, input, එකට, 1000, ලෙස, ඇතුළත්, කරන්න.
+                                               Easily define sub-units. For example, if your base unit is 'KG', you can create a 'g' (gram) unit. Simply enter how many of the new unit make up one base unit (e.g., enter 1000 for grams). You can also set the price for the new unit, and the quantity will be calculated for you.
                                             </p>
                                         </AlertDescription>
                                     </Alert>
@@ -533,16 +553,11 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
                                 <div className="space-y-2">
                                     {fields.map((field, index) => (
                                         <div key={field.id} className="p-3 border rounded-md bg-muted/30 dark:bg-muted/10">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-4">
                                                 <FormField control={form.control} name={`units.derivedUnits.${index}.name`} render={({ field }) => ( <FormItem className="flex-1"><Input {...field} placeholder="Unit Name (e.g., box)" /></FormItem> )} />
-                                                <div className="flex-1">
-                                                    <Label>How many '{field.name || 'New Unit'}' make 1 {watchedBaseUnit}?</Label>
-                                                    <Input type="number" value={userInputs[index] || ''} onChange={e => handleUserInput(index, Number(e.target.value))} placeholder={`e.g., 1000`} />
-                                                </div>
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                                             </div>
-                                            <ConversionFactorDisplay itemIndex={index} baseUnit={watchedBaseUnit} userInput={userInputs[index] || 0} />
-                                            <DerivedUnitCalculator itemIndex={index} baseUnit={watchedBaseUnit} userInput={userInputs[index] || 0} />
+                                            <DerivedUnitCalculator itemIndex={index} />
                                         </div>
                                     ))}
                                     <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', conversionFactor: 0 })}><PlusCircle className="mr-2 h-4 w-4" /> Add Derived Unit</Button>
