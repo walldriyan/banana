@@ -99,14 +99,11 @@ export function SummaryReport({ data }: SummaryReportProps) {
       </header>
       
       <div className="border border-gray-300 overflow-hidden">
-        {/* Profit & Loss Section */}
+        {/* P&L Section */}
         <ReportRow label="plStatementTitle" value="" isHeader />
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
-          {/* Column Headers */}
           <div className="font-semibold text-black col-span-2">{t('expensesTitle')}</div>
           <div className="font-semibold text-black col-span-2">{t('incomeTitle')}</div>
-          
-          {/* P&L Items */}
           {Array.from({ length: Math.max(expenseItems.length, incomeItems.length) }).map((_, index) => (
              <React.Fragment key={`pl-row-${index}`}>
                 {expenseItems[index] ? <ReportRow {...expenseItems[index]} isSubtle /> : <><div/><div/></>}
@@ -119,14 +116,11 @@ export function SummaryReport({ data }: SummaryReportProps) {
           <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
         </div>
         
-        {/* Balance Sheet & Metrics Section */}
+        {/* Balance Sheet Section */}
         <ReportRow label="bsAndMetricsTitle" value="" isHeader className="mt-0" />
         <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
-            {/* Headers */}
             <ReportSubHeader label="liabilitiesAndMetricsTitle" className="col-span-2" />
             <ReportSubHeader label="assetsAndMetricsTitle" className="col-span-2" />
-            
-             {/* Data Rows */}
             {Array.from({ length: Math.max(liabilitiesItems.length, assetsItems.length) }).map((_, index) => (
                 <React.Fragment key={`bs-row-${index}`}>
                     {liabilitiesItems[index] ? <ReportRow {...liabilitiesItems[index]} /> : <><div /><div /></>}
@@ -135,22 +129,52 @@ export function SummaryReport({ data }: SummaryReportProps) {
             ))}
         </div>
       </div>
-
+      
        {/* Net Profit Section */}
-        <div className="col-span-4 bg-blue-50 p-4 space-y-2 mt-2">
-            <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
+        <div className="col-span-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 p-4 space-y-2 mt-2 rounded-lg">
+            <h3 className="font-bold text-base text-center text-blue-800 dark:text-blue-200">{t('netProfitTitle')}</h3>
               <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600">{t('totalIncome')}</span>
-                  <span className="font-semibold">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{t('totalIncome')}</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">{`Rs. ${totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
               <div className="flex justify-between items-center text-base">
-                  <span className="text-gray-600">{`(-) ${t('totalExpenses')}`}</span>
-                  <span className="font-semibold">{`Rs. ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+                  <span className="text-gray-600 dark:text-gray-400">{`(-) ${t('totalExpenses')}`}</span>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">{`Rs. ${totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
               <Separator className="my-2 bg-gray-300" />
-              <div className="flex justify-between items-center text-lg font-bold text-blue-800">
+              <div className="flex justify-between items-center text-lg font-bold text-blue-800 dark:text-blue-300">
                   <span>{`(=) ${t('netProfitTitle')}`}</span>
                   <span>{`Rs. ${netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+        </div>
+
+      {/* Cash In Drawer Section */}
+        <div className="col-span-4 bg-green-50 dark:bg-green-900/20 border border-green-200 p-4 space-y-2 mt-2 rounded-lg">
+            <h3 className="font-bold text-base text-center text-green-800 dark:text-green-200">Cash In Drawer (Today)</h3>
+             <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">(+) Cash Sales</span>
+                  <span className="font-medium text-green-700 dark:text-green-300">{`Rs. ${data.cashFlow.cashSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+               <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">(+) Cash Other Income</span>
+                  <span className="font-medium text-green-700 dark:text-green-300">{`Rs. ${data.cashFlow.cashOtherIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+               <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">(+) Debtor Cash Payments</span>
+                  <span className="font-medium text-green-700 dark:text-green-300">{`Rs. ${data.cashFlow.todaysDebtorCashPayments.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+               <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">(-) Cash Expenses</span>
+                  <span className="font-medium text-red-700 dark:text-red-300">{`Rs. ${data.cashFlow.cashOtherExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+               <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">(-) Creditor Cash Payments</span>
+                  <span className="font-medium text-red-700 dark:text-red-300">{`Rs. ${data.cashFlow.todaysCreditorCashPayments.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
+              </div>
+              <Separator className="my-2 bg-gray-300" />
+              <div className="flex justify-between items-center text-lg font-bold text-green-800 dark:text-green-300">
+                  <span>Expected Cash in Drawer</span>
+                  <span>{`Rs. ${data.cashFlow.cashInDrawer.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</span>
               </div>
         </div>
 
