@@ -280,16 +280,16 @@ const ReportGenerator = () => {
             <div className="flex-1">
                 <Card className="h-full flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between no-print flex-shrink-0">
-                        <div className="flex items-center gap-4">
-                            <div>
-                                <CardTitle>{getReportTitle()}</CardTitle>
-                                {activeReportData && <CardDescription>{getReportDescription()}</CardDescription>}
-                            </div>
-                            <LanguageToggle />
+                        <div>
+                            <CardTitle>{getReportTitle()}</CardTitle>
+                            {activeReportData && <CardDescription>{getReportDescription()}</CardDescription>}
                         </div>
-                        <Button onClick={handlePrintActiveReport} variant="outline" disabled={!activeReportData || isPending}>
-                            <Printer className="mr-2 h-4 w-4" /> Print Report
-                        </Button>
+                        <div className="flex items-center gap-4">
+                            <LanguageToggle />
+                            <Button onClick={handlePrintActiveReport} variant="outline" disabled={!activeReportData || isPending}>
+                                <Printer className="mr-2 h-4 w-4" /> Print Report
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className="overflow-y-auto">
                         {isPending && (
