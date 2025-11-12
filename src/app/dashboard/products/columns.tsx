@@ -95,7 +95,7 @@ export const getColumns = (
                 return (
                 <div className="flex items-center gap-2">
                     <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
                     onClick={row.getToggleExpandedHandler()}
                     className="h-6 w-6"
@@ -110,15 +110,15 @@ export const getColumns = (
                 </div>
                 );
             }
-            return <div className="font-bold">{value}</div>;
+            return (
+              <div>
+                <div className="font-bold">{value}</div>
+                <div className="text-xs text-muted-foreground">
+                  Batch: <Badge variant="secondary" className="font-mono">{row.original.batchNumber}</Badge>
+                </div>
+              </div>
+            )
         },
-    },
-     {
-        accessorKey: "batchNumber",
-        header: "Batch Number",
-        cell: ({ row }) => {
-            return <Badge variant="secondary">{row.getValue("batchNumber")}</Badge>
-        }
     },
     {
         accessorKey: "sellingPrice",
