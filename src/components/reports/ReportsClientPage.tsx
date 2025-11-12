@@ -80,8 +80,8 @@ const ReportGenerator = () => {
     const { language } = useLanguage();
     const { toast } = useToast();
 
-    const handleGenerateReport = useCallback((type: ReportType, range: DateRange) => {
-        if ((type === 'summary' || type === 'transactions' || type === 'refunds' || type === 'debtors') && (!range || !range.from || !range.to)) {
+    const handleGenerateReport = useCallback((type: ReportType, range?: DateRange) => {
+        if ((type === 'summary' || type === 'transactions' || type === 'refunds' || type === 'debtors' || type === 'creditors') && (!range || !range.from || !range.to)) {
             toast({
                 variant: 'destructive',
                 title: "Date Range Required",
@@ -99,22 +99,22 @@ const ReportGenerator = () => {
 
             switch(type) {
                 case 'summary':
-                    result = await getSummaryReportDataAction({ from: range.from!, to: range.to! });
+                    result = await getSummaryReportDataAction(range!);
                     break;
                 case 'stock':
                     result = await getStockReportDataAction();
                     break;
                 case 'creditors':
-                    result = await getCreditorsReportDataAction();
+                    result = await getCreditorsReportDataAction(range!);
                     break;
                 case 'debtors':
-                     result = await getDebtorsReportDataAction(range);
+                     result = await getDebtorsReportDataAction(range!);
                     break;
                 case 'transactions':
-                     result = await getTransactionsReportDataAction(range);
+                     result = await getTransactionsReportDataAction(range!);
                     break;
                 case 'refunds':
-                    result = await getRefundsReportDataAction(range);
+                    result = await getRefundsReportDataAction(range!);
                     break;
                 default:
                     result = { success: false, error: 'Invalid report type' };
@@ -267,8 +267,8 @@ const ReportGenerator = () => {
     }
     
     const getReportDescription = (): string => {
-        const dataForDesc = activeReport === 'debtors' ? activeReportData.dateRange : activeReportData?.dateRange;
-        if ((['summary', 'transactions', 'refunds', 'debtors'].includes(activeReport)) && dataForDesc) {
+        const dataForDesc = activeReportData?.dateRange;
+        if ((['summary', 'transactions', 'refunds', 'debtors', 'creditors'].includes(activeReport)) && dataForDesc) {
              return `Report for the period of ${new Date(dataForDesc.from).toLocaleDateString()} to ${new Date(dataForDesc.to).toLocaleDateString()}`;
         }
         return `Generated on ${new Date().toLocaleDateString()}`;

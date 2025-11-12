@@ -7,19 +7,26 @@ import { format } from 'date-fns';
 type CreditorGrn = GoodsReceivedNote & { supplier: Supplier; totalPaid: number; };
 
 interface CreditorsReportProps {
-  data: CreditorGrn[];
+  data: {
+    creditors: CreditorGrn[];
+    dateRange?: { from: Date, to: Date }
+  };
 }
 
 export const CreditorsReport: React.FC<CreditorsReportProps> = ({ data }) => {
+  const { creditors, dateRange } = data;
   const { t, language } = useLanguage();
-  const totalOutstanding = data.reduce((sum, grn) => sum + (grn.totalAmount - grn.totalPaid), 0);
+  const totalOutstanding = creditors.reduce((sum, grn) => sum + (grn.totalAmount - grn.totalPaid), 0);
   
   return (
     <div className="report-container p-4 bg-white text-sm text-black">
         <header className="text-center mb-6">
             <h1 className="text-xl font-bold text-gray-800">Creditors Report (Outstanding GRNs)</h1>
             <p className="text-xs text-gray-500">
-            As of {new Date().toLocaleString(language)}
+             {dateRange?.from && dateRange?.to
+                    ? `For the period of ${format(new Date(dateRange.from), 'PPP')} to ${format(new Date(dateRange.to), 'PPP')}`
+                    : `As of ${new Date().toLocaleString(language)}`
+                }
             </p>
         </header>
 
@@ -35,7 +42,7 @@ export const CreditorsReport: React.FC<CreditorsReportProps> = ({ data }) => {
             </tr>
             </thead>
             <tbody>
-            {data.map((grn) => (
+            {creditors.map((grn) => (
                 <tr key={grn.id} className="hover:bg-gray-50">
                     <td className="p-2 border-b border-gray-200">{format(new Date(grn.grnDate), 'yyyy-MM-dd')}</td>
                     <td className="p-2 border-b border-gray-200">{grn.grnNumber}</td>

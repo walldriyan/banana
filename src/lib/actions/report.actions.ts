@@ -232,10 +232,20 @@ export async function getStockReportDataAction() {
     }
 }
 
-export async function getCreditorsReportDataAction() {
+export async function getCreditorsReportDataAction(dateRange?: DateRange) {
   try {
+    const where: Prisma.GoodsReceivedNoteWhereInput = {
+        paymentStatus: { in: ['pending', 'partial'] }
+    };
+    if (dateRange?.from && dateRange?.to) {
+        where.grnDate = {
+            gte: startOfDay(dateRange.from),
+            lte: endOfDay(dateRange.to),
+        };
+    }
+
     const creditorGrns = await prisma.goodsReceivedNote.findMany({
-      where: { paymentStatus: { in: ['pending', 'partial'] } },
+      where,
       include: {
         supplier: true,
         payments: { select: { amount: true } }
@@ -248,7 +258,7 @@ export async function getCreditorsReportDataAction() {
       totalPaid: grn.payments.reduce((sum, p) => sum + p.amount, 0),
     }));
 
-    return { success: true, data: grnsWithPaidAmount };
+    return { success: true, data: { creditors: grnsWithPaidAmount, dateRange } };
   } catch (error) {
     console.error('[getCreditorsReportDataAction] Error:', error);
     return { success: false, error: 'Failed to fetch creditors report data.' };
