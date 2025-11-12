@@ -91,7 +91,7 @@ const ConversionFactorDisplay = ({ itemIndex, baseUnit }: { itemIndex: number, b
 const DerivedUnitCalculator = ({ itemIndex, baseUnit }: { itemIndex: number, baseUnit: string }) => {
     const { control } = useFormContext<ProductFormValues>();
     const item = useWatch({ control, name: `units.derivedUnits.${itemIndex}` });
-    const sellingPrice = useWatch({ control, name: `sellingPrice` }) || 0;
+    const sellingPrice = Number(useWatch({ control, name: `sellingPrice` }) || 0);
 
     const conversionFactor = item?.conversionFactor || 0;
     const derivedUnitName = item?.name || 'New Unit';
@@ -203,7 +203,7 @@ export function AddProductForm({ productBatch, onSuccess, categories: initialCat
         batchNumber: productBatch.batchNumber ?? '',
         sellingPrice: productBatch.sellingPrice,
         costPrice: productBatch.costPrice ?? 0,
-        quantity: productBatch.stock, // In edit mode, quantity represents current stock
+        quantity: Number(productBatch.stock), // In edit mode, quantity represents current stock
         
         tax: productBatch.tax ?? 0,
         taxtype: productBatch.taxtype ?? 'PERCENTAGE',
