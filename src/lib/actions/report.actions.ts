@@ -248,7 +248,16 @@ export async function getCreditorsReportDataAction(dateRange?: DateRange) {
       where,
       include: {
         supplier: true,
-        payments: { select: { amount: true } }
+        payments: true, // Include full payment details
+        items: {
+            include: {
+                productBatch: {
+                    include: {
+                        product: true
+                    }
+                }
+            }
+        },
       },
       orderBy: { grnDate: 'asc' },
     });
