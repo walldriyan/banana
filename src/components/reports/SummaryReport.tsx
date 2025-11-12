@@ -17,6 +17,15 @@ interface ReportRowProps {
     className?: string;
 }
 
+const ReportSubHeader: React.FC<{ label: string, className?: string }> = ({ label, className }) => {
+    const { t } = useLanguage();
+    return (
+        <h3 className={cn("font-semibold text-black mt-4 border-b pb-1 mb-1", className)}>
+            {t(label as any)}
+        </h3>
+    )
+}
+
 const ReportRow: React.FC<ReportRowProps> = ({ 
     label, value, isSubtle, isBold, isTotal, valueClassName, isHeader, className
 }) => {
@@ -25,7 +34,7 @@ const ReportRow: React.FC<ReportRowProps> = ({
 
     if (isHeader) {
         return (
-            <h2 className={`p-3 bg-gray-100 font-semibold text-black text-base col-span-2 ${className}`}>{translatedLabel}</h2>
+            <h2 className={`p-3 bg-gray-100 font-semibold text-black text-base col-span-4 ${className}`}>{translatedLabel}</h2>
         )
     }
 
@@ -66,8 +75,6 @@ export function SummaryReport({ data }: SummaryReportProps) {
   const totalIncome = incomeItems.reduce((sum, item) => sum + item.value, 0);
   const netProfit = totalIncome - totalExpenses;
 
-  const maxRowsPL = Math.max(expenseItems.length, incomeItems.length);
-
   return (
     <div className="report-container p-4 bg-white text-sm text-black space-y-6">
       <header className="text-center">
@@ -80,12 +87,15 @@ export function SummaryReport({ data }: SummaryReportProps) {
       <div className="border border-gray-300 overflow-hidden">
         {/* Profit & Loss Section */}
         <ReportRow label="plStatementTitle" value="" isHeader />
-        <div className="grid grid-cols-2 gap-x-4 p-3 border-b border-gray-200">
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
+          {/* Column Headers */}
           <div className="font-semibold text-black">{t('expensesTitle')}</div>
+          <div className="font-semibold text-black text-right">{/* Empty for alignment */}</div>
           <div className="font-semibold text-black">{t('incomeTitle')}</div>
-        </div>
-        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 px-3">
-          {Array.from({ length: maxRowsPL }).map((_, index) => (
+          <div className="font-semibold text-black text-right">{/* Empty for alignment */}</div>
+          
+          {/* P&L Items */}
+          {Array.from({ length: Math.max(expenseItems.length, incomeItems.length) }).map((_, index) => (
             <React.Fragment key={`pl-row-${index}`}>
               {expenseItems[index] ? <ReportRow {...expenseItems[index]} isSubtle /> : <><div /><div /></>}
               {incomeItems[index] ? <ReportRow {...incomeItems[index]} isSubtle /> : <><div /><div /></>}
@@ -97,7 +107,8 @@ export function SummaryReport({ data }: SummaryReportProps) {
           <ReportRow label="totalIncome" value={totalIncome} isTotal isBold />
         </div>
         
-        <div className="col-span-2 border-t border-gray-200 bg-blue-50 p-4 space-y-2">
+        {/* Net Profit Section */}
+        <div className="col-span-4 bg-blue-50 p-4 space-y-2 mt-2">
             <h3 className="font-bold text-base text-center text-blue-800">{t('netProfitTitle')}</h3>
               <div className="flex justify-between items-center text-base">
                   <span className="text-gray-600">{t('totalIncome')}</span>
@@ -114,17 +125,26 @@ export function SummaryReport({ data }: SummaryReportProps) {
               </div>
         </div>
         
-        {/* Balance Sheet Section */}
+        {/* Balance Sheet & Metrics Section */}
         <ReportRow label="bsAndMetricsTitle" value="" isHeader />
-        <div className="grid grid-cols-2 gap-x-4 p-3">
-            <ReportRow label="debtors" value={data.balanceSheet.assets.debtors} valueClassName="text-red-600 font-bold" />
+        <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-x-4 p-3">
+            {/* Headers */}
+            <ReportSubHeader label="liabilitiesAndMetricsTitle" className="col-span-2" />
+            <ReportSubHeader label="assetsAndMetricsTitle" className="col-span-2" />
+            
+            {/* Data Rows */}
             <ReportRow label="creditors" value={data.balanceSheet.liabilities.creditors} valueClassName="text-orange-600 font-bold" />
+            <ReportRow label="debtors" value={data.balanceSheet.assets.debtors} valueClassName="text-red-600 font-bold" />
 
-            <ReportRow label="todaysDebtorPayments" value={data.balanceSheet.assets.todaysDebtorPayments} isSubtle valueClassName="text-green-600"/>
             <ReportRow label="todaysCreditorPayments" value={data.balanceSheet.liabilities.todaysCreditorPayments} isSubtle valueClassName="text-green-600"/>
+            <ReportRow label="todaysDebtorPayments" value={data.balanceSheet.assets.todaysDebtorPayments} isSubtle valueClassName="text-green-600"/>
 
-            <ReportRow label="grossProfit" value={data.profit.grossProfit} isBold/>
-            <ReportRow label="totalTransactions" value={data.sales.totalTransactions} isBold />
+            <ReportRow label="totalGrns" value={data.purchases.totalGrns} isSubtle />
+            <ReportRow label="totalTransactions" value={data.sales.totalTransactions} isSubtle />
+
+            <div />
+            <div />
+            <ReportRow label="grossProfit" value={data.profit.grossProfit} isBold />
         </div>
       </div>
 
