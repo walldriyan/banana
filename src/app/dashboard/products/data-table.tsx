@@ -14,6 +14,7 @@ import {
   getGroupedRowModel,
   getExpandedRowModel,
   ExpandedState,
+  Row,
 } from "@tanstack/react-table"
 
 import {
@@ -41,6 +42,16 @@ interface DataTableProps<TData, TValue> {
   hideZeroStock: boolean;
   onHideZeroStockChange: (checked: boolean) => void;
 }
+
+
+const renderRowSubComponent = ({ row }: { row: Row<any> }) => {
+  return (
+    <pre style={{ fontSize: '10px' }}>
+      <code>{JSON.stringify(row.original, null, 2)}</code>
+    </pre>
+  )
+}
+
 
 export function ProductsDataTable<TData, TValue>({
   columns,
@@ -111,50 +122,52 @@ export function ProductsDataTable<TData, TValue>({
                 </AuthorizationGuard>
             </div>
         </div>
-        <div className="rounded-md border flex-grow overflow-y-auto">
-            <Table>
-                <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                    <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                        return (
-                        <TableHead key={header.id} colSpan={header.colSpan}>
-                            {header.isPlaceholder
-                            ? null
-                            : flexRender(
-                                header.column.columnDef.header,
-                                header.getContext()
-                                )}
-                        </TableHead>
-                        )
-                    })}
-                    </TableRow>
-                ))}
-                </TableHeader>
-                <TableBody>
-                {table.getRowModel().rows?.length ? (
-                    table.getRowModel().rows.map((row) => (
-                    <TableRow
-                        key={row.id}
-                        data-state={row.getIsSelected() && "selected"}
-                        className={cn(row.depth > 0 && "bg-muted/50")}
-                    >
-                        {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} style={{ paddingLeft: `${row.depth * 1.5 + (cell.getIsGrouped() ? 0 : 1.5)}rem` }}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                        ))}
-                    </TableRow>
-                    ))
-                ) : (
-                    <TableRow>
-                    <TableCell colSpan={columns.length} className="h-24 text-center">
-                        No results.
-                    </TableCell>
-                    </TableRow>
-                )}
-                </TableBody>
-            </Table>
+        <div className="rounded-md border flex-grow overflow-y-auto p-2 space-y-2 bg-muted/20">
+            {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => {
+                    const isGrouped = row.getIsGrouped();
+                    return (
+                        <div
+                            key={row.id}
+                            className={cn(
+                                "bg-card rounded-md shadow-sm transition-all",
+                                isGrouped ? "border-l-4 border-primary" : "border",
+                                row.depth > 0 && "bg-muted/50"
+                            )}
+                        >
+                            <div className="grid grid-cols-12 items-center gap-4 p-3">
+                                {row.getVisibleCells().map((cell) => (
+                                    <div 
+                                        key={cell.id} 
+                                        className={cn(
+                                            "flex flex-col",
+                                            cell.column.id === 'product.name' && 'col-span-3',
+                                            cell.column.id === 'sellingPrice' && 'col-span-2 text-right',
+                                            cell.column.id === 'stock' && 'col-span-2 text-right',
+                                            cell.column.id === 'product.category' && 'col-span-2',
+                                            cell.column.id === 'product.brand' && 'col-span-1',
+                                            cell.column.id === 'product.isActive' && 'col-span-1',
+                                            cell.column.id === 'actions' && 'col-span-1 flex-row justify-end',
+                                        )}
+                                    >
+                                        <span className="text-xs text-muted-foreground font-medium md:hidden">
+                                           {typeof cell.column.columnDef.header === 'function' 
+                                                ? ''
+                                                : cell.column.columnDef.header?.toString()
+                                            }
+                                        </span>
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })
+            ) : (
+                <div className="text-center py-24 text-muted-foreground">
+                    No results.
+                </div>
+            )}
         </div>
          <div className="flex items-center justify-end space-x-2 py-4 flex-shrink-0">
             <Button
