@@ -70,14 +70,15 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
 ];
 
 
-const ConversionFactorDisplay = ({ derivedUnitName, baseUnit, conversionFactor }: { derivedUnitName: string, baseUnit: string, conversionFactor: number }) => {
-    if (conversionFactor <= 0) return null;
+const ConversionFactorDisplay = ({ derivedUnitName, baseUnit, conversionFactor, userInputQty }: { derivedUnitName: string, baseUnit: string, conversionFactor: number, userInputQty: string | number }) => {
+    if (Number(conversionFactor) <= 0) return null;
 
     return (
         <Alert className="mt-2 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300">
             <CheckCircle className="h-4 w-4 !text-emerald-700 dark:!text-emerald-300" />
             <AlertDescription className="text-emerald-900 dark:text-emerald-200">
-                1 {derivedUnitName} = <strong>{Number(conversionFactor).toPrecision(4)}</strong> {baseUnit}
+                {userInputQty} {derivedUnitName} = 1 {baseUnit} 
+                <span className="text-xs text-muted-foreground ml-2">(Factor: {conversionFactor.toPrecision(6)})</span>
             </AlertDescription>
         </Alert>
     );
@@ -99,15 +100,20 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
     const [derivedPriceInput, setDerivedPriceInput] = useState<string | number>('');
     const [lastEdited, setLastEdited] = useState<'qty' | 'price' | null>(null);
 
-    // Effect to initialize and sync state when form values change from outside
+     // Effect to initialize and sync state when conversionFactor changes from the form state
     useEffect(() => {
         if (conversionFactor > 0) {
-            const qty = 1 / conversionFactor;
-            if (lastEdited !== 'qty') setUserQtyInput(qty);
-            if (lastEdited !== 'price') setDerivedPriceInput(sellingPrice * conversionFactor);
+            if (lastEdited !== 'qty') {
+                const qty = 1 / conversionFactor;
+                setUserQtyInput(Number(qty.toPrecision(6)));
+            }
+            if (lastEdited !== 'price') {
+                 const price = sellingPrice * conversionFactor;
+                 setDerivedPriceInput(Number(price.toPrecision(6)));
+            }
         } else {
-            setUserQtyInput('');
-            setDerivedPriceInput('');
+             if (lastEdited !== 'qty') setUserQtyInput('');
+             if (lastEdited !== 'price') setDerivedPriceInput('');
         }
     }, [conversionFactor, sellingPrice, lastEdited]);
 
@@ -122,7 +128,7 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
             const newFactor = 1 / numericQty;
             const newPrice = sellingPrice * newFactor;
             setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, newFactor, { shouldValidate: true, shouldDirty: true });
-            setDerivedPriceInput(newPrice);
+            setDerivedPriceInput(Number(newPrice.toPrecision(6)));
         } else {
             setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, 0);
             setDerivedPriceInput('');
@@ -137,10 +143,10 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
         
         const numericPrice = Number(price);
         if (numericPrice > 0 && sellingPrice > 0) {
-            const newQty = sellingPrice / numericPrice;
-            const newFactor = 1 / newQty;
+            const newFactor = numericPrice / sellingPrice;
+            const newQty = 1 / newFactor;
             setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, newFactor, { shouldValidate: true, shouldDirty: true });
-            setUserQtyInput(newQty);
+            setUserQtyInput(Number(newQty.toPrecision(6)));
         } else {
             setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, 0);
             setUserQtyInput('');
@@ -152,6 +158,10 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
     return (
          <Card className="mt-2 bg-muted/30 dark:bg-muted/10 border-dashed">
             <CardContent className="p-3 text-sm space-y-3">
+                 <div className="flex justify-between items-center bg-background/50 p-2 rounded-md border text-sm">
+                    <span className="text-muted-foreground font-medium">Price per <span className='font-bold'>{baseUnit}</span>:</span>
+                    <span className="text-lg font-bold text-primary">Rs. {sellingPrice.toFixed(2)}</span>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                      <FormItem>
                         <Label>How many '<span className="font-bold text-primary">{derivedUnitName}</span>' make 1 '{baseUnit}'?</Label>
@@ -166,6 +176,7 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
                     derivedUnitName={derivedUnitName}
                     baseUnit={baseUnit}
                     conversionFactor={conversionFactor}
+                    userInputQty={userQtyInput}
                 />
             </CardContent>
         </Card>
