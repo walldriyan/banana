@@ -24,7 +24,7 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
   const originalLineTotal = item.price * item.quantity;
   const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
   const isCustomDiscount = item.customDiscountValue !== undefined && item.customDiscountValue > 0;
-  
+
   const units = useProductUnits(item.product.units);
   const hasDerivedUnits = (units.derivedUnits || []).length > 0;
 
@@ -43,7 +43,7 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
         <p className="text-xs text-muted-foreground">Batch: {item.batchNumber}</p>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 justify-end">
           <Button
             size="icon"
             variant="outline"
@@ -68,47 +68,46 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
           >
             +
           </Button>
-           {hasDerivedUnits ? (
-             <Button variant="outline" size="sm" className="h-8 ml-2" onClick={() => onSelectUnit(item)}>
-                <Scaling className="h-3 w-3 mr-2" />
-                {item.displayUnit}
-             </Button>
-            ) : (
-             <span className="text-xs text-muted-foreground ml-2">{units.baseUnit}</span>
-            )}
+          {hasDerivedUnits ? (
+            <Button variant="outline" size="sm" className="h-8 ml-2" onClick={() => onSelectUnit(item)}>
+              <Scaling className="h-3 w-3 mr-2" />
+              {item.displayUnit}
+            </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground ml-2">{units.baseUnit}</span>
+          )}
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="text-right">
         <div className="text-sm">Rs. {item.price.toFixed(2)}</div>
-         <div className="text-xs text-muted-foreground line-through">
-              {hasDiscounts ? `Rs. ${originalLineTotal.toFixed(2)}` : ''}
-          </div>
+        <div className="text-xs text-muted-foreground line-through">
+          {hasDiscounts ? `Rs. ${originalLineTotal.toFixed(2)}` : ''}
+        </div>
       </TableCell>
-      <TableCell>
-        {isCalculating ? <Skeleton className="h-6 w-full" /> : (
-           <div className="flex flex-col items-center gap-1">
+      <TableCell className="text-right">
+        {isCalculating ? <Skeleton className="h-6 w-full ml-auto" /> : (
+          <div className="flex flex-col items-end gap-1 overflow-hidden text-right">
             {hasDiscounts && lineItemResult && (
-              <div className="space-y-1 w-full">
+              <div className="space-y-1 w-full flex flex-col items-end text-right">
                 {isCustomDiscount ? (
                   <p className="flex items-center text-xs bg-yellow-100/20 text-yellow-700 dark:text-yellow-300 p-1 rounded-md">
-                    <span className="font-bold truncate pr-1">Manual</span>
-                    <span className="font-semibold bg-yellow-200/30 px-1.5 py-0.5 rounded-full">
+                    <span className="font-semibold bg-yellow-200/30 px-1.5 py-0.5 rounded-full mr-1">
                       {item.customDiscountType === 'percentage' ? `${item.customDiscountValue}%` : `Rs. ${item.customDiscountValue}`}
                     </span>
+                    <span className="font-bold truncate">Manual</span>
                   </p>
                 ) : (
                   lineItemResult.appliedRules.map((rule: any, i: number) => (
-                    <p key={i} className="text-xs text-green-600">
+                    <p key={i} className="text-xs text-green-600 text-right">
                       -Rs. {rule.discountAmount.toFixed(2)}
-                      <span className="text-muted-foreground ml-1">({rule.appliedRuleInfo.sourceRuleName})</span>
                     </p>
                   ))
                 )}
               </div>
             )}
-            <Button variant="ghost" size="sm" className="h-7 text-xs w-full justify-center" onClick={() => onOverrideDiscount(item)}>
-                <Tag className="mr-1 h-3 w-3" />
-                {isCustomDiscount ? 'Edit' : hasDiscounts ? 'Override' : 'Add'}
+            <Button variant="ghost" size="sm" className="h-7 text-xs w-full justify-end items-center gap-1" onClick={() => onOverrideDiscount(item)}>
+              {isCustomDiscount ? 'Edit' : hasDiscounts ? 'Change' : 'Add'}
+              <Tag className="ml-1 h-3 w-3" />
             </Button>
           </div>
         )}
@@ -118,12 +117,12 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
           <>
             <p className="font-bold text-base text-foreground">Rs. {finalLineTotal.toFixed(2)}</p>
             <Button
-                variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-red-500 hover:bg-red-50 w-6 h-6 mt-1 ml-auto"
-                onClick={() => onUpdateQuantity(item.saleItemId, 0)}
+              variant="ghost"
+              size="icon"
+              className="text-muted-foreground hover:text-red-500 hover:bg-red-50 w-6 h-6 mt-1 ml-auto"
+              onClick={() => onUpdateQuantity(item.saleItemId, 0)}
             >
-                <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-3 w-3" />
             </Button>
           </>
         )}
