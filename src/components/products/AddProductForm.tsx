@@ -71,14 +71,14 @@ const steps: { title: string; description: string; fields: StepFields }[] = [
 
 
 const ConversionFactorDisplay = ({ derivedUnitName, baseUnit, conversionFactor, userInputQty }: { derivedUnitName: string, baseUnit: string, conversionFactor: number, userInputQty: string | number }) => {
-    if (Number(conversionFactor) <= 0) return null;
+    const factor = Number(conversionFactor);
+    if (!factor || factor <= 0) return null;
 
     return (
         <Alert className="mt-2 bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300">
             <CheckCircle className="h-4 w-4 !text-emerald-700 dark:!text-emerald-300" />
             <AlertDescription className="text-emerald-900 dark:text-emerald-200">
                 {userInputQty} {derivedUnitName} = 1 {baseUnit} 
-                <span className="text-xs text-muted-foreground ml-2">(Factor: {conversionFactor.toPrecision(6)})</span>
             </AlertDescription>
         </Alert>
     );
@@ -107,7 +107,7 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
                 const qty = 1 / conversionFactor;
                 setUserQtyInput(Number(qty.toPrecision(6)));
             }
-            if (lastEdited !== 'price') {
+            if (lastEdited !== 'price' && sellingPrice > 0) {
                  const price = sellingPrice * conversionFactor;
                  setDerivedPriceInput(Number(price.toPrecision(6)));
             }
@@ -126,9 +126,9 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
         const numericQty = Number(qty);
         if (numericQty > 0) {
             const newFactor = 1 / numericQty;
-            const newPrice = sellingPrice * newFactor;
+            const newPrice = sellingPrice > 0 ? sellingPrice * newFactor : 0;
             setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, newFactor, { shouldValidate: true, shouldDirty: true });
-            setDerivedPriceInput(Number(newPrice.toPrecision(6)));
+            setDerivedPriceInput(newPrice > 0 ? Number(newPrice.toPrecision(6)) : '');
         } else {
             setValue(`units.derivedUnits.${itemIndex}.conversionFactor`, 0);
             setDerivedPriceInput('');
@@ -158,19 +158,21 @@ const DerivedUnitCalculator = ({ itemIndex }: { itemIndex: number }) => {
     return (
          <Card className="mt-2 bg-muted/30 dark:bg-muted/10 border-dashed">
             <CardContent className="p-3 text-sm space-y-3">
-                 <div className="flex justify-between items-center bg-background/50 p-2 rounded-md border text-sm">
-                    <span className="text-muted-foreground font-medium">Price per <span className='font-bold'>{baseUnit}</span>:</span>
-                    <span className="text-lg font-bold text-primary">Rs. {sellingPrice.toFixed(2)}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                     <FormItem>
-                        <Label>How many '<span className="font-bold text-primary">{derivedUnitName}</span>' make 1 '{baseUnit}'?</Label>
-                        <Input type="number" value={userQtyInput} onChange={handleQtyChange} placeholder="e.g., 1000" />
-                    </FormItem>
-                     <FormItem>
-                        <Label>Price for 1 '<span className="font-bold text-primary">{derivedUnitName}</span>'</Label>
-                        <Input type="number" value={derivedPriceInput} onChange={handlePriceChange} placeholder="e.g., 0.40" />
-                    </FormItem>
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center bg-background/50 p-2 rounded-md border text-sm">
+                        <span className="text-muted-foreground font-medium">Price per <span className='font-bold'>{baseUnit}</span>:</span>
+                        <span className="text-lg font-bold text-green-600">Rs. {sellingPrice.toFixed(2)}</span>
+                    </div>
+                     <div className="grid grid-cols-2 gap-4">
+                         <FormItem>
+                            <Label>How many '<span className="font-bold text-primary">{derivedUnitName}</span>' make 1 '{baseUnit}'?</Label>
+                            <Input type="number" value={userQtyInput} onChange={handleQtyChange} placeholder="e.g., 1000" />
+                        </FormItem>
+                         <FormItem>
+                            <Label>Price for 1 '<span className="font-bold text-primary">{derivedUnitName}</span>'</Label>
+                            <Input type="number" value={derivedPriceInput} onChange={handlePriceChange} placeholder="e.g., 0.40" />
+                        </FormItem>
+                    </div>
                 </div>
                  <ConversionFactorDisplay
                     derivedUnitName={derivedUnitName}
