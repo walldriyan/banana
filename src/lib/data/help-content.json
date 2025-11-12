@@ -229,7 +229,7 @@
   },
   "help": {
     "title": "Help & Support",
-    "icon": "LifeBuoy",
+    "icon": "CircleHelp",
     "en": {
       "summary": "This section provides guides and explanations for all the major features of the application.",
       "features": [

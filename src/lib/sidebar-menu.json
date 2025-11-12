@@ -60,7 +60,7 @@
             "label": "SUPPORT",
             "permission": null,
             "items": [
-                { "href": "/dashboard/help", "icon": "LifeBuoy", "label": "Help & Support", "permission": null }
+                { "href": "/dashboard/help", "icon": "CircleHelp", "label": "Help & Support", "permission": null }
             ]
         }
     ]

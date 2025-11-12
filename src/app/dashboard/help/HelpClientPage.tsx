@@ -9,7 +9,7 @@ import helpContent from "@/lib/data/help-content.json";
 import { cn } from "@/lib/utils";
 import {
     LayoutDashboard, Package, ShoppingCart, Building, Users, CreditCard,
-    HandCoins, Printer, Settings, LifeBuoy, TrendingUp, ArchiveX
+    HandCoins, Printer, Settings, CircleHelp, TrendingUp, ArchiveX
 } from 'lucide-react';
 
 const iconMap = {
@@ -23,7 +23,7 @@ const iconMap = {
     TrendingUp,
     Printer,
     Settings,
-    LifeBuoy,
+    CircleHelp,
     ArchiveX
 };
 
@@ -37,7 +37,7 @@ export function HelpClientPage() {
     const sections = Object.keys(helpContent) as SectionKey[];
     const currentContent = helpContent[activeSection][language];
     const currentIconName = helpContent[activeSection].icon as IconName;
-    const CurrentIcon = iconMap[currentIconName] || LifeBuoy;
+    const CurrentIcon = iconMap[currentIconName] || CircleHelp;
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-card border rounded-lg">
@@ -79,7 +79,7 @@ export function HelpClientPage() {
                     <nav className="flex flex-col gap-1">
                         {sections.map((key) => {
                             const sectionInfo = helpContent[key];
-                            const IconComponent = iconMap[sectionInfo.icon as IconName] || LifeBuoy;
+                            const IconComponent = iconMap[sectionInfo.icon as IconName] || CircleHelp;
                             return (
                                 <button
                                     key={key}

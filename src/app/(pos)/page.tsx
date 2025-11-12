@@ -16,7 +16,7 @@ import { calculateDiscountsAction } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { History, LayoutDashboard, SlidersHorizontal, LifeBuoy, PlusCircle } from 'lucide-react';
+import { History, LayoutDashboard, SlidersHorizontal, CircleHelp, PlusCircle } from 'lucide-react';
 import { useSessionStore } from '@/store/session-store';
 import { AuthorizationGuard } from '@/components/auth/AuthorizationGuard';
 import { LogoutButton } from '@/components/auth/LogoutButton';
@@ -639,7 +639,7 @@ export default function MyNewEcommerceShop() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={openHelpDrawer}>
-                  <LifeBuoy className="h-5 w-5" />
+                  <CircleHelp className="h-5 w-5" />
                    <span className="sr-only">Help & Support</span>
                 </Button>
               </TooltipTrigger>
@@ -688,7 +688,7 @@ export default function MyNewEcommerceShop() {
                   </DropdownMenuItem>
                 </AuthorizationGuard>
                  <DropdownMenuItem onClick={openHelpDrawer}>
-                  <LifeBuoy className="mr-2 h-4 w-4" />
+                  <CircleHelp className="mr-2 h-4 w-4" />
                   <span>Help & Support</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
