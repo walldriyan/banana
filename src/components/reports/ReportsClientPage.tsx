@@ -280,9 +280,12 @@ const ReportGenerator = () => {
             <div className="flex-1">
                 <Card className="h-full flex flex-col">
                     <CardHeader className="flex flex-row items-center justify-between no-print flex-shrink-0">
-                        <div>
-                            <CardTitle>{getReportTitle()}</CardTitle>
-                            {activeReportData && <CardDescription>{getReportDescription()}</CardDescription>}
+                        <div className="flex items-center gap-4">
+                            <div>
+                                <CardTitle>{getReportTitle()}</CardTitle>
+                                {activeReportData && <CardDescription>{getReportDescription()}</CardDescription>}
+                            </div>
+                            <LanguageToggle />
                         </div>
                         <Button onClick={handlePrintActiveReport} variant="outline" disabled={!activeReportData || isPending}>
                             <Printer className="mr-2 h-4 w-4" /> Print Report
@@ -311,12 +314,9 @@ const ReportGenerator = () => {
 
             <div className="flex flex-col w-full md:w-96 flex-shrink-0 gap-6">
                 <Card className="no-print">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle>Report Generation</CardTitle>
-                            <CardDescription>Select a date range to generate reports.</CardDescription>
-                        </div>
-                        <LanguageToggle />
+                    <CardHeader>
+                        <CardTitle>Report Generation</CardTitle>
+                        <CardDescription>Select a date range to generate reports.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-4">
                         <DateRangePicker dateRange={dateRange} setDateRange={setDateRange} />
