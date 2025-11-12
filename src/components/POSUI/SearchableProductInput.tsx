@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, Package, PackageSearch } from "lucide-react"
+import { Check, ChevronsUpDown, Package, PackageSearch, Tag } from "lucide-react"
 import { useImperativeHandle } from "react";
 
 import { cn } from "@/lib/utils"
@@ -119,6 +119,7 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                             : batch.product.units;
                           
                           const stockColor = batch.stock <= 5 ? 'text-red-600' : 'text-green-600';
+                          const hasDiscount = batch.discount && batch.discount > 0;
 
                           return (
                             <CommandItem
@@ -137,6 +138,14 @@ const SearchableProductInput = React.forwardRef<SearchableProductInputRef, Searc
                                     <p className={cn("text-sm font-semibold group-aria-selected:text-accent-foreground", stockColor)}>
                                       Stock: {batch.stock} {units.baseUnit}
                                     </p>
+                                    {hasDiscount && (
+                                      <div className="text-xs text-green-600 flex items-center gap-1">
+                                        <Tag className="h-3 w-3" />
+                                        <span>
+                                          Discount: {batch.discountType === 'PERCENTAGE' ? `${batch.discount}%` : `Rs. ${batch.discount}`}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                                 <span className={cn("font-bold text-lg group-aria-selected:text-accent-foreground")}>Rs. {batch.sellingPrice.toFixed(2)}</span>
