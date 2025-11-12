@@ -431,7 +431,7 @@ export async function getRefundsReportDataAction(dateRange?: DateRange) {
             orderBy: { transactionDate: 'desc' },
         });
         return { success: true, data: { refunds, dateRange } };
-    } catch (error) => {
+    } catch (error) {
         return { success: false, error: "Failed to fetch refunds report data." };
     }
 }
