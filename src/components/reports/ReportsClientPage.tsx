@@ -277,34 +277,36 @@ const ReportGenerator = () => {
 
     return (
         <div className="flex flex-row h-full gap-6">
-            <div className="flex-1 min-h-0 overflow-y-auto">
-                 {isPending && (
-                    <Card>
-                        <CardHeader><Skeleton className="h-8 w-1/2" /></CardHeader>
-                        <CardContent className="space-y-4"><Skeleton className="h-64 w-full" /></CardContent>
-                    </Card>
-                 )}
-                 {error && (
-                    <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                 )}
-                 {activeReportData && !isPending && (
-                     <Card>
-                         <CardHeader className="flex flex-row items-center justify-between no-print">
-                            <div>
-                                <CardTitle>{getReportTitle()}</CardTitle>
-                                <CardDescription>{getReportDescription()}</CardDescription>
+            <div className="flex-1 min-h-0 flex flex-col">
+                <Card className="flex flex-col flex-1 min-h-0">
+                    <CardHeader className="flex flex-row items-center justify-between no-print flex-shrink-0">
+                        <div>
+                            <CardTitle>{getReportTitle()}</CardTitle>
+                            <CardDescription>{getReportDescription()}</CardDescription>
+                        </div>
+                        <Button onClick={handlePrintActiveReport} variant="outline" disabled={!activeReportData || isPending}>
+                            <Printer className="mr-2 h-4 w-4" /> Print Report
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-y-auto">
+                        {isPending && (
+                            <div className="space-y-4">
+                                <Skeleton className="h-8 w-1/2" />
+                                <Skeleton className="h-64 w-full" />
                             </div>
-                            <Button onClick={handlePrintActiveReport} variant="outline"><Printer className="mr-2 h-4 w-4" /> Print Report</Button>
-                         </CardHeader>
-                         <CardContent>
-                            {renderActiveReport()}
-                         </CardContent>
-                     </Card>
-                 )}
+                        )}
+                        {error && (
+                            <Alert variant="destructive">
+                                <AlertTriangle className="h-4 w-4" />
+                                <AlertTitle>Error</AlertTitle>
+                                <AlertDescription>{error}</AlertDescription>
+                            </Alert>
+                        )}
+                        {activeReportData && !isPending && (
+                            renderActiveReport()
+                        )}
+                    </CardContent>
+                </Card>
             </div>
 
             <div className="flex flex-col w-96 flex-shrink-0 gap-6">
