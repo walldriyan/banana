@@ -227,7 +227,7 @@ export async function getStockReportDataAction() {
             stock: Number(batch.stock),
         }));
 
-        return { success: true, data: serializedBatches };
+        return { success: true, data: { data: serializedBatches } };
     } catch (error) {
         console.error("Error fetching stock report data:", error);
         return { success: false, error: "Failed to fetch stock report data." };
