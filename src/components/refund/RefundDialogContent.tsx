@@ -200,7 +200,7 @@ export function RefundDialogContent({
             <Terminal className="h-4 w-4" />
             <AlertTitle>Campaign Error!</AlertTitle>
             <AlertDescription>
-                The original discount campaign for this transaction could not be found. 
+                The original discount campaign for this transaction could not be loaded. 
                 Cannot proceed with an accurate refund calculation.
             </AlertDescription>
         </Alert>
