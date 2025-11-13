@@ -1,6 +1,6 @@
 // src/components/refund/RefundCart.tsx
 'use client';
-import React, { useEffect } from 'react';
+import React, { useMemo } from 'react';
 import type { SaleItem } from '@/types';
 import type { TransactionLine } from '@/lib/pos-data-transformer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -15,16 +15,6 @@ interface RefundCartProps {
 }
 
 export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, discountResult }: RefundCartProps) {
-  useEffect(() => {
-    console.log("--- RefundCart Items ---");
-    cart.forEach(item => {
-      const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
-      const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
-      console.log(`Item: ${item.product.name} | hasDiscounts:`, hasDiscounts, "| Discount Details:", lineItemResult);
-    });
-    console.log("------------------------");
-  }, [cart, discountResult]);
-
 
   return (
     <Card className="flex flex-col h-full">
@@ -34,77 +24,72 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
       <CardContent className="flex-grow overflow-y-auto">
         {originalTransactionLines.length === 0 ? (
           <p className="text-gray-500">Original transaction has no items.</p>
-        ) : cart.length === 0 ? (
-          <p className="text-center py-4 px-2 bg-yellow-50 text-yellow-800 rounded-lg">
-            All items removed. A full refund will be processed for all items in the original transaction.
-          </p>
         ) : (
           <div className="space-y-4">
-            {cart.map(item => {
-              const originalLine = originalTransactionLines.find(l => l.batchId === item.id);
-              const originalQty = originalLine?.quantity || 0;
-              const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
+            {
+              originalTransactionLines.map((originalLine) => {
+                const keptItem = cart.find(l => l.saleItemId === originalLine.id);
+                const keptQty = keptItem?.quantity || 0;
 
-              const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
-              const originalLineTotal = item.price * item.quantity;
-              const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
-        
-              return (
-                <div key={item.saleItemId} className="p-3 rounded-lg bg-muted/50 border border-transparent">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{item.product.name} {item.batchNumber && `(${item.batchNumber})`}</p>
-                      <p className="text-sm text-gray-500">Rs. {item.price.toFixed(2)} / unit</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(item.saleItemId, -1)}>-</Button>
-                      <span className="font-bold w-12 text-center text-base">
-                        {item.quantity}
-                        <span className="text-sm font-normal text-gray-500"> / {originalQty}</span>
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => onUpdateQuantity(item.saleItemId, 1)}
-                        disabled={item.quantity >= originalQty}
-                      >+</Button>
-                    </div>
-                  </div>
+                const lineItemResult = discountResult?.lineItems?.find((li: any) => li.lineId === originalLine.id);
+                
+                const newLineTotal = lineItemResult ? (lineItemResult.originalPrice * lineItemResult.quantity) : 0;
+                const newLineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
+                const finalLineTotal = lineItemResult ? (newLineTotal - newLineDiscount) : 0;
 
-                  <div className="mt-3 border-t border-dashed pt-3">
-                    {hasDiscounts && lineItemResult && (
-                      <div className="mb-2 text-xs text-green-800 bg-green-50 dark:bg-green-900/20 p-2 rounded-md space-y-1">
-                        <div className="font-bold text-green-900 dark:text-green-200 mb-1">Recalculated Discounts:</div>
-                        {lineItemResult.appliedRules.map((rule: any, i: number) => (
-                          <p key={i} className="flex justify-between items-center">
-                            <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
-                            <span className="font-semibold bg-green-100 dark:bg-green-800/50 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
-                          </p>
-                        ))}
+                return (
+                  <div key={originalLine.id} className="p-3 rounded-lg bg-muted/50 border border-transparent">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">{originalLine.productName}</p>
+                        <p className="text-sm text-gray-500">{originalLine.displayUnit}</p>
                       </div>
-                    )}
-                    <div className="flex justify-between items-baseline text-sm">
-                      {hasDiscounts ? (
-                        <>
-                          <span className="text-gray-500 line-through">
-                            Original: Rs. {originalLineTotal.toFixed(2)}
-                          </span>
-                          <span className="font-bold text-lg text-green-700 dark:text-green-400">
-                            Final Price: Rs. {finalLineTotal.toFixed(2)}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-gray-600 font-semibold">
-                          New Total: Rs. {originalLineTotal.toFixed(2)}
+                      <div className="flex items-center gap-2">
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(originalLine.id, -1)} disabled={keptQty <= 0}>-</Button>
+                        <span className="font-bold w-12 text-center text-base">
+                          {keptQty}
+                          <span className="text-sm font-normal text-gray-500"> / {originalLine.quantity}</span>
                         </span>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => onUpdateQuantity(originalLine.id, 1)}
+                          disabled={keptQty >= originalLine.quantity}
+                        >+</Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 border-t border-dashed pt-3">
+                      {keptQty > 0 ? (
+                        <div className="space-y-1 text-sm">
+                           <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Original Item Total:</span>
+                            <span className=" text-muted-foreground">
+                              Rs. {originalLine.lineTotalBeforeDiscount.toFixed(2)}
+                            </span>
+                           </div>
+                           <div className="flex justify-between items-center">
+                              <span className="font-bold text-blue-700 dark:text-blue-500">
+                                Discount:
+                              </span>
+                               <span className="font-bold text-blue-700 dark:text-blue-500">
+                                -Rs. {newLineDiscount.toFixed(2)}
+                               </span>
+                           </div>
+                           <div className="flex justify-between items-center font-bold text-green-700 dark:text-green-400">
+                              <span>New Total:</span>
+                              <span>Rs. {finalLineTotal.toFixed(2)}</span>
+                           </div>
+                        </div>
+                      ) : (
+                        <p className="text-center text-sm font-semibold text-destructive">Item fully removed for refund.</p>
                       )}
                     </div>
                   </div>
-
-                </div>
-              );
-            })}
+                );
+              })
+            }
           </div>
         )}
       </CardContent>

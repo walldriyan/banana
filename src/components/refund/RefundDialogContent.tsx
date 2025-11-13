@@ -107,32 +107,43 @@ export function RefundDialogContent({
   const updateRefundQuantity = useCallback((saleItemId: string, change: number) => {
     setRefundCart(currentCart => {
       const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
-      if (itemIndex === -1) return currentCart;
-      
-      const updatedCart = [...currentCart];
-      const currentItem = updatedCart[itemIndex];
+      const originalLine = originalTransaction.transactionLines.find(line => line.id === saleItemId);
+      if (!originalLine) return currentCart;
 
-      const originalLine = originalTransaction.transactionLines.find(line => line.batchId === currentItem.id);
-      const maxQty = originalLine?.quantity || 0;
-
-      let newQuantity = Number(currentItem.quantity) + Number(change);
-
-      if (newQuantity < 0) {
-        newQuantity = 0;
-      }
-      
-      if (newQuantity > maxQty) {
-        newQuantity = maxQty;
+      const maxQty = originalLine.quantity;
+      let currentQty = 0;
+      if (itemIndex > -1) {
+        currentQty = currentCart[itemIndex].quantity;
       }
 
-      if (newQuantity === 0) {
-        return updatedCart.filter(item => item.saleItemId !== saleItemId);
+      const newQuantity = currentQty + change;
+
+      if (newQuantity <= 0) {
+        // Remove item from cart if quantity is zero or less
+        return currentCart.filter(item => item.saleItemId !== saleItemId);
+      } else if (newQuantity > maxQty) {
+        // Do not allow quantity to exceed original quantity
+        return currentCart;
       } else {
-        updatedCart[itemIndex] = { ...currentItem, quantity: newQuantity, displayQuantity: newQuantity }; // Assuming base unit for simplicity in refunds
-        return updatedCart;
+        if (itemIndex > -1) {
+          // Update quantity for existing item
+          const updatedCart = [...currentCart];
+          updatedCart[itemIndex] = { ...updatedCart[itemIndex], quantity: newQuantity, displayQuantity: newQuantity };
+          return updatedCart;
+        } else {
+          // Add item back to cart if it was removed
+          const itemsFromDb = transactionLinesToSaleItems([originalLine], allBatches);
+          if (itemsFromDb.length > 0) {
+              const newItem = itemsFromDb[0];
+              newItem.quantity = newQuantity;
+              newItem.displayQuantity = newQuantity;
+              return [...currentCart, newItem];
+          }
+        }
       }
+      return currentCart;
     });
-  }, [originalTransaction.transactionLines]);
+  }, [originalTransaction.transactionLines, allBatches]);
 
   const handleProcessRefund = async () => {
     if (!activeCampaign) {
@@ -189,7 +200,7 @@ export function RefundDialogContent({
             <Terminal className="h-4 w-4" />
             <AlertTitle>Campaign Error!</AlertTitle>
             <AlertDescription>
-                The original discount campaign for this transaction could not be found. 
+                The original discount campaign for this transaction could not be loaded. 
                 Cannot proceed with an accurate refund calculation.
             </AlertDescription>
         </Alert>

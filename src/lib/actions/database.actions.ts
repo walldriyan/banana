@@ -144,12 +144,11 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       // STOCK MANAGEMENT LOGIC
       console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
-        // ✅ FIX: Use Promise.all for concurrent updates with atomic checks
         const stockUpdates = transactionLines.map(line =>
           tx.productBatch.update({
             where: {
               id: line.batchId,
-              stock: { gte: line.quantity } // Atomic check
+              stock: { gte: line.quantity }
             },
             data: {
               stock: { decrement: line.quantity }
@@ -159,9 +158,6 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
          try {
             await Promise.all(stockUpdates);
         } catch (error) {
-            // Prisma throws an error if an update fails due to the where condition (insufficient stock)
-            // We need to find which one failed, although Prisma doesn't directly tell us.
-            // A robust way is to re-check stock, but for now, we throw a general error.
             throw new Error('Insufficient stock for one or more items during transaction save.');
         }
 
@@ -191,10 +187,9 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                     }
                  });
              }
-             return null; // Return null for lines with no stock change
-         }).filter(Boolean); // Filter out nulls
+             return null;
+         }).filter(Boolean);
 
-         // Execute all stock restorations concurrently
          if(stockRestoreUpdates.length > 0) {
             await Promise.all(stockRestoreUpdates as any);
          }
