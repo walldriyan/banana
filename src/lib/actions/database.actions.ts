@@ -268,7 +268,6 @@ export async function getTransactionsFromDb(options?: {
           lines: {
             select: {
               id: true,
-              saleItemId: true,
               productBatchId: true,
               quantity: true,
               displayUnit: true,
@@ -357,6 +356,7 @@ export async function getTransactionsFromDb(options?: {
         },
         transactionLines: tx.lines.map(line => ({
           ...line,
+          saleItemId: line.id, // Use the actual line ID as saleItemId
           productName: line.productBatch.product.name,
           batchNumber: line.productBatch.batchNumber,
           productId: line.productBatch.productId,
