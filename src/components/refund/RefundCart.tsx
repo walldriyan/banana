@@ -1,6 +1,6 @@
 // src/components/refund/RefundCart.tsx
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { SaleItem } from '@/types';
 import type { TransactionLine } from '@/lib/pos-data-transformer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -15,7 +15,16 @@ interface RefundCartProps {
 }
 
 export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, discountResult }: RefundCartProps) {
-  console.log('originalTransactionLines hiii');
+  useEffect(() => {
+    console.log("--- RefundCart Items ---");
+    cart.forEach(item => {
+      const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
+      const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
+      console.log(`Item: ${item.product.name} | hasDiscounts:`, hasDiscounts, "| Discount Details:", lineItemResult);
+    });
+    console.log("------------------------");
+  }, [cart, discountResult]);
+
 
   return (
     <Card className="flex flex-col h-full">
@@ -39,18 +48,13 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
               const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
               const originalLineTotal = item.price * item.quantity;
               const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
-
-
         
-            
-
               return (
                 <div key={item.saleItemId} className="p-3 rounded-lg bg-muted/50 border border-transparent">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold">{item.product.name} {item.batchNumber && `(${item.batchNumber})`}</p>
                       <p className="text-sm text-gray-500">Rs. {item.price.toFixed(2)} / unit</p>
-
                     </div>
                     <div className="flex items-center gap-2">
                       <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(item.saleItemId, -1)}>-</Button>
