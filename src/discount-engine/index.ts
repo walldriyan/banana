@@ -13,9 +13,59 @@ import { CustomItemDiscountRule } from './rules/custom-item-discount-rule';
 import type { DiscountSet } from '@/types';
 
 // Cache for compiled rule sets
-const engineCache = new Map<string, { rules: IDiscountRule[], timestamp: number }>();
 const CACHE_TTL = 300000; // 5 minutes
 const CACHE_MAX_SIZE = 50; // Maximum number of engines to cache
+
+// ✅ FIX: Implement a proper cache with automatic cleanup to prevent memory leaks
+class EngineCache {
+  private cache = new Map<string, { rules: IDiscountRule[], timestamp: number }>();
+  private cleanupInterval: NodeJS.Timeout;
+
+  constructor() {
+    this.cleanupInterval = setInterval(() => this.cleanup(), CACHE_TTL * 2); // Cleanup every 10 mins
+  }
+
+  private cleanup() {
+    const now = Date.now();
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > CACHE_TTL) {
+        this.cache.delete(key);
+        console.log(`[EngineCache] Expired entry for campaign '${key}' removed.`);
+      }
+    }
+  }
+
+  get(key: string): IDiscountRule[] | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() - entry.timestamp > CACHE_TTL) {
+      this.cache.delete(key);
+      return null;
+    }
+    return entry.rules;
+  }
+
+  set(key: string, rules: IDiscountRule[]): void {
+    if (this.cache.size >= CACHE_MAX_SIZE) {
+      const oldestKey = this.cache.keys().next().value;
+      this.cache.delete(oldestKey);
+    }
+    this.cache.set(key, { rules, timestamp: Date.now() });
+  }
+
+  clear() {
+    this.cache.clear();
+  }
+
+  destroy() {
+    clearInterval(this.cleanupInterval);
+    this.cache.clear();
+  }
+}
+
+const engineCache = new EngineCache();
+
 
 export class DiscountEngine {
   private rules: IDiscountRule[] = [];
@@ -26,45 +76,14 @@ export class DiscountEngine {
     this.campaignId = campaign.id;
     
     // Check cache first
-    const cached = this.getCachedRules(campaign.id);
+    const cached = engineCache.get(campaign.id);
     if (cached) {
       this.rules = cached;
     } else {
       this.buildRulesFromCampaign(campaign);
-      this.cacheRules(campaign.id, this.rules);
+      engineCache.set(campaign.id, this.rules);
     }
   }
-
-  private getCachedRules(campaignId: string): IDiscountRule[] | null {
-    const cached = engineCache.get(campaignId);
-    if (!cached) return null;
-    
-    // Check if cache is still valid
-    if (Date.now() - cached.timestamp > CACHE_TTL) {
-      engineCache.delete(campaignId);
-      return null;
-    }
-    
-    return cached.rules;
-  }
-
-  private cacheRules(campaignId: string, rules: IDiscountRule[]): void {
-    // Add the new item to the cache.
-    engineCache.set(campaignId, {
-      rules,
-      timestamp: Date.now()
-    });
-    
-    // Enforce cache size limit. If the size exceeds the max, remove the oldest entry.
-    if (engineCache.size > CACHE_MAX_SIZE) {
-        // A Map iterates its elements in insertion order, so the first one is the oldest.
-        const oldestKey = engineCache.keys().next().value;
-        if (oldestKey) {
-            engineCache.delete(oldestKey);
-        }
-    }
-  }
-
 
   /**
    * Dynamically builds the list of rule processors based on a campaign configuration.

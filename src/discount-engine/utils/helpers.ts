@@ -50,8 +50,10 @@ export function evaluateRule(
     }
   } else { // percentage
     // Percentage is always calculated on the total value of the line
-    discountAmount = lineTotalValue * (ruleConfig.value / 100);
-    console.log(`[evaluateRule] Percentage discount calculated: ${lineTotalValue} * ${ruleConfig.value / 100} = ${discountAmount}`);
+    // ✅ FIX: Use integer math to avoid floating point precision issues.
+    // Calculate cents, then round, then convert back to dollars.
+    discountAmount = Math.round(lineTotalValue * ruleConfig.value) / 100;
+    console.log(`[evaluateRule] Percentage discount calculated: Math.round(${lineTotalValue} * ${ruleConfig.value}) / 100 = ${discountAmount}`);
   }
   
   // Ensure discount is not more than the line's total value and not negative.

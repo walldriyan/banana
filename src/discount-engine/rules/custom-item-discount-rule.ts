@@ -36,9 +36,8 @@ export class CustomItemDiscountRule implements IDiscountRule {
         // This is the special case for one-time fixed discount.
         console.log(`[CustomItemDiscountRule] Applying a single, one-time fixed discount.`);
 
-        // Check if this is a partial refund scenario
+        // ✅ FIX: Pro-rate the discount correctly during refunds
         if (item.originalQuantity && item.originalQuantity > item.quantity) {
-            // Pro-rate the discount
             const originalDiscount = item.customDiscountValue;
             const originalQty = item.originalQuantity;
             const currentQty = item.quantity;

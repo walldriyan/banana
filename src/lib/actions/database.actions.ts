@@ -145,28 +145,12 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
         for (const line of transactionLines) {
-            // Check stock before updating to prevent race conditions
-            const batchBeforeUpdate = await tx.productBatch.findUnique({ 
-                where: { id: line.batchId },
-                select: { stock: true }
-            });
-
-            if (!batchBeforeUpdate) {
-                throw new Error(`Stock update failed: Batch with ID ${line.batchId} not found.`);
-            }
-
-            if (new Prisma.Decimal(batchBeforeUpdate.stock).lt(line.quantity)) {
-                throw new Error(
-                    `Insufficient stock for batch ${line.batchId}. ` +
-                    `Available: ${batchBeforeUpdate.stock}, Required: ${line.quantity}`
-                );
-            }
-            
-            console.log(`   - 📉 යාවත්කාලීන කිරීමට පෙර: Batch ID: ${line.batchId} | දැනට පවතින තොගය: ${batchBeforeUpdate.stock.toString()} | අඩු කරන ප්‍රමාණය: ${line.quantity}`);
-
-            // Use Prisma's atomic decrement operation
-            await tx.productBatch.update({
-                where: { id: line.batchId }, 
+            // ✅ FIX: Use atomic operation with a `where` clause to prevent race conditions
+            const updatedBatch = await tx.productBatch.update({
+                where: { 
+                    id: line.batchId,
+                    stock: { gte: line.quantity } // Check stock at the database level
+                }, 
                 data: { 
                     stock: {
                         decrement: line.quantity
@@ -174,8 +158,13 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                 }
             });
 
-            const updatedBatch = await tx.productBatch.findUnique({ where: { id: line.batchId } });
-            console.log(`   - ✅ යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${line.batchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
+            if (!updatedBatch) {
+                throw new Error(
+                    `Insufficient stock for batch ${line.batchId} or a concurrent update occurred. ` +
+                    `Transaction has been rolled back.`
+                );
+            }
+             console.log(`   - ✅ යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${line.batchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
         }
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
          const originalTx = await tx.transaction.findUnique({
@@ -279,6 +268,7 @@ export async function getTransactionsFromDb(options?: {
           lines: {
             select: {
               id: true,
+              saleItemId: true,
               productBatchId: true,
               quantity: true,
               displayUnit: true,
