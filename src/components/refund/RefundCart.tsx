@@ -47,6 +47,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                     <div>
                       <p className="font-semibold">{item.product.name} {item.batchNumber && `(${item.batchNumber})`}</p>
                       <p className="text-sm text-gray-500">Rs. {item.price.toFixed(2)} / unit</p>
+
                     </div>
                     <div className="flex items-center gap-2">
                       <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(item.saleItemId, -1)}>-</Button>
