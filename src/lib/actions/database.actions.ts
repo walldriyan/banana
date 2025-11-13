@@ -144,9 +144,8 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       // STOCK MANAGEMENT LOGIC
       console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
-        for (const line of transactionLines) {
-            // ✅ FIX: Use atomic operation with a `where` clause to prevent race conditions
-            const updatedBatch = await tx.productBatch.update({
+        const stockUpdates = transactionLines.map(line => 
+            tx.productBatch.update({
                 where: { 
                     id: line.batchId,
                     stock: { gte: line.quantity } // Check stock at the database level
@@ -156,16 +155,10 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
                         decrement: line.quantity
                     }
                 }
-            });
-
-            if (!updatedBatch) {
-                throw new Error(
-                    `Insufficient stock for batch ${line.batchId} or a concurrent update occurred. ` +
-                    `Transaction has been rolled back.`
-                );
-            }
-             console.log(`   - ✅ යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${line.batchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
-        }
+            })
+        );
+        // Execute all updates concurrently
+        await Promise.all(stockUpdates);
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
          const originalTx = await tx.transaction.findUnique({
              where: { id: transactionHeader.originalTransactionId },
@@ -176,31 +169,28 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
              throw new Error(`Original transaction ${transactionHeader.originalTransactionId} not found for refund stock update.`);
          }
 
-         for (const originalLine of originalTx.lines) {
+         const stockRestoreUpdates = originalTx.lines.map(originalLine => {
              const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); 
              const originalQty = new Prisma.Decimal(originalLine.quantity);
              const keptQty = keptLine ? new Prisma.Decimal(keptLine.quantity) : new Prisma.Decimal(0);
              const returnedQty = originalQty.minus(keptQty);
 
              if (returnedQty.greaterThan(0)) {
-                 const batchBeforeUpdate = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
-                 if (!batchBeforeUpdate) throw new Error(`Stock update failed: Batch with ID ${originalLine.productBatchId} not found for refund.`);
-                 
-                 console.log(`   - 📈 REFUND: යාවත්කාලීන කිරීමට පෙර: Batch ID: ${originalLine.productBatchId} | දැනට පවතින තොගය: ${batchBeforeUpdate.stock.toString()} | ආපසු එකතු වන ප්‍රමාණය: ${returnedQty.toString()}`);
-                 
-                 // Use Prisma's atomic increment operation
-                 await tx.productBatch.update({
+                 return tx.productBatch.update({
                      where: { id: originalLine.productBatchId! },
                      data: { 
                         stock: {
-                            increment: returnedQty.toNumber() // Convert Decimal back to number for increment
+                            increment: returnedQty.toNumber()
                         }
                     }
                  });
-
-                 const updatedBatch = await tx.productBatch.findUnique({ where: { id: originalLine.productBatchId! } });
-                 console.log(`   - ✅ REFUND: යාවත්කාලීන කිරීමෙන් පසු: Batch ID: ${originalLine.productBatchId} | නව තොගය (DB): ${updatedBatch?.stock.toString()}`);
              }
+             return null; // Return null for lines with no stock change
+         }).filter(Boolean); // Filter out nulls
+
+         // Execute all stock restorations concurrently
+         if(stockRestoreUpdates.length > 0) {
+            await Promise.all(stockRestoreUpdates as any);
          }
       }
       console.log("✅ 5. Stock Management සාර්ථකව අවසන් විය.");

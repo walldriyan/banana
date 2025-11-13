@@ -1,6 +1,6 @@
 // src/components/POSUI/CartTableRow.tsx
 'use client';
-import React, { useMemo } from 'react';
+import React, { memo } from 'react';
 import type { SaleItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tag, Trash2, Scaling } from 'lucide-react';
@@ -18,7 +18,8 @@ interface CartTableRowProps {
   onSelectUnit: (item: SaleItem) => void;
 }
 
-export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount, onSelectUnit }: CartTableRowProps) {
+// Wrap component in React.memo
+const CartTableRowComponent = ({ item, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount, onSelectUnit }: CartTableRowProps) => {
   const lineItemResult = discountResult?.lineItems?.find((li: any) => li.lineId === item.saleItemId);
   const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
   const originalLineTotal = item.price * item.quantity;
@@ -130,3 +131,19 @@ export function CartTableRow({ item, isCalculating, discountResult, onUpdateQuan
     </TableRow>
   );
 }
+
+
+// Export the memoized component
+export const CartTableRow = memo(CartTableRowComponent, (prevProps, nextProps) => {
+    // Custom comparison function
+    return (
+      prevProps.isCalculating === nextProps.isCalculating &&
+      prevProps.item.saleItemId === nextProps.item.saleItemId &&
+      prevProps.item.quantity === nextProps.item.quantity &&
+      prevProps.item.displayQuantity === nextProps.item.displayQuantity &&
+      prevProps.item.displayUnit === nextProps.item.displayUnit &&
+      prevProps.item.customDiscountValue === nextProps.item.customDiscountValue &&
+      JSON.stringify(prevProps.discountResult?.lineItems?.find((li: any) => li.lineId === prevProps.item.saleItemId)) ===
+      JSON.stringify(nextProps.discountResult?.lineItems?.find((li: any) => li.lineId === nextProps.item.saleItemId))
+    );
+});

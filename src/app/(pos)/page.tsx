@@ -2,7 +2,7 @@
 // src/app/(pos)/page.tsx
 'use client';
 
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Product, SaleItem, DiscountSet, ProductBatch } from '@/types';
 import { allCampaigns as hardcodedCampaigns } from '@/lib/my-campaigns';
 import CampaignSelector from '@/components/POSUI/CampaignSelector';
@@ -75,6 +75,8 @@ const initialDiscountResult = {
 
 
 const CACHE_MAX_SIZE = 100;
+
+const MemoizedShoppingCart = React.memo(ShoppingCart);
 
 export default function MyNewEcommerceShop() {
   const [products, setProducts] = useState<ProductBatch[]>([]);
@@ -355,7 +357,7 @@ export default function MyNewEcommerceShop() {
   }, [products, cart]);
 
 
-  const handleCartUpdate = (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
+  const handleCartUpdate = useCallback((saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => {
     console.log("🛒 handleCartUpdate called:", { saleItemId, newDisplayQuantity, newDisplayUnit });
     setCart(currentCart => {
         const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
@@ -419,7 +421,7 @@ export default function MyNewEcommerceShop() {
         
         return updatedCart;
     });
-  };
+  }, [products, parseUnits, toast]);
 
   const openUnitSelectorModal = useCallback((item: SaleItem) => {
     setUnitModalState({ isOpen: true, item: item });
@@ -496,7 +498,7 @@ export default function MyNewEcommerceShop() {
     setTransactionId(createNewTransactionId());
   }, []);
 
-  const handleApplyCustomDiscount = (
+  const handleApplyCustomDiscount = useCallback((
     saleItemId: string,
     type: 'fixed' | 'percentage',
     value: number,
@@ -514,10 +516,10 @@ export default function MyNewEcommerceShop() {
       return item;
     }));
     drawer.closeDrawer();
-  };
+  }, [drawer]);
 
 
-  const openCustomDiscountDrawer = (item: SaleItem) => {
+  const openCustomDiscountDrawer = useCallback((item: SaleItem) => {
     drawer.openDrawer({
       title: `Override Discount for ${item.product.name}`,
       description: "Apply a special, one-time discount for this line item.",
@@ -529,7 +531,7 @@ export default function MyNewEcommerceShop() {
       ),
       drawerClassName: "sm:max-w-md"
     });
-  };
+  }, [drawer, handleApplyCustomDiscount]);
 
   const openAnalysisDrawer = useCallback(() => {
     drawer.openDrawer({
@@ -745,7 +747,7 @@ export default function MyNewEcommerceShop() {
                 {/* 🛒 Left - Cart */}
                 <div className="flex flex-col flex-1 min-w-0 rounded-lg lg:overflow-hidden">
                   <div className="flex-1 lg:overflow-y-auto">
-                    <ShoppingCart
+                    <MemoizedShoppingCart
                       cart={cart}
                       isCalculating={isCalculating}
                       discountResult={discountResult}
