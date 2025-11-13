@@ -184,7 +184,7 @@ export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: 
         const productBatch = products.find(p => p.id === line.batchId);
         
         // --- FIX: Use the original saleItemId from the database line ---
-        const saleItemId = line.saleItemId || `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const saleItemId = line.id;
 
         const unitPrice = line.unitPrice || line.price || 0;
 
