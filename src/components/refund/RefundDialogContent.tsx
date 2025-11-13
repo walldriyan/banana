@@ -106,52 +106,42 @@ export function RefundDialogContent({
 
   const updateRefundQuantity = useCallback((saleItemId: string, change: number) => {
     setRefundCart(currentCart => {
-        const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
-        const originalLine = originalTransaction.transactionLines.find(line => line.id === saleItemId);
+      const itemIndex = currentCart.findIndex(item => item.saleItemId === saleItemId);
+      const originalLine = originalTransaction.transactionLines.find(line => line.id === saleItemId);
+      if (!originalLine) return currentCart;
 
-        if (!originalLine) return currentCart;
+      const maxQty = originalLine.quantity;
+      let currentQty = 0;
+      if (itemIndex > -1) {
+        currentQty = currentCart[itemIndex].quantity;
+      }
 
-        const maxQty = originalLine.quantity || 0;
-        let newQuantity = 0;
+      const newQuantity = currentQty + change;
 
-        if (itemIndex > -1) {
-            // Item exists in cart, update its quantity
-            const currentItem = currentCart[itemIndex];
-            newQuantity = Number(currentItem.quantity) + Number(change);
-        } else if (change > 0) {
-            // Item does not exist in cart and we are adding it
-            newQuantity = change;
-        }
-
-        // Clamp the quantity between 0 and maxQty
-        if (newQuantity < 0) newQuantity = 0;
-        if (newQuantity > maxQty) newQuantity = maxQty;
-
-        if (newQuantity === 0) {
-            // Filter out the item if its new quantity is 0
-            return currentCart.filter(item => item.saleItemId !== saleItemId);
-        } else {
-            if (itemIndex > -1) {
-                // Update existing item
-                const updatedCart = [...currentCart];
-                updatedCart[itemIndex] = {
-                    ...updatedCart[itemIndex],
-                    quantity: newQuantity,
-                    displayQuantity: newQuantity
-                };
-                return updatedCart;
-            } else {
-                // Add new item back to cart
-                const itemsFromDb = transactionLinesToSaleItems([originalLine], allBatches);
-                if (itemsFromDb.length > 0) {
-                    const newItem = itemsFromDb[0];
-                    newItem.quantity = newQuantity;
-                    newItem.displayQuantity = newQuantity;
-                    return [...currentCart, newItem];
-                }
-            }
-        }
+      if (newQuantity <= 0) {
+        // Remove item from cart if quantity is zero or less
+        return currentCart.filter(item => item.saleItemId !== saleItemId);
+      } else if (newQuantity > maxQty) {
+        // Do not allow quantity to exceed original quantity
         return currentCart;
+      } else {
+        if (itemIndex > -1) {
+          // Update quantity for existing item
+          const updatedCart = [...currentCart];
+          updatedCart[itemIndex] = { ...updatedCart[itemIndex], quantity: newQuantity, displayQuantity: newQuantity };
+          return updatedCart;
+        } else {
+          // Add item back to cart if it was removed
+          const itemsFromDb = transactionLinesToSaleItems([originalLine], allBatches);
+          if (itemsFromDb.length > 0) {
+              const newItem = itemsFromDb[0];
+              newItem.quantity = newQuantity;
+              newItem.displayQuantity = newQuantity;
+              return [...currentCart, newItem];
+          }
+        }
+      }
+      return currentCart;
     });
   }, [originalTransaction.transactionLines, allBatches]);
 
