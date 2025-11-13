@@ -32,18 +32,30 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
 
     const originalTotal = item.price * item.quantity;
     let totalDiscount = 0;
-    let explanation = '';
+    let explanation: React.ReactNode = '';
 
     if (discountType === 'percentage') {
         totalDiscount = (originalTotal * value) / 100;
-        explanation = `ඔබ තෝරාගත් '${item.product.name}' සඳහා වන මුළු වටිනාකමෙන් (Line Total) ${value}% ක Discount එකක් යෙදේ.`;
+        explanation = (
+            <p className="text-sm">
+                ඔයා තෝරගත්ත <strong className="text-green-600">{item.product.name}</strong> කියන item එකේ සම්පූර්ණ වටිනාකමෙන් (Line Total) <strong className="font-mono">{value}%</strong> ක Discount එකක් තමයි ලැබෙන්නේ.
+            </p>
+        );
     } else { // fixed
       if (applyOnce) {
         totalDiscount = value;
-        explanation = `ඔබ තෝරාගත් '${item.product.name}' සඳහා, Quantity එක කුමක් වුවත්, එක් වරක් පමණක් යෙදෙන (per-line) ස්ථාවර (fixed) Discount එකකි.`;
+         explanation = (
+            <p className="text-sm">
+                ඔයා තෝරගත්ත <strong className="text-green-600">{item.product.name}</strong> කියන item එකට, ඔයා ගන්න Quantity එක මොකක් වුණත්, එක පාරක් විතරක් <strong className="font-mono">රු. {value.toFixed(2)}</strong> ක ස්ථාවර (fixed) Discount එකක් ලැබෙනවා.
+            </p>
+        );
       } else {
         totalDiscount = value * item.quantity;
-        explanation = `ඔබ තෝරාගත් '${item.product.name}' සඳහා, එක් ඒකකයකට (per-unit) රු. ${value.toFixed(2)} බැගින් වන ස්ථාවර (fixed) Discount එකකි. Quantity එක අනුව මුළු වට්ටම වෙනස් වේ. (රු. ${value.toFixed(2)} x ${item.quantity} qty)`;
+         explanation = (
+            <p className="text-sm">
+                ඔයා තෝරගත්ත <strong className="text-green-600">{item.product.name}</strong> කියන item එකේ, ඔයා ගන්න හැම ඒකකයකටම (per-unit) <strong className="font-mono">රු. {value.toFixed(2)}</strong> බැගින් Discount එකක් ලැබෙනවා. ඔයා ගන්න Quantity එක අනුව මුළු වට්ටම වෙනස් වෙනවා.
+            </p>
+        );
       }
     }
     
@@ -143,7 +155,7 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
               <Info className="h-4 w-4" />
               <AlertTitle className="font-semibold text-primary">වට්ටමේ බලපෑම (Preview)</AlertTitle>
               <AlertDescription className="space-y-2 mt-2 text-foreground/90">
-                 <p className="text-xs">{preview.explanation}</p>
+                 <div>{preview.explanation}</div>
                   <div className="border-t border-slate-300 dark:border-slate-700 pt-2 mt-2 space-y-1">
                       <div className="flex justify-between font-medium">
                           <span>මුළු Discount එක:</span>
