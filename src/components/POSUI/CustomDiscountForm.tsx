@@ -1,7 +1,7 @@
 // src/components/POSUI/CustomDiscountForm.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { SaleItem } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useDrawer } from '@/hooks/use-drawer';
 import { Switch } from '../ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Info } from 'lucide-react';
 
 interface CustomDiscountFormProps {
   item: SaleItem;
@@ -24,6 +26,40 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
   const [error, setError] = useState<string>('');
   const drawer = useDrawer();
 
+  const preview = useMemo(() => {
+    const value = Number(discountValue);
+    if (isNaN(value) || value <= 0) return null;
+
+    const originalTotal = item.price * item.quantity;
+    let totalDiscount = 0;
+    let explanation = '';
+
+    if (discountType === 'percentage') {
+      totalDiscount = (originalTotal * value) / 100;
+      explanation = `මෙම ${value}% වට්ටම අනුව, මුළු වට්ටම් මුදල රු. ${totalDiscount.toFixed(2)} වේ.`;
+    } else { // fixed
+      if (applyOnce) {
+        totalDiscount = value;
+        explanation = `මෙම ස්ථාවර (fixed) වට්ටම, මෙම අයිතමයට එක් වරක් පමණක් යෙදෙන අතර, මුළු වට්ටම රු. ${totalDiscount.toFixed(2)} වේ.`;
+      } else {
+        totalDiscount = value * item.quantity;
+        explanation = `මෙම ස්ථාවර (fixed) වට්ටම, එක් ඒකකයකට (per-unit) යෙදෙන බැවින්, (රු. ${value.toFixed(2)} x ${item.quantity} qty) = මුළු වට්ටම රු. ${totalDiscount.toFixed(2)} වේ.`;
+      }
+    }
+    
+    // Cap the discount
+    totalDiscount = Math.min(totalDiscount, originalTotal);
+    
+    const finalPrice = originalTotal - totalDiscount;
+
+    return {
+      totalDiscount,
+      finalPrice,
+      explanation,
+    };
+
+  }, [discountType, discountValue, applyOnce, item.price, item.quantity]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const valueAsNumber = Number(discountValue);
@@ -36,24 +72,20 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
       setError('Percentage discount cannot exceed 100.');
       return;
     }
-    if (discountType === 'fixed' && valueAsNumber > item.price && applyOnce === false) {
+    if (discountType === 'fixed' && !applyOnce && valueAsNumber > item.price) {
         setError('Per-unit fixed discount cannot be greater than the unit price.');
         return;
     }
-    if (discountType === 'fixed' && valueAsNumber > (item.price * item.quantity) && applyOnce === true) {
+    if (discountType === 'fixed' && applyOnce && valueAsNumber > (item.price * item.quantity)) {
       setError('One-time fixed discount cannot be greater than the line total.');
       return;
     }
 
-
     setError('');
-    // For percentage discounts, `applyOnce` is irrelevant, but we pass it anyway.
-    // The logic to ignore it is in the discount engine.
     onApplyDiscount(item.saleItemId, discountType, valueAsNumber, applyOnce);
   };
   
   const handleRemoveDiscount = () => {
-    // A value of 0 will effectively remove the custom discount
     onApplyDiscount(item.saleItemId, 'fixed', 0, false);
   }
 
@@ -100,12 +132,23 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
             </div>
             <Switch
                 id="apply-mode"
-                // The switch is "ON" when we want to apply per-unit (applyOnce = false)
                 checked={!applyOnce}
-                // When checked (ON), it means apply per unit, so set applyOnce to false.
                 onCheckedChange={(checked) => setApplyOnce(!checked)}
             />
         </div>
+      )}
+
+      {preview && (
+          <Alert className="bg-slate-100 dark:bg-slate-900 border-slate-300 dark:border-slate-700">
+              <Info className="h-4 w-4" />
+              <AlertTitle className="font-semibold text-primary">වට්ටමේ බලපෑම (Preview)</AlertTitle>
+              <AlertDescription className="space-y-2 mt-2 text-foreground/90">
+                 <p>{preview.explanation}</p>
+                 <p className="font-bold border-t border-slate-300 dark:border-slate-700 pt-2 mt-2">
+                    නව අවසාන මිල: <span className="text-green-600 dark:text-green-400 text-lg">රු. {preview.finalPrice.toFixed(2)}</span>
+                 </p>
+              </AlertDescription>
+          </Alert>
       )}
 
 
@@ -114,7 +157,7 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
             type="button" 
             variant="destructive"
             onClick={handleRemoveDiscount}
-            disabled={item.customDiscountValue === undefined}
+            disabled={!item.customDiscountValue}
         >
             Remove Override
         </Button>
