@@ -50,12 +50,21 @@ export function HistoryClientPage() {
     }
     setCurrentPage(1); // Reset to first page on new search
     const query = searchQuery.toLowerCase();
+    
     return allTransactions.filter(tx => {
-        const txIdMatch = tx.transactionHeader.transactionId.toLowerCase().includes(query);
-        const customerNameMatch = tx.customerDetails.name.toLowerCase().includes(query);
-        return txIdMatch || customerNameMatch;
+        const header = tx.transactionHeader;
+        const customer = tx.customerDetails;
+        
+        // Check main transaction ID
+        if (header.transactionId.toLowerCase().includes(query)) return true;
+        // Check customer name
+        if (customer.name.toLowerCase().includes(query)) return true;
+        // If it's a refund, also check the original transaction ID
+        if (header.originalTransactionId?.toLowerCase().includes(query)) return true;
+
+        return false;
     });
-  }, [allTransactions, searchQuery]);
+}, [allTransactions, searchQuery]);
 
 
   // Memoize the separation of original and refund transactions to avoid re-calculation on every render
@@ -63,16 +72,22 @@ export function HistoryClientPage() {
     const originalTxs: DatabaseReadyTransaction[] = [];
     const refundMap = new Map<string, DatabaseReadyTransaction>();
 
-    filteredTransactions.forEach(tx => {
-      if (tx.transactionHeader.status === 'refund' && tx.transactionHeader.originalTransactionId) {
-        refundMap.set(tx.transactionHeader.originalTransactionId, tx);
-      } else {
-        originalTxs.push(tx);
-      }
+    // This logic correctly populates the refundMap
+    allTransactions.forEach(tx => {
+        if (tx.transactionHeader.status === 'refund' && tx.transactionHeader.originalTransactionId) {
+            refundMap.set(tx.transactionHeader.originalTransactionId, tx);
+        }
     });
 
-    return { originalTransactions: originalTxs.sort((a, b) => new Date(b.transactionHeader.transactionDate).getTime() - new Date(a.transactionHeader.transactionDate).getTime()), refundMap };
-  }, [filteredTransactions]);
+    // The list to be displayed should be the filtered list, sorted.
+    // It will contain BOTH original and refund transactions if the filter matches them.
+    const sortedFilteredTxs = [...filteredTransactions].sort((a, b) => 
+        new Date(b.transactionHeader.transactionDate).getTime() - 
+        new Date(a.transactionHeader.transactionDate).getTime()
+    );
+
+    return { originalTransactions: sortedFilteredTxs, refundMap };
+}, [allTransactions, filteredTransactions]);
 
   // Pagination logic
   const paginatedTransactions = useMemo(() => {
