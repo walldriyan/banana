@@ -1,6 +1,6 @@
 // src/components/refund/RefundCart.tsx
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import type { SaleItem } from '@/types';
 import type { TransactionLine } from '@/lib/pos-data-transformer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -15,6 +15,17 @@ interface RefundCartProps {
 }
 
 export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, discountResult }: RefundCartProps) {
+  useEffect(() => {
+    console.log("--- RefundCart Items ---");
+    cart.forEach(item => {
+      const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
+      const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
+      console.log(`Item: ${item.product.name} | hasDiscounts:`, hasDiscounts, "| Discount Details:", lineItemResult);
+    });
+    console.log("------------------------");
+  }, [cart, discountResult]);
+
+
   return (
     <Card className="flex flex-col h-full">
       <CardHeader>
@@ -33,38 +44,34 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
               const originalLine = originalTransactionLines.find(l => l.batchId === item.id);
               const originalQty = originalLine?.quantity || 0;
               const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
-              
+
               const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
               const originalLineTotal = item.price * item.quantity;
               const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
-
+        
               return (
                 <div key={item.saleItemId} className="p-3 rounded-lg bg-muted/50 border border-transparent">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold">{item.product.name} {item.batchNumber && `(${item.batchNumber})`}</p>
                       <p className="text-sm text-gray-500">Rs. {item.price.toFixed(2)} / unit</p>
-                      {item.discount && item.discount > 0 && <p className="text-sm text-green-500">discount {item.discount.toFixed(2)} </p>}
-                   
-
-
                     </div>
                     <div className="flex items-center gap-2">
                       <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(item.saleItemId, -1)}>-</Button>
                       <span className="font-bold w-12 text-center text-base">
-                        {item.quantity} 
+                        {item.quantity}
                         <span className="text-sm font-normal text-gray-500"> / {originalQty}</span>
                       </span>
-                      <Button 
-                          size="icon" 
-                          variant="outline" 
-                          className="h-8 w-8" 
-                          onClick={() => onUpdateQuantity(item.saleItemId, 1)}
-                          disabled={item.quantity >= originalQty}
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => onUpdateQuantity(item.saleItemId, 1)}
+                        disabled={item.quantity >= originalQty}
                       >+</Button>
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 border-t border-dashed pt-3">
                     {hasDiscounts && lineItemResult && (
                       <div className="mb-2 text-xs text-green-800 bg-green-50 dark:bg-green-900/20 p-2 rounded-md space-y-1">
@@ -79,18 +86,18 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                     )}
                     <div className="flex justify-between items-baseline text-sm">
                       {hasDiscounts ? (
-                          <>
-                              <span className="text-gray-500 line-through">
-                                  Original: Rs. {originalLineTotal.toFixed(2)}
-                              </span>
-                              <span className="font-bold text-lg text-green-700 dark:text-green-400">
-                                  Final Price: Rs. {finalLineTotal.toFixed(2)}
-                              </span>
-                          </>
-                      ) : (
-                          <span className="text-gray-600 font-semibold">
-                              New Total: Rs. {originalLineTotal.toFixed(2)}
+                        <>
+                          <span className="text-gray-500 line-through">
+                            Original: Rs. {originalLineTotal.toFixed(2)}
                           </span>
+                          <span className="font-bold text-lg text-green-700 dark:text-green-400">
+                            Final Price: Rs. {finalLineTotal.toFixed(2)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-gray-600 font-semibold">
+                          New Total: Rs. {originalLineTotal.toFixed(2)}
+                        </span>
                       )}
                     </div>
                   </div>

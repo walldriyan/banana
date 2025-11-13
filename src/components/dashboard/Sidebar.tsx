@@ -7,7 +7,7 @@ import {
     Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, 
     CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp, ChevronRight,
     ArchiveX,
-    LifeBuoy
+    CircleHelp
 } from 'lucide-react';
 import {
   SidebarContent,
@@ -44,7 +44,7 @@ const iconMap = {
     Home,
     LogOut,
     ArchiveX,
-    LifeBuoy
+    CircleHelp
 };
 
 type IconName = keyof typeof iconMap;

@@ -14,6 +14,7 @@ export interface PaymentData {
   paymentMethod: 'cash' | 'card' | 'online';
   outstandingAmount: number;
   isInstallment: boolean;
+  finalTotal?: number; // Added for validation context
 }
 
 export interface CompanyDetails {
@@ -41,6 +42,7 @@ export interface TransactionHeader {
 }
 
 export interface TransactionLine {
+    id: string; // The primary key from the database TransactionLine model
     saleItemId: string; 
     productId: string; // The general product ID (e.g., 't-shirt-01')
     productName: string;
@@ -123,7 +125,7 @@ export function transformTransactionDataForDb(
     ...(originalTransactionId && { originalTransactionId }),
   };
 
-  const transactionLines: TransactionLine[] = cart.map(item => {
+  const transactionLines: Omit<TransactionLine, 'id'>[] = cart.map(item => {
     const lineItemResult = discountResult.lineItems.find((li: any) => li.lineId === item.saleItemId);
 
     const lineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
@@ -162,7 +164,7 @@ export function transformTransactionDataForDb(
     userName: 'Default User'
   };
 
-  const databaseReadyObject: DatabaseReadyTransaction = {
+  const databaseReadyObject: Omit<DatabaseReadyTransaction, 'transactionLines'> & { transactionLines: Omit<TransactionLine, 'id'>[]} = {
     transactionHeader,
     transactionLines,
     appliedDiscountsLog,
@@ -172,7 +174,7 @@ export function transformTransactionDataForDb(
     userDetails,
   };
 
-  return databaseReadyObject;
+  return databaseReadyObject as DatabaseReadyTransaction;
 }
 
 // Helper to convert DB transaction lines back to SaleItems for the refund cart
@@ -181,7 +183,8 @@ export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: 
         // Find the matching product-batch combination from the current sample products
         const productBatch = products.find(p => p.id === line.batchId);
         
-        const saleItemId = `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // --- FIX: Use the original saleItemId from the database line ---
+        const saleItemId = line.saleItemId || `refund-item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         const unitPrice = line.unitPrice || line.price || 0;
 
