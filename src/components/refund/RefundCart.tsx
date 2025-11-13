@@ -78,14 +78,18 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                       {keptQty > 0 && (
                         <div className="flex justify-between items-baseline text-sm">
                          <div className="flex flex-col ">
-                          <span className="text-gray-400 line-through">
-                            Original Item Total: Rs. {originalLine.lineTotalBeforeDiscount.toFixed(2)}
+                          <span className="text-green-400 ">
+                            Original Item Total: Rs. {originalLine.lineTotalAfterDiscount.toFixed(2)}
                           </span>
-                           {lineItemResult && lineItemResult.totalDiscount > 0 && (
-                                <span className="font-bold text-blue-700 dark:text-blue-700">
-                                Discount: Rs. {lineItemResult.totalDiscount.toFixed(2)}
+                          
+
+                          <span className="font-bold text-blue-700 dark:text-blue-700">
+                                Discount: Rs. ??
                                 </span>
-                            )}
+
+                           {/* {lineItemResult && lineItemResult.totalDiscount > 0 && (
+                             
+                            )} */}
                           </div>
                            <span className="font-bold text-green-700 dark:text-green-400">
                             New Total: Rs. {finalLineTotal.toFixed(2)}
