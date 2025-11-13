@@ -41,6 +41,10 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
               const originalLineTotal = item.price * item.quantity;
               const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
 
+
+              console.log('hiii');
+              console.log('originalLine', item);
+
               return (
                 <div key={item.saleItemId} className="p-3 rounded-lg bg-muted/50 border border-transparent">
                   <div className="flex items-center justify-between">
