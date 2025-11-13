@@ -35,15 +35,15 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
     let explanation = '';
 
     if (discountType === 'percentage') {
-      totalDiscount = (originalTotal * value) / 100;
-      explanation = `මෙම ${value}% වට්ටම අනුව, මුළු වට්ටම් මුදල රු. ${totalDiscount.toFixed(2)} වේ.`;
+        totalDiscount = (originalTotal * value) / 100;
+        explanation = `ඔබ තෝරාගත් '${item.product.name}' සඳහා වන මුළු වටිනාකමෙන් (Line Total) ${value}% ක Discount එකක් යෙදේ.`;
     } else { // fixed
       if (applyOnce) {
         totalDiscount = value;
-        explanation = `මෙම ස්ථාවර (fixed) වට්ටම, මෙම අයිතමයට එක් වරක් පමණක් යෙදෙන අතර, මුළු වට්ටම රු. ${totalDiscount.toFixed(2)} වේ.`;
+        explanation = `ඔබ තෝරාගත් '${item.product.name}' සඳහා, Quantity එක කුමක් වුවත්, එක් වරක් පමණක් යෙදෙන (per-line) ස්ථාවර (fixed) Discount එකකි.`;
       } else {
         totalDiscount = value * item.quantity;
-        explanation = `මෙම ස්ථාවර (fixed) වට්ටම, එක් ඒකකයකට (per-unit) යෙදෙන බැවින්, (රු. ${value.toFixed(2)} x ${item.quantity} qty) = මුළු වට්ටම රු. ${totalDiscount.toFixed(2)} වේ.`;
+        explanation = `ඔබ තෝරාගත් '${item.product.name}' සඳහා, එක් ඒකකයකට (per-unit) රු. ${value.toFixed(2)} බැගින් වන ස්ථාවර (fixed) Discount එකකි. Quantity එක අනුව මුළු වට්ටම වෙනස් වේ. (රු. ${value.toFixed(2)} x ${item.quantity} qty)`;
       }
     }
     
@@ -58,7 +58,7 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
       explanation,
     };
 
-  }, [discountType, discountValue, applyOnce, item.price, item.quantity]);
+  }, [discountType, discountValue, applyOnce, item]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,10 +143,17 @@ export function CustomDiscountForm({ item, onApplyDiscount }: CustomDiscountForm
               <Info className="h-4 w-4" />
               <AlertTitle className="font-semibold text-primary">වට්ටමේ බලපෑම (Preview)</AlertTitle>
               <AlertDescription className="space-y-2 mt-2 text-foreground/90">
-                 <p>{preview.explanation}</p>
-                 <p className="font-bold border-t border-slate-300 dark:border-slate-700 pt-2 mt-2">
-                    නව අවසාන මිල: <span className="text-green-600 dark:text-green-400 text-lg">රු. {preview.finalPrice.toFixed(2)}</span>
-                 </p>
+                 <p className="text-xs">{preview.explanation}</p>
+                  <div className="border-t border-slate-300 dark:border-slate-700 pt-2 mt-2 space-y-1">
+                      <div className="flex justify-between font-medium">
+                          <span>මුළු Discount එක:</span>
+                          <span>- රු. {preview.totalDiscount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-base">
+                          <span>නව අවසාන මිල:</span>
+                          <span className="text-green-600 dark:text-green-400">රු. {preview.finalPrice.toFixed(2)}</span>
+                      </div>
+                  </div>
               </AlertDescription>
           </Alert>
       )}
