@@ -68,25 +68,24 @@ export function ThermalReceipt({ data, company, originalTransaction, showAsGiftR
             <th className="text-left">{t('itemHeader')}</th>
             <th className="text-center">{t('qtyHeader')}</th>
             <th className="text-right">{t('priceHeader')}</th>
-            <th className="text-right">{t('totalHeader')}</th>
+            <th className="text-right">{t('ourPriceHeader')}</th>
           </tr>
         </thead>
         <tbody>
           {transactionLines.map((item, index) => (
             <React.Fragment key={index}>
               <tr>
-                <td className="text-left">{item.productName}{item.batchNumber ? ` (${item.batchNumber})` : ''}</td>
+                <td className="text-left">{item.productName}</td>
                 <td className="text-center">{item.displayQuantity} {item.displayUnit}</td>
-
                 <td className="text-right">{item.unitPrice.toFixed(2)}</td>
                 <td className="text-right">{item.lineTotalAfterDiscount.toFixed(2)}</td>
               </tr>
               {!showAsGiftReceipt && item.lineDiscount > 0 && (
-                <tr>
-                   <td colSpan={4} className="text-right italic text-gray-600">
-                    ({t('discountLabel')}: -{item.lineDiscount.toFixed(2)})
-                  </td>
-                </tr>
+                 <tr>
+                    <td colSpan={4} className="text-right italic text-xs text-gray-600">
+                      <span>({t('discountLabel')}) -{item.lineDiscount.toFixed(2)}</span>
+                   </td>
+                 </tr>
               )}
             </React.Fragment>
           ))}
