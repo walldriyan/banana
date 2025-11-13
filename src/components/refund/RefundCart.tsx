@@ -1,6 +1,6 @@
 // src/components/refund/RefundCart.tsx
 'use client';
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import type { SaleItem } from '@/types';
 import type { TransactionLine } from '@/lib/pos-data-transformer';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -35,7 +35,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
 
                 const originalLineTotal = originalLine.unitPrice * originalLine.quantity;
                 
-                // Use the discount result if available, otherwise calculate from original line
+                // Recalculate based on the discountResult for the current state of kept items
                 const newLineTotal = lineItemResult ? (lineItemResult.originalPrice * lineItemResult.quantity) : 0;
                 const newLineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
                 const finalLineTotal = lineItemResult ? (newLineTotal - newLineDiscount) : 0;
@@ -64,39 +64,28 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                     </div>
 
                     <div className="mt-3 border-t border-dashed pt-3">
-                      {lineItemResult && keptQty > 0 && (
-                        <div className="mb-2 text-xs text-green-800 bg-green-50 dark:bg-green-900/20 p-2 rounded-md space-y-1">
-                          <div className="font-bold text-green-900 dark:text-green-200 mb-1">Recalculated Discounts:</div>
-                          {lineItemResult.appliedRules.map((rule: any, i: number) => (
-                            <p key={i} className="flex justify-between items-center">
-                              <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
-                              <span className="font-semibold bg-green-100 dark:bg-green-800/50 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
-                            </p>
-                          ))}
+                      {keptQty > 0 ? (
+                        <div className="space-y-1 text-sm">
+                           <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Original Item Total:</span>
+                            <span className="line-through text-muted-foreground">
+                              Rs. {originalLine.lineTotalAfterDiscount.toFixed(2)}
+                            </span>
+                           </div>
+                           <div className="flex justify-between items-center">
+                              <span className="font-bold text-blue-700 dark:text-blue-500">
+                                Discount:
+                              </span>
+                               <span className="font-bold text-blue-700 dark:text-blue-500">
+                                -Rs. {newLineDiscount.toFixed(2)}
+                               </span>
+                           </div>
+                           <div className="flex justify-between items-center font-bold text-green-700 dark:text-green-400">
+                              <span>New Total:</span>
+                              <span>Rs. {finalLineTotal.toFixed(2)}</span>
+                           </div>
                         </div>
-                      )}
-                      {keptQty > 0 && (
-                        <div className="flex justify-between items-baseline text-sm">
-                         <div className="flex flex-col ">
-                          <span className="text-green-400 ">
-                            Original Item Total: Rs. {originalLine.lineTotalAfterDiscount.toFixed(2)}
-                          </span>
-                          
-
-                          <span className="font-bold text-blue-700 dark:text-blue-700">
-                                Discount: Rs. ??
-                                </span>
-
-                           {/* {lineItemResult && lineItemResult.totalDiscount > 0 && (
-                             
-                            )} */}
-                          </div>
-                           <span className="font-bold text-green-700 dark:text-green-400">
-                            New Total: Rs. {finalLineTotal.toFixed(2)}
-                          </span>
-                        </div>
-                      )}
-                      {keptQty === 0 && (
+                      ) : (
                         <p className="text-center text-sm font-semibold text-destructive">Item fully removed for refund.</p>
                       )}
                     </div>
