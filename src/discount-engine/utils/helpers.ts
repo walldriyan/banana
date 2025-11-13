@@ -45,13 +45,13 @@ export function evaluateRule(
       console.log(`[evaluateRule] Fixed (One-Time) discount calculated: ${discountAmount}`);
     } else {
       // Otherwise, apply it per unit.
-      discountAmount = ruleConfig.value * itemQuantity;
+      // ✅ FIX: Proper rounding for per-unit fixed discounts
+      discountAmount = Math.round(ruleConfig.value * itemQuantity * 100) / 100;
        console.log(`[evaluateRule] Fixed (Per-Unit) discount calculated: ${ruleConfig.value} * ${itemQuantity} = ${discountAmount}`);
     }
   } else { // percentage
     // Percentage is always calculated on the total value of the line
-    // ✅ FIX: Use integer math to avoid floating point precision issues.
-    // Calculate cents, then round, then convert back to dollars.
+    // ✅ FIX: Round AFTER multiplication to avoid floating point issues.
     discountAmount = Math.round(lineTotalValue * ruleConfig.value) / 100;
     console.log(`[evaluateRule] Percentage discount calculated: Math.round(${lineTotalValue} * ${ruleConfig.value}) / 100 = ${discountAmount}`);
   }
@@ -59,8 +59,8 @@ export function evaluateRule(
   // Ensure discount is not more than the line's total value and not negative.
   const validatedDiscount = Math.max(0, Math.min(discountAmount, lineTotalValue));
   
-  // Round to 2 decimal places to avoid floating point issues.
-  const finalDiscount = Math.round((validatedDiscount + Number.EPSILON) * 100) / 100;
+  // ✅ FIX: ALWAYS round to 2 decimal places to avoid floating point issues.
+  const finalDiscount = Math.round(validatedDiscount * 100) / 100;
 
   console.log(`[evaluateRule] Final discount after validation and rounding: ${finalDiscount}`);
   return finalDiscount;

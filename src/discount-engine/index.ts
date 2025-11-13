@@ -12,17 +12,18 @@ import { BatchSpecificRule } from './rules/batch-specific-rule';
 import { CustomItemDiscountRule } from './rules/custom-item-discount-rule';
 import type { DiscountSet } from '@/types';
 
-// Cache for compiled rule sets
 const CACHE_TTL = 300000; // 5 minutes
-const CACHE_MAX_SIZE = 50; // Maximum number of engines to cache
+const CACHE_MAX_SIZE = 50; 
 
 // ✅ FIX: Implement a proper cache with automatic cleanup to prevent memory leaks
 class EngineCache {
   private cache = new Map<string, { rules: IDiscountRule[], timestamp: number }>();
-  private cleanupInterval: NodeJS.Timeout;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.cleanupInterval = setInterval(() => this.cleanup(), CACHE_TTL * 2); // Cleanup every 10 mins
+    if (typeof window === 'undefined') { // Server-side only
+      this.cleanupInterval = setInterval(() => this.cleanup(), CACHE_TTL);
+    }
   }
 
   private cleanup() {
@@ -48,8 +49,11 @@ class EngineCache {
 
   set(key: string, rules: IDiscountRule[]): void {
     if (this.cache.size >= CACHE_MAX_SIZE) {
+      // LRU eviction: delete the first (oldest) key
       const oldestKey = this.cache.keys().next().value;
-      this.cache.delete(oldestKey);
+      if (oldestKey) {
+        this.cache.delete(oldestKey);
+      }
     }
     this.cache.set(key, { rules, timestamp: Date.now() });
   }
@@ -59,13 +63,22 @@ class EngineCache {
   }
 
   destroy() {
-    clearInterval(this.cleanupInterval);
+    if (this.cleanupInterval) {
+        clearInterval(this.cleanupInterval);
+        this.cleanupInterval = null;
+    }
     this.cache.clear();
   }
 }
 
 const engineCache = new EngineCache();
 
+// Cleanup on process exit (server-side)
+if (typeof window === 'undefined') {
+    process.on('beforeExit', () => {
+        engineCache.destroy();
+    });
+}
 
 export class DiscountEngine {
   private rules: IDiscountRule[] = [];

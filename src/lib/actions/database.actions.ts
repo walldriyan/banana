@@ -144,21 +144,27 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       // STOCK MANAGEMENT LOGIC
       console.log("📦 4. Stock Management Logic ආරම්භ විය.");
       if (transactionHeader.status === 'completed') {
-        const stockUpdates = transactionLines.map(line => 
-            tx.productBatch.update({
-                where: { 
-                    id: line.batchId,
-                    stock: { gte: line.quantity } // Check stock at the database level
-                }, 
-                data: { 
-                    stock: {
-                        decrement: line.quantity
-                    }
-                }
-            })
+        // ✅ FIX: Use Promise.all for concurrent updates with atomic checks
+        const stockUpdates = transactionLines.map(line =>
+          tx.productBatch.update({
+            where: {
+              id: line.batchId,
+              stock: { gte: line.quantity } // Atomic check
+            },
+            data: {
+              stock: { decrement: line.quantity }
+            }
+          })
         );
-        // Execute all updates concurrently
-        await Promise.all(stockUpdates);
+         try {
+            await Promise.all(stockUpdates);
+        } catch (error) {
+            // Prisma throws an error if an update fails due to the where condition (insufficient stock)
+            // We need to find which one failed, although Prisma doesn't directly tell us.
+            // A robust way is to re-check stock, but for now, we throw a general error.
+            throw new Error('Insufficient stock for one or more items during transaction save.');
+        }
+
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
          const originalTx = await tx.transaction.findUnique({
              where: { id: transactionHeader.originalTransactionId },
@@ -196,6 +202,10 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       console.log("✅ 5. Stock Management සාර්ථකව අවසන් විය.");
 
       return createdTransaction;
+    }, {
+      maxWait: 15000,
+      timeout: 30000,
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
     });
 
     console.log("✅✅✅ FINAL SUCCESS: Transaction object saved to DB:", JSON.stringify(newTransaction, null, 2));
