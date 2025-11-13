@@ -31,11 +31,8 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                 const keptItem = cart.find(l => l.saleItemId === originalLine.id);
                 const keptQty = keptItem?.quantity || 0;
 
-                const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === originalLine.id);
-
-                const originalLineTotal = originalLine.unitPrice * originalLine.quantity;
+                const lineItemResult = discountResult?.lineItems?.find((li: any) => li.lineId === originalLine.id);
                 
-                // Recalculate based on the discountResult for the current state of kept items
                 const newLineTotal = lineItemResult ? (lineItemResult.originalPrice * lineItemResult.quantity) : 0;
                 const newLineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
                 const finalLineTotal = lineItemResult ? (newLineTotal - newLineDiscount) : 0;
