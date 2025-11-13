@@ -141,11 +141,17 @@ export function ThermalReceipt({ data, company, originalTransaction, showAsGiftR
           <Line />
           <section className="my-1">
             <h2 className="font-bold text-center">{t('appliedDiscountsHeader')}</h2>
-            {appliedDiscountsLog.map((discount, index) => (
-              <div key={index} className="text-left">
-                - {discount.sourceRuleName} ({discount.totalCalculatedDiscount.toFixed(2)})
+            {appliedDiscountsLog.map((discount, index) => {
+               const productName = transactionLines.find(line => line.productId === discount.productIdAffected)?.productName;
+               const ruleDisplayName = productName ? `${discount.sourceRuleName.split(':')[0]}: ${productName}` : discount.sourceRuleName;
+
+              return (
+              <div key={index} className="flex justify-between text-left">
+                <span>- {ruleDisplayName}</span>
+                <span>({discount.totalCalculatedDiscount.toFixed(2)})</span>
               </div>
-            ))}
+              )
+            })}
           </section>
         </>
       )}
