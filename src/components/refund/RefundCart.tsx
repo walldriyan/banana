@@ -65,8 +65,8 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                         <div className="space-y-1 text-sm">
                            <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Original Item Total:</span>
-                            <span className="line-through text-muted-foreground">
-                              Rs. {originalLine.lineTotalAfterDiscount.toFixed(2)}
+                            <span className=" text-muted-foreground">
+                              Rs. {originalLine.lineTotalBeforeDiscount.toFixed(2)}
                             </span>
                            </div>
                            <div className="flex justify-between items-center">
