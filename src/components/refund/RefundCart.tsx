@@ -29,6 +29,7 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
       console.log(`saleItemId: ${item.saleItemId} `);
       console.log(`lineTotalAfterDiscount: ${item.lineTotalAfterDiscount} `);
       console.log(`lineTotalBeforeDiscount: ${item.lineTotalBeforeDiscount} `);
+      console.log(`lineTotalBeforeDiscount: ${item.lineDiscount} `);
       console.log(`------------------------`);
       console.log(`------------------------`);
     });
@@ -47,69 +48,78 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
         ) : (
           <div className="space-y-4">
             {
-            originalTransactionLines.map((originalLine, index) => {
-              const keptItem = cart.find(l => l.saleItemId === originalLine.saleItemId);
-              const keptQty = keptItem?.quantity || 0;
-              
-              const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === originalLine.saleItemId);
+              originalTransactionLines.map((originalLine, index) => {
+                const keptItem = cart.find(l => l.saleItemId === originalLine.saleItemId);
+                const keptQty = keptItem?.quantity || 0;
 
-              // const originalLineTotal = originalLine.unitPrice * originalLine.quantity;
-              // const newLineTotal = lineItemResult ? (lineItemResult.originalPrice * lineItemResult.quantity) : 0;
-              // const newLineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
-              // const finalLineTotal = lineItemResult ? newLineTotal - newLineDiscount : 0;
+                const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === originalLine.saleItemId);
 
-              return (
-                <div key={`${originalLine.saleItemId}-${index}`} className="p-3 rounded-lg bg-muted/50 border border-transparent">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{originalLine.productName}</p>
-                      <p className="text-sm text-gray-500">{originalLine.displayUnit}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(originalLine.saleItemId, -1)}>-</Button>
-                      <span className="font-bold w-12 text-center text-base">
-                        {/* {keptQty} */}
-                        <span className="text-sm font-normal text-gray-500"> {originalLine.quantity}</span>
-                      </span>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        className="h-8 w-8"
-                        onClick={() => onUpdateQuantity(originalLine.saleItemId, 1)}
-                        disabled={keptQty >= originalLine.quantity}
-                      >+</Button>
-                    </div>
-                  </div>
+                // const originalLineTotal = originalLine.unitPrice * originalLine.quantity;
+                // const newLineTotal = lineItemResult ? (lineItemResult.originalPrice * lineItemResult.quantity) : 0;
+                // const newLineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
+                // const finalLineTotal = lineItemResult ? newLineTotal - newLineDiscount : 0;
 
-                  <div className="mt-3 border-t border-dashed pt-3">
-                    {lineItemResult && keptQty > 0 && (
-                      <div className="mb-2 text-xs text-green-800 bg-green-50 dark:bg-green-900/20 p-2 rounded-md space-y-1">
-                        <div className="font-bold text-green-900 dark:text-green-200 mb-1">Recalculated Discounts:</div>
-                        {lineItemResult.appliedRules.map((rule: any, i: number) => (
-                          <p key={i} className="flex justify-between items-center">
-                            <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
-                            <span className="font-semibold bg-green-100 dark:bg-green-800/50 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
-                          </p>
-                        ))}
+                return (
+                  <div key={`${originalLine.saleItemId}-${index}`} className="p-3 rounded-lg bg-muted/50 border border-transparent">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold">{originalLine.productName}</p>
+                        <p className="text-sm text-gray-500">{originalLine.displayUnit}</p>
                       </div>
-                    )}
-                    {keptQty > 0 && (
-                      <div className="flex justify-between items-baseline text-sm">
-                          <span className="text-gray-500 line-through">
+                      <div className="flex items-center gap-2">
+                        <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(originalLine.saleItemId, -1)}>-</Button>
+                        <span className="font-bold w-12 text-center text-base">
+                          {/* {keptQty} */}
+                          <span className="text-sm font-normal text-gray-500"> {originalLine.quantity}</span>
+                        </span>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => onUpdateQuantity(originalLine.saleItemId, 1)}
+                          disabled={keptQty >= originalLine.quantity}
+                        >+</Button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 border-t border-dashed pt-3">
+                      {lineItemResult && keptQty > 0 && (
+                        <div className="mb-2 text-xs text-green-800 bg-green-50 dark:bg-green-900/20 p-2 rounded-md space-y-1">
+                          <div className="font-bold text-green-900 dark:text-green-200 mb-1">Recalculated Discounts:</div>
+                          {lineItemResult.appliedRules.map((rule: any, i: number) => (
+                            <p key={i} className="flex justify-between items-center">
+                              <span className="truncate pr-2">{rule.appliedRuleInfo.sourceRuleName}</span>
+                              <span className="font-semibold bg-green-100 dark:bg-green-800/50 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full">-Rs. {rule.discountAmount.toFixed(2)}</span>
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                      {keptQty > 0 && (
+                        <div className="flex justify-between items-baseline text-sm">
+                         <div className="flex flex-col ">
+                          <span className="text-gray-400 ">
                             Original: Rs. {originalLine.lineTotalBeforeDiscount.toFixed(2)}
                           </span>
-                          <span className="font-bold text-lg text-green-700 dark:text-green-400">
+                          {originalLine.lineDiscount > 0 && (
+                            <span className="font-bold text-blue-700 dark:text-blue-700">
+                             Discount: Rs. {originalLine.lineDiscount.toFixed(2)}
+                            </span>
+                          )}
+
+</div>
+
+                          <span className="font-bold text-green-700 dark:text-green-400">
                             New Total: Rs. {originalLine.lineTotalAfterDiscount.toFixed(2)}
                           </span>
-                      </div>
-                    )}
-                     {keptQty === 0 && (
+                        </div>
+                      )}
+                      {keptQty === 0 && (
                         <p className="text-center text-sm font-semibold text-destructive">Item fully removed for refund.</p>
-                     )}
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })
             }
           </div>
         )}
