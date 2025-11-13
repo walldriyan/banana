@@ -15,9 +15,8 @@ interface RefundCartProps {
 }
 
 export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, discountResult }: RefundCartProps) {
+  console.log('originalTransactionLines hiii');
 
-  console.log('discountResult', discountResult);
-  console.log('originalTransactionLines', originalTransactionLines);
   return (
     <Card className="flex flex-col h-full">
       <CardHeader>
@@ -36,14 +35,14 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
               const originalLine = originalTransactionLines.find(l => l.batchId === item.id);
               const originalQty = originalLine?.quantity || 0;
               const lineItemResult = discountResult?.lineItems?.find((li: any) => li.saleItemId === item.saleItemId);
-              
+
               const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
               const originalLineTotal = item.price * item.quantity;
               const finalLineTotal = lineItemResult ? originalLineTotal - lineItemResult.totalDiscount : originalLineTotal;
 
 
-              console.log('hiii');
-              console.log('originalLine', item);
+        
+            
 
               return (
                 <div key={item.saleItemId} className="p-3 rounded-lg bg-muted/50 border border-transparent">
@@ -56,19 +55,19 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                     <div className="flex items-center gap-2">
                       <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => onUpdateQuantity(item.saleItemId, -1)}>-</Button>
                       <span className="font-bold w-12 text-center text-base">
-                        {item.quantity} 
+                        {item.quantity}
                         <span className="text-sm font-normal text-gray-500"> / {originalQty}</span>
                       </span>
-                      <Button 
-                          size="icon" 
-                          variant="outline" 
-                          className="h-8 w-8" 
-                          onClick={() => onUpdateQuantity(item.saleItemId, 1)}
-                          disabled={item.quantity >= originalQty}
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-8 w-8"
+                        onClick={() => onUpdateQuantity(item.saleItemId, 1)}
+                        disabled={item.quantity >= originalQty}
                       >+</Button>
                     </div>
                   </div>
-                  
+
                   <div className="mt-3 border-t border-dashed pt-3">
                     {hasDiscounts && lineItemResult && (
                       <div className="mb-2 text-xs text-green-800 bg-green-50 dark:bg-green-900/20 p-2 rounded-md space-y-1">
@@ -83,18 +82,18 @@ export function RefundCart({ cart, onUpdateQuantity, originalTransactionLines, d
                     )}
                     <div className="flex justify-between items-baseline text-sm">
                       {hasDiscounts ? (
-                          <>
-                              <span className="text-gray-500 line-through">
-                                  Original: Rs. {originalLineTotal.toFixed(2)}
-                              </span>
-                              <span className="font-bold text-lg text-green-700 dark:text-green-400">
-                                  Final Price: Rs. {finalLineTotal.toFixed(2)}
-                              </span>
-                          </>
-                      ) : (
-                          <span className="text-gray-600 font-semibold">
-                              New Total: Rs. {originalLineTotal.toFixed(2)}
+                        <>
+                          <span className="text-gray-500 line-through">
+                            Original: Rs. {originalLineTotal.toFixed(2)}
                           </span>
+                          <span className="font-bold text-lg text-green-700 dark:text-green-400">
+                            Final Price: Rs. {finalLineTotal.toFixed(2)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-gray-600 font-semibold">
+                          New Total: Rs. {originalLineTotal.toFixed(2)}
+                        </span>
                       )}
                     </div>
                   </div>
