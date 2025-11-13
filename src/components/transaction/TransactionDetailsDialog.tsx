@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 const receiptStyles = `
   @page { size: auto; margin: 5px; }
   body { font-family: monospace; background-color: transparent; margin: 0; padding: 0; color: black; }
-  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 8px; overflow-x: hidden; }
+  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 11.5px; max-width: 280px; margin: 0 auto; padding: 4px; overflow-x: hidden; }
   
   html.dark body, html.dark .thermal-receipt-container { 
     background-color: #18181b !important; /* zinc-900 */
@@ -118,13 +118,18 @@ export function TransactionDetailsDialog({
         </html>
       `);
       iframeDoc.close();
-      iframe.contentWindow?.focus();
-      iframe.contentWindow?.print();
+      
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      }, 500);
     }
 
     setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 500);
+      if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+      }
+    }, 1500);
   };
 
   if (!transaction) return null;
