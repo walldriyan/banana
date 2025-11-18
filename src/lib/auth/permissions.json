@@ -1,0 +1,77 @@
+{
+  "roles": {
+    "admin": {
+      "name": "Administrator",
+      "inherits": null,
+      "permissions": [
+        "access_all"
+      ]
+    },
+    "manager": {
+      "name": "Manager",
+      "inherits": "cashier",
+      "permissions": [
+        "history.view",
+        "bills.update",
+        "bills.delete",
+        "refund.process",
+        "products.view",
+        "products.create",
+        "products.update",
+        "products.delete",
+        "customers.view",
+        "customers.create",
+        "customers.update",
+        "customers.delete",
+        "suppliers.view",
+        "suppliers.create",
+        "suppliers.update",
+        "suppliers.delete",
+        "purchases.view",
+        "purchases.create",
+        "purchases.update",
+        "purchases.delete",
+        "credit.view",
+        "credit.manage",
+        "debtors.view",
+        "debtors.manage",
+        "reports.view",
+        "company.manage",
+        "settings.view",
+        "settings.discounts",
+        "finance.view",
+        "finance.manage"
+      ]
+    },
+    "cashier": {
+      "name": "Cashier",
+      "inherits": null,
+      "permissions": [
+        "pos.view",
+        "pos.create.transaction"
+      ]
+    }
+  },
+  "users": {
+    "admin": {
+      "role": "admin",
+      "overrides": {
+        "permissions": []
+      }
+    },
+    "manager_user": {
+      "role": "manager",
+      "overrides": {
+        "permissions": []
+      }
+    },
+    "cashier_user": {
+      "role": "cashier",
+      "overrides": {
+        "permissions": [
+          "history.view"
+        ]
+      }
+    }
+  }
+}
