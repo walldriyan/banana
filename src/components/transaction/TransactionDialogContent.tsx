@@ -27,9 +27,9 @@ import { printReceipt } from '@/lib/services/print.service';
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
 const receiptStyles = `
-  @page { size: auto; margin: 5px; }
+  @page { size: auto; margin: 0; }
   body { font-family: monospace; background-color: transparent; margin: 0; padding: 0; color: black; }
-  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 8px; overflow-x: hidden; }
+  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 12px; max-width: 300px; margin: 0 auto; padding: 5px; overflow-x: hidden; }
   
   html.dark body, html.dark .thermal-receipt-container { 
     background-color: #111827 !important; /* gray-900 */
