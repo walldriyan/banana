@@ -27,11 +27,11 @@ import { printReceipt } from '@/lib/services/print.service';
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
 const receiptStyles = `
-  @page { size: 80mm auto; margin: 0; }
+  @page { size: 302px auto; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; width: 80mm; height: auto; }
+  html, body { margin: 0; padding: 0; width: 302px; height: auto; }
   body { font-family: monospace; background-color: transparent; color: black; }
-  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 12px; width: 80mm; margin: 0; padding: 5px; box-sizing: border-box; overflow-x: hidden; }
+  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 11px; width: 302px; margin: 0; padding: 0; box-sizing: border-box; overflow-x: hidden; }
   
   html.dark body, html.dark .thermal-receipt-container { 
     background-color: #111827 !important; /* gray-900 */
@@ -51,9 +51,10 @@ const receiptStyles = `
   .border-dashed { border-style: dashed; }
   .border-black { border-color: black; }
   .my-1 { margin-top: 4px; margin-bottom: 4px; }
-  .w-full { width: 100%; }
-  .text-left { text-align: left; }
+  .w-full { width: 100%; table-layout: fixed; }
+  .text-left { text-align: left; word-wrap: break-word; }
   .text-right { text-align: right; }
+  .text-center { text-align: center; }
   .text-base { font-size: 1rem; }
   .italic { font-style: italic; }
   .text-gray-600 { color: #555; }
@@ -65,6 +66,15 @@ const receiptStyles = `
   .mt-2 { margin-top: 8px; }
   .text-xs { font-size: 0.75rem; }
   .capitalize { text-transform: capitalize; }
+  
+  table { width: 292px; table-layout: fixed; border-collapse: collapse; margin: 5px; }
+  table th, table td { word-wrap: break-word; overflow-wrap: break-word; padding: 2px 1px; vertical-align: top; max-width: 0; }
+  table th:nth-child(1), table td:nth-child(1) { width: 125px; }
+  table th:nth-child(2), table td:nth-child(2) { width: 55px; }
+  table th:nth-child(3), table td:nth-child(3) { width: 56px; }
+  table th:nth-child(4), table td:nth-child(4) { width: 56px; }
+  
+  .thermal-receipt-container > * { padding: 0 5px; }
 `;
 
 interface TransactionDialogContentProps {
