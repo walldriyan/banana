@@ -22,6 +22,7 @@ import { Label } from '../ui/label';
 import { LanguageToggle } from '../LanguageToggle';
 import { LanguageProvider, useLanguage } from '@/context/LanguageContext';
 import type { Company, Customer } from '@prisma/client';
+import { printReceipt } from '@/lib/services/print.service';
 
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
@@ -66,7 +67,7 @@ const receiptStyles = `
 
 interface TransactionDialogContentProps {
   cart: SaleItem[];
-  discountResult: any; 
+  discountResult: any;
   transactionId: string;
   activeCampaign: DiscountSet;
   onTransactionComplete: () => void;
@@ -101,22 +102,22 @@ export function TransactionDialogContent({
     }
     // Fetch company and customer details when the dialog opens
     async function fetchInitialData() {
-        const [companyResult, customersResult] = await Promise.all([
-            getCompanyForReceiptAction(),
-            getCustomersAction()
-        ]);
-        
-        if (companyResult.success && companyResult.data) {
-            setCompanyDetails(companyResult.data);
-        } else {
-            toast({ variant: 'destructive', title: 'Company Info Missing', description: companyResult.error });
-        }
+      const [companyResult, customersResult] = await Promise.all([
+        getCompanyForReceiptAction(),
+        getCustomersAction()
+      ]);
 
-        if(customersResult.success && customersResult.data) {
-            setCustomers(customersResult.data);
-        } else {
-            toast({ variant: 'destructive', title: 'Customer List Error', description: customersResult.error });
-        }
+      if (companyResult.success && companyResult.data) {
+        setCompanyDetails(companyResult.data);
+      } else {
+        toast({ variant: 'destructive', title: 'Company Info Missing', description: companyResult.error });
+      }
+
+      if (customersResult.success && customersResult.data) {
+        setCustomers(customersResult.data);
+      } else {
+        toast({ variant: 'destructive', title: 'Customer List Error', description: customersResult.error });
+      }
     }
 
     fetchInitialData();
@@ -141,22 +142,22 @@ export function TransactionDialogContent({
     },
     mode: 'onChange',
   });
-  
+
   const { handleSubmit, reset, formState: { isValid, isSubmitting } } = methods;
 
   useEffect(() => {
     if (step === 'details') {
-        const finalTotal = discountResult.finalTotal || 0;
-        reset({
-            customer: { name: 'Walk-in Customer', phone: '', address: '' },
-            payment: {
-                paidAmount: finalTotal,
-                paymentMethod: 'cash',
-                outstandingAmount: 0,
-                isInstallment: false,
-                finalTotal: finalTotal,
-            }
-        });
+      const finalTotal = discountResult.finalTotal || 0;
+      reset({
+        customer: { name: 'Walk-in Customer', phone: '', address: '' },
+        payment: {
+          paidAmount: finalTotal,
+          paymentMethod: 'cash',
+          outstandingAmount: 0,
+          isInstallment: false,
+          finalTotal: finalTotal,
+        }
+      });
     }
   }, [discountResult, reset, step]);
 
@@ -168,7 +169,7 @@ export function TransactionDialogContent({
       customerData: data.customer,
       paymentData: data.payment,
       activeCampaign: activeCampaign,
-      isGiftReceipt: isGiftReceipt, 
+      isGiftReceipt: isGiftReceipt,
       company: companyDetails,
     });
     setFinalTransactionData(preparedData);
@@ -184,37 +185,21 @@ export function TransactionDialogContent({
       </LanguageProvider>
     );
 
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    document.body.appendChild(iframe);
+    // Use the new print service (supports both web and desktop modes)
+    const fullHTML = `
+      <!DOCTYPE html>
+      <html class="${isDarkMode ? 'dark' : ''}">
+        <head>
+          <title>Print Receipt</title>
+          <style>${receiptStyles}</style>
+        </head>
+        <body>
+          ${receiptHTML}
+        </body>
+      </html>
+    `;
 
-    const iframeDoc = iframe.contentWindow?.document;
-    if (iframeDoc) {
-      iframeDoc.open();
-      iframeDoc.write(`
-        <html>
-          <head>
-            <title>Print Receipt</title>
-            <style>${receiptStyles}</style>
-          </head>
-          <body class="${isDarkMode ? 'dark' : ''}">
-            ${receiptHTML}
-          </body>
-        </html>
-      `);
-      iframeDoc.close();
-      
-      setTimeout(() => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      }, 500);
-    }
-
-    setTimeout(() => {
-      if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-      }
-    }, 1500);
+    await printReceipt(fullHTML, receiptStyles);
   };
 
 
@@ -222,73 +207,73 @@ export function TransactionDialogContent({
     if (!finalTransactionData) return;
     setIsSaving(true);
     try {
-        const dataToSave = transformTransactionDataForDb({
-          ...finalTransactionData,
-          cart,
-          discountResult,
-          transactionId,
-          customerData: finalTransactionData.customerDetails,
-          paymentData: finalTransactionData.paymentDetails,
-          activeCampaign,
-          isGiftReceipt,
-          company: companyDetails,
-        });
+      const dataToSave = transformTransactionDataForDb({
+        ...finalTransactionData,
+        cart,
+        discountResult,
+        transactionId,
+        customerData: finalTransactionData.customerDetails,
+        paymentData: finalTransactionData.paymentDetails,
+        activeCampaign,
+        isGiftReceipt,
+        company: companyDetails,
+      });
 
-        const result = await saveTransactionToDb(dataToSave);
-        
-        if (!result.success) {
-            throw new Error(result.error);
-        }
+      const result = await saveTransactionToDb(dataToSave);
 
-        toast({
-            title: "Transaction Saved",
-            description: `Transaction ${result.data.id} saved to the database.`,
-        });
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
-        if (shouldPrintBill) {
-            await handlePrintAndFinish(dataToSave);
-        }
-        
-        onTransactionComplete();
+      toast({
+        title: "Transaction Saved",
+        description: `Transaction ${result.data.id} saved to the database.`,
+      });
+
+      if (shouldPrintBill) {
+        await handlePrintAndFinish(dataToSave);
+      }
+
+      onTransactionComplete();
 
     } catch (error) {
-        console.error("Failed to save or print transaction:", error);
-        toast({
-            variant: "destructive",
-            title: "Save Failed",
-            description: error instanceof Error ? error.message : "An unknown error occurred.",
-        });
+      console.error("Failed to save or print transaction:", error);
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
+      });
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
   };
 
   useEffect(() => {
     const handleDrawerKeyDown = (event: KeyboardEvent) => {
-        if (!drawer.isOpen) return;
+      if (!drawer.isOpen) return;
 
-        if (event.ctrlKey && event.key === 'Enter') {
-            event.preventDefault();
-            if (step === 'details' && confirmButtonRef.current) {
-                confirmButtonRef.current.click();
-            } else if (step === 'print' && finishButtonRef.current) {
-                finishButtonRef.current.click();
-            }
+      if (event.ctrlKey && event.key === 'Enter') {
+        event.preventDefault();
+        if (step === 'details' && confirmButtonRef.current) {
+          confirmButtonRef.current.click();
+        } else if (step === 'print' && finishButtonRef.current) {
+          finishButtonRef.current.click();
         }
+      }
 
-        if (event.ctrlKey && event.key === 'ArrowLeft') {
-            event.preventDefault();
-            if (step === 'print') {
-                setStep('details');
-            } else if (step === 'details') {
-                drawer.closeDrawer();
-            }
+      if (event.ctrlKey && event.key === 'ArrowLeft') {
+        event.preventDefault();
+        if (step === 'print') {
+          setStep('details');
+        } else if (step === 'details') {
+          drawer.closeDrawer();
         }
+      }
     };
-    
+
     document.addEventListener('keydown', handleDrawerKeyDown);
     return () => {
-        document.removeEventListener('keydown', handleDrawerKeyDown);
+      document.removeEventListener('keydown', handleDrawerKeyDown);
     };
   }, [drawer, step]);
 
@@ -298,58 +283,58 @@ export function TransactionDialogContent({
         {step === 'details' && (
           <form onSubmit={handleSubmit(handlePreview)} className="flex flex-col flex-grow min-h-0">
             <div className="flex-grow overflow-y-auto py-4 pr-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <CustomerInfoPanel customers={customers} />
-                    <PaymentPanel finalTotal={discountResult.finalTotal} />
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CustomerInfoPanel customers={customers} />
+                <PaymentPanel finalTotal={discountResult.finalTotal} />
+              </div>
             </div>
             <div className="flex-shrink-0 pt-4 mt-auto border-t flex items-center justify-end">
-                <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
-                    <Button ref={confirmButtonRef} type="submit" disabled={!isValid || isSubmitting}>
-                        Confirm & Preview Receipt
-                    </Button>
-                </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => drawer.closeDrawer()}>Cancel</Button>
+                <Button ref={confirmButtonRef} type="submit" disabled={!isValid || isSubmitting}>
+                  Confirm & Preview Receipt
+                </Button>
+              </div>
             </div>
           </form>
         )}
 
         {step === 'print' && finalTransactionData && (
           <div className='py-4 flex flex-col flex-grow min-h-0'>
-            <div 
-                className="bg-muted p-4 rounded-lg overflow-y-auto flex-grow printable-area focus:outline-none"
-                style={{ boxShadow: 'none' }}
+            <div
+              className="bg-muted p-4 rounded-lg overflow-y-auto flex-grow printable-area focus:outline-none"
+              style={{ boxShadow: 'none' }}
             >
               <div style={{ maxWidth: '300px', margin: '0 auto' }}>
                 <ThermalReceipt data={finalTransactionData} company={companyDetails} showAsGiftReceipt={isGiftReceipt} />
               </div>
             </div>
             <div className="flex-shrink-0 pt-4 mt-auto border-t flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <LanguageToggle />
-                     <div className="flex items-center space-x-2">
-                        <Switch
-                            id="billing-mode"
-                            checked={isGiftReceipt}
-                            onCheckedChange={setIsGiftReceipt}
-                        />
-                        <Label htmlFor="billing-mode">Gift Receipt</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Switch
-                            id="print-mode"
-                            checked={shouldPrintBill}
-                            onCheckedChange={handleShouldPrintChange}
-                        />
-                        <Label htmlFor="print-mode">Print Bill</Label>
-                    </div>
+              <div className="flex items-center gap-4">
+                <LanguageToggle />
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="billing-mode"
+                    checked={isGiftReceipt}
+                    onCheckedChange={setIsGiftReceipt}
+                  />
+                  <Label htmlFor="billing-mode">Gift Receipt</Label>
                 </div>
-                <div className="flex gap-2">
-                    <Button type="button" variant="outline" onClick={() => setStep('details')}>Back</Button>
-                    <Button ref={finishButtonRef} onClick={processTransaction} disabled={isSaving}>
-                        {isSaving ? "Saving..." : "Save & Finish"}
-                    </Button>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="print-mode"
+                    checked={shouldPrintBill}
+                    onCheckedChange={handleShouldPrintChange}
+                  />
+                  <Label htmlFor="print-mode">Print Bill</Label>
                 </div>
+              </div>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => setStep('details')}>Back</Button>
+                <Button ref={finishButtonRef} onClick={processTransaction} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Save & Finish"}
+                </Button>
+              </div>
             </div>
           </div>
         )}
