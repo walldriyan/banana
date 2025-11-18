@@ -27,11 +27,11 @@ import { printReceipt } from '@/lib/services/print.service';
 const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
 const receiptStyles = `
-  @page { size: 290px auto; margin: 0; }
+  @page { size: 240px auto; margin: 0; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; width: 290px; height: auto; }
+  html, body { margin: 0; padding: 0; width: 265px; height: auto; }
   body { font-family: monospace; background-color: transparent; color: black; }
-  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 10px; width: 290px; margin: 0 auto; padding: 0; box-sizing: border-box; overflow-x: hidden; }
+  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 10px; width: 230px; margin: 0 auto; padding: 0; box-sizing: border-box; overflow-x: hidden; }
   
   html.dark body, html.dark .thermal-receipt-container { 
     background-color: #111827 !important; /* gray-900 */
@@ -69,8 +69,8 @@ const receiptStyles = `
   
   table { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 5px 0; }
   table th, table td { word-wrap: break-word; overflow-wrap: break-word; padding: 2px 0; vertical-align: top; max-width: 0; }
-  table th:nth-child(1), table td:nth-child(1) { width: 110px; }
-  table th:nth-child(2), table td:nth-child(2) { width: 50px; }
+  table th:nth-child(1), table td:nth-child(1) { width: 100px; }
+  table th:nth-child(2), table td:nth-child(2) { width: 45px; }
   table th:nth-child(3), table td:nth-child(3) { width: 60px; }
   table th:nth-child(4), table td:nth-child(4) { width: 60px; }
   
