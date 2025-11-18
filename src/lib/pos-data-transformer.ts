@@ -1,5 +1,5 @@
 // src/lib/pos-data-transformer.ts
-import type { SaleItem, AppliedRuleInfo, Product, DiscountSet, ProductBatch } from '@/types';
+import type { SaleItem, AppliedRuleInfo, Product, DiscountSet, ProductBatch, SerializedDiscountResult } from '@/types';
 import type { Company } from '@prisma/client';
 
 // Define types for the data we'll collect from the UI
@@ -18,47 +18,47 @@ export interface PaymentData {
 }
 
 export interface CompanyDetails {
-    companyId: string;
-    companyName: string;
+  companyId: string;
+  companyName: string;
 }
 
 export interface UserDetails {
-    userId: string;
-    userName: string;
+  userId: string;
+  userName: string;
 }
 
 export interface TransactionHeader {
-    transactionId: string;
-    transactionDate: string; // ISO 8601 format
-    subtotal: number;
-    totalDiscountAmount: number;
-    finalTotal: number;
-    totalItems: number;
-    totalQuantity: number;
-    status: 'completed' | 'refund' | 'pending';
-    campaignId: string; // Crucial for refunds
-    originalTransactionId?: string; // For refunds
-    isGiftReceipt?: boolean;
+  transactionId: string;
+  transactionDate: string; // ISO 8601 format
+  subtotal: number;
+  totalDiscountAmount: number;
+  finalTotal: number;
+  totalItems: number;
+  totalQuantity: number;
+  status: 'completed' | 'refund' | 'pending';
+  campaignId: string; // Crucial for refunds
+  originalTransactionId?: string; // For refunds
+  isGiftReceipt?: boolean;
 }
 
 export interface TransactionLine {
-    id: string; // The primary key from the database TransactionLine model
-    saleItemId: string; 
-    productId: string; // The general product ID (e.g., 't-shirt-01')
-    productName: string;
-    batchId: string; // The unique product ID (e.g., 't-shirt-old-batch')
-    batchNumber?: string;
-    quantity: number; // Base unit quantity
-    displayUnit: string; // The unit shown to the user (e.g., 'box')
-    displayQuantity: number; // The quantity of the display unit (e.g., 2)
-    unitPrice: number;
-    lineTotalBeforeDiscount: number;
-    lineDiscount: number; 
-    lineTotalAfterDiscount: number;
-    // Add fields to store the manual override state
-    customDiscountValue?: number;
-    customDiscountType?: 'fixed' | 'percentage';
-    customApplyFixedOnce?: boolean;
+  id: string; // The primary key from the database TransactionLine model
+  saleItemId: string;
+  productId: string; // The general product ID (e.g., 't-shirt-01')
+  productName: string;
+  batchId: string; // The unique product ID (e.g., 't-shirt-old-batch')
+  batchNumber?: string;
+  quantity: number; // Base unit quantity
+  displayUnit: string; // The unit shown to the user (e.g., 'box')
+  displayQuantity: number; // The quantity of the display unit (e.g., 2)
+  unitPrice: number;
+  lineTotalBeforeDiscount: number;
+  lineDiscount: number;
+  lineTotalAfterDiscount: number;
+  // Add fields to store the manual override state
+  customDiscountValue?: number;
+  customDiscountType?: 'fixed' | 'percentage';
+  customApplyFixedOnce?: boolean;
 }
 
 
@@ -76,7 +76,7 @@ export interface DatabaseReadyTransaction {
 
 interface TransformerInput {
   cart: SaleItem[];
-  discountResult: any; // Received as a plain object, not a class instance
+  discountResult: SerializedDiscountResult; // Received as a plain object, not a class instance
   transactionId: string;
   customerData: CustomerData;
   paymentData: PaymentData;
@@ -95,11 +95,11 @@ interface TransformerInput {
 export function transformTransactionDataForDb(
   input: TransformerInput
 ): DatabaseReadyTransaction {
-  const { 
-    cart, 
-    discountResult, 
-    transactionId, 
-    customerData, 
+  const {
+    cart,
+    discountResult,
+    transactionId,
+    customerData,
     paymentData,
     activeCampaign,
     company,
@@ -126,11 +126,11 @@ export function transformTransactionDataForDb(
   };
 
   const transactionLines: Omit<TransactionLine, 'id'>[] = cart.map(item => {
-    const lineItemResult = discountResult.lineItems.find((li: any) => li.lineId === item.saleItemId);
+    const lineItemResult = discountResult.lineItems.find((li) => li.lineId === item.saleItemId);
 
     const lineDiscount = lineItemResult ? lineItemResult.totalDiscount : 0;
     const lineTotalBeforeDiscount = item.price * item.quantity;
-    
+
     return {
       saleItemId: item.saleItemId,
       productId: item.productId, // General product ID from nested product
@@ -156,7 +156,7 @@ export function transformTransactionDataForDb(
 
   const companyDetails: CompanyDetails = {
     companyId: company?.id || 'comp-001',
-    companyName: company?.name ||'Default Company'
+    companyName: company?.name || 'Default Company'
   };
 
   const userDetails: UserDetails = {
@@ -164,7 +164,7 @@ export function transformTransactionDataForDb(
     userName: 'Default User'
   };
 
-  const databaseReadyObject: Omit<DatabaseReadyTransaction, 'transactionLines'> & { transactionLines: Omit<TransactionLine, 'id'>[]} = {
+  const databaseReadyObject: Omit<DatabaseReadyTransaction, 'transactionLines'> & { transactionLines: Omit<TransactionLine, 'id'>[] } = {
     transactionHeader,
     transactionLines,
     appliedDiscountsLog,
@@ -179,73 +179,73 @@ export function transformTransactionDataForDb(
 
 // Helper to convert DB transaction lines back to SaleItems for the refund cart
 export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: number, productBatch?: any })[], products: ProductBatch[]): SaleItem[] {
-    return lines.map(line => {
-        // Find the matching product-batch combination from the current sample products
-        const productBatch = products.find(p => p.id === line.batchId);
-        
-        // --- FIX: Use the original saleItemId from the database line ---
-        const saleItemId = line.id;
+  return lines.map(line => {
+    // Find the matching product-batch combination from the current sample products
+    const productBatch = products.find(p => p.id === line.batchId);
 
-        const unitPrice = line.unitPrice || line.price || 0;
+    // --- FIX: Use the original saleItemId from the database line ---
+    const saleItemId = line.id;
 
-        if (!productBatch) {
-            // Fallback for products that might not exist in the current product list
-            console.warn(`ProductBatch with ID ${line.batchId} not found in sampleProducts. Creating fallback SaleItem from transaction line data.`);
-            
-            // Reconstruct a minimal product object from the line itself
-            const fallbackProduct: Product = {
-                id: line.productId,
-                name: line.productName,
-                description: '',
-                category: line.productBatch?.product?.category || '',
-                brand: line.productBatch?.product?.brand || '',
-                units: line.productBatch?.product?.units || { baseUnit: line.displayUnit || 'unit', derivedUnits: [] },
-                isService: false,
-                isActive: true,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
+    const unitPrice = line.unitPrice || line.price || 0;
 
-            const fallbackBatch: ProductBatch = {
-                id: line.batchId,
-                productId: line.productId,
-                batchNumber: line.batchNumber || 'N/A',
-                sellingPrice: unitPrice,
-                costPrice: 0,
-                stock: 0, 
-                addedDate: new Date(),
-                product: fallbackProduct,
-                 quantity: 0, // Not available
-                 barcode: null,
-                 supplierId: null,
-            };
-            
-            return {
-                ...fallbackBatch,
-                saleItemId,
-                price: unitPrice,
-                quantity: line.quantity,
-                originalQuantity: line.quantity,
-                displayUnit: line.displayUnit,
-                displayQuantity: line.displayQuantity,
-                customDiscountValue: line.customDiscountValue,
-                customDiscountType: line.customDiscountType,
-                customApplyFixedOnce: line.customApplyFixedOnce,
-            };
-        }
-                
-        return {
-            ...productBatch,
-            saleItemId,
-            quantity: line.quantity, // Base unit quantity
-            displayUnit: line.displayUnit,
-            displayQuantity: line.displayQuantity,
-            price: unitPrice,
-            originalQuantity: line.quantity, // Set original quantity for refund logic
-             // --- Custom Discount Fields ---
-            customDiscountValue: line.customDiscountValue,
-            customDiscountType: line.customDiscountType,
-            customApplyFixedOnce: line.customApplyFixedOnce,
-        };
-    });
+    if (!productBatch) {
+      // Fallback for products that might not exist in the current product list
+      console.warn(`ProductBatch with ID ${line.batchId} not found in sampleProducts. Creating fallback SaleItem from transaction line data.`);
+
+      // Reconstruct a minimal product object from the line itself
+      const fallbackProduct: Product = {
+        id: line.productId,
+        name: line.productName,
+        description: '',
+        category: line.productBatch?.product?.category || '',
+        brand: line.productBatch?.product?.brand || '',
+        units: line.productBatch?.product?.units || { baseUnit: line.displayUnit || 'unit', derivedUnits: [] },
+        isService: false,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      const fallbackBatch: ProductBatch = {
+        id: line.batchId,
+        productId: line.productId,
+        batchNumber: line.batchNumber || 'N/A',
+        sellingPrice: unitPrice,
+        costPrice: 0,
+        stock: 0,
+        addedDate: new Date(),
+        product: fallbackProduct,
+        quantity: 0, // Not available
+        barcode: null,
+        supplierId: null,
+      };
+
+      return {
+        ...fallbackBatch,
+        saleItemId,
+        price: unitPrice,
+        quantity: line.quantity,
+        originalQuantity: line.quantity,
+        displayUnit: line.displayUnit,
+        displayQuantity: line.displayQuantity,
+        customDiscountValue: line.customDiscountValue,
+        customDiscountType: line.customDiscountType,
+        customApplyFixedOnce: line.customApplyFixedOnce,
+      };
+    }
+
+    return {
+      ...productBatch,
+      saleItemId,
+      quantity: line.quantity, // Base unit quantity
+      displayUnit: line.displayUnit,
+      displayQuantity: line.displayQuantity,
+      price: unitPrice,
+      originalQuantity: line.quantity, // Set original quantity for refund logic
+      // --- Custom Discount Fields ---
+      customDiscountValue: line.customDiscountValue,
+      customDiscountType: line.customDiscountType,
+      customApplyFixedOnce: line.customApplyFixedOnce,
+    };
+  });
 }

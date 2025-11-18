@@ -13,27 +13,14 @@ import { CustomItemDiscountRule } from './rules/custom-item-discount-rule';
 import type { DiscountSet } from '@/types';
 
 const CACHE_TTL = 300000; // 5 minutes
-const CACHE_MAX_SIZE = 50; 
+const CACHE_MAX_SIZE = 50;
 
 // ✅ FIX: Implement a proper cache with automatic cleanup to prevent memory leaks
 class EngineCache {
   private cache = new Map<string, { rules: IDiscountRule[], timestamp: number }>();
-  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    if (typeof window === 'undefined') { // Server-side only
-      this.cleanupInterval = setInterval(() => this.cleanup(), CACHE_TTL);
-    }
-  }
-
-  private cleanup() {
-    const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > CACHE_TTL) {
-        this.cache.delete(key);
-        console.log(`[EngineCache] Expired entry for campaign '${key}' removed.`);
-      }
-    }
+    // Removed setInterval to prevent memory leaks in serverless environments
   }
 
   get(key: string): IDiscountRule[] | null {
@@ -63,10 +50,6 @@ class EngineCache {
   }
 
   destroy() {
-    if (this.cleanupInterval) {
-        clearInterval(this.cleanupInterval);
-        this.cleanupInterval = null;
-    }
     this.cache.clear();
   }
 }
@@ -75,9 +58,9 @@ const engineCache = new EngineCache();
 
 // Cleanup on process exit (server-side)
 if (typeof window === 'undefined') {
-    process.on('beforeExit', () => {
-        engineCache.destroy();
-    });
+  process.on('beforeExit', () => {
+    engineCache.destroy();
+  });
 }
 
 export class DiscountEngine {
@@ -87,7 +70,7 @@ export class DiscountEngine {
 
   constructor(campaign: DiscountSet) {
     this.campaignId = campaign.id;
-    
+
     // Check cache first
     const cached = engineCache.get(campaign.id);
     if (cached) {
@@ -109,34 +92,34 @@ export class DiscountEngine {
     // Priority 2: Batch-specific rules (highest priority for products with batches)
     const batchIds = new Set<string>();
     if (campaign.batchConfigurations) {
-        for (const config of campaign.batchConfigurations) {
-            if (!batchIds.has(config.productBatchId)) {
-                this.rules.push(new BatchSpecificRule(config));
-                batchIds.add(config.productBatchId);
-            }
+      for (const config of campaign.batchConfigurations) {
+        if (!batchIds.has(config.productBatchId)) {
+          this.rules.push(new BatchSpecificRule(config));
+          batchIds.add(config.productBatchId);
         }
+      }
     }
 
     // Priority 3: Product-specific rules
     const productIds = new Set<string>();
     if (campaign.productConfigurations) {
       // Sort by priority or order if needed
-        const sortedConfigs = [...campaign.productConfigurations]
-            .sort((a, b) => (a.priority || 0) - (b.priority || 0));
-        
-        for (const config of sortedConfigs) {
-            if (!productIds.has(config.productId)) {
-                this.rules.push(new ProductLevelRule(config));
-                productIds.add(config.productId);
-            }
+      const sortedConfigs = [...campaign.productConfigurations]
+        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+
+      for (const config of sortedConfigs) {
+        if (!productIds.has(config.productId)) {
+          this.rules.push(new ProductLevelRule(config));
+          productIds.add(config.productId);
         }
+      }
     }
 
     // Priority 4: "Buy X, Get Y" rules
     if (campaign.buyGetRulesJson?.length) {
-        for (const ruleConfig of campaign.buyGetRulesJson) {
-            this.rules.push(new BuyXGetYRule(ruleConfig, campaign.name));
-        }
+      for (const ruleConfig of campaign.buyGetRulesJson) {
+        this.rules.push(new BuyXGetYRule(ruleConfig, campaign.name));
+      }
     }
 
     // Priority 5: Campaign's default item-level rules
@@ -195,7 +178,7 @@ export class DiscountEngine {
     return Array.from(this.appliedOneTimeRules);
   }
 
-    // Static method to clear all cached engines (call on campaign updates)
+  // Static method to clear all cached engines (call on campaign updates)
   public static clearCache(): void {
     engineCache.clear();
   }

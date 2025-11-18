@@ -44,8 +44,8 @@ export interface SpecificDiscountRuleConfig {
 export interface UnitDefinition {
   baseUnit: string;
   derivedUnits?: {
-      name: string;
-      conversionFactor: number;
+    name: string;
+    conversionFactor: number;
   }[];
 }
 
@@ -192,4 +192,39 @@ export interface DatabaseReadyTransaction {
     userName: string;
   };
   isRefunded?: boolean;
+}
+
+// Interface for the serialized DiscountResult (received from API/Server)
+export interface SerializedDiscountResult {
+  lineItems: {
+    lineId: string;
+    productId: string;
+    batchId?: string | null;
+    originalPrice: number;
+    quantity: number;
+    totalDiscount: number;
+    appliedRules: {
+      ruleId: string;
+      discountAmount: number;
+      description: string;
+      appliedRuleInfo: AppliedRuleInfo;
+      isOneTime?: boolean;
+    }[];
+    netPrice?: number; // Getter in class, property in JSON if serialized
+  }[];
+  totalItemDiscount: number;
+  totalCartDiscount: number;
+  appliedCartRules: {
+    ruleId: string;
+    discountAmount: number;
+    description: string;
+    appliedRuleInfo: AppliedRuleInfo;
+    isOneTime?: boolean;
+  }[];
+
+  // Getters in class, expected as properties in JSON
+  totalDiscount: number;
+  originalSubtotal: number;
+  finalTotal: number;
+  appliedRulesSummary?: AppliedRuleInfo[];
 }

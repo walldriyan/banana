@@ -1,16 +1,16 @@
 
 import React from 'react';
-import type { DiscountSet, AppliedRuleInfo } from '@/types';
+import type { DiscountSet, AppliedRuleInfo, SerializedDiscountResult } from '@/types';
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
 import { ArrowRight, Gift, ShoppingCart, Tag } from 'lucide-react';
 
 
 interface DiscountBehaviorPanelProps {
-  isCalculating: boolean;
-  discountResult: any; // Using any because it's a plain object from server, not a class instance
-  activeCampaign: DiscountSet;
-  transactionId: string;
+    isCalculating: boolean;
+    discountResult: SerializedDiscountResult; // Using SerializedDiscountResult for type safety
+    activeCampaign: DiscountSet;
+    transactionId: string;
 }
 
 const getRuleTypeFriendlyName = (ruleType: string) => {
@@ -29,17 +29,17 @@ const getRuleTypeFriendlyName = (ruleType: string) => {
 }
 
 // --- Friendly Sinhala Explanation Component ---
-const DiscountExplanation = ({ result }: { result: any }) => {
+const DiscountExplanation = ({ result }: { result: SerializedDiscountResult }) => {
     let runningTotal = result.originalSubtotal;
 
-    const allItemRules = result.lineItems.flatMap((li: any) =>
-        li.appliedRules.map((rule: any) => ({
+    const allItemRules = result.lineItems.flatMap((li) =>
+        li.appliedRules.map((rule) => ({
             ...rule.appliedRuleInfo,
-            lineItemName: result.lineItems.find((l: any) => l.lineId === li.lineId)?.product?.name || 'Unknown Item'
+            lineItemName: result.lineItems.find((l) => l.lineId === li.lineId)?.productId || 'Unknown Item'
         }))
     );
 
-    const allCartRules = result.appliedCartRules.map((rule: any) => rule.appliedRuleInfo);
+    const allCartRules = result.appliedCartRules.map((rule) => rule.appliedRuleInfo);
 
     if (allItemRules.length === 0 && allCartRules.length === 0) {
         return (
@@ -76,7 +76,7 @@ const DiscountExplanation = ({ result }: { result: any }) => {
                             <p className="font-semibold text-primary">Item Discount එකක් ලැබුණා!</p>
                         </div>
                         <p className="text-muted-foreground mt-1">
-                             ඔයාගේ '<span className="font-medium text-foreground">{rule.lineItemName}</span>' කියන item එකට '<span className="font-medium text-foreground">{rule.sourceRuleName}</span>' rule එක නිසා <span className="font-bold text-green-600">Rs. {rule.totalCalculatedDiscount.toFixed(2)}</span> ක වට්ටමක් ලැබුණා.
+                            ඔයාගේ '<span className="font-medium text-foreground">{rule.lineItemName}</span>' කියන item එකට '<span className="font-medium text-foreground">{rule.sourceRuleName}</span>' rule එක නිසා <span className="font-bold text-green-600">Rs. {rule.totalCalculatedDiscount.toFixed(2)}</span> ක වට්ටමක් ලැබුණා.
                         </p>
                         <div className="flex items-center gap-2 mt-2 font-mono text-xs">
                             <span className="line-through text-muted-foreground">Rs. {previousTotal.toFixed(2)}</span>
@@ -92,7 +92,7 @@ const DiscountExplanation = ({ result }: { result: any }) => {
                 const previousTotal = runningTotal;
                 runningTotal -= rule.totalCalculatedDiscount;
                 return (
-                     <div key={`cart-rule-${index}`} className="pl-6 border-l-2 border-dashed border-purple-500 ml-4 py-2">
+                    <div key={`cart-rule-${index}`} className="pl-6 border-l-2 border-dashed border-purple-500 ml-4 py-2">
                         <div className="flex items-center gap-2">
                             <ShoppingCart className="h-4 w-4 text-purple-500" />
                             <p className="font-semibold text-purple-600 dark:text-purple-400">මුළු Bill එකටම Discount එකක්!</p>
@@ -108,7 +108,7 @@ const DiscountExplanation = ({ result }: { result: any }) => {
                     </div>
                 );
             })}
-            
+
             {/* Step 4: Final Total */}
             <div className="flex items-center gap-3 pt-4 border-t mt-4">
                 <div className="flex-shrink-0 w-8 h-8 rounded-full bg-green-600 flex items-center justify-center font-bold text-white">
@@ -124,52 +124,52 @@ const DiscountExplanation = ({ result }: { result: any }) => {
 };
 
 
-export default function DiscountBehaviorPanel({ 
-  isCalculating,
-  discountResult, 
-  activeCampaign, 
-  transactionId 
+export default function DiscountBehaviorPanel({
+    isCalculating,
+    discountResult,
+    activeCampaign,
+    transactionId
 }: DiscountBehaviorPanelProps) {
 
-  if (isCalculating) {
-      return (
-          <div className="mt-4 p-4 bg-muted/50 border rounded-lg space-y-4">
-              <Skeleton className="h-6 w-3/4" />
-              <div className="space-y-2">
-                  <Skeleton className="h-5 w-1/2" />
-                  <Skeleton className="h-12 w-full" />
-              </div>
-               <div className="space-y-2">
-                  <Skeleton className="h-5 w-1/3" />
-                  <Skeleton className="h-12 w-full" />
-              </div>
-          </div>
-      )
-  }
+    if (isCalculating) {
+        return (
+            <div className="mt-4 p-4 bg-muted/50 border rounded-lg space-y-4">
+                <Skeleton className="h-6 w-3/4" />
+                <div className="space-y-2">
+                    <Skeleton className="h-5 w-1/2" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+                <div className="space-y-2">
+                    <Skeleton className="h-5 w-1/3" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </div>
+        )
+    }
 
-  // Check if discountResult and its properties are available
-  if (!discountResult || !discountResult.lineItems) {
+    // Check if discountResult and its properties are available
+    if (!discountResult || !discountResult.lineItems) {
+        return (
+            <div className="mt-4 p-4 bg-muted/50 border rounded-lg">
+                <p className="text-muted-foreground text-center">No discount information to display.</p>
+            </div>
+        )
+    }
+
     return (
-        <div className="mt-4 p-4 bg-muted/50 border rounded-lg">
-            <p className="text-muted-foreground text-center">No discount information to display.</p>
+        <div className="mt-4 p-4 bg-muted/50 border rounded-lg space-y-6">
+            <div>
+                <h4 className="font-bold text-foreground mb-1 flex items-center">
+                    <span className="mr-2">💡</span>
+                    Discount එක හදාගත්ත හැටි
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                    '{activeCampaign.name}' campaign එකට අනුව ඔයාගේ bill එකට discount ලැබුණු විදිහ පහලින් තියෙනවා.
+                </p>
+            </div>
+
+            <DiscountExplanation result={discountResult} />
+
         </div>
-    )
-  }
-  
-  return (
-    <div className="mt-4 p-4 bg-muted/50 border rounded-lg space-y-6">
-      <div>
-        <h4 className="font-bold text-foreground mb-1 flex items-center">
-            <span className="mr-2">💡</span>
-            Discount එක හදාගත්ත හැටි
-        </h4>
-        <p className="text-xs text-muted-foreground">
-            '{activeCampaign.name}' campaign එකට අනුව ඔයාගේ bill එකට discount ලැබුණු විදිහ පහලින් තියෙනවා.
-        </p>
-      </div>
-
-      <DiscountExplanation result={discountResult} />
-
-    </div>
-  );
+    );
 }

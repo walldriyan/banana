@@ -1,7 +1,7 @@
 // src/components/POSUI/CartTableRow.tsx
 'use client';
 import React, { memo, useMemo } from 'react';
-import type { SaleItem } from '@/types';
+import type { SaleItem, SerializedDiscountResult } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Tag, Trash2, Scaling } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { useProductUnits } from '@/hooks/use-product-units';
 interface CartTableRowProps {
   item: SaleItem;
   isCalculating: boolean;
-  discountResult: any; // Using any because it's a plain object from server
+  discountResult: SerializedDiscountResult; // Using SerializedDiscountResult for type safety
   onUpdateQuantity: (saleItemId: string, newDisplayQuantity: number, newDisplayUnit?: string) => void;
   onOverrideDiscount: (item: SaleItem) => void;
   onSelectUnit: (item: SaleItem) => void;
@@ -20,9 +20,9 @@ interface CartTableRowProps {
 
 // Wrap component in React.memo
 const CartTableRowComponent = ({ item, isCalculating, discountResult, onUpdateQuantity, onOverrideDiscount, onSelectUnit }: CartTableRowProps) => {
-  
+
   const lineItemResult = useMemo(() => {
-    return discountResult?.lineItems?.find((li: any) => li.lineId === item.saleItemId);
+    return discountResult?.lineItems?.find((li) => li.lineId === item.saleItemId);
   }, [discountResult?.lineItems, item.saleItemId]);
 
   const hasDiscounts = lineItemResult && lineItemResult.totalDiscount > 0;
@@ -102,7 +102,7 @@ const CartTableRowComponent = ({ item, isCalculating, discountResult, onUpdateQu
                     <span className="font-bold truncate">Manual</span>
                   </p>
                 ) : (
-                  lineItemResult.appliedRules.map((rule: any, i: number) => (
+                  lineItemResult.appliedRules.map((rule, i: number) => (
                     <p key={i} className="text-xs text-green-600 text-right">
                       -Rs. {rule.discountAmount.toFixed(2)}
                     </p>
@@ -139,16 +139,16 @@ const CartTableRowComponent = ({ item, isCalculating, discountResult, onUpdateQu
 
 // Export the memoized component
 export const CartTableRow = memo(CartTableRowComponent, (prevProps, nextProps) => {
-    // ✅ Custom comparison function for optimal re-renders
-    return (
-      prevProps.isCalculating === nextProps.isCalculating &&
-      prevProps.item.saleItemId === nextProps.item.saleItemId &&
-      prevProps.item.quantity === nextProps.item.quantity &&
-      prevProps.item.displayQuantity === nextProps.item.displayQuantity &&
-      prevProps.item.displayUnit === nextProps.item.displayUnit &&
-      prevProps.item.customDiscountValue === nextProps.item.customDiscountValue &&
-      JSON.stringify(prevProps.discountResult?.lineItems?.find((li: any) => li.lineId === prevProps.item.saleItemId)) ===
-      JSON.stringify(nextProps.discountResult?.lineItems?.find((li: any) => li.lineId === nextProps.item.saleItemId))
-    );
+  // ✅ Custom comparison function for optimal re-renders
+  return (
+    prevProps.isCalculating === nextProps.isCalculating &&
+    prevProps.item.saleItemId === nextProps.item.saleItemId &&
+    prevProps.item.quantity === nextProps.item.quantity &&
+    prevProps.item.displayQuantity === nextProps.item.displayQuantity &&
+    prevProps.item.displayUnit === nextProps.item.displayUnit &&
+    prevProps.item.customDiscountValue === nextProps.item.customDiscountValue &&
+    JSON.stringify(prevProps.discountResult?.lineItems?.find((li) => li.lineId === prevProps.item.saleItemId)) ===
+    JSON.stringify(nextProps.discountResult?.lineItems?.find((li) => li.lineId === nextProps.item.saleItemId))
+  );
 });
 CartTableRow.displayName = 'CartTableRow';
