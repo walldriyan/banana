@@ -34,11 +34,11 @@ export async function addDiscountSetAction(data: DiscountSetFormValues) {
 
   try {
     const newDiscountSet = await prisma.discountSet.create({
-      data: validationResult.data,
+      data: validationResult.data as any,
     });
     revalidatePath('/dashboard/settings');
     return { success: true, data: newDiscountSet };
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return { success: false, error: "A discount campaign with this name already exists." };
     }
@@ -51,27 +51,27 @@ export async function addDiscountSetAction(data: DiscountSetFormValues) {
  * Server action to update an existing discount set.
  */
 export async function updateDiscountSetAction(id: string, data: DiscountSetFormValues) {
-    const validationResult = discountSetSchema.safeParse(data);
-    if (!validationResult.success) {
-        return {
-            success: false,
-            error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
-        };
-    }
+  const validationResult = discountSetSchema.safeParse(data);
+  if (!validationResult.success) {
+    return {
+      success: false,
+      error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
+    };
+  }
 
-    try {
-        const updatedDiscountSet = await prisma.discountSet.update({
-            where: { id },
-            data: validationResult.data,
-        });
-        revalidatePath('/dashboard/settings');
-        return { success: true, data: updatedDiscountSet };
-    } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-            return { success: false, error: "A discount campaign with this name already exists." };
-        }
-        return { success: false, error: "Failed to update discount campaign." };
+  try {
+    const updatedDiscountSet = await prisma.discountSet.update({
+      where: { id },
+      data: validationResult.data,
+    });
+    revalidatePath('/dashboard/settings');
+    return { success: true, data: updatedDiscountSet };
+  } catch (error: any) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { success: false, error: "A discount campaign with this name already exists." };
     }
+    return { success: false, error: "Failed to update discount campaign." };
+  }
 }
 
 
@@ -79,16 +79,16 @@ export async function updateDiscountSetAction(id: string, data: DiscountSetFormV
  * Server action to delete a discount set.
  */
 export async function deleteDiscountSetAction(id: string) {
-    try {
-        // Here, we should also handle deleting related configurations in a transaction.
-        // For now, Prisma's onDelete: Cascade will handle it.
-        await prisma.discountSet.delete({
-            where: { id },
-        });
-        revalidatePath('/dashboard/settings');
-        return { success: true };
-    } catch (error) {
-        console.error(`[deleteDiscountSetAction] Error:`, error);
-        return { success: false, error: "Failed to delete discount campaign. It might be in use." };
-    }
+  try {
+    // Here, we should also handle deleting related configurations in a transaction.
+    // For now, Prisma's onDelete: Cascade will handle it.
+    await prisma.discountSet.delete({
+      where: { id },
+    });
+    revalidatePath('/dashboard/settings');
+    return { success: true };
+  } catch (error) {
+    console.error(`[deleteDiscountSetAction] Error:`, error);
+    return { success: false, error: "Failed to delete discount campaign. It might be in use." };
+  }
 }

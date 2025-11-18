@@ -39,7 +39,7 @@ function getEffectivePermissions(user: User | { id: string, role?: Role }): Set<
         }
     };
 
-    addPermissionsFromRole(userRoleKey);
+    addPermissionsFromRole(userRoleKey as Role);
 
     // Add user-specific overrides
     userConfig?.overrides?.permissions?.forEach(p => effectivePermissions.add(p));
@@ -55,12 +55,12 @@ function getEffectivePermissions(user: User | { id: string, role?: Role }): Set<
  */
 export async function hasPermission(user: User, permission: string): Promise<boolean> {
     const userPermissions = getEffectivePermissions(user);
-    
+
     // Admin role has all permissions implicitly
     if (userPermissions.has('access_all')) {
         return true;
     }
-    
+
     return userPermissions.has(permission);
 }
 
@@ -81,6 +81,6 @@ export async function getUserPermissions(user: User): Promise<string[]> {
  * @returns The user's role key, or null if not found.
  */
 export async function findUserRole(username: string): Promise<Role | null> {
-   const userConfig = (permissionsConfig.users as Record<string, UserPermissions>)[username];
-   return userConfig?.role || null;
+    const userConfig = (permissionsConfig.users as Record<string, UserPermissions>)[username];
+    return userConfig?.role || null;
 }

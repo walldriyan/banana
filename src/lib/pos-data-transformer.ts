@@ -199,7 +199,7 @@ export function transactionLinesToSaleItems(lines: (TransactionLine & { price?: 
         description: '',
         category: line.productBatch?.product?.category || '',
         brand: line.productBatch?.product?.brand || '',
-        units: line.productBatch?.product?.units || { baseUnit: line.displayUnit || 'unit', derivedUnits: [] },
+        units: (line.productBatch?.product?.units || { baseUnit: line.displayUnit || 'unit', derivedUnits: [] }) as any,
         isService: false,
         isActive: true,
         createdAt: new Date(),

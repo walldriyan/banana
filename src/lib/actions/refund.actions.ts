@@ -31,8 +31,8 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
 
         // 0. Fetch company details
         const companyResult = await getCompanyForReceiptAction();
-        if (!companyResult.success) {
-            throw new Error(companyResult.error);
+        if (!companyResult.success || !companyResult.data) {
+            throw new Error(companyResult.error || "Failed to fetch company details");
         }
 
         // 1. Recalculate discounts for the items being kept on the server.
@@ -46,7 +46,7 @@ export async function processRefundAction(payload: ProcessRefundPayload) {
             activeCampaign,
             company: companyResult.data,
         });
-        
+
         // 3. Return the prepared data to the client to be saved.
         return { success: true, data: refundTransaction };
 
