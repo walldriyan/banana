@@ -76,7 +76,7 @@ ipcMain.handle('print-silent', async (event, options) => {
             webPreferences: { nodeIntegration: false, contextIsolation: true },
         });
 
-        const fullHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{size:80mm auto;margin:0}*{margin:0;padding:0;box-sizing:border-box}html,body{margin:0;padding:0;width:80mm;height:auto}body{display:flex;justify-content:center;align-items:flex-start;padding:0}${css || ''}</style></head><body>${html}</body></html>`;
+        const fullHTML = `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>@page{size:302px auto;margin:0}*{margin:0;padding:0;box-sizing:border-box}html,body{margin:0;padding:0;width:302px;height:auto;overflow-x:hidden}body{width:302px}${css || ''}</style></head><body>${html}</body></html>`;
 
         await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(fullHTML)}`);
 
