@@ -28,8 +28,10 @@ const PRINT_TOGGLE_STORAGE_KEY = 'shouldPrintBill';
 
 const receiptStyles = `
   @page { size: 80mm auto; margin: 0; }
-  body { font-family: monospace; background-color: transparent; margin: 0; padding: 0; color: black; }
-  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 12px; width: 80mm; margin: 0; padding: 5mm; overflow-x: hidden; box-sizing: border-box; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; width: 80mm; height: auto; }
+  body { font-family: monospace; background-color: transparent; color: black; }
+  .thermal-receipt-container { background-color: transparent; font-family: monospace; font-size: 12px; width: 80mm; margin: 0; padding: 5px; box-sizing: border-box; overflow-x: hidden; }
   
   html.dark body, html.dark .thermal-receipt-container { 
     background-color: #111827 !important; /* gray-900 */
