@@ -27,21 +27,21 @@ const dummyAdminSession: Session = {
  * completely avoiding the useSession() hook which triggers the problematic fetch.
  */
 function ZustandSessionInitializer() {
-    const { setSession } = useSessionStore();
-    
-    useEffect(() => {
-        console.log("AuthProvider: Initializing Zustand store with dummy admin session:", dummyAdminSession);
-        if (dummyAdminSession.user) {
-            setSession({
-                user: dummyAdminSession.user,
-                permissions: dummyAdminSession.user.permissions || [],
-                status: 'authenticated',
-            });
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // ‼️ FIX: Use an empty dependency array to run this effect only once on mount.
+  const { setSession } = useSessionStore();
 
-    return null; // This component doesn't render anything.
+  useEffect(() => {
+    console.log("AuthProvider: Initializing Zustand store with dummy admin session:", dummyAdminSession);
+    if (dummyAdminSession.user) {
+      setSession({
+        user: dummyAdminSession.user,
+        permissions: dummyAdminSession.user.permissions || [],
+        status: 'authenticated',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ‼️ FIX: Use an empty dependency array to run this effect only once on mount.
+
+  return null; // This component doesn't render anything.
 }
 
 
@@ -50,7 +50,7 @@ export default function AuthProvider({
 }: {
   children: React.ReactNode;
 }) {
-  console.log("AuthProvider: Rendering with static SessionProvider to avoid client fetch.");
+  // Removed console.log to prevent terminal spam during re-renders
   return (
     // The `session` prop here forces a static session, bypassing the fetch request.
     // However, the useSession hook within components still attempts to fetch.
