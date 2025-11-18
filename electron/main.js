@@ -1,9 +1,12 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 
 const isDev = process.env.NODE_ENV !== 'production';
 
 let mainWindow;
+
+// Remove default menubar
+Menu.setApplicationMenu(null);
 
 function createWindow() {
     mainWindow = new BrowserWindow({
