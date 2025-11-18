@@ -53,23 +53,6 @@ export async function addDiscountSetAction(data: DiscountSetFormValues) {
 export async function updateDiscountSetAction(id: string, data: DiscountSetFormValues) {
   const validationResult = discountSetSchema.safeParse(data);
   if (!validationResult.success) {
-    return {
-      success: false,
-      error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
-    };
-  }
-
-  try {
-    const updatedDiscountSet = await prisma.discountSet.update({
-      where: { id },
-      data: validationResult.data,
-    });
-    revalidatePath('/dashboard/settings');
-    return { success: true, data: updatedDiscountSet };
-  } catch (error: any) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return { success: false, error: "A discount campaign with this name already exists." };
-    }
     return { success: false, error: "Failed to update discount campaign." };
   }
 }

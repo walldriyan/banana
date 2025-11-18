@@ -82,5 +82,5 @@ export async function getUserPermissions(user: User): Promise<string[]> {
  */
 export async function findUserRole(username: string): Promise<Role | null> {
     const userConfig = (permissionsConfig.users as Record<string, UserPermissions>)[username];
-    return userConfig?.role || null;
+    return (userConfig?.role as Role) || null;
 }

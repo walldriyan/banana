@@ -10,27 +10,27 @@ import { revalidatePath } from "next/cache";
  * Server action to fetch all GRNs.
  */
 export async function getGrnsAction() {
-  try {
-    const grns = await prisma.goodsReceivedNote.findMany({
-      orderBy: { grnDate: 'desc' },
-      include: {
-        supplier: true, // Include supplier details
-        items: {
-          include: {
-            productBatch: {
-              include: {
-                product: true,
-              },
+    try {
+        const grns = await prisma.goodsReceivedNote.findMany({
+            orderBy: { grnDate: 'desc' },
+            include: {
+                supplier: true, // Include supplier details
+                items: {
+                    include: {
+                        productBatch: {
+                            include: {
+                                product: true,
+                            },
+                        },
+                    },
+                },
             },
-          },
-        },
-      },
-    });
-    return { success: true, data: grns };
-  } catch (error) {
-    console.error('[getGrnsAction] Error:', error);
-    return { success: false, error: "Failed to fetch purchase records." };
-  }
+        });
+        return { success: true, data: grns };
+    } catch (error) {
+        console.error('[getGrnsAction] Error:', error);
+        return { success: false, error: "Failed to fetch purchase records." };
+    }
 }
 
 /**
@@ -51,14 +51,15 @@ export async function addGrnAction(data: GrnFormValues) {
     try {
         const result = await prisma.$transaction(async (tx) => {
             const paidAmount = headerData.paidAmount ?? 0;
-            
+
+            const totalAmount = headerData.totalAmount ?? 0;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-            if (headerData.totalAmount > 0 && paidAmount >= headerData.totalAmount) {
+            if (totalAmount > 0 && paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
             } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
             }
-            
+
             const grnItemsData = await Promise.all(items.map(async (item) => {
                 const newBatch = await tx.productBatch.create({
                     data: {
@@ -90,7 +91,7 @@ export async function addGrnAction(data: GrnFormValues) {
             }));
 
             const newGrn = await tx.goodsReceivedNote.create({
-                 data: {
+                data: {
                     ...headerData,
                     paymentStatus: paymentStatus,
                     items: {
@@ -100,37 +101,37 @@ export async function addGrnAction(data: GrnFormValues) {
             });
 
             if (paidAmount > 0) {
-              await tx.purchasePayment.create({
-                data: {
-                  goodsReceivedNoteId: newGrn.id,
-                  amount: paidAmount,
-                  paymentDate: newGrn.grnDate,
-                  paymentMethod: newGrn.paymentMethod,
-                  notes: 'Initial payment with GRN creation.',
-                },
-              });
+                await tx.purchasePayment.create({
+                    data: {
+                        goodsReceivedNoteId: newGrn.id,
+                        amount: paidAmount,
+                        paymentDate: newGrn.grnDate,
+                        paymentMethod: newGrn.paymentMethod,
+                        notes: 'Initial payment with GRN creation.',
+                    },
+                });
             }
 
             return newGrn;
         }, {
-          maxWait: 15000,
-          timeout: 30000,
+            maxWait: 15000,
+            timeout: 30000,
         });
 
         revalidatePath('/dashboard/purchases');
         revalidatePath('/dashboard/products');
         revalidatePath('/dashboard/credit');
-        
+
         return { success: true, data: result };
 
     } catch (error) {
         console.error('[addGrnAction] Error:', error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             if (error.code === 'P2002') {
-                 return { success: false, error: `Unique constraint failed. A batch with the same Product and Batch Number might already exist.` };
+            if (error.code === 'P2002') {
+                return { success: false, error: `Unique constraint failed. A batch with the same Product and Batch Number might already exist.` };
             }
-             return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
+            return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
         }
         return { success: false, error: `Failed to create GRN: ${errorMessage}` };
     }
@@ -160,11 +161,11 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
             // A simple approach is to revert old stock and apply new stock.
             // This is a placeholder for that complex logic.
             // For now, we'll just update the GRN details.
-            
+
             const paidAmount = headerData.paidAmount ?? 0;
             const totalAmount = headerData.totalAmount;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
-             if (totalAmount > 0 && paidAmount >= totalAmount) {
+            if (totalAmount > 0 && paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
             } else if (paidAmount > 0) {
                 paymentStatus = 'partial';
@@ -183,11 +184,11 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
 
             return updatedGrn;
         });
-        
+
         revalidatePath('/dashboard/purchases');
         revalidatePath('/dashboard/products');
         revalidatePath('/dashboard/credit');
-        
+
         return { success: true, data: result };
 
     } catch (error) {
@@ -235,7 +236,7 @@ export async function deleteGrnAction(grnId: string) {
                 };
             }
         }
-        
+
         // --- Deletion Step ---
         const result = await prisma.$transaction(async (tx) => {
             // Delete GRN items first (cascading deletes are not relied upon here for clarity)
@@ -254,7 +255,7 @@ export async function deleteGrnAction(grnId: string) {
             const deletedGrn = await tx.goodsReceivedNote.delete({
                 where: { id: grnId },
             });
-            
+
             return deletedGrn;
         });
 
@@ -266,10 +267,10 @@ export async function deleteGrnAction(grnId: string) {
     } catch (error) {
         console.error(`[deleteGrnAction] Error deleting GRN ${grnId}:`, error);
         if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             if (error.code === 'P2025') { // Foreign key constraint failed
+            if (error.code === 'P2025') { // Foreign key constraint failed
                 return { success: false, error: `Prisma Error (P2025): Record to delete does not exist or a related record could not be deleted.` };
             }
-             return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
+            return { success: false, error: `Prisma Error (${error.code}): ${error.message}` };
         }
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         return { success: false, error: `Failed to delete GRN: ${errorMessage}` };
