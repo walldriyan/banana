@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Shift } from '@prisma/client';
-import { getShiftsAction, getActiveShiftAction } from '@/lib/actions/shift.actions';
+import { getShiftsAction, getActiveShiftAction, type ShiftWithCalculations } from '@/lib/actions/shift.actions';
 import { ShiftsDataTable } from './data-table';
 import { getColumns } from './columns';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 export function ShiftsClientPage() {
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeShift, setActiveShift] = useState<Shift | null>(null);
+  const [activeShift, setActiveShift] = useState<ShiftWithCalculations | null>(null);
   const { toast } = useToast();
   const drawer = useDrawer();
   const user = useSessionStore(state => state.user);
@@ -111,7 +111,7 @@ export function ShiftsClientPage() {
             {activeShift ? (
                 <div>
                     <p className="text-muted-foreground">You have an active shift that started on:</p>
-                    <p className="text-lg font-semibold">{format(new Date(activeShift.startTime), "PPP 'at' p")}</p>
+                    <p className="text-lg font-semibold">{format(new Date(activeShift.startTime), "PPp")}</p>
                 </div>
             ) : (
                 <p className="text-lg text-muted-foreground">You do not have an active shift.</p>

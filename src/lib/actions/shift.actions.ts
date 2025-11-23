@@ -15,6 +15,7 @@ const endShiftSchema = z.object({
     shiftId: z.string().min(1),
     closingBalance: z.coerce.number().min(0),
     notes: z.string().optional(),
+    calculatedSales: z.number(), // Added to receive the pre-calculated sales
 });
 
 export async function startShiftAction(data: z.infer<typeof startShiftSchema>) {
@@ -61,19 +62,8 @@ export async function endShiftAction(data: z.infer<typeof endShiftSchema>) {
             return { success: false, error: "Shift not found or is not open." };
         }
 
-        const transactions = await prisma.transaction.findMany({
-            where: {
-                transactionDate: {
-                    gte: shiftToEnd.startTime,
-                },
-                status: 'completed'
-            },
-            select: {
-                finalTotal: true,
-            }
-        });
-        
-        const calculatedTotal = transactions.reduce((sum, tx) => sum + tx.finalTotal, 0);
+        // The calculated total and difference are now based on the pre-calculated sales from the client
+        const calculatedTotal = (shiftToEnd.openingBalance.toNumber() || 0) + data.calculatedSales;
         const difference = data.closingBalance - calculatedTotal;
 
         const updatedShift = await prisma.shift.update({
@@ -81,7 +71,7 @@ export async function endShiftAction(data: z.infer<typeof endShiftSchema>) {
             data: {
                 endTime: new Date(),
                 closingBalance: data.closingBalance,
-                calculatedTotal: calculatedTotal,
+                calculatedTotal: calculatedTotal, // Save the server-calculated total
                 difference: difference,
                 notes: data.notes,
                 status: 'closed',
@@ -91,6 +81,7 @@ export async function endShiftAction(data: z.infer<typeof endShiftSchema>) {
         revalidatePath("/dashboard/shifts");
         return { success: true, data: updatedShift };
     } catch (error) {
+        console.error("Error ending shift:", error);
         return { success: false, error: "Failed to end shift." };
     }
 }
@@ -106,7 +97,10 @@ export async function getShiftsAction() {
     }
 }
 
-export async function getActiveShiftAction(userId: string) {
+
+export type ShiftWithCalculations = Shift & { calculatedSales?: number };
+
+export async function getActiveShiftAction(userId: string): Promise<{ success: boolean; data?: ShiftWithCalculations | null; error?: string }> {
      try {
         const activeShift = await prisma.shift.findFirst({
             where: {
@@ -114,7 +108,29 @@ export async function getActiveShiftAction(userId: string) {
                 status: "open",
             },
         });
-        return { success: true, data: activeShift };
+
+        if (!activeShift) {
+            return { success: true, data: null };
+        }
+        
+        // If an active shift exists, calculate the sales during that shift
+        const salesData = await prisma.transaction.aggregate({
+            where: {
+                transactionDate: { gte: activeShift.startTime },
+                status: 'completed'
+            },
+            _sum: {
+                finalTotal: true
+            }
+        });
+
+        const activeShiftWithCalc: ShiftWithCalculations = {
+            ...activeShift,
+            calculatedSales: salesData._sum.finalTotal || 0
+        };
+
+
+        return { success: true, data: activeShiftWithCalc };
     } catch (error) {
         return { success: false, error: "Failed to fetch active shift." };
     }

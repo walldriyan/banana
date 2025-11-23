@@ -16,11 +16,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { endShiftAction } from "@/lib/actions/shift.actions";
-import { useState } from "react";
+import { endShiftAction, type ShiftWithCalculations } from "@/lib/actions/shift.actions";
+import { useState, useMemo, useEffect } from "react";
 import type { Shift } from "@prisma/client";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { format } from "date-fns";
+import { Skeleton } from "../ui/skeleton";
+import { Separator } from "../ui/separator";
 
 const endShiftFormSchema = z.object({
   closingBalance: z.coerce.number().min(0, "Closing balance must be non-negative."),
@@ -28,7 +30,7 @@ const endShiftFormSchema = z.object({
 });
 
 interface EndShiftFormProps {
-  shift: Shift;
+  shift: ShiftWithCalculations;
   onSuccess: () => void;
 }
 
@@ -43,10 +45,24 @@ export function EndShiftForm({ shift, onSuccess }: EndShiftFormProps) {
       notes: "",
     },
   });
+  
+  const closingBalance = form.watch('closingBalance');
+  
+  const calculatedTotal = useMemo(() => {
+      return (shift.openingBalance || 0) + (shift.calculatedSales || 0);
+  }, [shift.openingBalance, shift.calculatedSales]);
+  
+  const difference = useMemo(() => {
+      return closingBalance - calculatedTotal;
+  }, [closingBalance, calculatedTotal]);
 
   async function onSubmit(data: z.infer<typeof endShiftFormSchema>) {
     setIsSubmitting(true);
-    const result = await endShiftAction({ ...data, shiftId: shift.id });
+    const result = await endShiftAction({
+      ...data,
+      shiftId: shift.id,
+      calculatedSales: shift.calculatedSales || 0
+    });
     setIsSubmitting(false);
 
     if (result.success) {
@@ -71,18 +87,27 @@ export function EndShiftForm({ shift, onSuccess }: EndShiftFormProps) {
             <CardHeader>
                 <CardTitle>Shift Summary</CardTitle>
             </CardHeader>
-            <CardContent>
-                <div className="flex justify-between text-sm">
+            <CardContent className="space-y-3 text-sm">
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">User:</span>
                     <span className="font-semibold">{shift.userName}</span>
                 </div>
-                <div className="flex justify-between text-sm mt-2">
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">Start Time:</span>
                     <span className="font-semibold">{format(new Date(shift.startTime), "PPp")}</span>
                 </div>
-                 <div className="flex justify-between text-sm mt-2">
+                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Opening Balance:</span>
                     <span className="font-semibold">Rs. {shift.openingBalance.toFixed(2)}</span>
+                </div>
+                 <div className="flex justify-between">
+                    <span className="text-muted-foreground">Calculated Sales:</span>
+                    <span className="font-semibold text-blue-600">Rs. {(shift.calculatedSales || 0).toFixed(2)}</span>
+                </div>
+                 <Separator />
+                  <div className="flex justify-between font-bold text-base">
+                    <span>Expected in Drawer:</span>
+                    <span>Rs. {calculatedTotal.toFixed(2)}</span>
                 </div>
             </CardContent>
         </Card>
@@ -100,6 +125,13 @@ export function EndShiftForm({ shift, onSuccess }: EndShiftFormProps) {
             </FormItem>
           )}
         />
+        
+        <div className={`p-3 rounded-md text-center font-bold text-lg ${
+            difference === 0 ? 'bg-muted' : difference > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+            Difference: Rs. {difference.toFixed(2)}
+        </div>
+
         <FormField
           control={form.control}
           name="notes"
