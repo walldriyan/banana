@@ -1,17 +1,14 @@
 // src/lib/auth/options.ts
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { getUserPermissions, findUserRole } from './service';
+import { getUserPermissions, findUserByUsername, verifyPassword } from './service';
+import { prisma } from '../prisma';
 
 console.log('[authOptions] File loaded.');
 console.log('[authOptions] NEXTAUTH_SECRET from env:', process.env.NEXTAUTH_SECRET ? 'Loaded' : 'NOT LOADED');
 
 
 export const authOptions: NextAuthOptions = {
-  // SINHALA COMMENT:
-  // Production (සැබෑ යෙදුම) සඳහා, මෙම NEXTAUTH_SECRET අගය, ඔබගේ hosting provider එකේ (උදා: Vercel, Firebase)
-  // environment variable එකක් ලෙස, ඉතාමත් ආරක්ෂිත, දිගු, අහඹු අක්ෂර මාලාවක් ලෙස සැකසිය යුතුය.
-  // Development (සංවර්ධන) පරිසරය සඳහා, අපි .env.local ගොනුවේ ඇති අගය හෝ පහත fallback අගය භාවිතා කරමු.
   secret: process.env.NEXTAUTH_SECRET || 'fallback-super-secret-key-for-development-if-env-is-not-set',
   providers: [
     CredentialsProvider({
@@ -27,28 +24,49 @@ export const authOptions: NextAuthOptions = {
           console.log('[authOptions] Authorize failed: Missing username or password.');
           return null;
         }
-
-        // --- DUMMY USER AUTHENTICATION ---
-        // SINHALA COMMENT:
-        // Development (සංවර්ධන) පරිසරය සඳහා, අපි මෙහි තාවකාලික (dummy) user-ලොග්-වීමේ තර්කනයක් භාවිතා කරමු.
-        // Production (සැබෑ යෙදුම) සඳහා, මෙතැනදී, ඔබගේ සැබෑ දත්ත ගබඩාව (database) වෙත request එකක් යවා,
-        // පරිශීලකයා සහ මුරපදය (password hash) නිවැරදිදැයි පරීක්ෂා කළ යුතුය.
-        const role = await findUserRole(credentials.username);
-        console.log(`[authOptions] Role found for ${credentials.username}:`, role);
         
-        // For any dummy user, the password is 'password'
-        if (role && credentials.password === 'password') {
-          const user = {
-            id: credentials.username,
-            name: credentials.username.replace('_', ' ').replace(/(^\w{1})|(\s+\w{1})/g, letter => letter.toUpperCase()), // e.g., "Cashier User"
-            role: role,
-            permissions: [] // Permissions will be added in the jwt callback
-          };
-          console.log('[authOptions] Authorize success, returning user:', user.name);
-          return user;
+        const { username, password } = credentials;
+
+        // 1. Check for Super User from .env
+        const superUsername = process.env.SUPER_USER_USERNAME;
+        const superPassword = process.env.SUPER_USER_PASSWORD;
+
+        if (username === superUsername && password === superPassword) {
+            console.log('[authOptions] Super User authentication successful.');
+            return {
+                id: 'super_admin',
+                name: 'Super Admin',
+                username: superUsername,
+                role: 'admin', // Super user is always an admin
+                permissions: ['access_all'] // Super user gets all permissions
+            };
         }
-        // --- END DUMMY USER AUTHENTICATION ---
-        console.log('[authOptions] Authorize failed: Invalid credentials.');
+
+        // 2. Fallback to database user authentication
+        const userFromDb = await findUserByUsername(username);
+
+        if (!userFromDb) {
+            console.log(`[authOptions] Database user "${username}" not found.`);
+            return null;
+        }
+
+        // In a real app, you'd use bcrypt or another hashing library
+        // const isPasswordValid = await verifyPassword(password, userFromDb.password);
+        const isPasswordValid = password === userFromDb.password; // Plain text check for now
+
+        if (isPasswordValid) {
+            console.log(`[authOptions] Database user "${username}" authenticated successfully.`);
+            const permissions = await getUserPermissions({ id: userFromDb.id, role: userFromDb.role.name });
+            return {
+                id: userFromDb.id,
+                username: userFromDb.username,
+                name: userFromDb.name,
+                role: userFromDb.role.name,
+                permissions: permissions
+            };
+        }
+        
+        console.log(`[authOptions] Invalid password for database user "${username}".`);
         return null;
       },
     }),
@@ -58,7 +76,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.permissions = await getUserPermissions(user);
+        // The 'user' object from authorize already has permissions calculated
+        token.permissions = user.permissions;
       }
       return token;
     },

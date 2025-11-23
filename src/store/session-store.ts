@@ -5,6 +5,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 type SessionStatus = 'authenticated' | 'unauthenticated' | 'loading';
 
 interface SessionState {
+  // Use the extended User type from next-auth
   user: User | null;
   permissions: string[];
   status: SessionStatus;
