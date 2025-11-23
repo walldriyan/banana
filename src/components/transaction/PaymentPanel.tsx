@@ -48,7 +48,7 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
 
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
         <CardTitle>Payment Details</CardTitle>
       </CardHeader>

@@ -283,11 +283,11 @@ export function TransactionDialogContent({
         {step === 'details' && (
           <form onSubmit={handleSubmit(handlePreview)} className="flex flex-col flex-grow min-h-0">
             <div className="flex-grow overflow-y-auto py-4 pr-6">
-              <div className="flex flex-col md:flex-row gap-6">
-                <div className="md:w-1/2">
+              <div className="flex flex-col md:flex-row gap-6 h-full">
+                <div className="md:w-1/2 flex flex-col">
                     <CustomerInfoPanel customers={customers} />
                 </div>
-                <div className="md:w-1/2">
+                <div className="md:w-1/2 flex flex-col">
                     <PaymentPanel finalTotal={discountResult.finalTotal} />
                 </div>
               </div>

@@ -70,7 +70,7 @@ export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
   }, [] as Customer[]);
 
   return (
-    <Card onKeyDown={handleKeyDown}>
+    <Card onKeyDown={handleKeyDown} className="h-full">
       <CardHeader>
         <CardTitle>Customer Details</CardTitle>
       </CardHeader>
