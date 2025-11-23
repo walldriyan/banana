@@ -7,7 +7,8 @@ import {
     Home, Package, Users, LineChart, LayoutDashboard, Building, ShoppingCart, 
     CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp, ChevronRight,
     ArchiveX,
-    CircleHelp
+    CircleHelp,
+    Clock
 } from 'lucide-react';
 import {
   SidebarContent,
@@ -44,7 +45,8 @@ const iconMap = {
     Home,
     LogOut,
     ArchiveX,
-    CircleHelp
+    CircleHelp,
+    Clock
 };
 
 type IconName = keyof typeof iconMap;

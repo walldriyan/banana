@@ -9,6 +9,13 @@
             ]
         },
         {
+            "label": "OPERATIONS",
+            "permission": "shifts.view",
+            "items": [
+                { "href": "/dashboard/shifts", "icon": "Clock", "label": "Shifts", "permission": "shifts.view" }
+            ]
+        },
+        {
             "label": "INVENTORY",
             "permission": "products.view",
             "items": [

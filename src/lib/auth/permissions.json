@@ -40,7 +40,9 @@
         "settings.view",
         "settings.discounts",
         "finance.view",
-        "finance.manage"
+        "finance.manage",
+        "shifts.view",
+        "shifts.manage"
       ]
     },
     "cashier": {
