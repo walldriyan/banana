@@ -41,7 +41,8 @@ export async function startShiftAction(data: z.infer<typeof startShiftSchema>) {
             data: validation.data,
         });
         revalidatePath("/dashboard/shifts");
-        return { success: true, data: newShift };
+        const { openingBalance, ...rest } = newShift;
+        return { success: true, data: { ...rest, openingBalance: openingBalance.toNumber() } };
     } catch (error) {
         return { success: false, error: "Failed to start shift." };
     }
@@ -79,7 +80,19 @@ export async function endShiftAction(data: z.infer<typeof endShiftSchema>) {
         });
 
         revalidatePath("/dashboard/shifts");
-        return { success: true, data: updatedShift };
+        
+        // Convert Decimal fields to number before returning
+        const { openingBalance, closingBalance, calculatedTotal: calcTotal, difference: diff, ...rest } = updatedShift;
+        const plainObject = {
+            ...rest,
+            openingBalance: openingBalance.toNumber(),
+            closingBalance: closingBalance?.toNumber() ?? null,
+            calculatedTotal: calcTotal?.toNumber() ?? null,
+            difference: diff?.toNumber() ?? null,
+        };
+
+        return { success: true, data: plainObject };
+
     } catch (error) {
         console.error("Error ending shift:", error);
         return { success: false, error: "Failed to end shift." };
@@ -91,7 +104,20 @@ export async function getShiftsAction() {
         const shifts = await prisma.shift.findMany({
             orderBy: { startTime: 'desc' },
         });
-        return { success: true, data: shifts };
+        
+        // Convert Decimal fields to number before returning
+        const plainShifts = shifts.map(shift => {
+             const { openingBalance, closingBalance, calculatedTotal, difference, ...rest } = shift;
+             return {
+                 ...rest,
+                 openingBalance: openingBalance.toNumber(),
+                 closingBalance: closingBalance?.toNumber() ?? null,
+                 calculatedTotal: calculatedTotal?.toNumber() ?? null,
+                 difference: difference?.toNumber() ?? null,
+             }
+        });
+
+        return { success: true, data: plainShifts };
     } catch (error) {
         return { success: false, error: "Failed to fetch shifts." };
     }
@@ -124,14 +150,20 @@ export async function getActiveShiftAction(userId: string): Promise<{ success: b
             }
         });
 
-        const activeShiftWithCalc: ShiftWithCalculations = {
-            ...activeShift,
+        // Convert Decimal fields to number before returning
+        const { openingBalance, closingBalance, calculatedTotal, difference, ...rest } = activeShift;
+        const plainShift: ShiftWithCalculations = {
+            ...rest,
+            openingBalance: openingBalance.toNumber(),
+            closingBalance: closingBalance?.toNumber() ?? null,
+            calculatedTotal: calculatedTotal?.toNumber() ?? null,
+            difference: difference?.toNumber() ?? null,
             calculatedSales: salesData._sum.finalTotal || 0
         };
 
-
-        return { success: true, data: activeShiftWithCalc };
+        return { success: true, data: plainShift };
     } catch (error) {
         return { success: false, error: "Failed to fetch active shift." };
     }
 }
+
