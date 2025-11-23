@@ -3,11 +3,13 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Percent, Printer, Bell, Users, Palette } from "lucide-react";
+import { Percent, Printer, Bell, Users, Palette, UserCog } from "lucide-react";
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard";
 import { DiscountSettings } from "@/components/settings/discounts/DiscountSettings";
 import { PrintSettings } from "@/components/settings/printing/PrintSettings";
 import { AppearanceSettings } from "@/components/settings/appearance/AppearanceSettings";
+import Link from "next/link";
+import { buttonVariants } from "../ui/button";
 
 const settingsNav = [
     {
@@ -15,35 +17,32 @@ const settingsNav = [
         icon: Percent,
         title: "Discount Settings",
         description: "Manage global discount rules and behaviors.",
-        permission: "settings.discounts"
+        permission: "settings.discounts",
+        component: <DiscountSettings />
     },
     {
         value: "printing",
         icon: Printer,
         title: "Print Settings",
         description: "Configure receipt templates and printer options.",
-        permission: "settings.printing"
+        permission: "settings.printing",
+        component: <PrintSettings />
+    },
+    {
+        value: "appearance",
+        icon: Palette,
+        title: "Appearance",
+        description: "Customize the look and feel of the application.",
+        permission: "settings.appearance",
+        component: <AppearanceSettings />
     },
     {
         value: "notifications",
         icon: Bell,
         title: "Notifications",
         description: "Set up alerts for low stock, sales, etc.",
-        permission: "settings.notifications"
-    },
-     {
-        value: "users",
-        icon: Users,
-        title: "Users & Roles",
-        description: "Manage user accounts and permissions.",
-        permission: "settings.users"
-    },
-     {
-        value: "appearance",
-        icon: Palette,
-        title: "Appearance",
-        description: "Customize the look and feel of the application.",
-        permission: "settings.appearance"
+        permission: "settings.notifications",
+        component: <Card><CardHeader><CardTitle>Notifications</CardTitle><CardDescription>Notification settings will be configured here.</CardDescription></CardHeader><CardContent><p>Coming soon...</p></CardContent></Card>
     },
 ];
 
@@ -70,37 +69,11 @@ export function SettingsClientPage() {
                 </TabsList>
 
                 <div className="flex-1 mt-6 md:mt-0 md:min-h-0 md:overflow-y-auto">
-                    <TabsContent value="discounts">
-                       <DiscountSettings />
-                    </TabsContent>
-                    <TabsContent value="printing">
-                        <PrintSettings />
-                    </TabsContent>
-                    <TabsContent value="notifications">
-                        <Card>
-                             <CardHeader>
-                                <CardTitle>Notification Settings</CardTitle>
-                                <CardDescription>Configure application-wide notifications.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p>Notification settings will be configured here.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                     <TabsContent value="users">
-                        <Card>
-                             <CardHeader>
-                                <CardTitle>Users & Roles</CardTitle>
-                                <CardDescription>Manage user accounts, roles, and permissions.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p>User management interface will be here.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                     <TabsContent value="appearance">
-                        <AppearanceSettings />
-                    </TabsContent>
+                    {settingsNav.map(nav => (
+                        <TabsContent key={nav.value} value={nav.value}>
+                           {nav.component}
+                        </TabsContent>
+                    ))}
                 </div>
             </Tabs>
         </AuthorizationGuard>

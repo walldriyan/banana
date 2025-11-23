@@ -8,7 +8,9 @@ import {
     CreditCard, HandCoins, LogOut, Printer, Settings, Briefcase, TrendingUp, ChevronRight,
     ArchiveX,
     CircleHelp,
-    Clock
+    Clock,
+    UserCog,
+    Shield
 } from 'lucide-react';
 import {
   SidebarContent,
@@ -46,7 +48,9 @@ const iconMap = {
     LogOut,
     ArchiveX,
     CircleHelp,
-    Clock
+    Clock,
+    UserCog,
+    Shield
 };
 
 type IconName = keyof typeof iconMap;
