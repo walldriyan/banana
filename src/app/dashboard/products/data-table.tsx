@@ -28,7 +28,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 import { Input } from "@/components/ui/input"
-import { PlusCircle, ArchiveX } from "lucide-react"
+import { PlusCircle, ArchiveX, Upload, Download } from "lucide-react"
 import { AuthorizationGuard } from "@/components/auth/AuthorizationGuard"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
@@ -38,7 +38,9 @@ import { cn } from "@/lib/utils"
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[],
-  onAddProduct: () => void; // Callback to open the add master product drawer
+  onAddProduct: () => void;
+  onImport: () => void;
+  onExport: () => void;
   hideZeroStock: boolean;
   onHideZeroStockChange: (checked: boolean) => void;
 }
@@ -48,6 +50,8 @@ export function ProductsDataTable<TData, TValue>({
   columns,
   data,
   onAddProduct,
+  onImport,
+  onExport,
   hideZeroStock,
   onHideZeroStockChange,
 }: DataTableProps<TData, TValue>) {
@@ -93,8 +97,8 @@ export function ProductsDataTable<TData, TValue>({
                 }
                 className="max-w-sm"
             />
-            <div className="flex items-center gap-4">
-                <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
+                <div className="flex items-center space-x-2 mr-4">
                     <Switch 
                         id="hide-zero-stock" 
                         checked={hideZeroStock}
@@ -105,6 +109,16 @@ export function ProductsDataTable<TData, TValue>({
                         Hide Zero Stock
                     </Label>
                 </div>
+                 <AuthorizationGuard permissionKey="products.manage">
+                    <Button variant="outline" onClick={onImport}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Import
+                    </Button>
+                    <Button variant="outline" onClick={onExport}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export
+                    </Button>
+                </AuthorizationGuard>
                 <AuthorizationGuard permissionKey="products.create">
                     <Button onClick={onAddProduct}>
                       <PlusCircle className="mr-2 h-4 w-4" />
@@ -113,7 +127,7 @@ export function ProductsDataTable<TData, TValue>({
                 </AuthorizationGuard>
             </div>
         </div>
-        <div className="rounded-md border flex-grow overflow-auto">
+        <div className="rounded-md border flex-grow overflow-y-auto">
             <Table>
                 <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (

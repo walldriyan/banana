@@ -26,6 +26,7 @@ import { Package, Archive, DollarSign, Landmark, TrendingUp, Coins, AlertTriangl
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ImportProductsModal } from '@/components/products/ImportProductsModal';
 
 
 const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
@@ -48,6 +49,7 @@ export function ProductsClientPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [batchToDelete, setBatchToDelete] = useState<string | null>(null);
   const [hideZeroStock, setHideZeroStock] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
 
   const { toast } = useToast();
@@ -76,6 +78,11 @@ export function ProductsClientPage() {
   const handleFormSuccess = () => {
     drawer.closeDrawer();
     fetchBatches(); // Refresh the batch list
+  };
+  
+  const handleImportSuccess = () => {
+    setIsImportModalOpen(false);
+    fetchBatches(); // Refresh list after successful import
   };
 
   const openAddProductDrawer = () => {
@@ -181,11 +188,20 @@ export function ProductsClientPage() {
             columns={columns}
             data={filteredBatches}
             onAddProduct={openAddProductDrawer}
+            onImport={() => setIsImportModalOpen(true)}
+            onExport={() => alert('Export functionality not yet implemented.')}
             hideZeroStock={hideZeroStock}
             onHideZeroStockChange={setHideZeroStock}
           />
         </CardContent>
       </Card>
+      
+      <ImportProductsModal
+        isOpen={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
+        onSuccess={handleImportSuccess}
+      />
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
