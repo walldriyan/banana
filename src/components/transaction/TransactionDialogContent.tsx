@@ -279,7 +279,7 @@ export function TransactionDialogContent({
 
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-col h-[85vh] no-print">
+      <div className="flex flex-col h-full no-print">
         {step === 'details' && (
           <form onSubmit={handleSubmit(handlePreview)} className="flex flex-col flex-grow min-h-0">
             <div className="flex-grow overflow-y-auto py-4 pr-6">
