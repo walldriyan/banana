@@ -48,11 +48,11 @@ export function PaymentPanel({ finalTotal }: PaymentPanelProps) {
 
 
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle>Payment Details</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 overflow-y-auto">
         <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <div>Total to Pay</div>
           <div>Rs. {finalTotal.toFixed(2)}</div>
