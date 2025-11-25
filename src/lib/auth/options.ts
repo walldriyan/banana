@@ -4,10 +4,6 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { getUserPermissions, findUserByUsername, verifyPassword } from './service';
 import { prisma } from '../prisma';
 
-console.log('[authOptions] File loaded.');
-console.log('[authOptions] NEXTAUTH_SECRET from env:', process.env.NEXTAUTH_SECRET ? 'Loaded' : 'NOT LOADED');
-
-
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'fallback-super-secret-key-for-development-if-env-is-not-set',
   providers: [
