@@ -9,6 +9,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { ThemeWrapper } from '@/components/ThemeWrapper';
+import { auth } from "@/auth";
 
 
 // This forces the entire app to be dynamically rendered, which can help
@@ -22,11 +23,13 @@ export const metadata: Metadata = {
   description: 'A simple Next.js app with Tailwind CSS.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -63,7 +66,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
+          <AuthProvider session={session}>
             <LanguageProvider>
               <GlobalDrawerProvider>
                 <ThemeWrapper>{children}</ThemeWrapper>

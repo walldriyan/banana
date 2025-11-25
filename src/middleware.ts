@@ -1,36 +1,22 @@
-// src/middleware.ts
-import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { auth } from "@/auth"
+import { NextResponse } from "next/server"
 
-export default withAuth(
-  // `withAuth` augments your `Request` with the user's token.
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const pathname = req.nextUrl.pathname;
-    
-    // If the user is not authenticated, they are already redirected to the login page by withAuth.
-    // If they are authenticated and try to access the login page, redirect them to the home page.
-    if (token && pathname.startsWith('/login')) {
-      return NextResponse.redirect(new URL('/', req.url));
-    }
-    
-    // Allow the request to proceed if none of the above conditions are met.
-    return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token, // A user is authorized if they have a valid token
-    },
-    pages: {
-      signIn: '/login', // Redirect to this page if the user is not authorized
-    },
+export default auth((req) => {
+  const isLoggedIn = !!req.auth
+  const isLoginPage = req.nextUrl.pathname.startsWith('/login')
+
+  // If logged in and on login page, redirect to home
+  if (isLoggedIn && isLoginPage) {
+    return NextResponse.redirect(new URL('/', req.nextUrl))
   }
-);
 
-// This config specifies which routes are protected by the middleware.
+  // If not logged in and NOT on login page, redirect to login
+  if (!isLoggedIn && !isLoginPage) {
+    return NextResponse.redirect(new URL('/login', req.nextUrl))
+  }
+})
+
 export const config = {
-  // Match all routes except for API routes, static files, and image optimization files.
-  matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|icon.png|font/.*|login).*)',
-  ],
-};
+  // Matcher ignoring static files and API routes
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|icon.png|font/.*).*)'],
+}

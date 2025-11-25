@@ -1,18 +1,17 @@
-// src/components/auth/AuthProvider.tsx
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
-// import { SessionUpdater } from './SessionUpdater';
-
+import type { Session } from 'next-auth';
 
 export default function AuthProvider({
   children,
+  session,
 }: {
   children: React.ReactNode;
+  session: Session | null;
 }) {
   return (
-    <SessionProvider basePath="/api/auth">
-      {/* <SessionUpdater /> */}
+    <SessionProvider session={session}>
       {children}
     </SessionProvider>
   );
