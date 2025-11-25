@@ -9,92 +9,91 @@ import { revalidatePath } from "next/cache";
 // --- Master Product Actions ---
 
 export async function addProductAction(data: ProductFormValues) {
-  const validationResult = productSchema.safeParse(data);
-  if (!validationResult.success) {
-    return {
-      success: false,
-      error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
-    };
-  }
-  const { 
-      units, 
-      quantity, 
-      batchNumber, 
-      sellingPrice, 
-      costPrice, 
-      productId, 
-      barcode, 
-      supplierId, 
-      manufactureDate,
-      expiryDate,
-      location,
-      notes,
-      minStockLevel,
-      maxStockLevel,
-      tax, // Batch-specific
-      taxtype, // Batch-specific
-      discount, // Batch-specific
-      discountType, // Batch-specific
-      defaultQuantity,
-      ...productDataForCreation 
-  } = validationResult.data;
-
-  try {
-    const result = await prisma.$transaction(async (tx) => {
-        // 1. Create the master product with only its own fields from the schema
-        const newProduct = await tx.product.create({
-            data: {
-                name: productDataForCreation.name,
-                description: productDataForCreation.description,
-                category: productDataForCreation.category,
-                brand: productDataForCreation.brand,
-                units: units as any,
-                isService: productDataForCreation.isService,
-                isActive: productDataForCreation.isActive,
-            },
-        });
-
-        // 2. Create the initial batch for this product, using fields from the form
-        await tx.productBatch.create({
-            data: {
-                product: { connect: { id: newProduct.id } },
-                batchNumber: batchNumber || `B-${Date.now()}`,
-                sellingPrice: sellingPrice || 0,
-                costPrice: costPrice || 0,
-                quantity: quantity || 0,
-                stock: quantity || 0, 
-                barcode: barcode,
-                addedDate: new Date(),
-                tax: tax,
-                taxtype: taxtype,
-                discount: discount,
-                discountType: discountType,
-                ...(supplierId && { supplier: { connect: { id: supplierId } } }),
-                location: location,
-                notes: notes,
-                manufactureDate: manufactureDate ? new Date(manufactureDate) : null,
-                expiryDate: expiryDate ? new Date(expiryDate) : null
-            }
-        });
-
-        return newProduct;
-    });
-    
-    revalidatePath('/dashboard/products');
-    return { success: true, data: result };
-
-  } catch (error) {
-    console.error('[addProductAction Error]', error);
-    const errorMessage = error instanceof Error ? `Reason: ${error.message}` : "Unknown error";
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      const target = (error.meta?.target as string[])?.join(', ') || 'fields';
-      if (error.code === 'P2002') {
-        return { success: false, error: `A product with the same ${target} already exists.` };
-      }
-      return { success: false, error: `Prisma Error (${error.code}): ${error.message}. Metadata: ${JSON.stringify(error.meta)}` };
+    const validationResult = productSchema.safeParse(data);
+    if (!validationResult.success) {
+        return {
+            success: false,
+            error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
+        };
     }
-    return { success: false, error: `Failed to create product and initial batch. ${errorMessage}` };
-  }
+    const {
+        units,
+        quantity,
+        batchNumber,
+        sellingPrice,
+        costPrice,
+        productId,
+        barcode,
+        supplierId,
+        manufactureDate,
+        expiryDate,
+        location,
+        notes,
+        minStockLevel,
+        maxStockLevel,
+        tax, // Batch-specific
+        taxtype, // Batch-specific
+        discount, // Batch-specific
+        discountType, // Batch-specific
+        defaultQuantity,
+        ...productDataForCreation
+    } = validationResult.data;
+
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Create the master product with only its own fields from the schema
+            const newProduct = await tx.product.create({
+                data: {
+                    name: productDataForCreation.name,
+                    description: productDataForCreation.description,
+                    category: productDataForCreation.category,
+                    brand: productDataForCreation.brand,
+                    units: units as any,
+                    isService: productDataForCreation.isService,
+                    isActive: productDataForCreation.isActive,
+                },
+            });
+
+            // 2. Create the initial batch for this product, using fields from the form
+            await tx.productBatch.create({
+                data: {
+                    product: { connect: { id: newProduct.id } },
+                    batchNumber: batchNumber || `B-${Date.now()}`,
+                    sellingPrice: sellingPrice || 0,
+                    costPrice: costPrice || 0,
+                    stock: quantity || 0,
+                    barcode: barcode,
+                    addedDate: new Date(),
+                    tax: tax,
+                    taxtype: taxtype,
+                    discount: discount,
+                    discountType: discountType,
+                    ...(supplierId && { supplier: { connect: { id: supplierId } } }),
+                    location: location,
+                    notes: notes,
+                    manufactureDate: manufactureDate ? new Date(manufactureDate) : null,
+                    expiryDate: expiryDate ? new Date(expiryDate) : null
+                }
+            });
+
+            return newProduct;
+        });
+
+        revalidatePath('/dashboard/products');
+        return { success: true, data: result };
+
+    } catch (error) {
+        console.error('[addProductAction Error]', error);
+        const errorMessage = error instanceof Error ? `Reason: ${error.message}` : "Unknown error";
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+            const target = (error.meta?.target as string[])?.join(', ') || 'fields';
+            if (error.code === 'P2002') {
+                return { success: false, error: `A product with the same ${target} already exists.` };
+            }
+            return { success: false, error: `Prisma Error (${error.code}): ${error.message}. Metadata: ${JSON.stringify(error.meta)}` };
+        }
+        return { success: false, error: `Failed to create product and initial batch. ${errorMessage}` };
+    }
 }
 
 export async function updateProductBatchAction(id: string, data: ProductFormValues) {
@@ -108,30 +107,30 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
             error: "Invalid data for batch update: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
         };
     }
-    const { 
-        units, 
+    const {
+        units,
         quantity, // stock is not directly editable
-        batchNumber, 
-        sellingPrice, 
-        costPrice, 
-        name, 
-        description, 
-        category, 
-        brand, 
-        isService, 
-        isActive, 
-        supplierId, 
-        tax, 
-        taxtype, 
-        discount, 
-        discountType, 
-        ...otherData 
+        batchNumber,
+        sellingPrice,
+        costPrice,
+        name,
+        description,
+        category,
+        brand,
+        isService,
+        isActive,
+        supplierId,
+        tax,
+        taxtype,
+        discount,
+        discountType,
+        ...otherData
     } = validationResult.data;
 
     try {
-        const oldBatch = await prisma.productBatch.findUnique({ where: { id }});
+        const oldBatch = await prisma.productBatch.findUnique({ where: { id } });
         if (!oldBatch) {
-            return { success: false, error: "Batch not found."};
+            return { success: false, error: "Batch not found." };
         }
 
         const updatedBatch = await prisma.productBatch.update({
@@ -163,7 +162,8 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
         });
 
         revalidatePath('/dashboard/products');
-        return { success: true, data: updatedBatch };
+        revalidatePath('/dashboard/products');
+        return { success: true, data: serializeProductBatch(updatedBatch) };
     } catch (error) {
         console.error('[updateProductBatchAction] Error:', error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -175,15 +175,15 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
 
 
 export async function getProductsAction() {
-  try {
-    const products = await prisma.product.findMany({
-      orderBy: { name: 'asc' },
-    });
-    return { success: true, data: products };
-  } catch (error) {
-    console.error("Error fetching master products:", error);
-    return { success: false, error: "Failed to fetch master products." };
-  }
+    try {
+        const products = await prisma.product.findMany({
+            orderBy: { name: 'asc' },
+        });
+        return { success: true, data: products };
+    } catch (error) {
+        console.error("Error fetching master products:", error);
+        return { success: false, error: "Failed to fetch master products." };
+    }
 }
 
 
@@ -214,17 +214,8 @@ export async function getProductBatchesAction() {
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
 
-        // Convert Decimal `stock` to string to preserve decimals
-        const serializedBatches = batches.map(batch => {
-             // Force decimal format with toFixed(3) to ensure decimal point exists
-            const stockNumber = Number(batch.stock);
-            const stockString = stockNumber.toFixed(3);
-
-            return {
-                ...batch,
-                stock: stockString, // Now always has decimal point: "45.000", "44.700"
-            };
-        });
+        // Convert Decimal fields to plain numbers/strings
+        const serializedBatches = batches.map(batch => serializeProductBatch(batch));
 
         return { success: true, data: serializedBatches };
     } catch (error) {
@@ -240,18 +231,21 @@ export async function addProductBatchAction(data: ProductBatchFormValues) {
         return { success: false, error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors) };
     }
     const validatedData = validationResult.data;
+    const { quantity, ...batchData } = validatedData;
+
     try {
         const newBatch = await prisma.productBatch.create({
             data: {
-                ...validatedData,
-                stock: validatedData.quantity, // Initial stock is the same as quantity
+                ...batchData,
+                stock: quantity, // Initial stock is the same as quantity
                 addedDate: new Date(),
                 manufactureDate: validatedData.manufactureDate ? new Date(validatedData.manufactureDate) : null,
                 expiryDate: validatedData.expiryDate ? new Date(validatedData.expiryDate) : null,
             },
         });
         revalidatePath('/dashboard/products');
-        return { success: true, data: newBatch };
+        revalidatePath('/dashboard/products');
+        return { success: true, data: serializeProductBatch(newBatch) };
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             return { success: false, error: `A batch with this Product ID and Batch Number already exists.` };
@@ -278,7 +272,7 @@ export async function deleteProductBatchAction(id: string) {
         await prisma.productBatch.delete({
             where: { id },
         });
-        
+
         revalidatePath('/dashboard/products');
         return { success: true };
     } catch (error) {
@@ -288,4 +282,18 @@ export async function deleteProductBatchAction(id: string) {
         }
         return { success: false, error: "Failed to delete product batch." };
     }
+}
+
+function serializeProductBatch(batch: any) {
+    const stockNumber = Number(batch.stock);
+    const stockString = stockNumber.toFixed(3);
+
+    return {
+        ...batch,
+        stock: stockString,
+        sellingPrice: Number(batch.sellingPrice),
+        costPrice: batch.costPrice ? Number(batch.costPrice) : 0,
+        tax: batch.tax ? Number(batch.tax) : 0,
+        discount: batch.discount ? Number(batch.discount) : 0,
+    };
 }

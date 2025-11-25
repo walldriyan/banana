@@ -5,11 +5,17 @@ import { Prisma } from '@prisma/client';
 export type Product = Prisma.ProductGetPayload<{}>;
 
 // Represents a specific batch of a product, with its own stock, price, etc.
-export type ProductBatch = Prisma.ProductBatchGetPayload<{
+export type ProductBatch = Omit<Prisma.ProductBatchGetPayload<{
   include: {
     product: true;
   }
-}>;
+}>, 'sellingPrice' | 'costPrice' | 'tax' | 'discount' | 'stock'> & {
+  sellingPrice: number;
+  costPrice: number;
+  tax: number;
+  discount: number;
+  stock: string;
+};
 
 // Represents what is in the shopping cart. It's a ProductBatch with sale-specific info.
 export interface SaleItem extends ProductBatch {
