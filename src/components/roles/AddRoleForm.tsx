@@ -78,8 +78,8 @@ export function AddRoleForm({ role, permissions, onSuccess }: AddRoleFormProps) 
     }
   }
 
-  const permissionGroups = permissions.reduce((acc, p) => {
-    const group = p.key.split('.')[0];
+  const permissionGroups = (permissions || []).reduce((acc, p) => {
+    const group = p.key.split('.')[0] || 'general';
     if (!acc[group]) {
       acc[group] = [];
     }
