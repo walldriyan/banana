@@ -1,38 +1,32 @@
 // src/middleware.ts
-import { withAuth } from "next-auth/middleware"
-import { getToken } from "next-auth/jwt"
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { auth } from "@/auth"
+import { NextResponse } from "next/server"
 
-export default async function middleware(req: NextRequest) {
-  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-  const { pathname } = req.nextUrl;
+export default auth((req) => {
+  const { pathname } = req.nextUrl
+  const isLoggedIn = !!req.auth
 
   // If user is trying to access login page but is already authenticated, redirect to home
-  if (pathname.startsWith('/login') && token) {
-    return NextResponse.redirect(new URL('/', req.url));
+  if (pathname.startsWith('/login') && isLoggedIn) {
+    return NextResponse.redirect(new URL('/', req.url))
   }
-  
-  // Use withAuth to protect other routes
-  const authMiddleware = withAuth({
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
-    pages: {
-      signIn: '/login',
-    },
-  });
 
-  // @ts-ignore
-  return authMiddleware(req);
-}
+  // If user is not authenticated and trying to access protected routes, redirect to login
+  if (!pathname.startsWith('/login') && !isLoggedIn) {
+    const loginUrl = new URL('/login', req.url)
+    loginUrl.searchParams.set('callbackUrl', pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return NextResponse.next()
+})
 
 // The `matcher` specifies which routes are protected by this middleware.
 export const config = {
   matcher: [
     /*
      * Match all request paths except for the ones starting with:
-     * - api (API routes - withAuth will not apply to /api/auth/* itself)
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)

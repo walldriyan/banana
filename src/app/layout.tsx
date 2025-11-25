@@ -57,7 +57,7 @@ export default async function RootLayout({
         />
       </head>
       {/* The body tag no longer needs font-sans directly, ThemeWrapper handles it */}
-      <body className={cn('min-h-screen overflow-hidden bg-background antialiased', inter.variable)}>
+      <body suppressHydrationWarning className={cn('min-h-screen overflow-hidden bg-background antialiased', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
