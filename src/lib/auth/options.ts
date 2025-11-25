@@ -6,6 +6,7 @@ import { prisma } from '../prisma';
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || 'fallback-super-secret-key-for-development-if-env-is-not-set',
+  useSecureCookies: false, // Recommended for development, esp. in proxied/iframe environments
   providers: [
     CredentialsProvider({
       name: 'Credentials',
