@@ -1,7 +1,7 @@
 // src/app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,11 @@ export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -37,7 +42,7 @@ export default function LoginPage() {
       if (res?.error) {
         // The error will be handled by the error search param, but we log it too
         console.error('Sign-in error:', res.error);
-         // We push to the router with the error so the page re-renders with the error message
+        // We push to the router with the error so the page re-renders with the error message
         router.push(`/login?error=CredentialsSignin`);
       } else if (res?.url) {
         // Successful sign-in
@@ -46,16 +51,18 @@ export default function LoginPage() {
     } catch (e) {
       console.error("Unexpected error during sign-in:", e);
     } finally {
-        // This might not be reached if router.push succeeds, but it's good practice
-       setIsLoading(false);
+      // This might not be reached if router.push succeeds, but it's good practice
+      setIsLoading(false);
     }
   };
 
   return (
     <main className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
+      {isMounted && (
         <div className="absolute top-4 right-4">
-            <ThemeToggle />
+          <ThemeToggle />
         </div>
+      )}
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome Back!</CardTitle>
@@ -63,7 +70,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-             {error && (
+            {error && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Login Failed</AlertTitle>
@@ -96,13 +103,13 @@ export default function LoginPage() {
                 disabled={isLoading}
               />
             </div>
-             <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
         </CardContent>
         <CardFooter className="text-center text-xs text-muted-foreground">
-             <p>© {new Date().getFullYear()} Banana POS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Banana POS. All rights reserved.</p>
         </CardFooter>
       </Card>
     </main>
