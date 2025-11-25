@@ -9,7 +9,6 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { cn } from '@/lib/utils';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { ThemeWrapper } from '@/components/ThemeWrapper';
-import { auth } from "@/auth";
 
 
 // This forces the entire app to be dynamically rendered, which can help
@@ -28,7 +27,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -66,7 +64,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider session={session}>
+          <AuthProvider>
             <LanguageProvider>
               <GlobalDrawerProvider>
                 <ThemeWrapper>{children}</ThemeWrapper>
