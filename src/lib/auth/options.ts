@@ -18,44 +18,41 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        console.log('[authOptions] Authorize function called with credentials:', credentials?.username);
+        console.log(`[AUTH FLOW 1/4 - Authorize] 🔑 පරිශීලකයා login වීමට උත්සාහ කරයි: ${credentials?.username}`);
 
         if (!credentials?.username || !credentials?.password) {
-          console.log('[authOptions] Authorize failed: Missing username or password.');
+          console.error('[AUTH FLOW 1/4 - Authorize] ❌ දෝෂය: Username හෝ Password ඇතුළත් කර නැත.');
           return null;
         }
         
         const { username, password } = credentials;
 
-        // 1. Check for Super User from .env
         const superUsername = process.env.SUPER_USER_USERNAME;
         const superPassword = process.env.SUPER_USER_PASSWORD;
 
         if (superUsername && superPassword && username === superUsername && password === superPassword) {
-            console.log('[authOptions] Super User authentication successful.');
-            // This user object is self-contained and doesn't need a DB lookup.
+            console.log('[AUTH FLOW 1/4 - Authorize] ✅ සාර්ථකයි: Super Admin ලෙස හඳුනාගත්තා.');
             return {
                 id: 'super_admin',
                 name: 'Super Admin',
                 username: superUsername,
                 role: 'admin',
-                permissions: ['access_all'] // Super user gets all permissions directly.
+                permissions: ['access_all']
             };
         }
 
-        // 2. Fallback to database user authentication
         const userFromDb = await findUserByUsername(username);
 
         if (!userFromDb) {
-            console.log(`[authOptions] Database user "${username}" not found.`);
+            console.warn(`[AUTH FLOW 1/4 - Authorize] ❌ අසාර්ථකයි: "${username}" නමින් පරිශීලකයෙක් database එකේ නැත.`);
             return null;
         }
 
         const isPasswordValid = password === userFromDb.password; 
 
         if (isPasswordValid) {
-            console.log(`[authOptions] Database user "${username}" authenticated successfully.`);
             const permissions = await getUserPermissions({ id: userFromDb.id, role: userFromDb.role.name });
+            console.log(`[AUTH FLOW 1/4 - Authorize] ✅ සාර්ථකයි: Database පරිශීලක "${username}" හඳුනාගත්තා.`);
             return {
                 id: userFromDb.id,
                 username: userFromDb.username,
@@ -65,30 +62,37 @@ export const authOptions: NextAuthOptions = {
             };
         }
         
-        console.log(`[authOptions] Invalid password for database user "${username}".`);
+        console.warn(`[AUTH FLOW 1/4 - Authorize] ❌ අසාර්ථකයි: "${username}" ගේ password එක වැරදියි.`);
         return null;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user }) {
+      console.log(`[AUTH FLOW 2/4 - JWT Callback] 📝 JWT token එක නිර්මාණය වෙමින් පවතී...`);
       // The 'user' object is only available on the first sign-in.
-      // Subsequent calls will only have the 'token' object.
       if (user) {
-        // Persist the custom data from the user object to the token
+        console.log('[AUTH FLOW 2/4 - JWT Callback] 👉 පළමු login වීම. User object එකෙන් දත්ත token එකට දමයි.', user);
         token.id = user.id;
         token.role = user.role;
         token.permissions = user.permissions;
+      } else {
+        console.log('[AUTH FLOW 2/4 - JWT Callback] 👉 දැනටමත් login වී ඇත. පවතින token එක භාවිතා කරයි.');
       }
+       console.log('[AUTH FLOW 2/4 - JWT Callback] ✅ අවසන් වූ JWT token එක:', token);
       return token;
     },
     async session({ session, token }) {
-      // Pass the custom data from the token to the client-side session object
+      console.log(`[AUTH FLOW 3/4 - Session Callback] 🙋‍♂️ Client-side session object එක නිර්මාණය වෙමින් පවතී...`);
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as any;
         session.user.permissions = token.permissions as string[];
+        console.log(`[AUTH FLOW 3/4 - Session Callback] ✅ Token එකේ දත්ත session එකට සාර්ථකව එක් කලා.`);
+      } else {
+         console.warn(`[AUTH FLOW 3/4 - Session Callback] ⚠️ Token හෝ session.user නොමැත.`);
       }
+      console.log('[AUTH FLOW 3/4 - Session Callback] ✅ අවසන් වූ Client-side session object එක:', session);
       return session;
     },
   },
