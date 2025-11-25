@@ -12,19 +12,15 @@ import { useEffect } from 'react';
  */
 export function SessionUpdater() {
   const { data: session, status } = useSession();
-  const { setSession, clearSession } = useSessionStore();
+  const { setSession, clearSession, setUserAndPermissions } = useSessionStore();
 
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
-      setSession({
-        user: session.user,
-        permissions: session.user.permissions || [],
-        status: 'authenticated',
-      });
+      setUserAndPermissions(session.user, session.user.permissions || []);
     } else if (status === 'unauthenticated') {
       clearSession();
     }
-  }, [session, status, setSession, clearSession]);
+  }, [session, status, setUserAndPermissions, clearSession]);
 
   // This component does not render anything.
   return null;

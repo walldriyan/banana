@@ -2,7 +2,7 @@
 'use client';
 
 import { SessionProvider } from 'next-auth/react';
-import { SessionUpdater } from './SessionUpdater';
+// import { SessionUpdater } from './SessionUpdater';
 
 
 export default function AuthProvider({
@@ -12,7 +12,7 @@ export default function AuthProvider({
 }) {
   return (
     <SessionProvider basePath="/api/auth">
-      <SessionUpdater />
+      {/* <SessionUpdater /> */}
       {children}
     </SessionProvider>
   );
