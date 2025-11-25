@@ -31,14 +31,15 @@ export const authOptions: NextAuthOptions = {
         const superUsername = process.env.SUPER_USER_USERNAME;
         const superPassword = process.env.SUPER_USER_PASSWORD;
 
-        if (username === superUsername && password === superPassword) {
+        if (superUsername && superPassword && username === superUsername && password === superPassword) {
             console.log('[authOptions] Super User authentication successful.');
+            // This user object is self-contained and doesn't need a DB lookup.
             return {
                 id: 'super_admin',
                 name: 'Super Admin',
                 username: superUsername,
-                role: 'admin', // Super user is always an admin
-                permissions: ['access_all'] // Super user gets all permissions
+                role: 'admin',
+                permissions: ['access_all'] // Super user gets all permissions directly.
             };
         }
 
@@ -50,9 +51,7 @@ export const authOptions: NextAuthOptions = {
             return null;
         }
 
-        // In a real app, you'd use bcrypt or another hashing library
-        // const isPasswordValid = await verifyPassword(password, userFromDb.password);
-        const isPasswordValid = password === userFromDb.password; // Plain text check for now
+        const isPasswordValid = password === userFromDb.password; 
 
         if (isPasswordValid) {
             console.log(`[authOptions] Database user "${username}" authenticated successfully.`);
@@ -73,15 +72,18 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // The 'user' object is only available on the first sign-in.
+      // Subsequent calls will only have the 'token' object.
       if (user) {
+        // Persist the custom data from the user object to the token
         token.id = user.id;
         token.role = user.role;
-        // The 'user' object from authorize already has permissions calculated
         token.permissions = user.permissions;
       }
       return token;
     },
     async session({ session, token }) {
+      // Pass the custom data from the token to the client-side session object
       if (token && session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as any;
