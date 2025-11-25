@@ -22,6 +22,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   useEffect(() => {
     setIsMounted(true);
@@ -30,6 +31,7 @@ export default function LoginPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
+    setLoginError('');
 
     try {
       const res = await signIn('credentials', {
@@ -40,18 +42,13 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        // The error will be handled by the error search param, but we log it too
-        console.error('Sign-in error:', res.error);
-        // We push to the router with the error so the page re-renders with the error message
-        router.push(`/login?error=CredentialsSignin`);
+        setLoginError('Invalid username or password. Please try again.');
       } else if (res?.url) {
-        // Successful sign-in
         router.push(res.url);
       }
     } catch (e) {
-      console.error("Unexpected error during sign-in:", e);
+      setLoginError('An unexpected error occurred. Please try again.');
     } finally {
-      // This might not be reached if router.push succeeds, but it's good practice
       setIsLoading(false);
     }
   };
@@ -70,12 +67,12 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+            {(error || loginError) && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertTitle>Login Failed</AlertTitle>
                 <AlertDescription>
-                  Invalid username or password. Please try again.
+                  {loginError || 'Invalid username or password. Please try again.'}
                 </AlertDescription>
               </Alert>
             )}
