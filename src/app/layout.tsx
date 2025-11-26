@@ -22,11 +22,12 @@ export const metadata: Metadata = {
   description: 'A simple Next.js app with Tailwind CSS.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -56,7 +57,7 @@ export default function RootLayout({
         />
       </head>
       {/* The body tag no longer needs font-sans directly, ThemeWrapper handles it */}
-      <body className={cn('min-h-screen overflow-hidden bg-background antialiased', inter.variable)}>
+      <body suppressHydrationWarning className={cn('min-h-screen overflow-hidden bg-background antialiased', inter.variable)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

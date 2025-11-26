@@ -9,6 +9,13 @@
             ]
         },
         {
+            "label": "OPERATIONS",
+            "permission": "shifts.view",
+            "items": [
+                { "href": "/dashboard/shifts", "icon": "Clock", "label": "Shifts", "permission": "shifts.view" }
+            ]
+        },
+        {
             "label": "INVENTORY",
             "permission": "products.view",
             "items": [
@@ -20,9 +27,11 @@
         },
         {
             "label": "PEOPLE",
-            "permission": "customers.view",
+            "permission": null,
             "items": [
-                { "href": "/dashboard/customers", "icon": "Users", "label": "Customers", "permission": "customers.view" }
+                { "href": "/dashboard/customers", "icon": "Users", "label": "Customers", "permission": "customers.view" },
+                { "href": "/dashboard/users", "icon": "UserCog", "label": "Users", "permission": "users.view" },
+                { "href": "/dashboard/roles", "icon": "Shield", "label": "Roles", "permission": "roles.view" }
             ]
         },
         {
@@ -45,15 +54,8 @@
             "label": "SETTINGS",
             "permission": "settings.view",
             "items": [
-                 { 
-                    "icon": "Settings", 
-                    "label": "Settings", 
-                    "permission": "settings.view",
-                    "subItems": [
-                        { "href": "/dashboard/company", "icon": "Briefcase", "label": "Company Profile", "permission": "company.manage" },
-                        { "href": "/dashboard/settings", "icon": "Settings", "label": "Application Settings", "permission": "settings.view" }
-                    ]
-                }
+                 { "href": "/dashboard/settings", "icon": "Settings", "label": "Settings", "permission": "settings.view" },
+                 { "href": "/dashboard/company", "icon": "Briefcase", "label": "Company Profile", "permission": "company.manage" }
             ]
         },
         {

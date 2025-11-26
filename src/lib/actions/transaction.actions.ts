@@ -3,6 +3,7 @@
 
 import type { SaleItem, DiscountSet } from '@/types';
 import { calculateDiscounts } from '../services/discount.service';
+import { serializeDecimals } from '../utils/serialize';
 
 /**
  * A Server Action to calculate discounts for the web UI.
@@ -35,8 +36,8 @@ export async function calculateDiscountsAction(
       finalTotal: discountResult.finalTotal,
       appliedRulesSummary: discountResult.getAppliedRulesSummary(), // Convert summary to plain array
     };
-    
-    return { success: true, data: resultObject };
+
+    return { success: true, data: serializeDecimals(resultObject) };
 
   } catch (error) {
     console.error('[ACTION_ERROR] Failed to calculate discounts:', error);

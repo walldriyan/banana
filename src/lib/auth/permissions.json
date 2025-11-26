@@ -1,3 +1,4 @@
+
 {
   "roles": {
     "admin": {
@@ -40,7 +41,13 @@
         "settings.view",
         "settings.discounts",
         "finance.view",
-        "finance.manage"
+        "finance.manage",
+        "shifts.view",
+        "shifts.manage",
+        "users.view",
+        "users.manage",
+        "roles.view",
+        "roles.manage"
       ]
     },
     "cashier": {

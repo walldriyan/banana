@@ -5,16 +5,17 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 type SessionStatus = 'authenticated' | 'unauthenticated' | 'loading';
 
 interface SessionState {
+  // Use the extended User type from next-auth
   user: User | null;
   permissions: string[];
   status: SessionStatus;
   setSession: (session: { user: User | null; permissions: string[], status: SessionStatus }) => void;
   clearSession: () => void;
+  setUserAndPermissions: (user: User, permissions: string[]) => void;
 }
 
 /**
- * Zustand store for managing the user's session state globally on the client-side.
- * This version uses persistence middleware to save state to sessionStorage.
+ * Zustand store for managing user data and permissions globally on the client-side.
  */
 export const useSessionStore = create<SessionState>()(
   persist(
@@ -26,6 +27,11 @@ export const useSessionStore = create<SessionState>()(
           user: session.user, 
           permissions: session.permissions,
           status: session.status 
+      }),
+      setUserAndPermissions: (user, permissions) => set({
+        user,
+        permissions,
+        status: 'authenticated'
       }),
       clearSession: () => set({ 
           user: null, 

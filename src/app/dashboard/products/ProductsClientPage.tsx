@@ -26,6 +26,7 @@ import { Package, Archive, DollarSign, Landmark, TrendingUp, Coins, AlertTriangl
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { ImportProductsModal } from '@/components/products/ImportProductsModal';
 
 
 const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
@@ -48,6 +49,7 @@ export function ProductsClientPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [batchToDelete, setBatchToDelete] = useState<string | null>(null);
   const [hideZeroStock, setHideZeroStock] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
 
   const { toast } = useToast();
@@ -76,6 +78,73 @@ export function ProductsClientPage() {
   const handleFormSuccess = () => {
     drawer.closeDrawer();
     fetchBatches(); // Refresh the batch list
+  };
+  
+  const handleImportSuccess = () => {
+    setIsImportModalOpen(false);
+    fetchBatches(); // Refresh list after successful import
+  };
+
+  const handleExport = async () => {
+    toast({ title: "Exporting...", description: "Preparing your product data for download." });
+    try {
+        const result = await getProductBatchesAction();
+        if (!result.success || !result.data) {
+            throw new Error(result.error || "Failed to fetch data for export.");
+        }
+        
+        const dataToExport = result.data;
+
+        // Define CSV headers
+        const headers = [
+            "ProductID", "ProductName", "Category", "Brand",
+            "BatchID", "BatchNumber", "Stock", "CostPrice", "SellingPrice",
+            "Barcode", "SupplierID", "ManufactureDate", "ExpiryDate", "DateAdded"
+        ];
+        
+        // Convert JSON to CSV string
+        const csvRows = [headers.join(',')];
+        for (const row of dataToExport) {
+            const values = [
+                `"${row.product.id}"`,
+                `"${row.product.name.replace(/"/g, '""')}"`,
+                `"${row.product.category.replace(/"/g, '""')}"`,
+                `"${row.product.brand.replace(/"/g, '""')}"`,
+                `"${row.id}"`,
+                `"${row.batchNumber}"`,
+                row.stock,
+                row.costPrice,
+                row.sellingPrice,
+                `"${row.barcode || ''}"`,
+                `"${row.supplierId || ''}"`,
+                `"${row.manufactureDate ? new Date(row.manufactureDate).toISOString() : ''}"`,
+                `"${row.expiryDate ? new Date(row.expiryDate).toISOString() : ''}"`,
+                `"${new Date(row.addedDate).toISOString()}"`,
+            ];
+            csvRows.push(values.join(','));
+        }
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        
+        // Create a link and trigger download
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", "products.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({ title: "Export Complete!", description: "Your products.csv file has started downloading." });
+    } catch (error) {
+        toast({
+            variant: "destructive",
+            title: "Export Failed",
+            description: error instanceof Error ? error.message : "An unknown error occurred during export.",
+        });
+    }
   };
 
   const openAddProductDrawer = () => {
@@ -132,7 +201,7 @@ export function ProductsClientPage() {
   
   const filteredBatches = useMemo(() => {
       if (hideZeroStock) {
-        return batches.filter(batch => batch.stock > 0);
+        return batches.filter(batch => parseFloat(batch.stock) > 0);
       }
       return batches;
   }, [batches, hideZeroStock]);
@@ -141,9 +210,9 @@ export function ProductsClientPage() {
   const summary = useMemo(() => {
     const totalBatches = batches.length;
     const totalMasterProducts = new Set(batches.map(b => b.productId)).size;
-    const totalStockQuantity = batches.reduce((sum, b) => sum + b.stock, 0);
-    const totalStockCostValue = batches.reduce((sum, b) => sum + (b.stock * (b.costPrice ?? 0)), 0);
-    const totalStockSellingValue = batches.reduce((sum, b) => sum + (b.stock * b.sellingPrice), 0);
+    const totalStockQuantity = batches.reduce((sum, b) => sum + parseFloat(b.stock), 0);
+    const totalStockCostValue = batches.reduce((sum, b) => sum + (parseFloat(b.stock) * (b.costPrice ?? 0)), 0);
+    const totalStockSellingValue = batches.reduce((sum, b) => sum + (parseFloat(b.stock) * b.sellingPrice), 0);
     const potentialProfit = totalStockSellingValue - totalStockCostValue;
     const overallMargin = totalStockCostValue > 0 ? (potentialProfit / totalStockCostValue) * 100 : 0;
 
@@ -181,11 +250,20 @@ export function ProductsClientPage() {
             columns={columns}
             data={filteredBatches}
             onAddProduct={openAddProductDrawer}
+            onImport={() => setIsImportModalOpen(true)}
+            onExport={handleExport}
             hideZeroStock={hideZeroStock}
             onHideZeroStockChange={setHideZeroStock}
           />
         </CardContent>
       </Card>
+      
+      <ImportProductsModal
+        isOpen={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
+        onSuccess={handleImportSuccess}
+      />
+
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>

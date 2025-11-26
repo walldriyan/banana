@@ -1,7 +1,8 @@
 import 'next-auth';
-import permissions from './permissions.json';
 
-type Role = keyof typeof permissions.roles;
+// No longer need permissions.json
+// type Role = keyof typeof permissions.roles;
+type Role = "admin" | "manager" | "cashier" | string; // Loosen the type
 
 declare module 'next-auth' {
   /**
@@ -9,6 +10,7 @@ declare module 'next-auth' {
    */
   interface User {
     id: string;
+    username: string; // Add username
     role: Role;
     permissions: string[];
   }

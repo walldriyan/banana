@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { startOfDay, endOfDay } from 'date-fns';
 import { Prisma } from "@prisma/client";
+import { serializeDecimals } from "@/lib/utils/serialize";
 
 
 interface DateRange {
@@ -50,7 +51,7 @@ export interface SummaryReportData {
             todaysCreditorPayments: number; // Payments made today for any debt
         };
     };
-     cashFlow: { // New Section
+    cashFlow: { // New Section
         cashSales: number;
         cashOtherIncome: number;
         todaysDebtorCashPayments: number;
@@ -65,15 +66,15 @@ export interface SummaryReportData {
 export async function getSummaryReportDataAction(dateRange: DateRange): Promise<{ success: boolean; data?: SummaryReportData; error?: string }> {
     try {
         const { from, to } = dateRange;
-        
+
         const adjustedFrom = startOfDay(from);
         const adjustedTo = endOfDay(to);
 
         // --- P&L Calculations (Period Specific) ---
         const [
-            salesData, 
-            purchaseData, 
-            financialTxData, 
+            salesData,
+            purchaseData,
+            financialTxData,
             lostAndDamageData,
             refundData,
         ] = await Promise.all([
@@ -83,7 +84,7 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                     status: 'completed',
                     transactionDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
-                 include: { payment: true }
+                include: { payment: true }
             }),
             // P&L: Purchases within the date range
             prisma.goodsReceivedNote.aggregate({
@@ -98,11 +99,11 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
             // P&L: Lost & Damage within the date range
             prisma.lostAndDamage.findMany({
                 where: { date: { gte: adjustedFrom, lte: adjustedTo } },
-                include: { productBatch: { select: { costPrice: true }}}
+                include: { productBatch: { select: { costPrice: true } } }
             }),
             // P&L: Refunds within the date range
             prisma.transaction.findMany({
-                 where: {
+                where: {
                     status: 'refund',
                     transactionDate: { gte: adjustedFrom, lte: adjustedTo },
                 },
@@ -143,33 +144,33 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
                 where: { paymentDate: { gte: todayStart, lte: todayEnd } }
             })
         ]);
-        
+
         // --- Process Sales Data ---
-        const grossSalesRevenue = salesData.reduce((sum, tx) => sum + tx.finalTotal, 0);
-        const totalDiscountsGiven = salesData.reduce((sum, tx) => sum + tx.totalDiscountAmount, 0);
+        const grossSalesRevenue = salesData.reduce((sum, tx) => sum + Number(tx.finalTotal), 0);
+        const totalDiscountsGiven = salesData.reduce((sum, tx) => sum + Number(tx.totalDiscountAmount), 0);
         const cashSales = salesData
             .filter(tx => tx.payment?.paymentMethod === 'cash')
-            .reduce((sum, tx) => sum + tx.payment!.paidAmount, 0); // Amount paid in cash
+            .reduce((sum, tx) => sum + Number(tx.payment!.paidAmount), 0); // Amount paid in cash
 
         // --- Process Other Financial Transactions ---
         const otherIncome = financialTxData
             .filter(tx => tx.type === 'INCOME')
-            .reduce((sum, tx) => sum + tx.amount, 0);
+            .reduce((sum, tx) => sum + Number(tx.amount), 0);
         const otherExpenses = financialTxData
             .filter(tx => tx.type === 'EXPENSE')
-            .reduce((sum, tx) => sum + tx.amount, 0);
-        
+            .reduce((sum, tx) => sum + Number(tx.amount), 0);
+
         // --- Process Purchase Data ---
-        const totalPurchaseCost = purchaseData._sum.totalAmount || 0;
+        const totalPurchaseCost = Number(purchaseData._sum.totalAmount || 0);
 
         // --- Process Inventory & Refund Data ---
         const lostAndDamageValue = lostAndDamageData.reduce((sum, record) => {
-            return sum + (record.quantity * (record.productBatch?.costPrice || 0));
+            return sum + (Number(record.quantity) * Number(record.productBatch?.costPrice || 0));
         }, 0);
-        
+
         const totalRefundsValue = refundData.reduce((sum, tx) => {
-            const originalTotal = tx.originalTransaction?.finalTotal || 0;
-            const keptTotal = tx.finalTotal;
+            const originalTotal = Number(tx.originalTransaction?.finalTotal || 0);
+            const keptTotal = Number(tx.finalTotal);
             return sum + (originalTotal - keptTotal);
         }, 0);
 
@@ -177,39 +178,39 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
         const netSalesRevenue = grossSalesRevenue - totalRefundsValue;
         const grossProfit = netSalesRevenue - totalPurchaseCost; // This is a simplified GP
         const netProfit = grossProfit + otherIncome - otherExpenses - lostAndDamageValue;
-        
+
         // --- Balance Sheet Summary ---
         const totalDebtorsValue = debtorsData.reduce((totalDue, tx) => {
-            const totalPaidForTx = tx.salePayments.reduce((paidSum, p) => paidSum + p.amount, 0);
-            const dueForThisTx = tx.finalTotal - totalPaidForTx;
+            const totalPaidForTx = tx.salePayments.reduce((paidSum, p) => paidSum + Number(p.amount), 0);
+            const dueForThisTx = Number(tx.finalTotal) - totalPaidForTx;
             return totalDue + dueForThisTx;
         }, 0);
 
         const totalCreditorsValue = creditorsData.reduce((totalDue, grn) => {
-            const totalPaidForGrn = grn.payments.reduce((paidSum, p) => paidSum + p.amount, 0);
-            const dueForThisGrn = grn.totalAmount - totalPaidForGrn;
+            const totalPaidForGrn = grn.payments.reduce((paidSum, p) => paidSum + Number(p.amount), 0);
+            const dueForThisGrn = Number(grn.totalAmount) - totalPaidForGrn;
             return totalDue + dueForThisGrn;
         }, 0);
-        
-        const totalTodaysDebtorPayments = todaysDebtorPayments.reduce((sum, p) => sum + p.amount, 0);
-        const totalTodaysCreditorPayments = todaysCreditorPayments.reduce((sum, p) => sum + p.amount, 0);
+
+        const totalTodaysDebtorPayments = todaysDebtorPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+        const totalTodaysCreditorPayments = todaysCreditorPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
         // --- Cash Flow Calculations (For Today Only) ---
         const cashOtherIncomeToday = financialTxData
             .filter(tx => tx.type === 'INCOME' && tx.date >= todayStart && tx.date <= todayEnd) // Assuming all 'other' are cash
-            .reduce((sum, tx) => sum + tx.amount, 0);
-        
+            .reduce((sum, tx) => sum + Number(tx.amount), 0);
+
         const cashOtherExpensesToday = financialTxData
             .filter(tx => tx.type === 'EXPENSE' && tx.date >= todayStart && tx.date <= todayEnd) // Assuming all 'other' are cash
-            .reduce((sum, tx) => sum + tx.amount, 0);
-            
+            .reduce((sum, tx) => sum + Number(tx.amount), 0);
+
         const todaysDebtorCashPayments = todaysDebtorPayments
             .filter(p => p.paymentMethod === 'cash')
-            .reduce((sum, p) => sum + p.amount, 0);
-            
+            .reduce((sum, p) => sum + Number(p.amount), 0);
+
         const todaysCreditorCashPayments = todaysCreditorPayments
             .filter(p => p.paymentMethod === 'cash')
-            .reduce((sum, p) => sum + p.amount, 0);
+            .reduce((sum, p) => sum + Number(p.amount), 0);
 
         const cashIn = cashSales + cashOtherIncomeToday + todaysDebtorCashPayments;
         const cashOut = cashOtherExpensesToday + todaysCreditorCashPayments;
@@ -281,16 +282,13 @@ export async function getSummaryReportDataAction(dateRange: DateRange): Promise<
 export async function getStockReportDataAction() {
     try {
         const batches = await prisma.productBatch.findMany({
-            where: { stock: { gt: 0 }},
+            where: { stock: { gt: 0 } },
             include: { product: true },
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
 
-        // Convert Decimal `stock` to number for easier use in the report
-        const serializedBatches = batches.map(batch => ({
-            ...batch,
-            stock: Number(batch.stock),
-        }));
+        // Serialize all Decimal fields (stock, sellingPrice, costPrice, etc.)
+        const serializedBatches = serializeDecimals(batches);
 
         return { success: true, data: { data: serializedBatches } };
     } catch (error) {
@@ -300,92 +298,99 @@ export async function getStockReportDataAction() {
 }
 
 export async function getCreditorsReportDataAction(dateRange?: DateRange) {
-  try {
-    const where: Prisma.GoodsReceivedNoteWhereInput = {
-        paymentStatus: { in: ['pending', 'partial'] }
-    };
-    if (dateRange?.from && dateRange?.to) {
-        where.grnDate = {
-            gte: startOfDay(dateRange.from),
-            lte: endOfDay(dateRange.to),
+    try {
+        const where: Prisma.GoodsReceivedNoteWhereInput = {
+            paymentStatus: { in: ['pending', 'partial'] }
         };
-    }
+        if (dateRange?.from && dateRange?.to) {
+            where.grnDate = {
+                gte: startOfDay(dateRange.from),
+                lte: endOfDay(dateRange.to),
+            };
+        }
 
-    const creditorGrns = await prisma.goodsReceivedNote.findMany({
-      where,
-      include: {
-        supplier: true,
-        payments: true, // Include full payment details
-        items: {
+        const creditorGrns = await prisma.goodsReceivedNote.findMany({
+            where,
             include: {
-                productBatch: {
+                supplier: true,
+                payments: true, // Include full payment details
+                items: {
                     include: {
-                        product: true
+                        productBatch: {
+                            include: {
+                                product: true
+                            }
+                        }
                     }
-                }
-            }
-        },
-      },
-      orderBy: { grnDate: 'asc' },
-    });
+                },
+            },
+            orderBy: { grnDate: 'asc' },
+        });
 
-    const grnsWithPaidAmount = creditorGrns.map(grn => ({
-      ...grn,
-      totalPaid: grn.payments.reduce((sum, p) => sum + p.amount, 0),
-    }));
+        const grnsWithPaidAmount = creditorGrns.map(grn => ({
+            ...grn,
+            totalPaid: grn.payments.reduce((sum, p) => sum + Number(p.amount), 0),
+        }));
 
-    return { success: true, data: { creditors: grnsWithPaidAmount, dateRange } };
-  } catch (error) {
-    console.error('[getCreditorsReportDataAction] Error:', error);
-    return { success: false, error: 'Failed to fetch creditors report data.' };
-  }
+        // Serialize Decimal fields to plain numbers
+        const serializedCreditors = serializeDecimals(grnsWithPaidAmount);
+
+        return { success: true, data: { creditors: serializedCreditors, dateRange } };
+    } catch (error) {
+        console.error('[getCreditorsReportDataAction] Error:', error);
+        return { success: false, error: 'Failed to fetch creditors report data.' };
+    }
 }
 
 export async function getDebtorsReportDataAction(dateRange?: DateRange) {
-  try {
-    const where: Prisma.TransactionWhereInput = {
-        paymentStatus: { in: ['pending', 'partial'] }
-    };
-    if (dateRange?.from && dateRange?.to) {
-        where.transactionDate = {
-            gte: startOfDay(dateRange.from),
-            lte: endOfDay(dateRange.to),
+    try {
+        const where: Prisma.TransactionWhereInput = {
+            paymentStatus: { in: ['pending', 'partial'] }
         };
+        if (dateRange?.from && dateRange?.to) {
+            where.transactionDate = {
+                gte: startOfDay(dateRange.from),
+                lte: endOfDay(dateRange.to),
+            };
+        }
+
+        const debtorTransactions = await prisma.transaction.findMany({
+            where,
+            include: {
+                customer: true,
+                salePayments: true, // Include full payment details
+                lines: {
+                    include: {
+                        productBatch: {
+                            include: {
+                                product: true
+                            }
+                        }
+                    }
+                },
+            },
+            orderBy: { transactionDate: 'asc' },
+        });
+
+        const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
+            ...tx,
+            totalPaid: tx.salePayments.reduce((sum, p) => sum + Number(p.amount), 0),
+            lines: tx.lines.map(line => ({
+                ...line,
+                productName: line.productBatch.product.name,
+            })),
+        }));
+
+        // Serialize Decimal fields to plain numbers
+        const serializedDebtors = serializeDecimals(transactionsWithPaidAmount);
+
+        return { success: true, data: { debtors: serializedDebtors, dateRange } };
+    } catch (error) {
+        console.error('[getDebtorsReportDataAction] Error:', error);
+        return { success: false, error: 'Failed to fetch debtors report data.' };
     }
-
-    const debtorTransactions = await prisma.transaction.findMany({
-      where,
-      include: {
-        customer: true,
-        salePayments: true, // Include full payment details
-        lines: {
-          include: {
-            productBatch: {
-              include: {
-                product: true
-              }
-            }
-          }
-        },
-      },
-      orderBy: { transactionDate: 'asc' },
-    });
-
-    const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
-      ...tx,
-      totalPaid: tx.salePayments.reduce((sum, p) => sum + p.amount, 0),
-       lines: tx.lines.map(line => ({
-          ...line,
-          productName: line.productBatch.product.name,
-      })),
-    }));
-
-    return { success: true, data: { debtors: transactionsWithPaidAmount, dateRange } };
-  } catch (error) {
-    console.error('[getDebtorsReportDataAction] Error:', error);
-    return { success: false, error: 'Failed to fetch debtors report data.' };
-  }
 }
+
 
 export async function getTransactionsReportDataAction(dateRange?: DateRange) {
     try {
@@ -404,7 +409,11 @@ export async function getTransactionsReportDataAction(dateRange?: DateRange) {
             include: { customer: true },
             orderBy: { transactionDate: 'desc' },
         });
-        return { success: true, data: { transactions, dateRange } };
+
+        // Serialize Decimal fields to plain numbers
+        const serializedTransactions = serializeDecimals(transactions);
+
+        return { success: true, data: { transactions: serializedTransactions, dateRange } };
     } catch (error) {
         return { success: false, error: "Failed to fetch transactions report data." };
     }
@@ -430,7 +439,11 @@ export async function getRefundsReportDataAction(dateRange?: DateRange) {
             },
             orderBy: { transactionDate: 'desc' },
         });
-        return { success: true, data: { refunds, dateRange } };
+
+        // Serialize Decimal fields to plain numbers
+        const serializedRefunds = serializeDecimals(refunds);
+
+        return { success: true, data: { refunds: serializedRefunds, dateRange } };
     } catch (error) {
         return { success: false, error: "Failed to fetch refunds report data." };
     }

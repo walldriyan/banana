@@ -27,7 +27,12 @@ export function GlobalDrawer() {
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
       <SheetContent 
-        className={cn("w-full sm:max-w-2xl flex flex-col", drawerClassName)}
+        className={cn(
+            "w-full flex flex-col",
+            // FIX: Use a default max-width only when no custom class is provided.
+            // This allows `w-4/5` to work correctly on all screen sizes.
+            drawerClassName ? drawerClassName : "sm:max-w-lg" 
+        )}
         onInteractOutside={(e) => {
             if (!closeOnOverlayClick) {
                 e.preventDefault();

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { customerSchema, type CustomerFormValues } from "@/lib/validation/customer.schema";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { serializeDecimals } from "../utils/serialize";
 
 /**
  * Server action to add a new customer.
@@ -28,7 +29,7 @@ export async function addCustomerAction(data: CustomerFormValues) {
       },
     });
     revalidatePath('/dashboard/customers');
-    return { success: true, data: newCustomer };
+    return { success: true, data: serializeDecimals(newCustomer) };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       const target = (error.meta?.target as string[])?.join(', ');
@@ -46,7 +47,7 @@ export async function getCustomersAction() {
     const customers = await prisma.customer.findMany({
       orderBy: { name: 'asc' },
     });
-    return { success: true, data: customers };
+    return { success: true, data: serializeDecimals(customers) };
   } catch (error) {
     return { success: false, error: "Failed to fetch customers." };
   }
@@ -63,7 +64,7 @@ export async function updateCustomerAction(id: string, data: CustomerFormValues)
       error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
     };
   }
-  
+
   const { email, ...validatedData } = validationResult.data;
 
   try {
@@ -75,9 +76,9 @@ export async function updateCustomerAction(id: string, data: CustomerFormValues)
       },
     });
     revalidatePath('/dashboard/customers');
-    return { success: true, data: updatedCustomer };
+    return { success: true, data: serializeDecimals(updatedCustomer) };
   } catch (error) {
-     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       const target = (error.meta?.target as string[])?.join(', ');
       return { success: false, error: `A customer with this ${target} already exists.` };
     }
@@ -96,9 +97,9 @@ export async function deleteCustomerAction(id: string) {
     });
 
     if (transactionCount > 0) {
-      return { 
-        success: false, 
-        error: `Cannot delete customer. They have ${transactionCount} existing transaction(s).` 
+      return {
+        success: false,
+        error: `Cannot delete customer. They have ${transactionCount} existing transaction(s).`
       };
     }
 

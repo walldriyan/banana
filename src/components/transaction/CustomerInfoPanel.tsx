@@ -70,11 +70,11 @@ export function CustomerInfoPanel({ customers }: CustomerInfoPanelProps) {
   }, [] as Customer[]);
 
   return (
-    <Card onKeyDown={handleKeyDown}>
+    <Card onKeyDown={handleKeyDown} className="h-full flex flex-col">
       <CardHeader>
         <CardTitle>Customer Details</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 overflow-y-auto">
         <FormItem>
           <Label htmlFor="customerName">Customer Name</Label>
            <Popover open={open} onOpenChange={setOpen}>

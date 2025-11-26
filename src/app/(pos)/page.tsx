@@ -281,7 +281,7 @@ export default function MyNewEcommerceShop() {
         />
       ),
       closeOnOverlayClick: false,
-      drawerClassName: "sm:max-w-4xl"
+      drawerClassName: "w-4/5" // Use 80% of the screen width
     });
   }, [drawer, cart, discountResult, transactionId, activeCampaign, handleTransactionComplete]);
 

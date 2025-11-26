@@ -5,6 +5,7 @@ import { DatabaseReadyTransaction } from '../pos-data-transformer';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { serializeDecimals } from '../utils/serialize';
 
 /**
  * Saves a fully formed transaction object to the SQLite database using Prisma.
@@ -26,7 +27,20 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
     appliedDiscountsLog,
     customerDetails,
     paymentDetails,
+    companyDetails,
+    userDetails,
   } = data;
+
+  // --- VALIDATION STEP ---
+  if (!companyDetails?.companyId || !companyDetails?.companyName) {
+    console.error("❌ Validation Error: Missing Company Details");
+    return { success: false, error: "Company details are missing. Cannot proceed with transaction." };
+  }
+  if (!userDetails?.userId || !userDetails?.userName) {
+    console.error("❌ Validation Error: Missing User Details");
+    return { success: false, error: "User details are missing. Cannot proceed with transaction." };
+  }
+  // -----------------------
 
   try {
     const newTransaction = await prisma.$transaction(async (tx) => {
@@ -61,9 +75,9 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
       // Determine initial payment status
       let initialPaymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
       if (paymentDetails.paidAmount >= transactionHeader.finalTotal) {
-          initialPaymentStatus = 'paid';
+        initialPaymentStatus = 'paid';
       } else if (paymentDetails.paidAmount > 0) {
-          initialPaymentStatus = 'partial';
+        initialPaymentStatus = 'partial';
       }
 
       // Create the main transaction record
@@ -128,17 +142,17 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
 
       // Record initial payment in the new SalePayment table if it's a credit sale
       if (initialPaymentStatus === 'partial' || initialPaymentStatus === 'pending') {
-          if (paymentDetails.paidAmount > 0) {
-              await tx.salePayment.create({
-                  data: {
-                      transactionId: createdTransaction.id,
-                      amount: paymentDetails.paidAmount,
-                      paymentDate: new Date(),
-                      paymentMethod: paymentDetails.paymentMethod,
-                      notes: 'Initial payment with transaction.',
-                  }
-              });
-          }
+        if (paymentDetails.paidAmount > 0) {
+          await tx.salePayment.create({
+            data: {
+              transactionId: createdTransaction.id,
+              amount: paymentDetails.paidAmount,
+              paymentDate: new Date(),
+              paymentMethod: paymentDetails.paymentMethod,
+              notes: 'Initial payment with transaction.',
+            }
+          });
+        }
       }
 
       // STOCK MANAGEMENT LOGIC
@@ -155,44 +169,44 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
             }
           })
         );
-         try {
-            await Promise.all(stockUpdates);
+        try {
+          await Promise.all(stockUpdates);
         } catch (error) {
-            throw new Error('Insufficient stock for one or more items during transaction save.');
+          throw new Error('Insufficient stock for one or more items during transaction save.');
         }
 
       } else if (transactionHeader.status === 'refund' && transactionHeader.originalTransactionId) {
-         const originalTx = await tx.transaction.findUnique({
-             where: { id: transactionHeader.originalTransactionId },
-             include: { lines: true }
-         });
+        const originalTx = await tx.transaction.findUnique({
+          where: { id: transactionHeader.originalTransactionId },
+          include: { lines: true }
+        });
 
-         if (!originalTx) {
-             throw new Error(`Original transaction ${transactionHeader.originalTransactionId} not found for refund stock update.`);
-         }
+        if (!originalTx) {
+          throw new Error(`Original transaction ${transactionHeader.originalTransactionId} not found for refund stock update.`);
+        }
 
-         const stockRestoreUpdates = originalTx.lines.map(originalLine => {
-             const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId); 
-             const originalQty = new Prisma.Decimal(originalLine.quantity);
-             const keptQty = keptLine ? new Prisma.Decimal(keptLine.quantity) : new Prisma.Decimal(0);
-             const returnedQty = originalQty.minus(keptQty);
+        const stockRestoreUpdates = originalTx.lines.map(originalLine => {
+          const keptLine = transactionLines.find(line => line.batchId === originalLine.productBatchId);
+          const originalQty = new Prisma.Decimal(originalLine.quantity);
+          const keptQty = keptLine ? new Prisma.Decimal(keptLine.quantity) : new Prisma.Decimal(0);
+          const returnedQty = originalQty.minus(keptQty);
 
-             if (returnedQty.greaterThan(0)) {
-                 return tx.productBatch.update({
-                     where: { id: originalLine.productBatchId! },
-                     data: { 
-                        stock: {
-                            increment: returnedQty.toNumber()
-                        }
-                    }
-                 });
-             }
-             return null;
-         }).filter(Boolean);
+          if (returnedQty.greaterThan(0)) {
+            return tx.productBatch.update({
+              where: { id: originalLine.productBatchId! },
+              data: {
+                stock: {
+                  increment: returnedQty.toNumber()
+                }
+              }
+            });
+          }
+          return null;
+        }).filter(Boolean);
 
-         if(stockRestoreUpdates.length > 0) {
-            await Promise.all(stockRestoreUpdates as any);
-         }
+        if (stockRestoreUpdates.length > 0) {
+          await Promise.all(stockRestoreUpdates as any);
+        }
       }
       console.log("✅ 5. Stock Management සාර්ථකව අවසන් විය.");
 
@@ -207,13 +221,15 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
     revalidatePath('/history');
     revalidatePath('/dashboard/products');
     revalidatePath('/dashboard/debtors');
-    return { success: true, data: newTransaction };
+
+    // Use the robust serializer
+    return { success: true, data: serializeDecimals(newTransaction) };
 
   } catch (error) {
     console.error('[DB_SAVE_ERROR] සම්පූර්ණ දෝෂය:', error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if(error.code === 'P2002' && (error.meta?.target as string[])?.includes('originalTransactionId')) {
-           return { success: false, error: `දෝෂය: මෙම ගනුදෙනුව සඳහා දැනටමත් refund එකක් නිකුත් කර ඇත.` };
+      if (error.code === 'P2002' && (error.meta?.target as string[])?.includes('originalTransactionId')) {
+        return { success: false, error: `දෝෂය: මෙම ගනුදෙනුව සඳහා දැනටමත් refund එකක් නිකුත් කර ඇත.` };
       }
       return { success: false, error: `Prisma දෝෂය (${error.code}): ${error.message}` };
     }
@@ -253,11 +269,11 @@ export async function getTransactionsFromDb(options?: {
             select: { id: true, name: true, phone: true, address: true }
           },
           payment: {
-            select: { 
-              paidAmount: true, 
-              paymentMethod: true, 
-              outstandingAmount: true, 
-              isInstallment: true 
+            select: {
+              paidAmount: true,
+              paymentMethod: true,
+              outstandingAmount: true,
+              isInstallment: true
             }
           },
           lines: {
@@ -303,10 +319,10 @@ export async function getTransactionsFromDb(options?: {
               appliedOnce: true
             }
           },
-          originalTransaction: { 
+          originalTransaction: {
             select: { id: true }
           },
-          refundTransactions: { 
+          refundTransactions: {
             select: { id: true }
           }
         },
@@ -319,23 +335,25 @@ export async function getTransactionsFromDb(options?: {
       prisma.transaction.count({ where })
     ]);
 
-    // Transform data (same as before)
+    // Transform data using the robust serializer
     const formattedTransactions = transactions.map(tx => {
       const paymentDetails = tx.payment
         ? {
-            paidAmount: tx.payment.paidAmount,
-            paymentMethod: tx.payment.paymentMethod as 'cash' | 'card' | 'online',
-            outstandingAmount: tx.payment.outstandingAmount,
-            isInstallment: tx.payment.isInstallment,
-          }
+          paidAmount: tx.payment.paidAmount,
+          paymentMethod: tx.payment.paymentMethod as 'cash' | 'card' | 'online',
+          outstandingAmount: tx.payment.outstandingAmount,
+          isInstallment: tx.payment.isInstallment,
+        }
         : {
-            paidAmount: 0,
-            paymentMethod: 'cash' as 'cash',
-            outstandingAmount: tx.finalTotal,
-            isInstallment: false,
-          };
+          paidAmount: 0,
+          paymentMethod: 'cash' as 'cash',
+          outstandingAmount: tx.finalTotal,
+          isInstallment: false,
+        };
 
-      return {
+      // Create the structure expected by the frontend
+      const structuredTx = {
+        ...tx,
         transactionHeader: {
           transactionId: tx.id,
           transactionDate: tx.transactionDate.toISOString(),
@@ -359,10 +377,10 @@ export async function getTransactionsFromDb(options?: {
           customDiscountType: line.customDiscountType as 'fixed' | 'percentage' | undefined,
         })),
         appliedDiscountsLog: tx.appliedDiscounts.map(log => ({
-            ...log,
-            productIdAffected: log.productIdAffected ?? undefined,
-            batchIdAffected: log.batchIdAffected ?? undefined,
-            appliedOnce: log.appliedOnce ?? undefined,
+          ...log,
+          productIdAffected: log.productIdAffected ?? undefined,
+          batchIdAffected: log.batchIdAffected ?? undefined,
+          appliedOnce: log.appliedOnce ?? undefined,
         })),
         customerDetails: {
           id: tx.customer.id,
@@ -375,10 +393,12 @@ export async function getTransactionsFromDb(options?: {
         userDetails: { userId: 'user-001', userName: 'Default User' },
         isRefunded: !!tx.refundTransactions.length,
       };
+
+      return serializeDecimals(structuredTx);
     });
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       data: formattedTransactions,
       totalCount,
       hasMore: (options?.skip || 0) + formattedTransactions.length < totalCount
@@ -397,20 +417,20 @@ export async function getTransactionsFromDb(options?: {
  * @param transactionId The ID of the transaction to delete.
  */
 export async function deleteTransactionFromDb(transactionId: string) {
-    try {
-        await prisma.transaction.delete({
-            where: { id: transactionId },
-        });
-        revalidatePath('/history');
-        return { success: true };
-    } catch (error) {
-        console.error(`[DB_DELETE_TRANSACTION_ERROR] ID: ${transactionId}`, error);
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-            return { success: false, error: 'Transaction not found.' };
-        }
-        return { 
-            success: false, 
-            error: 'Failed to delete transaction. It might be linked to other records (e.g., a refund).' 
-        };
+  try {
+    await prisma.transaction.delete({
+      where: { id: transactionId },
+    });
+    revalidatePath('/history');
+    return { success: true };
+  } catch (error) {
+    console.error(`[DB_DELETE_TRANSACTION_ERROR] ID: ${transactionId}`, error);
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+      return { success: false, error: 'Transaction not found.' };
     }
+    return {
+      success: false,
+      error: 'Failed to delete transaction. It might be linked to other records (e.g., a refund).'
+    };
+  }
 }

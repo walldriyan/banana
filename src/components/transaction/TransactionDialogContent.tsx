@@ -279,13 +279,17 @@ export function TransactionDialogContent({
 
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-col h-[85vh] no-print">
+      <div className="flex flex-col h-full no-print">
         {step === 'details' && (
           <form onSubmit={handleSubmit(handlePreview)} className="flex flex-col flex-grow min-h-0">
-            <div className="flex-grow overflow-y-auto py-4 pr-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <CustomerInfoPanel customers={customers} />
-                <PaymentPanel finalTotal={discountResult.finalTotal} />
+            <div className="flex-grow overflow-y-auto py-4 pr-6 min-h-0">
+              <div className="flex flex-col md:flex-row gap-6 h-full">
+                <div className="md:w-1/2 flex flex-col">
+                    <CustomerInfoPanel customers={customers} />
+                </div>
+                <div className="md:w-1/2 flex flex-col">
+                    <PaymentPanel finalTotal={discountResult.finalTotal} />
+                </div>
               </div>
             </div>
             <div className="flex-shrink-0 pt-4 mt-auto border-t flex items-center justify-end">
