@@ -287,11 +287,8 @@ export async function getStockReportDataAction() {
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
 
-        // Convert Decimal `stock` to number for easier use in the report
-        const serializedBatches = batches.map(batch => ({
-            ...batch,
-            stock: Number(batch.stock),
-        }));
+        // Serialize all Decimal fields (stock, sellingPrice, costPrice, etc.)
+        const serializedBatches = serializeDecimals(batches);
 
         return { success: true, data: { data: serializedBatches } };
     } catch (error) {
