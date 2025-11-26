@@ -4,6 +4,7 @@
 import { prisma } from "@/lib/prisma";
 import { userSchema, type UserFormValues } from "@/lib/validation/user.schema";
 import { revalidatePath } from "next/cache";
+import { serializeDecimals } from "../utils/serialize";
 
 export async function getUsersAction() {
     try {
@@ -11,7 +12,7 @@ export async function getUsersAction() {
             include: { role: true },
             orderBy: { name: 'asc' }
         });
-        return { success: true, data: users };
+        return { success: true, data: serializeDecimals(users) };
     } catch (error) {
         return { success: false, error: "Failed to fetch users." };
     }
@@ -22,7 +23,7 @@ export async function addUserAction(data: UserFormValues) {
     if (!validation.success) {
         return { success: false, error: JSON.stringify(validation.error.flatten()) };
     }
-    
+
     // In a real app, hash the password before saving
     // const hashedPassword = await hash(data.password, 10);
 
@@ -31,20 +32,20 @@ export async function addUserAction(data: UserFormValues) {
             data: {
                 username: data.username,
                 name: data.name,
-                password: data.password, // Store plain text for now as per schema
+                password: data.password || '', // Should be caught by schema, but satisfying TS
                 isActive: data.isActive,
                 roleId: data.roleId,
             }
         });
         revalidatePath('/dashboard/users');
-        return { success: true, data: newUser };
+        return { success: true, data: serializeDecimals(newUser) };
     } catch (error) {
         return { success: false, error: "Failed to create user. Username might already exist." };
     }
 }
 
 export async function updateUserAction(id: string, data: UserFormValues) {
-     const validation = userSchema.safeParse(data);
+    const validation = userSchema.safeParse(data);
     if (!validation.success) {
         return { success: false, error: JSON.stringify(validation.error.flatten()) };
     }
@@ -62,7 +63,7 @@ export async function updateUserAction(id: string, data: UserFormValues) {
             }
         });
         revalidatePath('/dashboard/users');
-        return { success: true, data: updatedUser };
+        return { success: true, data: serializeDecimals(updatedUser) };
     } catch (error) {
         return { success: false, error: "Failed to update user. Username might already exist." };
     }
@@ -70,12 +71,12 @@ export async function updateUserAction(id: string, data: UserFormValues) {
 
 
 export async function deleteUserAction(id: string) {
-  try {
-    // Prevent self-deletion if we had a concept of current user ID here
-    await prisma.user.delete({ where: { id } });
-    revalidatePath('/dashboard/users');
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: "Failed to delete user." };
-  }
+    try {
+        // Prevent self-deletion if we had a concept of current user ID here
+        await prisma.user.delete({ where: { id } });
+        revalidatePath('/dashboard/users');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: "Failed to delete user." };
+    }
 }

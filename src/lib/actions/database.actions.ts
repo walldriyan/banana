@@ -5,6 +5,7 @@ import { DatabaseReadyTransaction } from '../pos-data-transformer';
 import { prisma } from '../prisma';
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { serializeDecimals } from '../utils/serialize';
 
 /**
  * Saves a fully formed transaction object to the SQLite database using Prisma.
@@ -220,7 +221,9 @@ export async function saveTransactionToDb(data: DatabaseReadyTransaction) {
     revalidatePath('/history');
     revalidatePath('/dashboard/products');
     revalidatePath('/dashboard/debtors');
-    return { success: true, data: serializeTransaction(newTransaction) };
+
+    // Use the robust serializer
+    return { success: true, data: serializeDecimals(newTransaction) };
 
   } catch (error) {
     console.error('[DB_SAVE_ERROR] සම්පූර්ණ දෝෂය:', error);
@@ -332,7 +335,7 @@ export async function getTransactionsFromDb(options?: {
       prisma.transaction.count({ where })
     ]);
 
-    // Transform data (same as before)
+    // Transform data using the robust serializer
     const formattedTransactions = transactions.map(tx => {
       const paymentDetails = tx.payment
         ? {
@@ -348,7 +351,8 @@ export async function getTransactionsFromDb(options?: {
           isInstallment: false,
         };
 
-      return serializeTransaction({
+      // Create the structure expected by the frontend
+      const structuredTx = {
         ...tx,
         transactionHeader: {
           transactionId: tx.id,
@@ -388,7 +392,9 @@ export async function getTransactionsFromDb(options?: {
         companyDetails: { companyId: 'comp-001', companyName: 'My Company' },
         userDetails: { userId: 'user-001', userName: 'Default User' },
         isRefunded: !!tx.refundTransactions.length,
-      });
+      };
+
+      return serializeDecimals(structuredTx);
     });
 
     return {
@@ -427,73 +433,4 @@ export async function deleteTransactionFromDb(transactionId: string) {
       error: 'Failed to delete transaction. It might be linked to other records (e.g., a refund).'
     };
   }
-}
-
-function serializeTransaction(data: any) {
-  // Helper to safely convert Decimal/Date
-  const toNum = (val: any) => (val ? Number(val) : 0);
-  const toStr = (val: any) => (val ? String(val) : '');
-
-  // If it's the raw Prisma Transaction object (from saveTransactionToDb)
-  if (data.id && data.subtotal && data.lines) {
-    return {
-      ...data,
-      subtotal: toNum(data.subtotal),
-      totalDiscountAmount: toNum(data.totalDiscountAmount),
-      finalTotal: toNum(data.finalTotal),
-      totalQuantity: toNum(data.totalQuantity),
-      lines: data.lines?.map((line: any) => ({
-        ...line,
-        quantity: toNum(line.quantity),
-        displayQuantity: toNum(line.displayQuantity),
-        unitPrice: toNum(line.unitPrice),
-        lineTotalBeforeDiscount: toNum(line.lineTotalBeforeDiscount),
-        lineDiscount: toNum(line.lineDiscount),
-        lineTotalAfterDiscount: toNum(line.lineTotalAfterDiscount),
-      })),
-      appliedDiscounts: data.appliedDiscounts?.map((ad: any) => ({
-        ...ad,
-        totalCalculatedDiscount: toNum(ad.totalCalculatedDiscount),
-      })),
-      payment: data.payment ? {
-        ...data.payment,
-        paidAmount: toNum(data.payment.paidAmount),
-        outstandingAmount: toNum(data.payment.outstandingAmount),
-      } : null,
-    };
-  }
-
-  // If it's the formatted object (from getTransactionsFromDb)
-  if (data.transactionHeader) {
-    return {
-      ...data,
-      transactionHeader: {
-        ...data.transactionHeader,
-        subtotal: toNum(data.transactionHeader.subtotal),
-        totalDiscountAmount: toNum(data.transactionHeader.totalDiscountAmount),
-        finalTotal: toNum(data.transactionHeader.finalTotal),
-        totalQuantity: toNum(data.transactionHeader.totalQuantity),
-      },
-      transactionLines: data.transactionLines?.map((line: any) => ({
-        ...line,
-        quantity: toNum(line.quantity),
-        displayQuantity: toNum(line.displayQuantity),
-        unitPrice: toNum(line.unitPrice),
-        lineTotalBeforeDiscount: toNum(line.lineTotalBeforeDiscount),
-        lineDiscount: toNum(line.lineDiscount),
-        lineTotalAfterDiscount: toNum(line.lineTotalAfterDiscount),
-      })),
-      appliedDiscountsLog: data.appliedDiscountsLog?.map((ad: any) => ({
-        ...ad,
-        totalCalculatedDiscount: toNum(ad.totalCalculatedDiscount),
-      })),
-      paymentDetails: data.paymentDetails ? {
-        ...data.paymentDetails,
-        paidAmount: toNum(data.paymentDetails.paidAmount),
-        outstandingAmount: toNum(data.paymentDetails.outstandingAmount),
-      } : null,
-    };
-  }
-
-  return data;
 }

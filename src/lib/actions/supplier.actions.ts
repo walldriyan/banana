@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { supplierSchema, type SupplierFormValues } from "@/lib/validation/supplier.schema";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { serializeDecimals } from "../utils/serialize";
 
 /**
  * Server action to add a new supplier.
@@ -28,7 +29,7 @@ export async function addSupplierAction(data: SupplierFormValues) {
       },
     });
     revalidatePath('/dashboard/suppliers');
-    return { success: true, data: newSupplier };
+    return { success: true, data: serializeDecimals(newSupplier) };
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       const target = (error.meta?.target as string[])?.join(', ');
@@ -46,7 +47,7 @@ export async function getSuppliersAction() {
     const suppliers = await prisma.supplier.findMany({
       orderBy: { name: 'asc' },
     });
-    return { success: true, data: suppliers };
+    return { success: true, data: serializeDecimals(suppliers) };
   } catch (error) {
     return { success: false, error: "Failed to fetch suppliers." };
   }
@@ -63,7 +64,7 @@ export async function updateSupplierAction(id: string, data: SupplierFormValues)
       error: "Invalid data: " + JSON.stringify(validationResult.error.flatten().fieldErrors),
     };
   }
-  
+
   const { email, ...validatedData } = validationResult.data;
 
   try {
@@ -75,9 +76,9 @@ export async function updateSupplierAction(id: string, data: SupplierFormValues)
       },
     });
     revalidatePath('/dashboard/suppliers');
-    return { success: true, data: updatedSupplier };
+    return { success: true, data: serializeDecimals(updatedSupplier) };
   } catch (error) {
-     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       const target = (error.meta?.target as string[])?.join(', ');
       return { success: false, error: `A supplier with this ${target} already exists.` };
     }

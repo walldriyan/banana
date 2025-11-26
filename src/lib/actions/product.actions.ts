@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { productSchema, type ProductFormValues, productBatchSchema, type ProductBatchFormValues } from "@/lib/validation/product.schema";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { serializeDecimals } from "../utils/serialize";
 
 // --- Master Product Actions ---
 
@@ -163,7 +164,9 @@ export async function updateProductBatchAction(id: string, data: ProductFormValu
 
         revalidatePath('/dashboard/products');
         revalidatePath('/dashboard/products');
-        return { success: true, data: serializeProductBatch(updatedBatch) };
+        revalidatePath('/dashboard/products');
+        revalidatePath('/dashboard/products');
+        return { success: true, data: serializeDecimals(updatedBatch) };
     } catch (error) {
         console.error('[updateProductBatchAction] Error:', error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -214,8 +217,8 @@ export async function getProductBatchesAction() {
             orderBy: [{ product: { name: 'asc' } }, { addedDate: 'desc' }],
         });
 
-        // Convert Decimal fields to plain numbers/strings
-        const serializedBatches = batches.map(batch => serializeProductBatch(batch));
+        // Convert Decimal fields to plain numbers/strings using robust serializer
+        const serializedBatches = serializeDecimals(batches);
 
         return { success: true, data: serializedBatches };
     } catch (error) {
@@ -245,7 +248,7 @@ export async function addProductBatchAction(data: ProductBatchFormValues) {
         });
         revalidatePath('/dashboard/products');
         revalidatePath('/dashboard/products');
-        return { success: true, data: serializeProductBatch(newBatch) };
+        return { success: true, data: serializeDecimals(newBatch) };
     } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
             return { success: false, error: `A batch with this Product ID and Batch Number already exists.` };
@@ -282,18 +285,4 @@ export async function deleteProductBatchAction(id: string) {
         }
         return { success: false, error: "Failed to delete product batch." };
     }
-}
-
-function serializeProductBatch(batch: any) {
-    const stockNumber = Number(batch.stock);
-    const stockString = stockNumber.toFixed(3);
-
-    return {
-        ...batch,
-        stock: stockString,
-        sellingPrice: Number(batch.sellingPrice),
-        costPrice: batch.costPrice ? Number(batch.costPrice) : 0,
-        tax: batch.tax ? Number(batch.tax) : 0,
-        discount: batch.discount ? Number(batch.discount) : 0,
-    };
 }
