@@ -4,10 +4,10 @@
 import { useState, useTransition, useCallback, useEffect, ReactNode, useMemo } from 'react';
 import { DateRange } from 'react-day-picker';
 import { subDays, startOfMonth, startOfYear, startOfWeek, isSameDay } from 'date-fns';
-import { 
-    getSummaryReportDataAction, type SummaryReportData, 
-    getStockReportDataAction, 
-    getCreditorsReportDataAction, 
+import {
+    getSummaryReportDataAction, type SummaryReportData,
+    getStockReportDataAction,
+    getCreditorsReportDataAction,
     getDebtorsReportDataAction,
     getTransactionsReportDataAction,
     getRefundsReportDataAction
@@ -30,39 +30,46 @@ import { RefundsReport } from './RefundsReport';
 
 
 const reportPrintStyles = `
-  @page { 
-    size: A4; 
-    margin: 10mm; 
-  }
   @media print {
-    body {
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-      background-color: transparent !important;
-      color: black !important;
+    /* Hide everything by default */
+    body * {
+      visibility: hidden;
     }
-    .report-container {
-      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-      color: black;
+    
+    /* Only show the report area */
+    #report-print-area, #report-print-area * {
+      visibility: visible;
+    }
+    
+    /* Position the report at the top-left */
+    #report-print-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      margin: 0;
+      padding: 20px; /* Add some padding for the paper */
       background-color: white;
+      color: black;
     }
+
+    /* Ensure no dark mode colors in print */
+    .dark #report-print-area {
+        background-color: white !important;
+        color: black !important;
+    }
+
+    /* Hide specific no-print elements even inside the area if any */
     .no-print {
-      display: none;
+      display: none !important;
+    }
+    
+    /* Reset page margins */
+    @page {
+      size: auto;
+      margin: 0mm;
     }
   }
-  html.dark body, html.dark .report-container {
-    background-color: #111827 !important; /* gray-900 */
-    color: white !important;
-  }
-  html.dark .text-black { color: white !important; }
-  html.dark .text-gray-800 { color: #e5e7eb !important; } /* gray-200 */
-  html.dark .text-gray-600 { color: #9ca3af !important; } /* gray-400 */
-  html.dark .text-gray-500 { color: #a1a1aa !important; } /* zinc-400 */
-  html.dark .bg-gray-100 { background-color: #374151 !important; } /* gray-700 */
-  html.dark .bg-blue-50 { background-color: #1e3a8a !important; } /* blue-900 */
-  html.dark .text-blue-800 { color: #93c5fd !important; } /* blue-300 */
-  html.dark .border-gray-200 { border-color: #4b5563 !important; } /* gray-600 */
-  html.dark .border-gray-300 { border-color: #4b5563 !important; }
 `;
 
 type ReportType = 'summary' | 'stock' | 'creditors' | 'debtors' | 'transactions' | 'refunds';
@@ -71,7 +78,7 @@ const ReportGenerator = () => {
     const today = new Date();
     const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: today, to: today });
     const [activePreset, setActivePreset] = useState<string | null>('today');
-    
+
     const [activeReport, setActiveReport] = useState<ReportType>('summary');
     const [activeReportData, setActiveReportData] = useState<any>(null);
 
@@ -94,27 +101,31 @@ const ReportGenerator = () => {
             setError(null);
             setActiveReportData(null);
             setActiveReport(type);
-            
+
             let result: { success: boolean; data?: any; error?: string };
 
-            switch(type) {
+            // Create a safe range object where from and to are guaranteed to be Dates
+            // We know they exist because of the validation check above
+            const safeRange = range && range.from && range.to ? { from: range.from, to: range.to } : undefined;
+
+            switch (type) {
                 case 'summary':
-                    result = await getSummaryReportDataAction(range!);
+                    result = await getSummaryReportDataAction(safeRange as any);
                     break;
                 case 'stock':
                     result = await getStockReportDataAction();
                     break;
                 case 'creditors':
-                    result = await getCreditorsReportDataAction(range!);
+                    result = await getCreditorsReportDataAction(safeRange as any);
                     break;
                 case 'debtors':
-                     result = await getDebtorsReportDataAction(range!);
+                    result = await getDebtorsReportDataAction(safeRange as any);
                     break;
                 case 'transactions':
-                     result = await getTransactionsReportDataAction(range!);
+                    result = await getTransactionsReportDataAction(safeRange as any);
                     break;
                 case 'refunds':
-                    result = await getRefundsReportDataAction(range!);
+                    result = await getRefundsReportDataAction(safeRange as any);
                     break;
                 default:
                     result = { success: false, error: 'Invalid report type' };
@@ -152,98 +163,20 @@ const ReportGenerator = () => {
         setActivePreset(presetName);
         setDateRange(range);
     };
-    
-    const printReport = async (reportHTML: string, title: string) => {
-        const isDarkMode = document.documentElement.classList.contains('dark');
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
 
-        const iframeDoc = iframe.contentWindow?.document;
-        if (iframeDoc) {
-            iframeDoc.open();
-            iframeDoc.write(`
-                <html>
-                  <head>
-                    <title>${title}</title>
-                    <script src="https://cdn.tailwindcss.com"></script>
-                    <style>${reportPrintStyles}</style>
-                  </head>
-                  <body class="${isDarkMode ? 'dark' : ''}">
-                    <div class="report-container">
-                      ${reportHTML}
-                    </div>
-                  </body>
-                </html>
-            `);
-            iframeDoc.close();
-            
-             setTimeout(() => {
-                iframe.contentWindow?.focus();
-                iframe.contentWindow?.print();
-            }, 500);
-        }
-
-        setTimeout(() => {
-            if (document.body.contains(iframe)) {
-                document.body.removeChild(iframe);
-            }
-        }, 1500);
-    }
-    
-    const handlePrintActiveReport = async () => {
+    // Simple and robust printing using window.print()
+    const handlePrintActiveReport = () => {
         if (!activeReportData) {
-             toast({ variant: 'destructive', title: 'Error', description: 'No report data to print.' });
-             return;
+            toast({ variant: 'destructive', title: 'Error', description: 'No report data to print.' });
+            return;
         }
-        
-        let ReportComponent: React.ComponentType<{ data: any }> | null = null;
-        let title = "Report";
-        let reportData = activeReportData;
-
-        switch(activeReport) {
-            case 'summary':
-                ReportComponent = SummaryReport;
-                title = 'Financial Summary Report';
-                break;
-            case 'stock':
-                ReportComponent = StockReport;
-                title = 'Stock Report';
-                reportData = activeReportData.data; // Nested data
-                break;
-            case 'creditors':
-                ReportComponent = CreditorsReport;
-                title = 'Creditors Report';
-                break;
-            case 'debtors':
-                ReportComponent = DebtorsReport;
-                title = 'Debtors Report';
-                break;
-            case 'transactions':
-                ReportComponent = TransactionsReport;
-                title = 'Transactions Report';
-                break;
-            case 'refunds':
-                ReportComponent = RefundsReport;
-                title = 'Refunds Report';
-                break;
-        }
-
-        if (ReportComponent) {
-            const ReactDOMServer = (await import('react-dom/server')).default;
-            const reportHTML = ReactDOMServer.renderToString(
-            <LanguageProvider initialLanguage={language}>
-                <ReportComponent data={reportData} />
-            </LanguageProvider>
-            );
-            await printReport(reportHTML, title);
-        }
+        window.print();
     };
 
     const renderActiveReport = (): ReactNode => {
         if (!activeReportData) return null;
-        
-        switch(activeReport) {
+
+        switch (activeReport) {
             case 'summary': return <SummaryReport data={activeReportData} />;
             case 'stock': return <StockReport data={activeReportData.data} />;
             case 'creditors': return <CreditorsReport data={activeReportData} />;
@@ -253,9 +186,9 @@ const ReportGenerator = () => {
             default: return null;
         }
     }
-    
+
     const getReportTitle = (): string => {
-        switch(activeReport) {
+        switch (activeReport) {
             case 'summary': return 'Summary Report';
             case 'stock': return 'Stock Report';
             case 'creditors': return 'Creditors Report';
@@ -265,11 +198,11 @@ const ReportGenerator = () => {
             default: return 'Report';
         }
     }
-    
+
     const getReportDescription = (): string => {
         const dataForDesc = activeReportData?.dateRange;
         if ((['summary', 'transactions', 'refunds', 'debtors', 'creditors'].includes(activeReport)) && dataForDesc) {
-             return `Report for the period of ${new Date(dataForDesc.from).toLocaleDateString()} to ${new Date(dataForDesc.to).toLocaleDateString()}`;
+            return `Report for the period of ${new Date(dataForDesc.from).toLocaleDateString()} to ${new Date(dataForDesc.to).toLocaleDateString()}`;
         }
         return `Generated on ${new Date().toLocaleDateString()}`;
     }
@@ -277,14 +210,15 @@ const ReportGenerator = () => {
 
     return (
         <div className="flex flex-col md:flex-row h-full gap-6">
+            <style>{reportPrintStyles}</style>
             <div className="flex-1">
                 <Card className="h-full flex flex-col">
-                    <CardHeader className="flex flex-row items-center justify-between no-print flex-shrink-0">
+                    <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
                         <div>
                             <CardTitle>{getReportTitle()}</CardTitle>
                             {activeReportData && <CardDescription>{getReportDescription()}</CardDescription>}
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 no-print">
                             <LanguageToggle />
                             <Button onClick={handlePrintActiveReport} variant="outline" disabled={!activeReportData || isPending}>
                                 <Printer className="mr-2 h-4 w-4" /> Print Report
@@ -306,14 +240,16 @@ const ReportGenerator = () => {
                             </Alert>
                         )}
                         {activeReportData && !isPending && (
-                            renderActiveReport()
+                            <div id="report-print-area">
+                                {renderActiveReport()}
+                            </div>
                         )}
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="flex flex-col w-full md:w-96 flex-shrink-0 gap-6">
-                <Card className="no-print">
+            <div className="flex flex-col w-full md:w-96 flex-shrink-0 gap-6 no-print">
+                <Card>
                     <CardHeader>
                         <CardTitle>Report Generation</CardTitle>
                         <CardDescription>Select a date range to generate reports.</CardDescription>
@@ -328,27 +264,27 @@ const ReportGenerator = () => {
                         </div>
                     </CardContent>
                 </Card>
-                 <Card className="no-print">
+                <Card>
                     <CardHeader>
                         <CardTitle>Other Reports</CardTitle>
                         <CardDescription>Select a specific report to view and print.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-3">
-                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('summary', dateRange!)} disabled={isPending}>
+                        <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('summary', dateRange!)} disabled={isPending}>
                             <FileText className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'summary' ? 'Generating...' : 'View Summary Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('stock', dateRange!)} disabled={isPending}>
+                        <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('stock', dateRange!)} disabled={isPending}>
                             <Package className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'stock' ? 'Generating...' : 'View Stock Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('creditors', dateRange!)} disabled={isPending}>
+                        <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('creditors', dateRange!)} disabled={isPending}>
                             <CreditCard className="mr-2 h-4 w-4" />
                             {isPending && activeReport === 'creditors' ? 'Generating...' : 'View Creditors Report'}
                         </Button>
-                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('debtors', dateRange!)} disabled={isPending}>
+                        <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('debtors', dateRange!)} disabled={isPending}>
                             <HandCoins className="mr-2 h-4 w-4" />
-                           {isPending && activeReport === 'debtors' ? 'Generating...' : 'View Debtors Report'}
+                            {isPending && activeReport === 'debtors' ? 'Generating...' : 'View Debtors Report'}
                         </Button>
                         <Button variant="outline" className="justify-start" onClick={() => handleGenerateReport('transactions', dateRange!)} disabled={isPending}>
                             <FileText className="mr-2 h-4 w-4" />
@@ -367,9 +303,9 @@ const ReportGenerator = () => {
 
 
 export function ReportsClientPage() {
-  return (
-    <LanguageProvider>
-      <ReportGenerator />
-    </LanguageProvider>
-  )
+    return (
+        <LanguageProvider>
+            <ReportGenerator />
+        </LanguageProvider>
+    )
 }
