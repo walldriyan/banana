@@ -5,43 +5,47 @@ import { prisma } from '@/lib/prisma';
 import { debtorPaymentSchema, type DebtorPaymentFormValues } from '@/lib/validation/debtor.schema';
 import { revalidatePath } from 'next/cache';
 import { Prisma } from '@prisma/client';
+import { serializeDecimals } from '@/lib/utils/serialize';
 
 /**
  * Fetches all transactions that have an outstanding balance (debtors).
  */
 export async function getDebtorTransactionsAction() {
-  try {
-    const debtorTransactions = await prisma.transaction.findMany({
-      where: {
-        paymentStatus: {
-          in: ['pending', 'partial'],
-        },
-      },
-      include: {
-        customer: true,
-        _count: {
-          select: { salePayments: true },
-        },
-         salePayments: {
-          select: { amount: true }
-        }
-      },
-      orderBy: {
-        transactionDate: 'asc',
-      },
-    });
+    try {
+        const debtorTransactions = await prisma.transaction.findMany({
+            where: {
+                paymentStatus: {
+                    in: ['pending', 'partial'],
+                },
+            },
+            include: {
+                customer: true,
+                _count: {
+                    select: { salePayments: true },
+                },
+                salePayments: {
+                    select: { amount: true }
+                }
+            },
+            orderBy: {
+                transactionDate: 'asc',
+            },
+        });
 
-    // Calculate total paid for each transaction
-    const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
-      ...tx,
-      totalPaid: tx.salePayments.reduce((sum, p) => sum + p.amount, 0),
-    }));
+        // Calculate total paid for each transaction
+        const transactionsWithPaidAmount = debtorTransactions.map(tx => ({
+            ...tx,
+            totalPaid: tx.salePayments.reduce((sum, p) => sum + Number(p.amount), 0),
+        }));
 
-    return { success: true, data: transactionsWithPaidAmount };
-  } catch (error) {
-    console.error('[getDebtorTransactionsAction] Error:', error);
-    return { success: false, error: 'Failed to fetch debtor transactions.' };
-  }
+        // Serialize Decimal fields to plain numbers
+        const serializedTransactions = serializeDecimals(transactionsWithPaidAmount);
+
+        return { success: true, data: serializedTransactions };
+    } catch (error) {
+        console.error('[getDebtorTransactionsAction] Error:', error);
+        return { success: false, error: 'Failed to fetch debtor transactions.' };
+    }
 }
 
 /**
@@ -70,10 +74,13 @@ export async function getDebtorTransactionByIdAction(transactionId: string) {
 
         const transactionWithPaidAmount = {
             ...transaction,
-            totalPaid: paymentAggr._sum.amount || 0,
+            totalPaid: Number(paymentAggr._sum.amount || 0),
         };
 
-        return { success: true, data: transactionWithPaidAmount };
+        // Serialize Decimal fields to plain numbers
+        const serializedTransaction = serializeDecimals(transactionWithPaidAmount);
+
+        return { success: true, data: serializedTransaction };
     } catch (error) {
         console.error(`[getDebtorTransactionByIdAction] Error fetching transaction ${transactionId}:`, error);
         return { success: false, error: 'Failed to fetch transaction details.' };
@@ -90,7 +97,11 @@ export async function getPaymentsForSaleAction(transactionId: string) {
             where: { transactionId: transactionId },
             orderBy: { paymentDate: 'desc' },
         });
-        return { success: true, data: payments };
+
+        // Serialize Decimal fields to plain numbers
+        const serializedPayments = serializeDecimals(payments);
+
+        return { success: true, data: serializedPayments };
     } catch (error) {
         console.error(`[getPaymentsForSaleAction] Error fetching payments for transaction ${transactionId}:`, error);
         return { success: false, error: 'Failed to fetch payments.' };
@@ -127,10 +138,10 @@ export async function addSalePaymentAction(data: DebtorPaymentFormValues) {
                 _sum: { amount: true },
                 where: { transactionId: transactionId },
             });
-            const newTotalPaid = totalPaidAggr._sum.amount || 0;
+            const newTotalPaid = Number(totalPaidAggr._sum.amount || 0);
 
             let newStatus: 'pending' | 'partial' | 'paid' = 'partial';
-            if (newTotalPaid >= transaction.finalTotal) {
+            if (newTotalPaid >= Number(transaction.finalTotal)) {
                 newStatus = 'paid';
             } else if (newTotalPaid === 0) {
                 newStatus = 'pending';
@@ -149,7 +160,10 @@ export async function addSalePaymentAction(data: DebtorPaymentFormValues) {
         revalidatePath('/dashboard/debtors');
         revalidatePath('/history');
 
-        return { success: true, data: result };
+        // Serialize Decimal fields to plain numbers
+        const serializedResult = serializeDecimals(result);
+
+        return { success: true, data: serializedResult };
 
     } catch (error) {
         console.error('[addSalePaymentAction] Error:', error);
@@ -177,13 +191,13 @@ export async function deleteSalePaymentAction(paymentId: string) {
                 _sum: { amount: true },
                 where: { transactionId },
             });
-            const newTotalPaid = totalPaidAggr._sum.amount || 0;
+            const newTotalPaid = Number(totalPaidAggr._sum.amount || 0);
 
             const transaction = await tx.transaction.findUnique({ where: { id: transactionId } });
             if (!transaction) throw new Error('Associated transaction not found.');
 
             let newStatus: 'pending' | 'partial' | 'paid' = 'partial';
-            if (newTotalPaid >= transaction.finalTotal) {
+            if (newTotalPaid >= Number(transaction.finalTotal)) {
                 newStatus = 'paid';
             } else if (newTotalPaid === 0) {
                 newStatus = 'pending';
