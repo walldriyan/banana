@@ -14,7 +14,7 @@ export type ProductBatch = Omit<Prisma.ProductBatchGetPayload<{
   costPrice: number;
   tax: number;
   discount: number;
-  stock: string;
+  stock: number;
 };
 
 // Represents what is in the shopping cart. It's a ProductBatch with sale-specific info.

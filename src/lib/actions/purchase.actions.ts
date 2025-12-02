@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { grnSchema, type GrnFormValues } from "@/lib/validation/grn.schema";
 import { Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { serializeDecimals } from "../utils/serialize";
 
 /**
  * Server action to fetch all GRNs.
@@ -26,7 +27,9 @@ export async function getGrnsAction() {
                 },
             },
         });
-        return { success: true, data: grns };
+        // Serialize Decimal fields for client components
+        const serializedGrns = serializeDecimals(grns);
+        return { success: true, data: serializedGrns };
     } catch (error) {
         console.error('[getGrnsAction] Error:', error);
         return { success: false, error: "Failed to fetch purchase records." };
@@ -50,9 +53,9 @@ export async function addGrnAction(data: GrnFormValues) {
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            const paidAmount = headerData.paidAmount ?? 0;
+            const paidAmount = headerData.paidAmount;
 
-            const totalAmount = headerData.totalAmount ?? 0;
+            const totalAmount = headerData.totalAmount;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
             if (totalAmount > 0 && paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
@@ -67,7 +70,6 @@ export async function addGrnAction(data: GrnFormValues) {
                         batchNumber: item.batchNumber,
                         costPrice: item.costPrice,
                         sellingPrice: item.sellingPrice,
-                        quantity: item.quantity,
                         stock: item.quantity, // Initial stock is the quantity
                         supplierId: headerData.supplierId,
                         addedDate: new Date(),
@@ -84,7 +86,7 @@ export async function addGrnAction(data: GrnFormValues) {
                     costPrice: item.costPrice,
                     discount: item.discount,
                     tax: item.tax,
-                    total: item.total,
+                    total: item.total ?? 0, // Handle optional total
                     discountType: item.discountType,
                     taxType: item.taxType,
                 };
@@ -122,7 +124,7 @@ export async function addGrnAction(data: GrnFormValues) {
         revalidatePath('/dashboard/products');
         revalidatePath('/dashboard/credit');
 
-        return { success: true, data: result };
+        return { success: true, data: serializeDecimals(result) };
 
     } catch (error) {
         console.error('[addGrnAction] Error:', error);
@@ -162,7 +164,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
             // This is a placeholder for that complex logic.
             // For now, we'll just update the GRN details.
 
-            const paidAmount = headerData.paidAmount ?? 0;
+            const paidAmount = headerData.paidAmount;
             const totalAmount = headerData.totalAmount;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
             if (totalAmount > 0 && paidAmount >= totalAmount) {
@@ -189,7 +191,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
         revalidatePath('/dashboard/products');
         revalidatePath('/dashboard/credit');
 
-        return { success: true, data: result };
+        return { success: true, data: serializeDecimals(result) };
 
     } catch (error) {
         console.error(`[updateGrnAction] Error updating GRN ${grnId}:`, error);
@@ -262,7 +264,7 @@ export async function deleteGrnAction(grnId: string) {
         revalidatePath('/dashboard/purchases');
         revalidatePath('/dashboard/products');
 
-        return { success: true, data: result };
+        return { success: true, data: serializeDecimals(result) };
 
     } catch (error) {
         console.error(`[deleteGrnAction] Error deleting GRN ${grnId}:`, error);
