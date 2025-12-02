@@ -40,7 +40,7 @@ function createWindow() {
         icon: path.join(__dirname, '../public/icon.png'),
     });
 
-    const url = isDev ? 'http://localhost:9002' : `file://${path.join(__dirname, '../.next/server/app/index.html')}`;
+    const url = isDev ? 'http://localhost:3000' : `file://${path.join(__dirname, '../.next/server/app/index.html')}`;
     mainWindow.loadURL(url);
 
     mainWindow.webContents.on('did-finish-load', () => {
