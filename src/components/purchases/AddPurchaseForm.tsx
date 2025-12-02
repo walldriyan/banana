@@ -79,7 +79,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [itemError, setItemError] = useState<string | null>(null);
 
-    const [totalAmount, setTotalAmount] = useState(0);
 
     const form = useForm<GrnFormValues>({
         resolver: zodResolver(grnSchema),
@@ -136,18 +135,16 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
     }, [fetchInitialData]);
 
 
-    const calculateTotal = useCallback(() => {
-        const items = getValues('items');
-        const currentTotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-        setTotalAmount(currentTotal);
-        setValue('totalAmount', currentTotal, { shouldValidate: true, shouldDirty: true });
-    }, [getValues, setValue]);
+    const watchedItems = useWatch({ control, name: 'items' });
 
+    const totalAmount: number = useMemo(() => {
+        if (!watchedItems || watchedItems.length === 0) return 0;
+        return watchedItems.reduce((sum, item) => sum + (item.total || 0), 0);
+    }, [watchedItems]);
 
-    const watchedItems = watch('items');
     useEffect(() => {
-        calculateTotal();
-    }, [watchedItems, calculateTotal]);
+        setValue('totalAmount', totalAmount, { shouldValidate: false, shouldDirty: true });
+    }, [totalAmount, setValue]);
 
 
     useEffect(() => {
@@ -174,7 +171,6 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                 grnDate: new Date(grn.grnDate),
                 items: loadedItems as any,
             });
-            setTotalAmount(grn.totalAmount);
             setValue('totalAmount', grn.totalAmount);
         }
     }, [isEditMode, grn, products, suppliers, form, setValue]);
@@ -318,8 +314,8 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         }
     };
 
-    const paidAmount = watch('paidAmount') || 0;
-    const balance = totalAmount - paidAmount;
+    const paidAmount = useWatch({ control, name: 'paidAmount' }) || 0;
+    const balance = useMemo(() => totalAmount - paidAmount, [totalAmount, paidAmount]);
 
     const selectedProductTotalStock = useMemo(() => {
         if (!selectedProduct) return 0;
