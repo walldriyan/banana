@@ -119,12 +119,12 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         }
 
         if (productsResult.success && productsResult.data) {
-            setProducts(productsResult.data);
+            setProducts(productsResult.data as Product[]);
         } else {
             toast({ variant: "destructive", title: "Error", description: "Could not load products." });
         }
         if (batchesResult.success && batchesResult.data) {
-            setAllBatches(batchesResult.data);
+            setAllBatches(batchesResult.data as unknown as ProductBatch[]);
         } else {
             toast({ variant: "destructive", title: "Error", description: "Could not load product batch data." });
         }
@@ -158,9 +158,13 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                     category: productBatch.product.category,
                     brand: productBatch.product.brand,
                     units: productBatch.product.units,
-                    sellingPrice: productBatch.sellingPrice,
+                    sellingPrice: Number(productBatch.sellingPrice),
                     batchNumber: productBatch.batchNumber,
-                    // Ensure discount/tax types are loaded correctly
+                    quantity: Number(item.quantity),
+                    costPrice: Number(item.costPrice),
+                    discount: Number(item.discount),
+                    tax: Number(item.tax),
+                    total: Number(item.total),
                     discountType: item.discountType,
                     taxType: item.taxType
                 };
@@ -168,10 +172,15 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
 
             form.reset({
                 ...grn,
+                invoiceNumber: grn.invoiceNumber || undefined,
+                notes: grn.notes || undefined,
+                paymentMethod: grn.paymentMethod as any,
                 grnDate: new Date(grn.grnDate),
+                totalAmount: Number(grn.totalAmount),
+                paidAmount: Number(grn.paidAmount),
                 items: loadedItems as any,
             });
-            setValue('totalAmount', grn.totalAmount);
+            setValue('totalAmount', Number(grn.totalAmount));
         }
     }, [isEditMode, grn, products, suppliers, form, setValue]);
 
@@ -290,7 +299,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
             });
             onSuccess();
         } else {
-            setSubmissionError(result.error);
+            setSubmissionError(result.error || "An unknown error occurred.");
         }
     }
 
@@ -321,7 +330,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
         if (!selectedProduct) return 0;
         return allBatches
             .filter(batch => batch.productId === selectedProduct.id)
-            .reduce((sum, batch) => sum + batch.stock, 0);
+            .reduce((sum, batch) => sum + Number(batch.stock), 0);
     }, [selectedProduct, allBatches]);
 
 
@@ -495,7 +504,7 @@ export function AddPurchaseForm({ grn, onSuccess }: AddPurchaseFormProps) {
                                                         <Archive className='h-5 w-5 text-muted-foreground' />
                                                         <div>
                                                             <p className='text-xs text-muted-foreground'>Total Current Stock</p>
-                                                            <p className='font-bold text-lg'>{selectedProductTotalStock.toLocaleString()} {selectedProduct.units.baseUnit}</p>
+                                                            <p className='font-bold text-lg'>{selectedProductTotalStock.toLocaleString()} {(selectedProduct.units as any).baseUnit}</p>
                                                         </div>
                                                     </div>
                                                 </div>

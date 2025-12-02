@@ -25,21 +25,28 @@ import { AlertTriangle, Banknote, Building, FileText, Landmark, Wallet } from 'l
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Define a type for GRN with its relations for the client-side
-export type GrnWithRelations = GoodsReceivedNote & { supplier: Supplier, items: GoodsReceivedNoteItem[] };
+export type GrnWithRelations = GoodsReceivedNote & {
+  supplier: Supplier,
+  items: (GoodsReceivedNoteItem & {
+    productBatch: import('@prisma/client').ProductBatch & {
+      product: import('@prisma/client').Product
+    }
+  })[]
+};
 type GoodsReceivedNoteItem = import('@prisma/client').GoodsReceivedNoteItem;
 
 
 const SummaryRow = ({ icon: Icon, label, value, description, valueClassName }: { icon: React.ElementType, label: string, value: string | number, description?: string, valueClassName?: string }) => (
-    <div className="flex items-start gap-4 py-3">
-        <div className="bg-muted p-2 rounded-lg">
-            <Icon className="h-5 w-5 text-foreground/80" />
-        </div>
-        <div className="flex-1">
-            <p className="font-medium text-foreground">{label}</p>
-            {description && <p className="text-xs text-muted-foreground">{description}</p>}
-        </div>
-        <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
+  <div className="flex items-start gap-4 py-3">
+    <div className="bg-muted p-2 rounded-lg">
+      <Icon className="h-5 w-5 text-foreground/80" />
     </div>
+    <div className="flex-1">
+      <p className="font-medium text-foreground">{label}</p>
+      {description && <p className="text-xs text-muted-foreground">{description}</p>}
+    </div>
+    <p className={`text-xl font-bold text-right ${valueClassName}`}>{value}</p>
+  </div>
 );
 
 
@@ -89,10 +96,10 @@ export function PurchasesClientPage() {
 
   const openEditGrnDrawer = useCallback((grn: GrnWithRelations) => {
     drawer.openDrawer({
-        title: 'Edit Purchase (GRN)',
-        description: `Editing GRN: ${grn.grnNumber}`,
-        content: <AddPurchaseForm grn={grn} onSuccess={handleFormSuccess} />,
-        drawerClassName: 'sm:max-w-6xl'
+      title: 'Edit Purchase (GRN)',
+      description: `Editing GRN: ${grn.grnNumber}`,
+      content: <AddPurchaseForm grn={grn} onSuccess={handleFormSuccess} />,
+      drawerClassName: 'sm:max-w-6xl'
     });
   }, [drawer, handleFormSuccess]);
 
@@ -104,21 +111,21 @@ export function PurchasesClientPage() {
 
   const confirmDeleteGrn = async () => {
     if (!grnToDelete) return;
-    
+
     setDeletionError(null);
     const result = await deleteGrnAction(grnToDelete);
 
     if (result.success) {
-        toast({ title: "GRN Deleted", description: `The purchase record has been successfully deleted.` });
-        fetchGrns();
+      toast({ title: "GRN Deleted", description: `The purchase record has been successfully deleted.` });
+      fetchGrns();
     } else {
-        setDeletionError(result.error);
-        toast({ 
-            variant: "destructive", 
-            title: "Deletion Failed", 
-            description: result.error, // Display the specific error message from the server
-            duration: 9000,
-        });
+      setDeletionError(result.error || "Unknown error");
+      toast({
+        variant: "destructive",
+        title: "Deletion Failed",
+        description: result.error, // Display the specific error message from the server
+        duration: 9000,
+      });
     }
 
     setIsDeleteDialogOpen(false);
@@ -128,16 +135,16 @@ export function PurchasesClientPage() {
   const summary = useMemo(() => {
     const totalGrns = grns.length;
     const totalSuppliers = new Set(grns.map(g => g.supplierId)).size;
-    const totalPurchaseValue = grns.reduce((sum, g) => sum + g.totalAmount, 0);
-    const totalPaidValue = grns.reduce((sum, g) => sum + g.paidAmount, 0);
+    const totalPurchaseValue = grns.reduce((sum, g) => sum + Number(g.totalAmount), 0);
+    const totalPaidValue = grns.reduce((sum, g) => sum + Number(g.paidAmount), 0);
     const totalOutstandingValue = totalPurchaseValue - totalPaidValue;
 
     return {
-        totalGrns,
-        totalSuppliers,
-        totalPurchaseValue,
-        totalPaidValue,
-        totalOutstandingValue,
+      totalGrns,
+      totalSuppliers,
+      totalPurchaseValue,
+      totalPaidValue,
+      totalOutstandingValue,
     };
   }, [grns]);
 
@@ -163,33 +170,33 @@ export function PurchasesClientPage() {
         data={grns}
         onAddGrn={openAddGrnDrawer}
       />
-      
+
       {deletionError && (
         <Alert variant="destructive" className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Deletion Error Details</AlertTitle>
-            <AlertDescription className="break-all font-mono text-xs">
-                {deletionError}
-            </AlertDescription>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Deletion Error Details</AlertTitle>
+          <AlertDescription className="break-all font-mono text-xs">
+            {deletionError}
+          </AlertDescription>
         </Alert>
       )}
 
-       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This action cannot be undone. Deleting a GRN will remove the record and its associated product batches, affecting stock levels. This will fail if the GRN has associated payments or if its products have been sold.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={confirmDeleteGrn} className="bg-red-600 hover:bg-red-700">
-                        Confirm Delete
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. Deleting a GRN will remove the record and its associated product batches, affecting stock levels. This will fail if the GRN has associated payments or if its products have been sold.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteGrn} className="bg-red-600 hover:bg-red-700">
+              Confirm Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
