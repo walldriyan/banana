@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npm run prisma:push && next dev --turbopack -p 9002",
-    "dev:desktop": "concurrently \"npm run dev\" \"wait-on http://localhost:9002 && electron electron/main.js\"",
+    "dev": "npm run prisma:push && next dev --turbopack -p 9200",
+    "dev:desktop": "concurrently \"npm run dev\" \"wait-on http://localhost:9200 && electron electron/main.js\"",
     "electron:dev": "electron electron/main.js",
     "genkit:dev": "genkit start -- tsx src/ai/dev.ts",
     "genkit:watch": "genkit start -- tsx --watch src/ai/dev.ts",
