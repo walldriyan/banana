@@ -53,9 +53,9 @@ export async function addGrnAction(data: GrnFormValues) {
 
     try {
         const result = await prisma.$transaction(async (tx) => {
-            const paidAmount = headerData.paidAmount ?? 0;
+            const paidAmount = headerData.paidAmount;
 
-            const totalAmount = headerData.totalAmount ?? 0;
+            const totalAmount = headerData.totalAmount;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
             if (totalAmount > 0 && paidAmount >= totalAmount) {
                 paymentStatus = 'paid';
@@ -86,7 +86,7 @@ export async function addGrnAction(data: GrnFormValues) {
                     costPrice: item.costPrice,
                     discount: item.discount,
                     tax: item.tax,
-                    total: item.total,
+                    total: item.total ?? 0, // Handle optional total
                     discountType: item.discountType,
                     taxType: item.taxType,
                 };
@@ -164,7 +164,7 @@ export async function updateGrnAction(grnId: string, data: GrnFormValues) {
             // This is a placeholder for that complex logic.
             // For now, we'll just update the GRN details.
 
-            const paidAmount = headerData.paidAmount ?? 0;
+            const paidAmount = headerData.paidAmount;
             const totalAmount = headerData.totalAmount;
             let paymentStatus: 'pending' | 'partial' | 'paid' = 'pending';
             if (totalAmount > 0 && paidAmount >= totalAmount) {

@@ -19,7 +19,7 @@ export const grnItemSchema = z.object({
   category: z.string().optional().nullable(),
   brand: z.string().optional().nullable(),
   units: unitDefinitionSchema,
-  
+
   // GRN-specific details for the new batch
   batchNumber: z.string().min(1, "Batch number is required."),
   quantity: z.coerce.number().int().min(1, "Quantity must be at least 1."),
@@ -41,9 +41,9 @@ export const grnSchema = z.object({
   invoiceNumber: z.string().optional(),
   items: z.array(grnItemSchema).min(1, "At least one item must be added to the GRN."),
   notes: z.string().optional(),
-  paidAmount: z.coerce.number().min(0).nullable().default(0),
+  paidAmount: z.coerce.number().min(0).default(0),
   paymentMethod: z.enum(['cash', 'card', 'cheque', 'credit']),
-  totalAmount: z.coerce.number().min(0, "Total amount must be non-negative.").nullable().default(0),
+  totalAmount: z.coerce.number().min(0, "Total amount must be non-negative."),
 });
 
 
